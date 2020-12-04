@@ -33,12 +33,12 @@
     		<div class="ui eleven wide column" style=" padding: 0px; display: flex; justify-content: center;">
     		<audio controls preload="metadata" src="http://www.everyayah.com/data/Alafasy_128kbps/{{'%03d' % details['surah']}}{{'%03d' % details['verse']}}.mp3" style="width: 90%;"></audio>
     		</div>
-    		<div class="ui two wide column" style="display: flex; justify-content: center;">
+    		<div class="ui two wide column" style="display: flex; justify-content: center; margin: 0px; ">
     		<button id="loop-btn" class="circular ui basic toggle icon button" style="vertical-align: middle;" onclick="document.querySelector('audio').loop = (document.querySelector('audio').loop ? false : true);">
     		<i class="icon undo" ></i>
     		</button>
 			</div>
-    		<div class="ui two wide column" style="display: flex; justify-content: center;">
+    		<div class="ui two wide column" style="display: flex; justify-content: center; margin: 0px;">
     		<button id="play-btn" class="circular ui basic icon button" style="vertical-align: middle;" onclick="$('audio').trigger('pause'); $('#audio-box').hide(); $('#control-btns').show();">
     		<i class="icon close" ></i>
     		</button>
@@ -48,8 +48,8 @@
 			<br>
     	</div>
     	<div id="control-btns">
-    	<button id="play-btn" class="circular ui small basic icon button" onclick="$('#audio-box').show(); $('#control-btns').hide(); $('audio').trigger('play');">
-		  <i class="small icon play"></i>
+    	<button id="play-btn" class="circular ui basic icon button" onclick="$('#audio-box').show(); $('#control-btns').hide(); $('audio').trigger('play');">
+		  <i class="icon play"></i>
 		</button>
 		<!-- <button class="circular ui basic facebook icon button">
 		  <i class="small icon facebook"></i>
