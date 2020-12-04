@@ -29,20 +29,19 @@
     <h1 style="font-size: 300%; font-family: 'Scheherazade', serif;"> {{ details['ayah'] }} </h1>
     
     <div align="right" style="margin-bottom: 10px; box-sizing: border-box;">
-    	<div id="audio-box" class="ui grid" style="display: none;">
-    		<div class="ui eleven wide column" style=" padding: 0px; display: flex; justify-content: center;">
-    		<audio controls preload="metadata" src="http://www.everyayah.com/data/Alafasy_128kbps/{{'%03d' % details['surah']}}{{'%03d' % details['verse']}}.mp3" style="width: 90%;"></audio>
+    	<div id="audio-box" class="ui grid container" style="display: none;">
+    		<div class="ui twelve wide column" style=" padding: 0px; display: flex; align-items: center; justify-content: center;">
+    		<audio controls preload="metadata" src="http://www.everyayah.com/data/Alafasy_128kbps/{{'%03d' % details['surah']}}{{'%03d' % details['verse']}}.mp3" style="width: 95%;"></audio>
     		</div>
-    		<div class="ui two wide column" style="display: flex; justify-content: center; margin: 0px; ">
+    		<div class="ui four wide column" style="display: flex; justify-content: center;">
     		<button id="loop-btn" class="circular ui basic toggle icon button" style="vertical-align: middle;" onclick="document.querySelector('audio').loop = (document.querySelector('audio').loop ? false : true);">
     		<i class="icon undo" ></i>
     		</button>
-			</div>
-    		<div class="ui two wide column" style="display: flex; justify-content: center; margin: 0px;">
     		<button id="play-btn" class="circular ui basic icon button" style="vertical-align: middle;" onclick="$('audio').trigger('pause'); $('#audio-box').hide(); $('#control-btns').fadeIn();">
     		<i class="icon close" ></i>
     		</button>
 			</div>
+    		
 
 			<p style="width: 100%; font-size: 80%; text-align: center;"> [Source: <a href="https://everyayah.com/data/getfile.php" target="_blank">Verse By Verse Quran MP3 Project</a>] </p>
 			<br>
