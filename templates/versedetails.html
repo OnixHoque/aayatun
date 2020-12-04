@@ -39,7 +39,7 @@
     		</button>
 			</div>
     		<div class="ui two wide column" style="display: flex; justify-content: center; margin: 0px;">
-    		<button id="play-btn" class="circular ui basic icon button" style="vertical-align: middle;" onclick="$('audio').trigger('pause'); $('#audio-box').hide(); $('#control-btns').show();">
+    		<button id="play-btn" class="circular ui basic icon button" style="vertical-align: middle;" onclick="$('audio').trigger('pause'); $('#audio-box').hide(); $('#control-btns').fadeIn();">
     		<i class="icon close" ></i>
     		</button>
 			</div>
@@ -48,7 +48,7 @@
 			<br>
     	</div>
     	<div id="control-btns">
-    	<button id="play-btn" class="circular ui basic icon button" onclick="$('#audio-box').show(); $('#control-btns').hide(); $('audio').trigger('play');">
+    	<button id="play-btn" class="circular ui basic icon button" onclick="$('#audio-box').fadeIn(); $('#control-btns').hide(); $('audio').trigger('play');">
 		  <i class="icon play"></i>
 		</button>
 		<!-- <button class="circular ui basic facebook icon button">
