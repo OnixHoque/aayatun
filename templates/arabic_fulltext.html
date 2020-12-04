@@ -1,5 +1,12 @@
 {% extends 'comprehensive.html' %}
-
+{% block bismillah %} 
+	{% if surah_no != 1 and surah_no != 9 %}
+	<tr>
+	<td colspan="2" style="font-family: 'Scheherazade', serif; font-size: 225%; text-align: center;"> ﷽ </td>
+	</tr>
+	{% endif %}
+{% endblock %}
+    		
 {% block url1 %} {{ url_for('arabic_fulltext', surah=prev) }} {% endblock %}
 {% block url2 %} {{ url_for('arabic_fulltext', surah=nxt) }} {% endblock %}
 {% block font_config %} font-family: 'Scheherazade', serif; font-size: 225%; text-align: right; {% endblock %}

@@ -40,13 +40,15 @@
     <br>
 
     <table class="ui very basic unstackable selectable left aligned table" id="cur_table">
-    	<thead style="display: none">
-    		<tr>
+    	<thead>
+    		<tr style="display: none;">
     			<th>Verse</th>
     			<th>Translation</th>
     		</tr>
+    		{% block bismillah %} {% endblock %}
     	</thead>
     <tbody>
+
     {% for x in verses %}
     	<tr style="padding: 1%" onclick="window.location.href='{{ url_for('details', surah=surah_no, verse=x[0]) }}';"> 
     		<td class="two wide" style="font-family: Lora; font-size: 100%; text-align: right; vertical-align: top"> {{ x[0] }} </td> 
