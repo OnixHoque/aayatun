@@ -26,5 +26,7 @@
         {% block content %} {% endblock %}
         <br>{% block content2 %} {% endblock %}
     </div>
+  <script defer="true" src="{{ url_for('static', filename= 'js/script.js') }}"></script>
+  {% block scriptcontent %} {% endblock %}
   </body>
 </html>
