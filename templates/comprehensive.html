@@ -69,14 +69,18 @@
 <script>
 	$(document).ready(function() {
 	    $('#cur_table').DataTable(
-	    	{"oLanguage": {
+	    	{
+	    		"stateSave": true,
+	    		"oLanguage": {
 	    	         "sInfo": "Showing _START_ to _END_ of _TOTAL_ verses",
 	    	         "sLengthMenu": "_MENU_",
 	    	         "sSearch": ""
+
 	    	       },
 	    	   "language": {
-    searchPlaceholder: 'Search...'
-}}
+				    searchPlaceholder: 'Search...'
+				}},
+
 	    	   );
 	    
 		
