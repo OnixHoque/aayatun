@@ -88,10 +88,12 @@
 
 		$('#cur_table_wrapper > div').removeClass('stackable').addClass('unstackable');
 		$('#cur_table_length').parent().removeClass('eight wide column').addClass('five wide column');
+		$('#cur_table_length').parent().css('padding-right', '0px');
 		$('#cur_table_length').css('font-size', '90%');
 		$('#cur_table_length .selection').css('width', '100%');
 		
 		$('#cur_table_filter').parent().removeClass('eight wide column').addClass('eleven wide column');
+		$('#cur_table_filter').parent().css('padding-left', '0px');
 		$('#cur_table_filter').css('font-size', '90%');
 		$('#cur_table_filter').css('text-align', 'center');
 		$('#cur_table_filter .input').css('width', '100%');
