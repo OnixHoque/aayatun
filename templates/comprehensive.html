@@ -39,7 +39,7 @@
 
     <br>
 
-    <table class="ui very basic unstackable selectable left aligned table" id="cur_table">
+    <table class="ui very basic unstackable left aligned table" id="cur_table">
     	<thead>
     		<tr style="display: none;">
     			<th>Verse</th>
@@ -50,8 +50,8 @@
     <tbody>
 
     {% for x in verses %}
-    	<tr style="padding: 1%" onclick="window.location.href='{{ url_for('details', surah=surah_no, verse=x[0]) }}';"> 
-    		<td class="two wide" style="font-family: Lora; font-size: 100%; text-align: right; vertical-align: top"> {{ x[0] }} </td> 
+    	<tr style="padding: 1%"> 
+    		<td class="two wide selectable" onclick="window.location.href='{{ url_for('details', surah=surah_no, verse=x[0]) }}';" style="font-family: Lora; font-size: 100%; text-align: center; vertical-align: top; padding-top: 2%;"> {{ x[0] }} </td> 
     		<td style="{% block font_config %} {% endblock %}"> {{ x[1] }} </td> 
     	</tr>
     {% endfor %}
