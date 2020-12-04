@@ -1,0 +1,261 @@
+{% extends 'base.html' %}
+
+{% block title %} {{ details['surah_name'] }} : Aayatun - An Ayah a Day {% endblock %}
+
+{% block menu %}
+<div class="item" style="outline: none;">
+<a class="ui icon basic huge left floated button" href= {{ url_for('details', surah=details['prev'][0], verse=details['prev'][1]) }} ><i class="left arrow icon"></i></a>
+</div>
+
+<div class="header item" style="font-size: 200%; display: inline-block; text-align: middle;">
+<a href="{{ url_for('index') }}" style="font-family: Merriweather;">Quran</a> <a style="font-family: Merriweather;" href="{{ url_for('details', surah=details['surah'], verse=1) }}">{{ details['surah'] }}:{{ details['verse'] }}</a>
+</div>
+<div class="item">
+<a class="ui icon basic right floated huge button" href= {{ url_for('details', surah=details['next'][0], verse=details['next'][1]) }}><i class="right arrow icon"></i></a>
+</div>
+{% endblock %}
+
+
+{% block content %}
+	<style>
+		* {
+			font-family: 'Open Sans'
+		}
+	</style>
+
+
+	<div style="text-align: center;">
+	<br>
+    <h1 style="font-size: 300%; font-family: 'Scheherazade', serif;"> {{ details['ayah'] }} </h1>
+    <br>
+    <p>{{ details['translation'] }}</p>
+
+    <br>
+
+    {% for x in details['wordforword'] %}
+    {% if (x['3']|length) != 0 %}
+    	<div class="ui mini modal" id="related{{ x['4'] }}">
+		  <div class="header" style="width: 100%; text-align: center;">
+		  	Other meanings of <span style="font-size: 150%; font-family: 'Scheherazade', serif;">{{ x['0'] }}</span>
+		  </div>
+		  
+		  <div class="scrolling content">
+		  	{% if (x['3']|length == 0) %}
+		  	<p style="width: 100%; text-align: center;">{{ x['3']|length }} variation</p>
+		  	{% else %}
+		  	<p style="width: 100%; text-align: center;">{{ x['3']|length }} variations</p>
+		  	{% endif %}
+		    <table class="ui unstackable center aligned collapsing very basic compact small table" style="margin: 0 auto;">
+			  <thead>
+			    <tr>
+			    <th>Arabic</th>
+			    <th>Meaning</th>
+			    <th>Source</th>
+			  	</tr></thead>
+			  <tbody>
+			
+		    {% for y in x['3'] %}
+		    <tr>
+		    <td style="font-size: 150%; font-family: 'Scheherazade', serif;"> {{ y[0] }} </td> 
+		    <td> {{ y[1] }} </td>
+		    <td> <a href="{{ url_for('details', surah=y[2], verse=y[3]) }}">{{ y[2] }}:{{ y[3] }}</a> </td>
+			</tr>
+		    {% endfor %}
+		    </tbody>
+			</table>
+		  </div>
+		  <!-- <div class="actions">
+		    <div class="ui approve button">Approve</div>
+		    <div class="ui button">Neutral</div>
+		    <div class="ui cancel button">Cancel</div>
+		  </div> -->
+		</div>
+    {% endif %}
+    {% endfor %}
+
+    <div class="ui fluid styled accordion" style="text-align: left; font-size: 90%;">
+	  <div class="title">
+	    <i class="dropdown icon"></i>
+	    <span>Word for Word Meaning</span>
+	  </div>
+	  <div class="content">
+	  	{% if (details['wordforword']|length == 0) %}
+	  	<p style="text-align: center;"> No data found for this ayah </p>
+	  	{% else %}
+
+	    <table class="ui unstackable center aligned table">
+		  <thead>
+		    <tr><th>Word</th>
+		    <th>Meaning</th>
+		    <th>Root</th>
+		  </tr></thead>
+		  <tbody>
+		  {% for x in details['wordforword'] %}
+		    <tr>
+		      <td style="font-size: 150%; font-family: 'Scheherazade', serif;" class="ui single line"> {{ x['0'] }} </td>
+		      {% if (x['3']|length) != 0 %}
+		      <td> <a href="" onclick="$('#related{{ x['4'] }}').modal('show'); return false;">{{ x['1'] }}</a> </td>
+		      {% else %}
+		      <td> {{ x['1'] }} </td>
+		      {% endif %}
+		      <td style="font-size: 150%; font-family: 'Scheherazade', serif;" class="ui single line"> {{ x['2'] }} </td>
+		    </tr>
+		   {% endfor %}
+		  </tbody>
+		</table>
+		<p style="font-size: 90%; text-align: center;"> [Source: <a href="https://gtaf.org/apps/quran" target="_blank">Al Quran (Tafsir & by Word) by Greentech Apps Foundation</a>] </p>
+		{% endif %}
+	  </div>
+
+	  <div class="title">
+	    <i class="dropdown icon"></i>
+	    <span>Word Definions</span>
+	  </div>
+	  <div class="content">
+	  	{% if (details['definitions']|length) == 0 %}
+	  	<p style="text-align: center; font-size: 90%"> No data found for this ayah </p>
+	  	{% else %}
+	  	<div class="ui text container">
+	    {% for x in details['definitions'] %}
+	    <h2 style="font-size: 250%; font-family: 'Scheherazade', serif;"> {{ x[0] }} </h2>
+	    <h4> {{ x[1] }} ({{ x[2] }}) </h4>
+	    <div style="padding-right: 5%">
+	    <p style="font-size: 90%"> {{ x[3] }} </p>
+	    <br>
+		</div>
+	    {% endfor %}
+	    <p style="font-size: 90%; text-align: center;"> [Source: <a href="https://www.quranhive.com" target="_blank">www.quranhive.com</a>] </p>
+		</div>
+		{% endif %}
+	  </div>
+
+	  <div class="title">
+	    <i class="dropdown icon"></i>
+	    <span>Morphology</span>
+	  </div>
+	  <div class="content">
+	  	{% if (details['morph']|length) == 0 %}
+	  	<p style="text-align: center; font-size: 90%"> No data found for this ayah </p>
+	  	{% else %}
+	  	<div class="ui text container">
+	  	<br>
+	  	{% for x in details['morph'] %}
+	  		<div style="text-align: center;">
+		    <h1 style="font-size: 250%; font-family: 'Scheherazade', serif;"> {{ x['word'] }} </h1>
+		    <span style="font-size: 90%"> {{ x['meaning'] }} </span>
+		    {% if (x['lemma']|length) != 0  %}
+		    | <span style="font-size: 90%"> Lemma: </span> <span style="font-size: 150%; font-family: 'Scheherazade', serif;"> <a href="http://arabiclexicon.hawramani.com/search/{{ x['lemma'] }}?cat=50" target="_blank">{{ x['lemma'] }}</a> </span>
+		    {% endif %}
+		    {% if (x['verb_type']|length) != 0  %}
+		    | <span style="font-size: 90%"> Verb Form {{ x['verb_type'] }} </span>
+		    {% endif %}
+			</div>
+			<br>
+			{% for y in x['annot'] %}
+
+		    <p style="padding-left: 5%;"> <span style="font-size: 150%; font-family: 'Scheherazade', serif;"> {{ y[0] }}
+		    	 → </span> <span style="font-size: 90%"> {{ y[1] }} </span> </p>
+
+		    {% endfor %}
+
+		    {% if (x['verb_form']|length) != 0 %}
+
+		    <table class="ui unstackable center aligned collapsing very basic very compact small table" style="margin: 0 auto;">
+			  <!-- <thead>
+			    <tr><th>Form</th>
+			    <th>Verb</th>
+			  </tr></thead> -->
+			  <tbody>
+			  	<tr><td colspan="2">Root: <span style="font-size: 150%; font-family: 'Scheherazade', serif;"> <a href="http://arabiclexicon.hawramani.com/search/{{ x['root'] }}?cat=50" target="_blank">{{ x['root'] }}</a> </span> </td></tr>
+		    {% for y in x['verb_form'] %}
+		    <tr>
+		    <td> {{ y[0] }} </td> <td style="font-size: 150%; font-family: 'Scheherazade', serif;"> {{ y[1] }} </td>
+			</tr>
+		    {% endfor %}
+		    </tbody>
+			</table>
+			{% endif %}
+			<hr style="width: 80%; opacity: 50%;">
+		<br>
+		{% endfor %}
+	    <p style="font-size: 80%; text-align: center;"> [Source: <a href="https://gtaf.org/apps/quran" target="_blank">Al Quran (Tafsir & by Word) by Greentech Apps Foundation</a>] </p>
+		</div>
+		{% endif %}
+	  </div>
+
+	  <div class="title">
+	    <i class="dropdown icon"></i>
+	    <span>Comprehensive Reading</span>
+	  </div>
+	  <div class="content">
+	  	<div style="padding-left: 5%; width: 100%;">
+	  	  <p><a href="{{ url_for('arabic_fulltext', surah=details['surah']) }}">Arabic Text</a></p>
+		  <p><a href="{{ url_for('translation', surah=details['surah']) }}">Translation</a></p>
+		  <p><a href="{{ url_for('bn_tafsir', surah=details['surah']) }}">Bangla Tafsir (Abu Bakr Zakaria)</a></p>
+		  <p><a href="{{ url_for('en_tafsir', surah=details['surah']) }}">English Tafsir (Ibn Kathir)</a></p>
+		</div>
+	  </div>
+
+	  <div class="title">
+	    <i class="dropdown icon"></i>
+	    <span>Bangla Tafsir (Abu Bakr Zakaria)</span>
+	  </div>
+	  <div class="content">
+	  	{% if (details['bn_zakaria']|length) == 0 %}
+	  	<p style="text-align: center; font-size: 90%"> No data found for this ayah </p>
+	  	{% else %}
+	    {{ details['bn_zakaria'] }}
+	    <br>
+	    <p style="font-size: 90%; text-align: center;"> [Source: <a href="https://gtaf.org/apps/quran" target="_blank">Al Quran (Tafsir & by Word) by Greentech Apps Foundation</a>] </p>
+	    {% endif %}
+	  </div>
+
+	  <div class="title">
+	    <i class="dropdown icon"></i>
+	    <span>English Tafsir (Ibn Kathir)</span>
+	  </div>
+	  <div class="content">
+	  	{% if (details['en_kathir']|length) == 0 %}
+	  	<p style="text-align: center; font-size: 90%"> No data found for this ayah </p>
+	  	{% else %}
+	    {{ details['en_kathir'] }}
+	    <br><br>
+	    <p style="font-size: 90%; text-align: center;"> [Source: <a href="https://gtaf.org/apps/quran" target="_blank">Al Quran (Tafsir & by Word) by Greentech Apps Foundation</a>] </p>
+	    {% endif %}
+
+	  </div>
+
+	  <div class="title">
+	    <i class="dropdown icon"></i>
+	    <span>Advanced Grammatical Breakdown</span>
+	  </div>
+	  <div class="content">
+	    <iframe src="http://corpus.quran.com/treebank.jsp?chapter={{details['surah']}}&verse={{details['verse']}}" title="description" style="width: 100%; height: 800px; border:1px solid lightgray;"></iframe>
+	    <div style="text-align: right;">
+    	<a href="http://corpus.quran.com/treebank.jsp?chapter={{details['surah']}}&verse={{details['verse']}}" target="_blank" style="font-size: 90%;">Go to site</a>
+    </div>
+	  </div>
+
+	</div>
+
+	<br>
+
+
+
+<script>
+	$('.ui.accordion')
+	  .accordion()
+	;
+
+	// $('.ui.modal')
+	//   .modal('show')
+	// ;
+</script>
+{% endblock %}
+
+{% block content2 %}
+
+
+
+
+{% endblock %}

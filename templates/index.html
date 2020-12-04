@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block title %} Aayatun - An Ayah a Day {% endblock %}
+
+{% block menu %}
+<div class="header item" style="width: 100%; font-size: 250%; font-family: Merriweather;">
+<p> Aayatun </p>
+</div>
+{% endblock %}
+
+<style>
+    * {
+        font-family: "Open Sans";
+    }
+    
+</style>
+
+{% block content %}
+    <h2 style="text-align: center;font-family: Open Sans;"> Let's explore the Quran! </h1>
+{% endblock %}
+
+{% block content2 %}
+<div style="font-family: Open Sans;font-size: 95%;">
+	<select class="ui search fluid dropdown" id="surah">
+	{% for s in surahs %}
+	  <option value="{{ s['surah_no'] }}" verse_count="{{ s['verse_count'] }}">{{ s['surah'] }}</option>
+	{% endfor %}
+	</select>
+	<br>
+	<div class="ui two column grid">
+		<div class="column" style="margin: auto;"><p style="text-align: right;"> Jump to verse </p></div>
+		<div class="column">
+			<select class="ui search fluid dropdown" id="verse">
+			  <option value="1">1</option>
+			</select>
+		</div>
+	</div>
+	<br><br>
+	<div>
+	<button class="ui huge blue fluid button" style="font-family: Open Sans; font-size: 95%;" id='btnGo'> Open </button>
+	<p></p>
+	<button class="ui huge basic fluid button" style="font-family: Open Sans; font-size: 95%" id='btnSurprise'> Surprise me! </button>
+	</div>
+</div>
+	<!-- <div style="text-align: center; padding: 3%">
+	<a href="#">Surprise me!</a>
+	</div> -->
+
+
+
+<footer style="position: fixed; bottom: 0; left: 0; font-family: open sans; font-size: 70%; color: gray; width: 100%; padding-bottom: 2%;">
+	<p style="text-align: center;">Aayatun v1.2</p>
+</footer>
+
+<script>
+	$('.ui.dropdown').dropdown({
+		fullTextSearch: true
+	});
+
+	$('#surah').dropdown('setting', 'onChange', updateVerse);
+	updateVerse();
+	$('#btnGo').click(function()
+	{
+		var s = $('#surah').find(":selected").attr('value');
+		var v = $('#verse').find(":selected").attr('value');
+		var base_url = window.location.origin;
+		window.location.replace(base_url + '/' + s + '/' + v);
+	})
+
+	$('#btnSurprise').click(function()
+	{
+		var s = {{ rand_surah[0] }};
+		var v = {{ rand_surah[1] }};
+		// alert("" + {{ rand_surah[0] }} + {{ rand_surah[1] }} + "")
+		var base_url = window.location.origin;
+		window.location.replace(base_url + '/' + s + '/' + v);
+	})
+
+	function updateVerse()
+	{
+		var i;
+		var v_count = $('#surah').find(":selected").attr('verse_count');
+		// alert(v_count);
+		$('#verse option').remove();
+		for (i = 1; i <= v_count; i++) {
+		  $('#verse').append(new Option(i, i));
+		}
+	}
+
+</script>
+
+{% endblock %}

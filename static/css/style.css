@@ -1,0 +1,9 @@
+body > div.ui.inverted.orange.menu.navbar.fluid > div {
+	font-size: 200%;
+	font-family: 'Merriweather', serif;
+}
+
+body{
+	font-family: 'Open Sans', sans-serif;
+	margin-bottom: 60px;
+}

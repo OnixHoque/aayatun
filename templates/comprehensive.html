@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %} {{ surah_name }} : Aayatun - An Ayah a Day {% endblock %}
+
+{% block menu %}
+
+<div class="item" style="outline: none;">
+<a class="ui icon basic huge left floated button" href= {% block url1 %} {% endblock %} ><i class="left arrow icon"></i></a>
+</div>
+
+<div class="ui header item" style="font-size: 200%; display: inline-block; text-align: middle;">
+<a href="{{ url_for('index') }}" style="font-family: Merriweather;">#{{ surah_no }}</a>
+</div>
+
+<div class="item">
+<a class="ui icon basic right floated huge button" href= {% block url2 %} {% endblock %}><i class="right arrow icon"></i></a>
+</div>
+
+{% endblock %}
+
+
+{% block content %}
+	<link href="https://fonts.googleapis.com/css2?family=Lora&display=swap" rel="stylesheet">
+	<!-- <link href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.css" rel="stylesheet"> -->
+	<link href="https://cdn.datatables.net/1.10.22/css/dataTables.semanticui.min.css" rel="stylesheet">
+	
+
+	<style>
+		* {
+			font-family: 'Open Sans', serif;
+		}
+	</style>
+
+
+	<div style="">
+	<br>
+    <a href="{{ url_for('details', surah=surah_no, verse=1) }}"><h4 style="text-align: center; font-size: 150%; font-family: 'Merriweather', serif;"> {{ surah_name }} </h4></a> 
+    <br>
+
+    <br>
+
+    <table class="ui very basic unstackable selectable left aligned table" id="cur_table">
+    	<thead style="display: none">
+    		<tr>
+    			<th>Verse</th>
+    			<th>Translation</th>
+    		</tr>
+    	</thead>
+    <tbody>
+    {% for x in verses %}
+    	<tr style="padding: 1%" onclick="window.location.href='{{ url_for('details', surah=surah_no, verse=x[0]) }}';"> 
+    		<td class="two wide" style="font-family: Lora; font-size: 100%; text-align: right; vertical-align: top"> {{ x[0] }} </td> 
+    		<td style="{% block font_config %} {% endblock %}"> {{ x[1] }} </td> 
+    	</tr>
+    {% endfor %}
+	</tbody>
+	</table>
+	<br>
+
+<!-- <script src="https://code.jquery.com/jquery-3.5.1.js"></script> -->
+<script src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.22/js/dataTables.semanticui.min.js"></script>
+
+
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.js"></script> -->
+
+<script>
+	$(document).ready(function() {
+	    $('#cur_table').DataTable(
+	    	{"oLanguage": {
+	    	         "sInfo": "Showing _START_ to _END_ of _TOTAL_ verses",
+	    	         "sLengthMenu": "_MENU_",
+	    	         "sSearch": ""
+	    	       },
+	    	   "language": {
+    searchPlaceholder: 'Search...'
+}}
+	    	   );
+	    
+		
+		$('#cur_table').on( 'page.dt', function () {
+		    $('html, body').animate({
+		        scrollTop: 0
+		    }, 300);
+		} );
+
+		$('#cur_table_wrapper > div').removeClass('stackable').addClass('unstackable');
+		$('#cur_table_length').parent().removeClass('eight wide column').addClass('five wide column');
+		$('#cur_table_length').css('font-size', '80%');
+		$('#cur_table_length .selection').css('width', '100%');
+		
+		$('#cur_table_filter').parent().removeClass('eight wide column').addClass('eleven wide column');
+		$('#cur_table_filter').css('font-size', '90%');
+		$('#cur_table_filter').css('text-align', 'center');
+		$('#cur_table_filter .input').css('width', '100%');
+		$('#cur_table_filter .input').removeClass('ui input').addClass('ui icon input');
+		$('#cur_table_filter span').prepend('<i class="ui search icon"></i>');
+		
+	});
+</script>
+{% endblock %}
+
+{% block content2 %}
+
+
+
+
+{% endblock %}

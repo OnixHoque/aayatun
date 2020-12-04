@@ -1,0 +1,5 @@
+{% extends 'comprehensive.html' %}
+
+{% block url1 %} {{ url_for('bn_tafsir', surah=prev) }} {% endblock %}
+{% block url2 %} {{ url_for('bn_tafsir', surah=nxt) }} {% endblock %}
+{% block font_config %} font-family: Lora; font-size: 100%; text-align: left; {% endblock %}
