@@ -4,7 +4,9 @@
 
 {% block menu %}
 <div class="header item" style="width: 100%; font-size: 250%; font-family: Merriweather;">
+<a id="title_link">
 <p> Aayatun </p>
+</a>
 </div>
 {% endblock %}
 
@@ -89,4 +91,48 @@
 
 </script>
 
+{% endblock %}
+
+{% block scriptcontent %}
+	let pageType = getPageType();
+	let location_ = getLocation();
+
+	if (pageType !== -1)
+	{
+		const page_title = document.getElementById("title_link"); 
+		switch (Number(pageType))
+		{
+			case (pages.VERSE_DETAILS):
+			{
+				let tmp = location_.split(":");
+				let url = "{{ url_for('details', surah='-1', verse='-2') }}".replace("-1", tmp[0]).replace("-2", tmp[1]);
+				page_title.href = url;
+				break;
+			}
+			case (pages.COMP_ARABIC):
+			{
+				let url = "{{ url_for('arabic_fulltext', surah='-1') }}".replace("-1", location_);
+				page_title.href = url;
+				break;
+			}
+			case (pages.COMP_TRANSLATION):
+			{
+				let url = "{{ url_for('translation', surah='-1') }}".replace("-1", location_);
+				page_title.href = url;
+				break;
+			}
+			case (pages.COMP_TAFSIR_EN):
+			{
+				let url = "{{ url_for('en_tafsir', surah='-1') }}".replace("-1", location_);
+				page_title.href = url;
+				break;
+			}
+			case (pages.COMP_TAFSIR_BN):
+			{
+				let url = "{{ url_for('bn_tafsir', surah='-1') }}".replace("-1", location_);
+				page_title.href = url;
+				break;
+			}
+		}
+	}
 {% endblock %}

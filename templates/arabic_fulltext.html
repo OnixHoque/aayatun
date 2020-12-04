@@ -10,3 +10,7 @@
 {% block url1 %} {{ url_for('arabic_fulltext', surah=prev) }} {% endblock %}
 {% block url2 %} {{ url_for('arabic_fulltext', surah=nxt) }} {% endblock %}
 {% block font_config %} font-family: 'Scheherazade', serif; font-size: 225%; text-align: right; {% endblock %}
+
+{% block scriptcontent %}
+	setValues(pages.COMP_ARABIC, {{surah_no}});
+{% endblock %}
