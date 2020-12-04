@@ -185,19 +185,6 @@
 
 	  <div class="title">
 	    <i class="dropdown icon"></i>
-	    <span>Comprehensive Reading</span>
-	  </div>
-	  <div class="content">
-	  	<div style="padding-left: 5%; width: 100%;">
-	  	  <p><a href="{{ url_for('arabic_fulltext', surah=details['surah']) }}">Arabic Text</a></p>
-		  <p><a href="{{ url_for('translation', surah=details['surah']) }}">Translation</a></p>
-		  <p><a href="{{ url_for('bn_tafsir', surah=details['surah']) }}">Bangla Tafsir (Abu Bakr Zakaria)</a></p>
-		  <p><a href="{{ url_for('en_tafsir', surah=details['surah']) }}">English Tafsir (Ibn Kathir)</a></p>
-		</div>
-	  </div>
-
-	  <div class="title">
-	    <i class="dropdown icon"></i>
 	    <span>Bangla Tafsir (Abu Bakr Zakaria)</span>
 	  </div>
 	  <div class="content">
@@ -233,7 +220,20 @@
 	    <iframe src="http://corpus.quran.com/treebank.jsp?chapter={{details['surah']}}&verse={{details['verse']}}" title="description" style="width: 100%; height: 800px; border:1px solid lightgray;"></iframe>
 	    <div style="text-align: right;">
     	<a href="http://corpus.quran.com/treebank.jsp?chapter={{details['surah']}}&verse={{details['verse']}}" target="_blank" style="font-size: 90%;">Go to site</a>
-    </div>
+    	</div>
+	  </div>
+
+	  <div class="title">
+	    <i class="dropdown icon"></i>
+	    <span>Comprehensive Reading</span>
+	  </div>
+	  <div class="content">
+	  	<div style="padding-left: 5%; width: 100%;">
+	  	  <p><a href="{{ url_for('arabic_fulltext', surah=details['surah']) }}">Arabic Text</a></p>
+		  <p><a href="{{ url_for('translation', surah=details['surah']) }}">Translation</a></p>
+		  <p><a href="{{ url_for('bn_tafsir', surah=details['surah']) }}">Bangla Tafsir (Abu Bakr Zakaria)</a></p>
+		  <p><a href="{{ url_for('en_tafsir', surah=details['surah']) }}">English Tafsir (Ibn Kathir)</a></p>
+		</div>
 	  </div>
 
 	</div>
