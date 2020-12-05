@@ -38,16 +38,35 @@
 	    		<button id="loop-btn" class="circular ui basic toggle icon button" style="vertical-align: middle;" onclick="document.querySelector('audio').loop = (document.querySelector('audio').loop ? false : true);">
 	    		<i class="icon undo" ></i>
 	    		</button>
-	    		<button id="play-btn" class="circular ui basic icon button" style="vertical-align: middle;" onclick="$('audio').trigger('pause'); $('#audio-box').hide(); $('#control-btns').fadeIn();">
+	    		<button id="close-btn" class="circular ui basic icon button" style="vertical-align: middle;" onclick="$('audio').trigger('pause'); $('#audio-box').hide(); $('#control-btns').fadeIn();">
 	    		<i class="icon close" ></i>
 	    		</button>
 			</div>
     		<p style="width: 100%; font-size: 80%; color: gray; text-align: center; padding-bottom: 30px;"> [Source: <a href="https://everyayah.com/data/getfile.php" target="_blank">Verse By Verse Quran MP3 Project</a>] </p>
     	</div>
-    	<div id="control-btns" style="padding-bottom: 20px;">
-    	<button id="play-btn" class="circular ui basic icon button" onclick="$('#audio-box').fadeIn(); $('#control-btns').hide(); $('audio').trigger('play');">
-		  <i class="icon play"></i>
-		</button>
+    	<div id="control-btns" style="padding-bottom: 20px">
+    		<span id="more-controls" style="display: none;">
+    			<!-- <p style="font-size: .8em; text-align: right; margin-right: 40px;">Read the whole surah {{ details['surah_name'] }}</p> -->
+    			<button style="font-family: 'Open Sans' font-size: 90%;" class="circular ui tiny basic icon button" onclick="window.location.href ='{{ url_for('arabic_fulltext', surah=details['surah']) }}'">
+					Arabic
+				</button>
+				<button style="font-family: 'Open Sans' font-size: 90%; " class="circular ui tiny basic icon button" onclick="window.location.href ='{{ url_for('translation', surah=details['surah']) }}'">
+					Translation
+				</button>
+				<button style="font-family: 'Open Sans' font-size: 90%; " class="circular ui tiny basic icon button"  onclick="window.location.href ='{{ url_for('bn_tafsir', surah=details['surah']) }}'">
+					Tafsir (Bn)
+				</button>
+				<button style="font-family: 'Open Sans' font-size: 90%; " class="circular ui tiny basic icon button" onclick="window.location.href ='{{ url_for('en_tafsir', surah=details['surah']) }}'">
+					Tafsir (En)
+				</button>
+				<i class="icon close" style="cursor: pointer;" onclick="$('#more-controls').hide(); $('#more-btn').fadeIn(); $('#play-btn').fadeIn()"></i>
+    		</span>
+			<button id="more-btn" data-tooltip="Comprehensive Reading" class="circular ui basic icon button" onclick="$('#more-btn').hide(); $('#play-btn').hide(); $('#more-controls').fadeIn();">
+			  <i class="icon ellipsis horizontal"></i>
+			</button>
+	    	<button id="play-btn" class="circular ui basic icon button" onclick="$('#audio-box').fadeIn(); $('#control-btns').hide(); $('audio').trigger('play');">
+			  <i class="icon play"></i>
+			</button>
 		</div>
     </div>
 
@@ -246,7 +265,7 @@
     	
 	  </div>
 
-	  <div class="title">
+	  <!-- <div class="title">
 	    <i class="dropdown icon"></i>
 	    <span>Comprehensive Reading</span>
 	  </div>
@@ -257,7 +276,7 @@
 		  <p><a href="{{ url_for('bn_tafsir', surah=details['surah']) }}">Bangla Tafsir (Abu Bakr Zakaria)</a></p>
 		  <p><a href="{{ url_for('en_tafsir', surah=details['surah']) }}">English Tafsir (Ibn Kathir)</a></p>
 		</div>
-	  </div>
+	  </div> -->
 
 	</div>
 
