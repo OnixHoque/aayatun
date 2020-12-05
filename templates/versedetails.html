@@ -142,13 +142,19 @@
 		  <tbody>
 		  {% for x in details['wordforword'] %}
 		    <tr>
-		      <td style="font-size: 150%; font-family: 'Scheherazade', serif;" class="ui single line"> {{ x['0'] }} </td>
+		      <td style="font-size: 150%; font-family: 'Scheherazade', serif;" name="word_index" class="ui selectable single line"> {{ x['0'] }} </td>
+		      
 		      {% if (x['3']|length) != 0 %}
-		      <td> <a href="" onclick="$('#related{{ x['4'] }}').modal('show'); return false;">{{ x['1'] }}</a> </td>
+		      	<td><a href="" onclick="$('#related{{ x['4'] }}').modal('show'); return false;">{{ x['1'] }}</a></td>
 		      {% else %}
-		      <td> {{ x['1'] }} </td>
+		      	<td>{{ x['1'] }}</td>
 		      {% endif %}
+
+		      {% if x['2'] != '-' %}
+		      <td style="font-size: 150%; font-family: 'Scheherazade', serif; padding: .78571429em .78571429em;" name="root_index" class="ui single line selectable"> {{ x['2'] }} </td>
+		      {% else %}
 		      <td style="font-size: 150%; font-family: 'Scheherazade', serif;" class="ui single line"> {{ x['2'] }} </td>
+		      {% endif %}
 		    </tr>
 		   {% endfor %}
 		  </tbody>
@@ -167,7 +173,7 @@
 	  	{% else %}
 	  	<div class="ui text container">
 	    {% for x in details['definitions'] %}
-	    <h2 style="font-size: 250%; font-family: 'Scheherazade', serif;"> {{ x[0] }} </h2>
+	    <h2 style="font-size: 250%; font-family: 'Scheherazade', serif; padding-top: 20px;" name="root_details"> {{ x[0] }} </h2>
 	    <h4> {{ x[1] }} ({{ x[2] }}) </h4>
 	    <div style="padding-right: 5%">
 	    <p style="font-size: 90%"> {{ x[3] }} </p>
@@ -190,7 +196,7 @@
 	  	<div class="ui text container">
 	  	<br>
 	  	{% for x in details['morph'] %}
-	  		<div style="text-align: center;">
+	  		<div style="text-align: center; padding-top: 20px;" name="word_details">
 		    <h1 style="font-size: 250%; font-family: 'Scheherazade', serif;"> {{ x['word'] }} </h1>
 		    <span style="font-size: 90%"> {{ x['meaning'] }} </span>
 		    {% if (x['lemma']|length) != 0  %}
@@ -335,9 +341,41 @@
 		audio_element.play();
 	}
 
-	// $('.ui.modal')
-	//   .modal('show')
-	// ;
+	function getTop(element) {
+	    let top = 0, left = 0;
+	    do {
+	        top += element.offsetTop  || 0;
+	        left += element.offsetLeft || 0;
+	        element = element.offsetParent;
+	    } while(element);
+
+	    return top;
+	};
+	
+	let words = document.getElementsByName("word_index");
+	let word_details_list = document.getElementsByName("word_details");
+	for (let i = 0; i< words.length; i++)
+	{
+		words[i].onclick = () => {
+			$(".accordion").accordion("open", 2);
+			setTimeout(function() {
+			  word_details_list[i].scrollIntoView({behavior: "smooth"});
+			}, 500)
+		};
+	}
+
+	let roots = document.getElementsByName("root_index");
+	let root_details_list = document.getElementsByName("root_details");
+	for (let i = 0; i< roots.length; i++)
+	{
+		roots[i].onclick = () => {
+			$(".accordion").accordion("open", 1);
+			setTimeout(function() {
+			  root_details_list[i].scrollIntoView({behavior: "smooth"});
+			}, 500)
+		};
+	}
+
 </script>
 {% endblock %}
 
