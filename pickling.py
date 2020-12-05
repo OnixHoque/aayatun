@@ -66,4 +66,4 @@ class RootDefAdder:
 		return item
 
 	def update(self):
-
+		for i in range(len(self.details['morph']))
