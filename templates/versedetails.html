@@ -28,33 +28,51 @@
 	<br>
     <h1 style="font-size: 300%; font-family: 'Scheherazade', serif;"> {{ details['ayah'] }} </h1>
     
-    <div align="right" style="margin-bottom: 10px; box-sizing: border-box;">
-    	<div id="audio-box" class="ui grid container" style="display: none;">
-    		<div class="ui twelve wide column" style=" padding: 0px; display: flex; align-items: center; justify-content: center;">
-    		<audio controls preload="metadata" src="http://www.everyayah.com/data/Alafasy_128kbps/{{'%03d' % details['surah']}}{{'%03d' % details['verse']}}.mp3" style="width: 95%;"></audio>
-    		</div>
-    		<div class="ui four wide column" style="display: flex; justify-content: center;">
-    		<button id="loop-btn" class="circular ui basic toggle icon button" style="vertical-align: middle;" onclick="document.querySelector('audio').loop = (document.querySelector('audio').loop ? false : true);">
-    		<i class="icon undo" ></i>
-    		</button>
-    		<button id="play-btn" class="circular ui basic icon button" style="vertical-align: middle;" onclick="$('audio').trigger('pause'); $('#audio-box').hide(); $('#control-btns').fadeIn();">
-    		<i class="icon close" ></i>
-    		</button>
-			</div>
-    		
+    <div align="right" style="margin-bottom: 10px position: -50px; position: relative;">
 
-			<p style="width: 100%; font-size: 80%; text-align: center;"> [Source: <a href="https://everyayah.com/data/getfile.php" target="_blank">Verse By Verse Quran MP3 Project</a>] </p>
-			<br>
+    	<div id="audio-box" class="ui two grid" style="display: none;">
+    		<div class="column" style="flex: 1; padding-right: 0px;">
+    		<audio controls preload="metadata" src="http://www.everyayah.com/data/Alafasy_128kbps/{{'%03d' % details['surah']}}{{'%03d' % details['verse']}}.mp3" style="width: 100%;"></audio>
+    		</div>
+    		<div class="column" style="display: flex; align-items: center; flex: 0 0 110px; padding: 5px; margin-bottom: 5px;">
+	    		<button id="loop-btn" class="circular ui basic toggle icon button" style="vertical-align: middle;" onclick="document.querySelector('audio').loop = (document.querySelector('audio').loop ? false : true);">
+	    		<i class="icon undo" ></i>
+	    		</button>
+	    		<button id="play-btn" class="circular ui basic icon button" style="vertical-align: middle;" onclick="$('audio').trigger('pause'); $('#audio-box').hide(); $('#control-btns').fadeIn();">
+	    		<i class="icon close" ></i>
+	    		</button>
+			</div>
+    		<p style="width: 100%; font-size: 80%; color: gray; text-align: center; padding-bottom: 30px;"> [Source: <a href="https://everyayah.com/data/getfile.php" target="_blank">Verse By Verse Quran MP3 Project</a>] </p>
     	</div>
-    	<div id="control-btns">
+    	<div id="control-btns" style="padding: 5px;">
     	<button id="play-btn" class="circular ui basic icon button" onclick="$('#audio-box').fadeIn(); $('#control-btns').hide(); $('audio').trigger('play');">
 		  <i class="icon play"></i>
 		</button>
-		<!-- <button class="circular ui basic facebook icon button">
-		  <i class="small icon facebook"></i>
-		</button> -->
 		</div>
     </div>
+
+    <!-- <div align="right" style="margin-bottom: 10px; box-sizing: border-box;">
+    	<div id="audio-box" class="ui grid container" style="display: none;">
+    		<div class="ui thirteen wide column" style=" padding: 0px; display: flex; align-items: center; justify-content: center;">
+    		<audio controls preload="metadata" src="http://www.everyayah.com/data/Alafasy_128kbps/{{'%03d' % details['surah']}}{{'%03d' % details['verse']}}.mp3" style="width: 95%;"></audio>
+    		</div>
+    		<div class="ui center aligned three wide column" style="display: flex; justify-content: center;">
+    		<button id="loop-btn" class="circular ui basic toggle icon button" style="vertical-align: middle; margin: 0 auto;" onclick="document.querySelector('audio').loop = (document.querySelector('audio').loop ? false : true);">
+    		<i class="icon undo" ></i>
+    		</button>
+    		<button id="play-btn" class="circular ui basic icon button" style="vertical-align: middle; margin: 0 auto;" onclick="$('audio').trigger('pause'); $('#audio-box').hide(); $('#control-btns').fadeIn();">
+    		<i class="icon close" ></i>
+    		</button>
+			</div>
+    		<p style="width: 100%; font-size: 80%; text-align: center;"> [Source: <a href="https://everyayah.com/data/getfile.php" target="_blank">Verse By Verse Quran MP3 Project</a>] </p>
+			<br>
+    	</div>
+    	<div id="control-btns" class="">
+    	<button id="play-btn" class="circular ui basic icon button" onclick="$('#audio-box').fadeIn(); $('#control-btns').hide(); $('audio').trigger('play');">
+		  <i class="icon play"></i>
+		</button>
+		</div>
+    </div> -->
 
     <p>{{ details['translation'] }}</p>
 
@@ -132,7 +150,7 @@
 		   {% endfor %}
 		  </tbody>
 		</table>
-		<p style="font-size: 90%; text-align: center;"> [Source: <a href="https://gtaf.org/apps/quran" target="_blank">Al Quran (Tafsir & by Word) by Greentech Apps Foundation</a>] </p>
+		<p style="font-size: 90%; color: gray; text-align: center;"> [Source: <a href="https://gtaf.org/apps/quran" target="_blank">Al Quran (Tafsir & by Word) by Greentech Apps Foundation</a>] </p>
 		{% endif %}
 	  </div>
 
@@ -153,7 +171,7 @@
 	    <br>
 		</div>
 	    {% endfor %}
-	    <p style="font-size: 90%; text-align: center;"> [Source: <a href="https://www.quranhive.com" target="_blank">www.quranhive.com</a>] </p>
+	    <p style="font-size: 90%; color: gray; text-align: center;"> [Source: <a href="https://www.quranhive.com" target="_blank">www.quranhive.com</a>] </p>
 		</div>
 		{% endif %}
 	  </div>
@@ -207,7 +225,7 @@
 			<hr style="width: 80%; opacity: 50%;">
 		<br>
 		{% endfor %}
-	    <p style="font-size: 80%; text-align: center;"> [Source: <a href="https://gtaf.org/apps/quran" target="_blank">Al Quran (Tafsir & by Word) by Greentech Apps Foundation</a>] </p>
+	    <p style="font-size: 80%; color: gray; text-align: center;"> [Source: <a href="https://gtaf.org/apps/quran" target="_blank">Al Quran (Tafsir & by Word) by Greentech Apps Foundation</a>] </p>
 		</div>
 		{% endif %}
 	  </div>
@@ -222,7 +240,7 @@
 	  	{% else %}
 	    {{ details['bn_zakaria'] }}
 	    <br>
-	    <p style="font-size: 90%; text-align: center;"> [Source: <a href="https://gtaf.org/apps/quran" target="_blank">Al Quran (Tafsir & by Word) by Greentech Apps Foundation</a>] </p>
+	    <p style="font-size: 90%; color: gray; text-align: center;"> [Source: <a href="https://gtaf.org/apps/quran" target="_blank">Al Quran (Tafsir & by Word) by Greentech Apps Foundation</a>] </p>
 	    {% endif %}
 	  </div>
 
@@ -236,7 +254,7 @@
 	  	{% else %}
 	    {{ details['en_kathir'] }}
 	    <br><br>
-	    <p style="font-size: 90%; text-align: center;"> [Source: <a href="https://gtaf.org/apps/quran" target="_blank">Al Quran (Tafsir & by Word) by Greentech Apps Foundation</a>] </p>
+	    <p style="font-size: 90%; color: gray; text-align: center;"> [Source: <a href="https://gtaf.org/apps/quran" target="_blank">Al Quran (Tafsir & by Word) by Greentech Apps Foundation</a>] </p>
 	    {% endif %}
 
 	  </div>
