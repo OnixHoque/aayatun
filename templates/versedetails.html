@@ -60,8 +60,9 @@
 					<button style="font-family: 'Open Sans' font-size: 90%; " class="circular ui tiny basic icon button" onclick="window.location.href ='{{ url_for('en_tafsir', surah=details['surah']) }}'">
 						Tafsir (En)
 					</button>
-				</span>
 				<i class="icon close" style="cursor: pointer;" onclick="$('#more-controls').hide(); $('#more-btn').fadeIn(); $('#play-btn').fadeIn()"></i>
+				</span>
+				
     		</span>
 			<button id="more-btn" data-tooltip="Comprehensive Reading" class="circular ui basic icon button" onclick="$('#more-btn').hide(); $('#play-btn').hide(); $('#more-controls').fadeIn();">
 			  <i class="icon ellipsis horizontal"></i>
