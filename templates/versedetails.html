@@ -46,7 +46,7 @@
     	</div>
     	<div id="control-btns" style="padding-bottom: 20px">
     		<span id="more-controls" style="display: none;">
-    			<span style="font-size: .8em; text-align: center; padding-right: 30px;">Surah {{ details['surah_name'] }}</span>
+    			<span style="font-size: .8em; color: gray; text-align: center; padding-right: 30px;">Surah {{ details['surah_name'] }}</span>
     			<span style="display: inline-block;">
 	    			<button style="font-family: 'Open Sans' font-size: 90%;" class="circular ui tiny basic icon button" onclick="window.location.href ='{{ url_for('arabic_fulltext', surah=details['surah']) }}'">
 						Arabic
