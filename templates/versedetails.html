@@ -46,19 +46,21 @@
     	</div>
     	<div id="control-btns" style="padding-bottom: 20px">
     		<span id="more-controls" style="display: none;">
-    			<!-- <p style="font-size: .8em; text-align: right; margin-right: 40px;">Read the whole surah {{ details['surah_name'] }}</p> -->
-    			<button style="font-family: 'Open Sans' font-size: 90%;" class="circular ui tiny basic icon button" onclick="window.location.href ='{{ url_for('arabic_fulltext', surah=details['surah']) }}'">
-					Arabic
-				</button>
-				<button style="font-family: 'Open Sans' font-size: 90%; " class="circular ui tiny basic icon button" onclick="window.location.href ='{{ url_for('translation', surah=details['surah']) }}'">
-					Translation
-				</button>
-				<button style="font-family: 'Open Sans' font-size: 90%; " class="circular ui tiny basic icon button"  onclick="window.location.href ='{{ url_for('bn_tafsir', surah=details['surah']) }}'">
-					Tafsir (Bn)
-				</button>
-				<button style="font-family: 'Open Sans' font-size: 90%; " class="circular ui tiny basic icon button" onclick="window.location.href ='{{ url_for('en_tafsir', surah=details['surah']) }}'">
-					Tafsir (En)
-				</button>
+    			<span style="font-size: .8em; text-align: center; padding-right: 30px;">Surah {{ details['surah_name'] }}</span>
+    			<span style="display: inline-block;">
+	    			<button style="font-family: 'Open Sans' font-size: 90%;" class="circular ui tiny basic icon button" onclick="window.location.href ='{{ url_for('arabic_fulltext', surah=details['surah']) }}'">
+						Arabic
+					</button>
+					<button style="font-family: 'Open Sans' font-size: 90%; " class="circular ui tiny basic icon button" onclick="window.location.href ='{{ url_for('translation', surah=details['surah']) }}'">
+						Translation
+					</button>
+					<button style="font-family: 'Open Sans' font-size: 90%; " class="circular ui tiny basic icon button"  onclick="window.location.href ='{{ url_for('bn_tafsir', surah=details['surah']) }}'">
+						Tafsir (Bn)
+					</button>
+					<button style="font-family: 'Open Sans' font-size: 90%; " class="circular ui tiny basic icon button" onclick="window.location.href ='{{ url_for('en_tafsir', surah=details['surah']) }}'">
+						Tafsir (En)
+					</button>
+				</span>
 				<i class="icon close" style="cursor: pointer;" onclick="$('#more-controls').hide(); $('#more-btn').fadeIn(); $('#play-btn').fadeIn()"></i>
     		</span>
 			<button id="more-btn" data-tooltip="Comprehensive Reading" class="circular ui basic icon button" onclick="$('#more-btn').hide(); $('#play-btn').hide(); $('#more-controls').fadeIn();">
