@@ -142,7 +142,7 @@
 		  <tbody>
 		  {% for x in details['wordforword'] %}
 		    <tr>
-		      <td style="font-size: 150%; font-family: 'Scheherazade', serif;" name="word_index" class="ui selectable single line"> {{ x['0'] }} </td>
+		      <td style="border-radius: 3px; font-size: 150%; font-family: 'Scheherazade', serif;" name="word_index" class="ui selectable single line"> {{ x['0'] }} </td>
 		      
 		      {% if (x['3']|length) != 0 %}
 		      	<td><a href="" onclick="$('#related{{ x['4'] }}').modal('show'); return false;">{{ x['1'] }}</a></td>
@@ -151,7 +151,7 @@
 		      {% endif %}
 
 		      {% if x['2'] != '-' %}
-		      <td style="font-size: 150%; font-family: 'Scheherazade', serif; padding: .78571429em .78571429em;" name="root_index" class="ui single line selectable"> {{ x['2'] }} </td>
+		      <td style="border-radius: 3px; font-size: 150%; font-family: 'Scheherazade', serif; padding: .78571429em .78571429em;" name="root_index" class="ui single line selectable"> {{ x['2'] }} </td>
 		      {% else %}
 		      <td style="font-size: 150%; font-family: 'Scheherazade', serif;" class="ui single line"> {{ x['2'] }} </td>
 		      {% endif %}
@@ -180,7 +180,7 @@
 	    <br>
 		</div>
 	    {% endfor %}
-	    <p style="font-size: 90%; color: gray; text-align: center;"> [Source: <a href="https://www.quranhive.com" target="_blank">www.quranhive.com</a>] </p>
+	    <p style="font-size: 80%; color: gray; text-align: center;"> [Source: <a href="https://www.quranhive.com" target="_blank">www.quranhive.com</a>] </p>
 		</div>
 		{% endif %}
 	  </div>
