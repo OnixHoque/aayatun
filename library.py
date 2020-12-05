@@ -235,10 +235,33 @@ def get_full_arabic(surah):
 	return curr_surah, zip(list(range(1, len(x)+1)), x)
 
 
+class RootDefAdder:
+	def __init__(self, details):
+		self.sarf_db = pd.read_json('db/sarf.json')
+		self.details = details;
+
+	def get_root_def(self, root):
+		x = self.sarf_db.query(f'Root == "{root}"')[["Baab", "Description", "Form"]]
+		return [(j["Baab"], j["Form"], j["Description"].replace("/", " / ")) for i, j in x.iterrows()]
+
+	def add_root_def(self, item):
+		item['root_def'] = self.get_root_def(item['root'])
+		return item
+
+	def add_slash_in_definions(self, item):
+		return (item[0], item[1], item[2], item[3].replace("/", " / "))
+
+	def update(self):
+		for i in range(len(self.details['morph'])):
+			self.details['morph'][i] = self.add_root_def(self.details['morph'][i])
+		for i in range(len(self.details['definitions'])):
+			self.details['definitions'][i] = self.add_slash_in_definions(self.details['definitions'][i])
+		return self.details
+
 def p_getSurahInfo(surah, verse):
 	if validate(surah, verse) == False:
 		abort(404)
 	b = {}
 	with open(f'db2/{surah}_{verse}.pickle', 'rb') as handle:
 	    b = pickle.load(handle)
-	return b
+	return RootDefAdder(b).update()

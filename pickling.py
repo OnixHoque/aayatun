@@ -42,15 +42,15 @@ def convert_db():
 
 
 x = library.p_getSurahInfo(1, 4);
-z = x['morph'][0]
-y = pd.read_json('db/sarf.json')
+# z = x['morph'][0]
+# y = pd.read_json('db/sarf.json')
 
 
 
 
 
-pprint(z)
-pprint(add_root_def(z))
+# pprint(z)
+# pprint(add_root_def(z))
 
 class RootDefAdder:
 	def __init__(self, details):
@@ -66,4 +66,12 @@ class RootDefAdder:
 		return item
 
 	def update(self):
-		for i in range(len(self.details['morph']))
+		for i in range(len(self.details['morph'])):
+			self.details['morph'][i] = self.add_root_def(self.details['morph'][i])
+		return self.details
+
+
+print("Old\n")
+pprint(x)
+print("\n\nNew\n")
+pprint(RootDefAdder(x).update())

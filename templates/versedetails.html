@@ -200,6 +200,7 @@
 		    | <span style="font-size: 90%"> Verb Form {{ x['verb_type'] }} </span>
 		    {% endif %}
 			</div>
+
 			<br>
 			{% for y in x['annot'] %}
 
@@ -208,8 +209,32 @@
 
 		    {% endfor %}
 
-		    {% if (x['verb_form']|length) != 0 %}
+		    {% if (x['root_def']) %}
+			<div>
+				<br>
+				<table class="ui unstackable center aligned collapsing very basic very compact small table" style="width: 80%; margin: 0 auto;">
+				  <thead>
+				  	<tr><td colspan="3"><strong>Different Verb Forms of <span style="font-size: 150%; font-family: 'Scheherazade', serif;">{{ x['root'] }}</span></strong></td></tr>
+				    <tr><th>Baab</th>
+				    <th>Form</th>
+				    <th>Meaning</th>
+				  </tr></thead>
+				  <tbody>
+					{% for y in x['root_def'] %}
+						<tr>
+							<td style="font-size: 150%; font-family: 'Scheherazade', serif;">{{ y[0] }}</td>
+							<td>{{ y[1] }}</td>
+							<td>{{ y[2] }}</td>
+						</tr>
+					{% endfor %}
+				  </tbody>
+				</table>
+			</div>
+			{% endif %}
 
+		    <br>
+
+		    {% if (x['verb_form']|length) != 0 %}
 		    <table class="ui unstackable center aligned collapsing very basic very compact small table" style="margin: 0 auto;">
 			  <!-- <thead>
 			    <tr><th>Form</th>
@@ -225,10 +250,11 @@
 		    </tbody>
 			</table>
 			{% endif %}
+
 			<hr style="width: 80%; opacity: 50%;">
 		<br>
 		{% endfor %}
-	    <p style="font-size: 80%; color: gray; text-align: center;"> [Source: <a href="https://gtaf.org/apps/quran" target="_blank">Al Quran (Tafsir & by Word) by Greentech Apps Foundation</a>] </p>
+	    <p style="font-size: 80%; color: gray; text-align: center;"> [Source: <a href="https://gtaf.org/apps/quran" target="_blank">Al Quran (Tafsir & by Word) by Greentech Apps Foundation</a> and <a href="http://www.quransarf.com/sarfs" target="_blank">Sarf Generator</a>] </p>
 		</div>
 		{% endif %}
 	  </div>
