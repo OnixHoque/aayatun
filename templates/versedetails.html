@@ -32,7 +32,7 @@
 
     	<div id="audio-box" class="ui two grid" style="display: none;">
     		<div class="column" style="flex: 1; padding-right: 0px;">
-    		<audio controls preload="metadata" src="http://www.everyayah.com/data/Alafasy_128kbps/{{'%03d' % details['surah']}}{{'%03d' % details['verse']}}.mp3" style="width: 100%;"></audio>
+    		<audio controls preload="metadata" src="http://www.everyayah.com/data/Alafasy_128kbps/{{'%03d' % details['surah']}}{{'%03d' % details['verse']}}.mp3" style="width: 100%; height: 40px;" controlsList="nodownload"></audio>
     		</div>
     		<div class="column" style="display: flex; align-items: center; flex: 0 0 110px; padding: 5px; margin-bottom: 5px;">
 	    		<button id="loop-btn" class="circular ui basic toggle icon button" style="vertical-align: middle;" onclick="document.querySelector('audio').loop = (document.querySelector('audio').loop ? false : true);">
