@@ -4,7 +4,9 @@
 
 {% block menu %}
 <div class="header item" style="width: 100%; font-size: 250%; font-family: Merriweather;">
+<a id="title_link">
 <p> Aayatun </p>
+</a>
 </div>
 {% endblock %}
 
@@ -36,11 +38,12 @@
 		</div>
 	</div>
 	<br><br>
-	<div>
+	<div style="margin-bottom: 20px;">
 	<button class="ui huge blue fluid button" style="font-family: Open Sans; font-size: 95%;" id='btnGo'> Open </button>
 	<p></p>
 	<button class="ui huge basic fluid button" style="font-family: Open Sans; font-size: 95%" id='btnSurprise'> Surprise me! </button>
 	</div>
+	
 </div>
 	<!-- <div style="text-align: center; padding: 3%">
 	<a href="#">Surprise me!</a>
@@ -48,8 +51,8 @@
 
 
 
-<footer style="position: fixed; bottom: 0; left: 0; font-family: open sans; font-size: 70%; color: gray; width: 100%; padding-bottom: 2%;">
-	<p style="text-align: center;">Aayatun v1.2</p>
+<footer style="position: fixed; bottom: 0; background: white; left: 0; font-family: open sans; font-size: 70%; color: gray; width: 100%; padding-bottom: 2%;">
+	<p style="text-align: center;">Aayatun v1.3</p>
 </footer>
 
 <script>
@@ -89,4 +92,48 @@
 
 </script>
 
+{% endblock %}
+
+{% block scriptcontent %}
+	let pageType = getPageType();
+	let location_ = getLocation();
+
+	if (pageType !== -1)
+	{
+		const page_title = document.getElementById("title_link"); 
+		switch (Number(pageType))
+		{
+			case (pages.VERSE_DETAILS):
+			{
+				let tmp = location_.split(":");
+				let url = "{{ url_for('details', surah='-1', verse='-2') }}".replace("-1", tmp[0]).replace("-2", tmp[1]);
+				page_title.href = url;
+				break;
+			}
+			case (pages.COMP_ARABIC):
+			{
+				let url = "{{ url_for('arabic_fulltext', surah='-1') }}".replace("-1", location_);
+				page_title.href = url;
+				break;
+			}
+			case (pages.COMP_TRANSLATION):
+			{
+				let url = "{{ url_for('translation', surah='-1') }}".replace("-1", location_);
+				page_title.href = url;
+				break;
+			}
+			case (pages.COMP_TAFSIR_EN):
+			{
+				let url = "{{ url_for('en_tafsir', surah='-1') }}".replace("-1", location_);
+				page_title.href = url;
+				break;
+			}
+			case (pages.COMP_TAFSIR_BN):
+			{
+				let url = "{{ url_for('bn_tafsir', surah='-1') }}".replace("-1", location_);
+				page_title.href = url;
+				break;
+			}
+		}
+	}
 {% endblock %}

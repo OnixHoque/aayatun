@@ -2,9 +2,10 @@
 <html lang="en">
   <head>
     <!-- Required meta tags -->
+    <meta name="theme-color" content="#eeeeee">
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename= 'images/favicon.png') }}"/>
     <!-- Bootstrap CSS -->
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
 	<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.6/dist/semantic.min.css">
@@ -26,5 +27,11 @@
         {% block content %} {% endblock %}
         <br>{% block content2 %} {% endblock %}
     </div>
+  <script src="{{ url_for('static', filename= 'js/script.js') }}"></script>
+  
+  <script type="text/javascript">
+  {% block scriptcontent %}  {% endblock %}
+  </script>
+  
   </body>
 </html>

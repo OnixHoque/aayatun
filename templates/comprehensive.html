@@ -39,17 +39,19 @@
 
     <br>
 
-    <table class="ui very basic unstackable selectable left aligned table" id="cur_table">
-    	<thead style="display: none">
-    		<tr>
+    <table class="ui very basic unstackable left aligned table" id="cur_table">
+    	<thead>
+    		<tr style="display: none;">
     			<th>Verse</th>
     			<th>Translation</th>
     		</tr>
+    		
     	</thead>
     <tbody>
+    {% block bismillah %} {% endblock %}
     {% for x in verses %}
-    	<tr style="padding: 1%" onclick="window.location.href='{{ url_for('details', surah=surah_no, verse=x[0]) }}';"> 
-    		<td class="two wide" style="font-family: Lora; font-size: 100%; text-align: right; vertical-align: top"> {{ x[0] }} </td> 
+    	<tr style="padding: 1%"> 
+    		<td class="two wide selectable" onclick="window.location.href='{{ url_for('details', surah=surah_no, verse=x[0]) }}';" style="font-family: Lora; font-size: 100%; text-align: center; vertical-align: top; padding-top: 2%; border-radius: 3px;"> {{ x[0] }} </td> 
     		<td style="{% block font_config %} {% endblock %}"> {{ x[1] }} </td> 
     	</tr>
     {% endfor %}
@@ -67,14 +69,18 @@
 <script>
 	$(document).ready(function() {
 	    $('#cur_table').DataTable(
-	    	{"oLanguage": {
+	    	{
+	    		"stateSave": true,
+	    		"oLanguage": {
 	    	         "sInfo": "Showing _START_ to _END_ of _TOTAL_ verses",
 	    	         "sLengthMenu": "_MENU_",
 	    	         "sSearch": ""
+
 	    	       },
 	    	   "language": {
-    searchPlaceholder: 'Search...'
-}}
+				    searchPlaceholder: 'Search...'
+				}},
+
 	    	   );
 	    
 		
@@ -86,23 +92,21 @@
 
 		$('#cur_table_wrapper > div').removeClass('stackable').addClass('unstackable');
 		$('#cur_table_length').parent().removeClass('eight wide column').addClass('five wide column');
-		$('#cur_table_length').css('font-size', '80%');
+		$('#cur_table_length').parent().css('padding-right', '0px');
+		$('#cur_table_length').css('font-size', '90%');
 		$('#cur_table_length .selection').css('width', '100%');
 		
 		$('#cur_table_filter').parent().removeClass('eight wide column').addClass('eleven wide column');
+		$('#cur_table_filter').parent().css('padding-left', '0px');
 		$('#cur_table_filter').css('font-size', '90%');
 		$('#cur_table_filter').css('text-align', 'center');
 		$('#cur_table_filter .input').css('width', '100%');
 		$('#cur_table_filter .input').removeClass('ui input').addClass('ui icon input');
 		$('#cur_table_filter span').prepend('<i class="ui search icon"></i>');
+
+		$('#cur_table_info').parent().parent().css('font-size', '90%');
 		
 	});
 </script>
 {% endblock %}
 
-{% block content2 %}
-
-
-
-
-{% endblock %}

@@ -27,9 +27,59 @@
 	<div style="text-align: center;">
 	<br>
     <h1 style="font-size: 300%; font-family: 'Scheherazade', serif;"> {{ details['ayah'] }} </h1>
-    <br>
+    
+    <div align="right" style="margin-bottom: 10px position: -50px; position: relative;">
+
+    	<div id="audio-box" class="ui two grid" style="display: none;">
+    		<div class="column" style="flex: 1; padding-right: 0px;">
+    		<audio controls id="mainaudio" preload="auto" src="http://www.everyayah.com/data/Alafasy_128kbps/{{'%03d' % details['surah']}}{{'%03d' % details['verse']}}.mp3" style="width: 100%; height: 40px;" controlsList="nodownload"></audio>
+    		<audio controls preload="auto" src="http://www.everyayah.com/data/Husary_128kbps_Mujawwad/{{'%03d' % details['surah']}}{{'%03d' % details['verse']}}.mp3" style="width: 100%; height: 40px; display: none" controlsList="nodownload"></audio>
+    		</div>
+    		<div class="column" style="display: flex; align-items: center; flex: 0 0 150px; padding: 5px; margin-bottom: 5px;">
+	    		<button id="tajweed-btn" class="circular ui basic toggle icon button" style="vertical-align: middle;" onclick="changeAudioSrc()">
+	    		<i class="icon heading" ></i>
+	    		</button>
+	    		<button id="loop-btn" class="circular ui basic toggle icon button" style="vertical-align: middle;" onclick="document.querySelector('audio').loop = (document.querySelector('audio').loop ? false : true);">
+	    		<i class="icon undo" ></i>
+	    		</button>
+	    		<button id="close-btn" class="circular ui basic icon button" style="vertical-align: middle;" onclick="$('#mainaudio').trigger('pause'); $('#audio-box').hide(); $('#control-btns').fadeIn();">
+	    		<i class="icon close" ></i>
+	    		</button>
+			</div>
+    		<p style="width: 100%; font-size: 80%; color: gray; text-align: center; padding-bottom: 30px;"> [Source: <a href="https://everyayah.com/data/getfile.php" target="_blank">Verse By Verse Quran MP3 Project</a>] </p>
+    	</div>
+    	<div id="control-btns" style="padding-bottom: 20px">
+    		<span id="more-controls" style="display: none;">
+    			<span style="font-size: .8em; color: gray; text-align: center; padding-right: 30px;">Surah {{ details['surah_name'] }}</span>
+    			<span style="display: inline-block;">
+	    			<button style="font-family: 'Open Sans' font-size: 90%;" class="circular ui tiny basic icon button" onclick="window.location.href ='{{ url_for('arabic_fulltext', surah=details['surah']) }}'">
+						Arabic
+					</button>
+					<button style="font-family: 'Open Sans' font-size: 90%; " class="circular ui tiny basic icon button" onclick="window.location.href ='{{ url_for('translation', surah=details['surah']) }}'">
+						Translation
+					</button>
+					<button style="font-family: 'Open Sans' font-size: 90%; " class="circular ui tiny basic icon button"  onclick="window.location.href ='{{ url_for('bn_tafsir', surah=details['surah']) }}'">
+						Tafsir (Bn)
+					</button>
+					<button style="font-family: 'Open Sans' font-size: 90%; " class="circular ui tiny basic icon button" onclick="window.location.href ='{{ url_for('en_tafsir', surah=details['surah']) }}'">
+						Tafsir (En)
+					</button>
+				<i class="icon close" style="cursor: pointer;" onclick="$('#more-controls').hide(); $('#more-btn').fadeIn(); $('#play-btn').fadeIn()"></i>
+				</span>
+				
+    		</span>
+			<button id="more-btn" data-tooltip="Comprehensive Reading" class="circular ui basic icon button" onclick="$('#more-btn').hide(); $('#play-btn').hide(); $('#more-controls').fadeIn();">
+			  <i class="icon ellipsis horizontal"></i>
+			</button>
+	    	<button id="play-btn" class="circular ui basic icon button" onclick="$('#audio-box').fadeIn(); $('#control-btns').hide(); $('#mainaudio').trigger('play');">
+			  <i class="icon play"></i>
+			</button>
+		</div>
+    </div>
+
     <p>{{ details['translation'] }}</p>
 
+    
     <br>
 
     {% for x in details['wordforword'] %}
@@ -92,18 +142,24 @@
 		  <tbody>
 		  {% for x in details['wordforword'] %}
 		    <tr>
-		      <td style="font-size: 150%; font-family: 'Scheherazade', serif;" class="ui single line"> {{ x['0'] }} </td>
+		      <td style="border-radius: 3px; font-size: 150%; font-family: 'Scheherazade', serif;" name="word_index" class="ui selectable single line"> {{ x['0'] }} </td>
+		      
 		      {% if (x['3']|length) != 0 %}
-		      <td> <a href="" onclick="$('#related{{ x['4'] }}').modal('show'); return false;">{{ x['1'] }}</a> </td>
+		      	<td><a href="" onclick="$('#related{{ x['4'] }}').modal('show'); return false;">{{ x['1'] }}</a></td>
 		      {% else %}
-		      <td> {{ x['1'] }} </td>
+		      	<td>{{ x['1'] }}</td>
 		      {% endif %}
+
+		      {% if x['2'] != '-' %}
+		      <td style="border-radius: 3px; font-size: 150%; font-family: 'Scheherazade', serif; padding: .78571429em .78571429em;" name="root_index" class="ui single line selectable"> {{ x['2'] }} </td>
+		      {% else %}
 		      <td style="font-size: 150%; font-family: 'Scheherazade', serif;" class="ui single line"> {{ x['2'] }} </td>
+		      {% endif %}
 		    </tr>
 		   {% endfor %}
 		  </tbody>
 		</table>
-		<p style="font-size: 90%; text-align: center;"> [Source: <a href="https://gtaf.org/apps/quran" target="_blank">Al Quran (Tafsir & by Word) by Greentech Apps Foundation</a>] </p>
+		<p style="font-size: 90%; color: gray; text-align: center;"> [Source: <a href="https://gtaf.org/apps/quran" target="_blank">Al Quran (Tafsir & by Word) by Greentech Apps Foundation</a>] </p>
 		{% endif %}
 	  </div>
 
@@ -117,14 +173,14 @@
 	  	{% else %}
 	  	<div class="ui text container">
 	    {% for x in details['definitions'] %}
-	    <h2 style="font-size: 250%; font-family: 'Scheherazade', serif;"> {{ x[0] }} </h2>
+	    <h2 style="font-size: 250%; font-family: 'Scheherazade', serif; padding-top: 20px;" name="root_details"> {{ x[0] }} </h2>
 	    <h4> {{ x[1] }} ({{ x[2] }}) </h4>
 	    <div style="padding-right: 5%">
 	    <p style="font-size: 90%"> {{ x[3] }} </p>
 	    <br>
 		</div>
 	    {% endfor %}
-	    <p style="font-size: 90%; text-align: center;"> [Source: <a href="https://www.quranhive.com" target="_blank">www.quranhive.com</a>] </p>
+	    <p style="font-size: 80%; color: gray; text-align: center;"> [Source: <a href="https://www.quranhive.com" target="_blank">www.quranhive.com</a>] </p>
 		</div>
 		{% endif %}
 	  </div>
@@ -140,7 +196,7 @@
 	  	<div class="ui text container">
 	  	<br>
 	  	{% for x in details['morph'] %}
-	  		<div style="text-align: center;">
+	  		<div style="text-align: center; padding-top: 20px;" name="word_details">
 		    <h1 style="font-size: 250%; font-family: 'Scheherazade', serif;"> {{ x['word'] }} </h1>
 		    <span style="font-size: 90%"> {{ x['meaning'] }} </span>
 		    {% if (x['lemma']|length) != 0  %}
@@ -150,6 +206,7 @@
 		    | <span style="font-size: 90%"> Verb Form {{ x['verb_type'] }} </span>
 		    {% endif %}
 			</div>
+
 			<br>
 			{% for y in x['annot'] %}
 
@@ -158,8 +215,32 @@
 
 		    {% endfor %}
 
-		    {% if (x['verb_form']|length) != 0 %}
+		    {% if (x['root_def']) %}
+			<div>
+				<br>
+				<table class="ui unstackable center aligned collapsing very basic very compact small table" style="width: 80%; margin: 0 auto;">
+				  <thead>
+				  	<tr><td colspan="3"><strong>Different Verb Forms of <span style="font-size: 150%; font-family: 'Scheherazade', serif;">{{ x['root'] }}</span></strong></td></tr>
+				    <tr><th>Baab</th>
+				    <th>Form</th>
+				    <th>Meaning</th>
+				  </tr></thead>
+				  <tbody>
+					{% for y in x['root_def'] %}
+						<tr>
+							<td style="font-size: 150%; font-family: 'Scheherazade', serif;">{{ y[0] }}</td>
+							<td>{{ y[1] }}</td>
+							<td>{{ y[2] }}</td>
+						</tr>
+					{% endfor %}
+				  </tbody>
+				</table>
+			</div>
+			{% endif %}
 
+		    <br>
+
+		    {% if (x['verb_form']|length) != 0 %}
 		    <table class="ui unstackable center aligned collapsing very basic very compact small table" style="margin: 0 auto;">
 			  <!-- <thead>
 			    <tr><th>Form</th>
@@ -175,25 +256,13 @@
 		    </tbody>
 			</table>
 			{% endif %}
+
 			<hr style="width: 80%; opacity: 50%;">
 		<br>
 		{% endfor %}
-	    <p style="font-size: 80%; text-align: center;"> [Source: <a href="https://gtaf.org/apps/quran" target="_blank">Al Quran (Tafsir & by Word) by Greentech Apps Foundation</a>] </p>
+	    <p style="font-size: 80%; color: gray; text-align: center;"> [Source: <a href="https://gtaf.org/apps/quran" target="_blank">Al Quran (Tafsir & by Word) by Greentech Apps Foundation</a> and <a href="http://www.quransarf.com/sarfs" target="_blank">Sarf Generator</a>] </p>
 		</div>
 		{% endif %}
-	  </div>
-
-	  <div class="title">
-	    <i class="dropdown icon"></i>
-	    <span>Comprehensive Reading</span>
-	  </div>
-	  <div class="content">
-	  	<div style="padding-left: 5%; width: 100%;">
-	  	  <p><a href="{{ url_for('arabic_fulltext', surah=details['surah']) }}">Arabic Text</a></p>
-		  <p><a href="{{ url_for('translation', surah=details['surah']) }}">Translation</a></p>
-		  <p><a href="{{ url_for('bn_tafsir', surah=details['surah']) }}">Bangla Tafsir (Abu Bakr Zakaria)</a></p>
-		  <p><a href="{{ url_for('en_tafsir', surah=details['surah']) }}">English Tafsir (Ibn Kathir)</a></p>
-		</div>
 	  </div>
 
 	  <div class="title">
@@ -206,7 +275,7 @@
 	  	{% else %}
 	    {{ details['bn_zakaria'] }}
 	    <br>
-	    <p style="font-size: 90%; text-align: center;"> [Source: <a href="https://gtaf.org/apps/quran" target="_blank">Al Quran (Tafsir & by Word) by Greentech Apps Foundation</a>] </p>
+	    <p style="font-size: 90%; color: gray; text-align: center;"> [Source: <a href="https://gtaf.org/apps/quran" target="_blank">Al Quran (Tafsir & by Word) by Greentech Apps Foundation</a>] </p>
 	    {% endif %}
 	  </div>
 
@@ -220,7 +289,7 @@
 	  	{% else %}
 	    {{ details['en_kathir'] }}
 	    <br><br>
-	    <p style="font-size: 90%; text-align: center;"> [Source: <a href="https://gtaf.org/apps/quran" target="_blank">Al Quran (Tafsir & by Word) by Greentech Apps Foundation</a>] </p>
+	    <p style="font-size: 90%; color: gray; text-align: center;"> [Source: <a href="https://gtaf.org/apps/quran" target="_blank">Al Quran (Tafsir & by Word) by Greentech Apps Foundation</a>] </p>
 	    {% endif %}
 
 	  </div>
@@ -231,10 +300,22 @@
 	  </div>
 	  <div class="content">
 	    <iframe src="http://corpus.quran.com/treebank.jsp?chapter={{details['surah']}}&verse={{details['verse']}}" title="description" style="width: 100%; height: 800px; border:1px solid lightgray;"></iframe>
-	    <div style="text-align: right;">
-    	<a href="http://corpus.quran.com/treebank.jsp?chapter={{details['surah']}}&verse={{details['verse']}}" target="_blank" style="font-size: 90%;">Go to site</a>
-    </div>
+	    <p style="font-size: 90%; color: gray; text-align: center;"> [Source: <a href="http://corpus.quran.com/treebank.jsp?chapter={{details['surah']}}&verse={{details['verse']}}" target="_blank">Corpus Quran</a>] </p>
+    	
 	  </div>
+
+	  <!-- <div class="title">
+	    <i class="dropdown icon"></i>
+	    <span>Comprehensive Reading</span>
+	  </div>
+	  <div class="content">
+	  	<div style="padding-left: 5%; width: 100%;">
+	  	  <p><a href="{{ url_for('arabic_fulltext', surah=details['surah']) }}">Arabic Text</a></p>
+		  <p><a href="{{ url_for('translation', surah=details['surah']) }}">Translation</a></p>
+		  <p><a href="{{ url_for('bn_tafsir', surah=details['surah']) }}">Bangla Tafsir (Abu Bakr Zakaria)</a></p>
+		  <p><a href="{{ url_for('en_tafsir', surah=details['surah']) }}">English Tafsir (Ibn Kathir)</a></p>
+		</div>
+	  </div> -->
 
 	</div>
 
@@ -246,16 +327,58 @@
 	$('.ui.accordion')
 	  .accordion()
 	;
+	$('.ui.button.toggle').state();
+	
+	// let audio_src_link = ["http://www.everyayah.com/data/Alafasy_128kbps/{{'%03d' % details['surah']}}{{'%03d' % details['verse']}}.mp3", "http://www.everyayah.com/data/Husary_Mujawwad_64kbps/{{'%03d' % details['surah']}}{{'%03d' % details['verse']}}.mp3"];
 
-	// $('.ui.modal')
-	//   .modal('show')
-	// ;
+	let audio_src_link = ["http://www.everyayah.com/data/Alafasy_128kbps/{{'%03d' % details['surah']}}{{'%03d' % details['verse']}}.mp3", "http://www.everyayah.com/data/Husary_128kbps_Mujawwad/{{'%03d' % details['surah']}}{{'%03d' % details['verse']}}.mp3"];
+	let audio_src = 0;
+	const audio_element = document.querySelector('audio');
+	function changeAudioSrc()
+	{
+		audio_src = (audio_src + 1) % 2;
+		audio_element.src = audio_src_link[audio_src];
+		audio_element.play();
+	}
+
+	function getTop(element) {
+	    let top = 0, left = 0;
+	    do {
+	        top += element.offsetTop  || 0;
+	        left += element.offsetLeft || 0;
+	        element = element.offsetParent;
+	    } while(element);
+
+	    return top;
+	};
+	
+	let words = document.getElementsByName("word_index");
+	let word_details_list = document.getElementsByName("word_details");
+	for (let i = 0; i< words.length; i++)
+	{
+		words[i].onclick = () => {
+			$(".accordion").accordion("open", 2);
+			setTimeout(function() {
+			  word_details_list[i].scrollIntoView({behavior: "smooth"});
+			}, 500)
+		};
+	}
+
+	let roots = document.getElementsByName("root_index");
+	let root_details_list = document.getElementsByName("root_details");
+	for (let i = 0; i< roots.length; i++)
+	{
+		roots[i].onclick = () => {
+			$(".accordion").accordion("open", 1);
+			setTimeout(function() {
+			  root_details_list[i].scrollIntoView({behavior: "smooth"});
+			}, 500)
+		};
+	}
+
 </script>
 {% endblock %}
 
-{% block content2 %}
-
-
-
-
+{% block scriptcontent %}
+	setValues(pages.VERSE_DETAILS, "{{details['surah']}}:{{details['verse']}}");
 {% endblock %}
