@@ -32,7 +32,8 @@
 
     	<div id="audio-box" class="ui two grid" style="display: none;">
     		<div class="column" style="flex: 1; padding-right: 0px;">
-    		<audio controls preload="metadata" src="http://www.everyayah.com/data/Alafasy_128kbps/{{'%03d' % details['surah']}}{{'%03d' % details['verse']}}.mp3" style="width: 100%; height: 40px;" controlsList="nodownload"></audio>
+    		<audio controls id="mainaudio" preload="auto" src="http://www.everyayah.com/data/Alafasy_128kbps/{{'%03d' % details['surah']}}{{'%03d' % details['verse']}}.mp3" style="width: 100%; height: 40px;" controlsList="nodownload"></audio>
+    		<audio controls preload="auto" src="http://www.everyayah.com/data/Husary_128kbps_Mujawwad/{{'%03d' % details['surah']}}{{'%03d' % details['verse']}}.mp3" style="width: 100%; height: 40px; display: none" controlsList="nodownload"></audio>
     		</div>
     		<div class="column" style="display: flex; align-items: center; flex: 0 0 110px; padding: 5px; margin-bottom: 5px;">
 	    		<button id="tajweed-btn" class="circular ui basic toggle icon button" style="vertical-align: middle;" onclick="changeAudioSrc()">
@@ -41,7 +42,7 @@
 	    		<button id="loop-btn" class="circular ui basic toggle icon button" style="vertical-align: middle;" onclick="document.querySelector('audio').loop = (document.querySelector('audio').loop ? false : true);">
 	    		<i class="icon undo" ></i>
 	    		</button>
-	    		<button id="close-btn" class="circular ui basic icon button" style="vertical-align: middle;" onclick="$('audio').trigger('pause'); $('#audio-box').hide(); $('#control-btns').fadeIn();">
+	    		<button id="close-btn" class="circular ui basic icon button" style="vertical-align: middle;" onclick="$('#mainaudio').trigger('pause'); $('#audio-box').hide(); $('#control-btns').fadeIn();">
 	    		<i class="icon close" ></i>
 	    		</button>
 			</div>
@@ -70,7 +71,7 @@
 			<button id="more-btn" data-tooltip="Comprehensive Reading" class="circular ui basic icon button" onclick="$('#more-btn').hide(); $('#play-btn').hide(); $('#more-controls').fadeIn();">
 			  <i class="icon ellipsis horizontal"></i>
 			</button>
-	    	<button id="play-btn" class="circular ui basic icon button" onclick="$('#audio-box').fadeIn(); $('#control-btns').hide(); $('audio').trigger('play');">
+	    	<button id="play-btn" class="circular ui basic icon button" onclick="$('#audio-box').fadeIn(); $('#control-btns').hide(); $('#mainaudio').trigger('play');">
 			  <i class="icon play"></i>
 			</button>
 		</div>
@@ -296,9 +297,9 @@
 	;
 	$('.ui.button.toggle').state();
 	
-	let audio_src_link = ["http://www.everyayah.com/data/Alafasy_128kbps/{{'%03d' % details['surah']}}{{'%03d' % details['verse']}}.mp3", "http://www.everyayah.com/data/Husary_Mujawwad_64kbps/{{'%03d' % details['surah']}}{{'%03d' % details['verse']}}.mp3"];
+	// let audio_src_link = ["http://www.everyayah.com/data/Alafasy_128kbps/{{'%03d' % details['surah']}}{{'%03d' % details['verse']}}.mp3", "http://www.everyayah.com/data/Husary_Mujawwad_64kbps/{{'%03d' % details['surah']}}{{'%03d' % details['verse']}}.mp3"];
 
-	// let audio_src_link = ["http://www.everyayah.com/data/Alafasy_128kbps/{{'%03d' % details['surah']}}{{'%03d' % details['verse']}}.mp3", "http://www.everyayah.com/data/Husary_128kbps_Mujawwad/{{'%03d' % details['surah']}}{{'%03d' % details['verse']}}.mp3"];
+	let audio_src_link = ["http://www.everyayah.com/data/Alafasy_128kbps/{{'%03d' % details['surah']}}{{'%03d' % details['verse']}}.mp3", "http://www.everyayah.com/data/Husary_128kbps_Mujawwad/{{'%03d' % details['surah']}}{{'%03d' % details['verse']}}.mp3"];
 	let audio_src = 0;
 	const audio_element = document.querySelector('audio');
 	function changeAudioSrc()
