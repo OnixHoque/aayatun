@@ -79,6 +79,10 @@
 
     <p>{{ details['translation'] }}</p>
 
+
+    <button id="collapse-btn" style="display: none; position: fixed; background: white; box-shadow: all; bottom: 15px; right: 15px; opacity: 0.7;" class="circular ui basic huge icon button" onclick="collapseAll()">
+	  <i class="icon bars"></i>
+	</button>
     
     <br>
 
@@ -325,8 +329,21 @@
 
 <script>
 	$('.ui.accordion')
-	  .accordion()
+	  .accordion(
+	  {
+	  	onOpen : function(){
+	  		$('#collapse-btn').show();
+	  	}
+	  })
 	;
+
+	function collapseAll(){
+		for (let i = 0; i<6; i++)
+		{
+			$(".accordion").accordion("close", i);
+		}
+		$('#collapse-btn').fadeOut();
+	}
 	$('.ui.button.toggle').state();
 	
 	// let audio_src_link = ["http://www.everyayah.com/data/Alafasy_128kbps/{{'%03d' % details['surah']}}{{'%03d' % details['verse']}}.mp3", "http://www.everyayah.com/data/Husary_Mujawwad_64kbps/{{'%03d' % details['surah']}}{{'%03d' % details['verse']}}.mp3"];
