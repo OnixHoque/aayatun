@@ -17,20 +17,33 @@
 	<link rel="stylesheet" href="{{ url_for('static', filename= 'css/style.css') }}">
     <title>{% block title %} {% endblock %}</title>
   </head>
-  <body>
+  <body onload="hideLoading()" onbeforeunload="showLoading()">
   	
 
     <div class="ui blue borderless three item menu navbar fluid" style="width: 100%; background-color: #EEEEEE">
     	{% block menu %} {% endblock %}
     </div>
+    
     <div class="ui text container">
         {% block content %} {% endblock %}
         <br>{% block content2 %} {% endblock %}
     </div>
+
+  <footer id="loading-bar" style="position: fixed; bottom: 0; background: white; left: 0; font-family: open sans; font-size: 13px; width: 100%; padding-bottom: 1%; padding-top: 1%; text-align: center; opacity: 0.9; border-radius: 5px;">
+    <div class="ui active tiny inline loader" style="padding: 0px 15px"></div>Loading...
+  </footer>
   <script src="{{ url_for('static', filename= 'js/script.js') }}"></script>
   
   <script type="text/javascript">
   {% block scriptcontent %}  {% endblock %}
+  function showLoading()
+  {
+    $('#loading-bar').fadeIn();
+  }
+  function hideLoading()
+  {
+    $('#loading-bar').fadeOut();
+  }
   </script>
   
   </body>
