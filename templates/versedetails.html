@@ -325,8 +325,7 @@
 
 	<br>
 
-
-
+<script src="{{ url_for('static', filename= 'js/swiped-events.min.js') }}"></script>
 <script>
 	$('.ui.accordion')
 	  .accordion(
@@ -392,6 +391,21 @@
 			}, 500)
 		};
 	}
+
+	//Keypress Events
+	document.onkeydown = function(event) {
+        switch (event.keyCode) {
+           case 37:
+           		window.location.href = "{{ url_for('details', surah=details['prev'][0], verse=details['prev'][1]) }}";
+              break;
+           
+           case 39:
+                window.location.href = "{{ url_for('details', surah=details['next'][0], verse=details['next'][1]) }}";
+              break;
+           
+        }
+    };
+
 
 </script>
 {% endblock %}
