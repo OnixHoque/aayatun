@@ -76,7 +76,7 @@
 		var v = {{ rand_surah[1] }};
 		// alert("" + {{ rand_surah[0] }} + {{ rand_surah[1] }} + "")
 		var base_url = window.location.origin;
-		window.location.replace(base_url + '/' + s + '/' + v);
+		window.location.href = base_url + '/' + s + '/' + v;
 	})
 
 	function updateVerse()
