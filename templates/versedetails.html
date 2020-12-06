@@ -406,6 +406,16 @@
         }
     };
 
+    //Swipe left/right button
+
+    document.addEventListener('swiped-left', function(e) {
+    	window.location.href = "{{ url_for('details', surah=details['next'][0], verse=details['next'][1]) }}";	    
+	});
+
+	document.addEventListener('swiped-right', function(e) {
+	    window.location.href = "{{ url_for('details', surah=details['prev'][0], verse=details['prev'][1]) }}";
+	});
+
 
 </script>
 {% endblock %}
