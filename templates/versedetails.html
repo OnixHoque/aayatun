@@ -204,10 +204,10 @@
 		    <h1 style="font-size: 250%; font-family: 'Scheherazade', serif;"> {{ x['word'] }} </h1>
 		    <span style="font-size: 90%"> {{ x['meaning'] }} </span>
 		    {% if (x['lemma']|length) != 0  %}
-		    | <span style="font-size: 90%"> Lemma: </span> <span style="font-size: 150%; font-family: 'Scheherazade', serif;"> <a href="http://arabiclexicon.hawramani.com/search/{{ x['lemma'] }}?cat=50" target="_blank">{{ x['lemma'] }}</a> </span>
+		    | <span style="font-size: 90%; display: inline-block;"> Lemma: </span> <span style="font-size: 150%; font-family: 'Scheherazade', serif;"> <a href="http://arabiclexicon.hawramani.com/search/{{ x['lemma'] }}?cat=50" target="_blank">{{ x['lemma'] }}</a> </span>
 		    {% endif %}
 		    {% if (x['verb_type']|length) != 0  %}
-		    | <span style="font-size: 90%"> Verb Form {{ x['verb_type'] }} </span>
+		    | <span style="font-size: 90%; display: inline-block;"> Verb Form {{ x['verb_type'] }} </span>
 		    {% endif %}
 			</div>
 
