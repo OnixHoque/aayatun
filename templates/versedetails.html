@@ -178,10 +178,10 @@
 	  	<div class="ui text container">
 	    {% for x in details['definitions'] %}
 	    <h2 style="font-size: 250%; font-family: 'Scheherazade', serif; padding-top: 20px;" name="root_details"> {{ x[0] }} </h2>
-	    <h4> {{ x[1] }} ({{ x[2] }}) </h4>
+	    <h4 style="font-family: 'Open Sans'"> {{ x[1] }} ({{ x[2] }}) </h4>
 	    <div style="padding-right: 5%">
 	    <p style="font-size: 90%"> {{ x[3] }} </p>
-	    <br>
+	    <!-- <br> -->
 		</div>
 	    {% endfor %}
 	    <p style="font-size: 80%; color: gray; text-align: center;"> [Source: <a href="https://www.quranhive.com" target="_blank">www.quranhive.com</a>] </p>
@@ -277,7 +277,11 @@
 	  	{% if (details['bn_zakaria']|length) == 0 %}
 	  	<p style="text-align: center; font-size: 90%"> No data found for this ayah </p>
 	  	{% else %}
-	    {{ details['bn_zakaria'] }}
+		    <div style="padding: 0 2%; text-align: justify; text-justify: auto;">
+		    <!-- <div style="font-family: 'Bangla', sans-serif; font-size: 200%"> -->
+		    	{{ details['bn_zakaria'] }}
+		    </div>
+			<!-- </div> -->
 	    <br>
 	    <p style="font-size: 90%; color: gray; text-align: center;"> [Source: <a href="https://gtaf.org/apps/quran" target="_blank">Al Quran (Tafsir & by Word) by Greentech Apps Foundation</a>] </p>
 	    {% endif %}
@@ -291,7 +295,9 @@
 	  	{% if (details['en_kathir']|length) == 0 %}
 	  	<p style="text-align: center; font-size: 90%"> No data found for this ayah </p>
 	  	{% else %}
-	    {{ details['en_kathir'] }}
+	  		<div style="padding: 0 2%; text-align: justify; text-justify: auto;">
+			    {{ details['en_kathir'] }}
+			</div>
 	    <br><br>
 	    <p style="font-size: 90%; color: gray; text-align: center;"> [Source: <a href="https://gtaf.org/apps/quran" target="_blank">Al Quran (Tafsir & by Word) by Greentech Apps Foundation</a>] </p>
 	    {% endif %}
