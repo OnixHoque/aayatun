@@ -178,13 +178,13 @@
 	  	<div class="ui text container">
 	    {% for x in details['definitions'] %}
 	    <h2 style="font-size: 250%; font-family: 'Scheherazade', serif; padding-top: 20px;" name="root_details"> {{ x[0] }} </h2>
-	    <h4 style="font-family: 'Open Sans'"> {{ x[1] }} ({{ x[2] }}) </h4>
+	    <h4 style="font-family: 'Open Sans'"> {{ x[1].capitalize() }} ({{ x[2] }}) </h4>
 	    <div style="padding-right: 5%">
 	    <p style="font-size: 90%"> {{ x[3] }} </p>
 	    <!-- <br> -->
 		</div>
 	    {% endfor %}
-	    <p style="font-size: 80%; color: gray; text-align: center;"> [Source: <a href="https://www.quranhive.com" target="_blank">www.quranhive.com</a>] </p>
+	    <p style="font-size: 80%; padding-top: 30px; color: gray; text-align: center;"> [Source: <a href="https://www.quranhive.com" target="_blank">www.quranhive.com</a>] </p>
 		</div>
 		{% endif %}
 	  </div>
@@ -202,7 +202,7 @@
 	  	{% for x in details['morph'] %}
 	  		<div style="text-align: center; padding-top: 20px;" name="word_details">
 		    <h1 style="font-size: 250%; font-family: 'Scheherazade', serif;"> {{ x['word'] }} </h1>
-		    <span style="font-size: 90%"> {{ x['meaning'] }} </span>
+		    <span style="font-size: 90%"> {{ x['meaning'].capitalize() }} </span>
 		    {% if (x['lemma']|length) != 0  %}
 		    | <span style="font-size: 90%; display: inline-block;"> Lemma: </span> <span style="font-size: 150%; font-family: 'Scheherazade', serif;"> <a href="http://arabiclexicon.hawramani.com/search/{{ x['lemma'] }}?cat=50" target="_blank">{{ x['lemma'] }}</a> </span>
 		    {% endif %}
