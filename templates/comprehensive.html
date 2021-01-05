@@ -19,7 +19,23 @@
 {% endblock %}
 
 
+
 {% block content %}
+	<div class="ui longer modal" id="verse_details_modal">
+		<i class="close icon"></i>
+		  <div class="header" id="verse_details_modal_heading" style="font-family: open sans; font-size: 120% width: 100%; text-align: center;">
+		  	Details
+		  </div>
+		  <div id="loadingdetails" style="width: 100%; padding-bottom: 5%; padding-top: 5%; text-align: center; opacity: 0.9; border-radius: 5px;" ><div class="ui active tiny inline loader" style="padding: 0px 15px"></div>Loading...</div>
+		  <!-- <div class="scrolling content" style="font-family: open sans; font-size: 110%;"> -->
+		  	<iframe src="" id="verse_details_modal_content" style="width: 100%; height: 60vh; overflow-y: hidden; border:0px solid lightgray;" >
+		  	</iframe>
+		  <!-- </div> -->
+		  <div class="actions">
+		    <a style="font-family: open sans" href="/" id="verse_details_modal_button" class="ui basic button">Go to Verse Page</a>
+		  </div>
+	</div>
+
 	<link href="https://fonts.googleapis.com/css2?family=Lora&display=swap" rel="stylesheet">
 	<!-- <link href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.css" rel="stylesheet"> -->
 	<link href="https://cdn.datatables.net/1.10.22/css/dataTables.semanticui.min.css" rel="stylesheet">
@@ -51,7 +67,8 @@
     {% block bismillah %} {% endblock %}
     {% for x in verses %}
     	<tr style="padding: 1%"> 
-    		<td class="two wide selectable" onclick="window.location.href='{{ url_for('details', surah=surah_no, verse=x[0]) }}';" style="font-family: Lora; font-size: 100%; text-align: center; vertical-align: top; padding-top: 2%; border-radius: 3px;"> {{ x[0] }} </td> 
+    		<!-- <td class="two wide selectable" onclick="window.location.href='{{ url_for('details', surah=surah_no, verse=x[0]) }}';" style="font-family: Lora; font-size: 100%; text-align: center; vertical-align: top; padding-top: 2%; border-radius: 3px;"> {{ x[0] }} </td>  -->
+    		<td class="two wide selectable" onclick="showModal( {{ surah_no }} , {{ x[0] }} )" style="font-family: Lora; font-size: 100%; text-align: center; vertical-align: top; padding-top: 2%; border-radius: 3px;"> {{ x[0] }} </td> 
     		<td style="{% block font_config %} {% endblock %}"> {{ x[1] }} </td> 
     	</tr>
     {% endfor %}
@@ -109,6 +126,31 @@
 		// $('#cur_table_paginate div *').css('color', 'gray');
 		
 	});
+	function showModal(s, v){
+		$('#verse_details_modal_button').attr("href", "{{ url_for('details', surah=-1, verse=-2) }}".replace("-1", s).replace(-2, v));
+		$("#verse_details_modal_content").on("load", ()=>{
+			$("#verse_details_modal_content").contents().find("#menubar").hide(); 
+			
+			$("#verse_details_modal_content")[0].contentWindow.navigation_allowed = false;
+			
+			$("#loadingdetails").hide(); 
+			$("#verse_details_modal_content").fadeIn();
+		});
+
+		$('#loadingdetails').show();
+		$("#verse_details_modal_content").hide();
+		document.querySelector('#verse_details_modal_content').setAttribute("src", "{{ url_for('details', surah=-1, verse=-2) }}".replace("-1", s).replace(-2, v)); 
+    	
+		$("#verse_details_modal_heading").html("Verse #" + v);
+		$("#verse_details_modal").modal('show');
+		
+	            
+		
+	}
+	
+
+
 </script>
+
 {% endblock %}
 

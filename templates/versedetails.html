@@ -17,14 +17,17 @@
 
 
 {% block content %}
+
 	<style>
 		* {
 			font-family: 'Open Sans'
 		}
 	</style>
+	<script type="text/javascript">
+		var navigation_allowed = true;
+	</script>
 
-
-	<div style="text-align: center;">
+	<div style="text-align: center;" id="pagecontent">
 	<br>
     <h1 style="font-size: 300%; font-family: 'Scheherazade', serif;"> {{ details['ayah'] }} </h1>
     
@@ -52,16 +55,16 @@
     		<span id="more-controls" style="display: none;">
     			<span style="font-size: .8em; color: gray; text-align: center; padding-right: 30px;">Surah {{ details['surah_name'] }}</span>
     			<span style="display: inline-block;">
-	    			<button style="font-family: 'Open Sans' font-size: 90%;" class="circular ui tiny basic icon button" onclick="window.location.href ='{{ url_for('arabic_fulltext', surah=details['surah']) }}'">
+	    			<button style="font-family: 'Open Sans' font-size: 90%;" class="circular ui tiny basic icon button" onclick="window.parent.location.href ='{{ url_for('arabic_fulltext', surah=details['surah']) }}'">
 						Arabic
 					</button>
-					<button style="font-family: 'Open Sans' font-size: 90%; " class="circular ui tiny basic icon button" onclick="window.location.href ='{{ url_for('translation', surah=details['surah']) }}'">
+					<button style="font-family: 'Open Sans' font-size: 90%; " class="circular ui tiny basic icon button" onclick="window.parent.location.href ='{{ url_for('translation', surah=details['surah']) }}'">
 						Translation
 					</button>
-					<button style="font-family: 'Open Sans' font-size: 90%; " class="circular ui tiny basic icon button"  onclick="window.location.href ='{{ url_for('bn_tafsir', surah=details['surah']) }}'">
+					<button style="font-family: 'Open Sans' font-size: 90%; " class="circular ui tiny basic icon button"  onclick="window.parent.location.href ='{{ url_for('bn_tafsir', surah=details['surah']) }}'">
 						Tafsir (Bn)
 					</button>
-					<button style="font-family: 'Open Sans' font-size: 90%; " class="circular ui tiny basic icon button" onclick="window.location.href ='{{ url_for('en_tafsir', surah=details['surah']) }}'">
+					<button style="font-family: 'Open Sans' font-size: 90%; " class="circular ui tiny basic icon button" onclick="window.parent.location.href ='{{ url_for('en_tafsir', surah=details['surah']) }}'">
 						Tafsir (En)
 					</button>
 				<i class="icon close" style="cursor: pointer;" onclick="$('#more-controls').hide(); $('#more-btn').fadeIn(); $('#play-btn').fadeIn()"></i>
@@ -124,7 +127,7 @@
 		    <tr>
 		    <td style="font-size: 150%; font-family: 'Scheherazade', serif;"> {{ y[0] }} </td> 
 		    <td> {{ y[1] }} </td>
-		    <td> <a href="{{ url_for('details', surah=y[2], verse=y[3]) }}">{{ y[2] }}:{{ y[3] }}</a> </td>
+		    <td> <a target="_parent" href="{{ url_for('details', surah=y[2], verse=y[3]) }}">{{ y[2] }}:{{ y[3] }}</a> </td>
 			</tr>
 		    {% endfor %}
 		    </tbody>
@@ -344,11 +347,14 @@
 
 	</div>
 
+	
+
+	</div>
+
 	<br>
 
 <script src="{{ url_for('static', filename= 'js/swiped-events.min.js') }}"></script>
-<script>
-
+<script type="text/javascript" id="tagscript">
 	$('.ui.accordion')
 	  .accordion(
 	  {
@@ -379,17 +385,6 @@
 		audio_element.play();
 	}
 
-	function getTop(element) {
-	    let top = 0, left = 0;
-	    do {
-	        top += element.offsetTop  || 0;
-	        left += element.offsetLeft || 0;
-	        element = element.offsetParent;
-	    } while(element);
-
-	    return top;
-	};
-	
 	let words = document.getElementsByName("word_index");
 	let word_details_list = document.getElementsByName("word_details");
 	for (let i = 0; i< words.length; i++)
@@ -422,15 +417,20 @@
 		};
 	}
 
-	//Keypress Events
+</script>
+<script>
+//Keypress Events
+	
 	document.onkeydown = function(event) {
         switch (event.keyCode) {
            case 37:
-           		window.location.href = "{{ url_for('details', surah=details['prev'][0], verse=details['prev'][1]) }}";
+           		if (navigation_allowed)
+           			window.location.href = "{{ url_for('details', surah=details['prev'][0], verse=details['prev'][1]) }}";
               break;
            
            case 39:
-                window.location.href = "{{ url_for('details', surah=details['next'][0], verse=details['next'][1]) }}";
+           		if (navigation_allowed)
+                	window.location.href = "{{ url_for('details', surah=details['next'][0], verse=details['next'][1]) }}";
               break;
            
         }
@@ -439,11 +439,13 @@
     //Swipe left/right button
 
     document.addEventListener('swiped-left', function(e) {
-    	window.location.href = "{{ url_for('details', surah=details['next'][0], verse=details['next'][1]) }}";	    
+    	if (navigation_allowed)
+    		window.location.href = "{{ url_for('details', surah=details['next'][0], verse=details['next'][1]) }}";	    
 	});
 
 	document.addEventListener('swiped-right', function(e) {
-	    window.location.href = "{{ url_for('details', surah=details['prev'][0], verse=details['prev'][1]) }}";
+		if (navigation_allowed) 
+	    	window.location.href = "{{ url_for('details', surah=details['prev'][0], verse=details['prev'][1]) }}";
 	});
 
 
