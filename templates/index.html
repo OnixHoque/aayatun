@@ -29,7 +29,7 @@
 	{% endfor %}
 	</select>
 	<br>
-	<div class="ui two column grid">
+	<div class="ui two column grid" id="verserow">
 		<div class="column" style="margin: auto;"><p style="text-align: right;"> Jump to verse </p></div>
 		<div class="column">
 			<select class="ui search fluid dropdown" id="verse">
@@ -37,9 +37,26 @@
 			</select>
 		</div>
 	</div>
-	<br><br>
+	
+	<br>
+	  
+	
 	<div style="margin-bottom: 20px;">
-	<button class="ui huge blue fluid button" style="font-family: Open Sans; font-size: 95%;" id='btnGo'> Open </button>
+	
+		<div class="ui blue fluid buttons">
+		  <div class="ui large blue button" style="font-family: 'Open Sans'; width: 90%" id="btnGo">Jump to Verse</div>
+		  <div class="ui floating dropdown icon button">
+		    <i class="dropdown icon"></i>
+		    <div class="fluid menu">
+		    	<div class="header"  style="font-family: 'Open Sans'">Read the whole surah</div>
+		      <div name="menuitem" class="item" style="font-family: 'Open Sans'">Arabic</div>
+		      <div name="menuitem" class="item" style="font-family: 'Open Sans'">English Translation</div>
+		      <div name="menuitem" class="item" style="font-family: 'Open Sans'">Bangla Tafseer</div>
+		      <div name="menuitem" class="item" style="font-family: 'Open Sans'">English Tafseer</div>
+		    </div>
+		  </div>
+		</div>
+	<!-- <button class="ui huge blue fluid button" style="font-family: Open Sans; font-size: 95%;" id='btnGo'> Open </button> -->
 	<p></p>
 	<button class="ui huge basic fluid button" style="font-family: Open Sans; font-size: 95%" id='btnSurprise'> Surprise me! </button>
 	</div>
@@ -60,6 +77,22 @@
 		fullTextSearch: true
 	});
 
+	let target_location = [	"{{ url_for('arabic_fulltext', surah=-1) }}",
+	"{{ url_for('translation', surah=-1) }}",
+	"{{ url_for('bn_tafsir', surah=-1) }}",
+	"{{ url_for('en_tafsir', surah=-1) }}"];
+	// console.log(target_location[0]);
+	let options = document.querySelectorAll("[name='menuitem']");
+	console.log(options.length);
+	for (let i = 0; i < options.length; i++)
+	{
+		options[i].onclick = function(){
+			let s = $('#surah').find(":selected").attr('value');
+			// var v = $('#verse').find(":selected").attr('value');
+			// console.log(target_location[i]);
+			window.parent.location.href = target_location[i].replace("-1", s);
+		}
+	}
 	$('#surah').dropdown('setting', 'onChange', updateVerse);
 	updateVerse();
 	$('#btnGo').click(function()
@@ -69,6 +102,8 @@
 		var base_url = window.location.origin;
 		window.location.replace(base_url + '/' + s + '/' + v);
 	})
+
+
 
 	$('#btnSurprise').click(function()
 	{

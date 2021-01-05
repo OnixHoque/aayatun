@@ -87,7 +87,13 @@
 	$(document).ready(function() {
 	    $('#cur_table').DataTable(
 	    	{
+	    		"drawCallback": function( settings ) {
+	    			// $('#cur_table_paginate > div').css('color', 'gray');
+	    			$('#cur_table_paginate > div').removeClass('ui stackable pagination menu').addClass('ui unstackable pagination menu');
+			        
+			    },
 	    		"stateSave": true,
+	    		"info": false,
 	    		"oLanguage": {
 	    	         "sInfo": "Showing _START_ to _END_ of _TOTAL_ verses",
 	    	         "sLengthMenu": "_MENU_",
@@ -95,7 +101,14 @@
 
 	    	       },
 	    	   "language": {
-				    searchPlaceholder: 'Search...'
+				    searchPlaceholder: 'Search...',
+				    lengthMenu: '<select>'+
+							      '<option value="10">10</option>'+
+							      '<option value="25">25</option>'+
+							      '<option value="50">50</option>'+
+							      '<option value="100">100</option>'+
+							      '<option value="-1">All</option>'+
+							      '</select>'
 				}},
 
 	    	   );
@@ -122,8 +135,9 @@
 		$('#cur_table_filter span').prepend('<i class="ui search icon"></i>');
 
 		$('#cur_table_info').css('font-size', '90%');
-		$('#cur_table_info').css('color', 'gray');
-		// $('#cur_table_paginate div *').css('color', 'gray');
+		
+		$('#cur_table_paginate').parent().removeClass('nine wide column').addClass('sixteen wide column');
+		
 		
 	});
 	function showModal(s, v){
