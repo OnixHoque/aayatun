@@ -86,14 +86,26 @@
     
     <br>
 
+    <div class="ui longer modal" id="word_details_modal">
+    	<i class="close icon"></i>
+		  <div class="header" id="word_details_modal_heading" style="font-family: open sans; font-size: 120% width: 100%; text-align: center;">
+		  	Details
+		  </div>
+		  
+		  <div class="scrolling content" style="font-family: open sans; font-size: 110%;" id="word_details_modal_content">
+		  	
+		  </div>
+	</div>
+
     {% for x in details['wordforword'] %}
     {% if (x['3']|length) != 0 %}
     	<div class="ui mini modal" id="related{{ x['4'] }}">
-		  <div class="header" style="width: 100%; text-align: center;">
+    		<i class="close icon"></i>
+		  <div class="header" style="font-family: open sans; width: 100%; text-align: center;">
 		  	Other meanings of <span style="font-size: 150%; font-family: 'Scheherazade', serif;">{{ x['0'] }}</span>
 		  </div>
 		  
-		  <div class="scrolling content">
+		  <div class="scrolling content" style="font-size: 110%">
 		  	{% if (x['3']|length == 0) %}
 		  	<p style="width: 100%; text-align: center;">{{ x['3']|length }} variation</p>
 		  	{% else %}
@@ -169,7 +181,7 @@
 
 	  <div class="title">
 	    <i class="dropdown icon"></i>
-	    <span>Word Definions</span>
+	    <span>Word Definitions</span>
 	  </div>
 	  <div class="content">
 	  	{% if (details['definitions']|length) == 0 %}
@@ -177,10 +189,12 @@
 	  	{% else %}
 	  	<div class="ui text container" style="padding: 0 2%;">
 	    {% for x in details['definitions'] %}
-	    <h2 style="font-size: 250%; font-family: 'Scheherazade', serif; padding-top: 20px;" name="root_details"> {{ x[0] }} </h2>
-	    <h4 style="font-family: 'Open Sans'"> {{ x[1].capitalize() }} ({{ x[2] }}) </h4>
-	    <div style="padding-right: 5%">
-	    <p style="font-size: 90%"> {{ x[3] }} </p>
+	    <div name="root_details" style="text-align: justify; text-justify: auto;">
+		    <h2 style="font-size: 250%; font-family: 'Scheherazade', serif; padding-top: 20px;"> {{ x[0] }} </h2>
+		    <h4 style="font-family: 'Open Sans'"> {{ x[1].capitalize() }} ({{ x[2] }}) </h4>
+		    <div style="padding-right: 5%">
+		    <p style="font-size: 90%"> {{ x[3] }} </p>
+		</div>
 	    <!-- <br> -->
 		</div>
 	    {% endfor %}
@@ -200,7 +214,8 @@
 	  	<div class="ui text container">
 	  	<br>
 	  	{% for x in details['morph'] %}
-	  		<div style="text-align: center; padding-top: 20px;" name="word_details">
+	  	<div name="word_details">
+	  		<div style="text-align: center; padding-top: 20px;">
 		    <h1 style="font-size: 250%; font-family: 'Scheherazade', serif;"> {{ x['word'] }} </h1>
 		    <span style="font-size: 90%"> {{ x['meaning'].capitalize() }} </span>
 		    {% if (x['lemma']|length) != 0  %}
@@ -214,7 +229,7 @@
 			<br>
 			{% for y in x['annot'] %}
 
-		    <p style="padding-left: 5%;"> <span style="font-size: 150%; font-family: 'Scheherazade', serif;"> {{ y[0] }}
+		    <p style="padding-left: 20%;"> <span style="font-size: 150%; font-family: 'Scheherazade', serif;"> {{ y[0] }}
 		    	 → </span> <span style="font-size: 90%"> {{ y[1] }} </span> </p>
 
 		    {% endfor %}
@@ -260,7 +275,7 @@
 		    </tbody>
 			</table>
 			{% endif %}
-
+		</div>
 			<hr style="width: 80%; opacity: 50%;">
 		<br>
 		{% endfor %}
@@ -333,6 +348,7 @@
 
 <script src="{{ url_for('static', filename= 'js/swiped-events.min.js') }}"></script>
 <script>
+
 	$('.ui.accordion')
 	  .accordion(
 	  {
@@ -379,10 +395,14 @@
 	for (let i = 0; i< words.length; i++)
 	{
 		words[i].onclick = () => {
-			$(".accordion").accordion("open", 2);
-			setTimeout(function() {
-			  word_details_list[i].scrollIntoView({behavior: "smooth"});
-			}, 500)
+			$("#word_details_modal_content").html(word_details_list[i].outerHTML);
+			$("#word_details_modal_heading").html("Morphological Details");
+			$("#word_details_modal").modal('show');
+			document.querySelector('#word_details_modal_content').scrollTop = 0;
+			// $(".accordion").accordion("open", 2);
+			// setTimeout(function() {
+			//   word_details_list[i].scrollIntoView({behavior: "smooth"});
+			// }, 500)
 		};
 	}
 
@@ -391,10 +411,14 @@
 	for (let i = 0; i< roots.length; i++)
 	{
 		roots[i].onclick = () => {
-			$(".accordion").accordion("open", 1);
-			setTimeout(function() {
-			  root_details_list[i].scrollIntoView({behavior: "smooth"});
-			}, 500)
+			$("#word_details_modal_content").html(root_details_list[i].outerHTML);
+			$("#word_details_modal_heading").html("Word Definition");
+			$("#word_details_modal").modal('show');
+			document.querySelector('#word_details_modal_content').scrollTop = 0;
+			// $(".accordion").accordion("open", 1);
+			// setTimeout(function() {
+			//   root_details_list[i].scrollIntoView({behavior: "smooth"});
+			// }, 500)
 		};
 	}
 
