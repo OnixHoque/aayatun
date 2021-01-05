@@ -175,7 +175,7 @@
 	  	{% if (details['definitions']|length) == 0 %}
 	  	<p style="text-align: center; font-size: 90%"> No data found for this ayah </p>
 	  	{% else %}
-	  	<div class="ui text container">
+	  	<div class="ui text container" style="padding: 0 2%;">
 	    {% for x in details['definitions'] %}
 	    <h2 style="font-size: 250%; font-family: 'Scheherazade', serif; padding-top: 20px;" name="root_details"> {{ x[0] }} </h2>
 	    <h4 style="font-family: 'Open Sans'"> {{ x[1].capitalize() }} ({{ x[2] }}) </h4>
