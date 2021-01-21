@@ -1,4 +1,2 @@
 setx FLASK_APP app
-Scripts\activate.bat
-cd aayatun12
 flask run --host=0.0.0.0 --port=80

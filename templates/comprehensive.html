@@ -64,12 +64,17 @@
     		
     	</thead>
     <tbody>
-    {% block bismillah %} {% endblock %}
+    
     {% for x in verses %}
     	<tr style="padding: 1%"> 
     		<!-- <td class="two wide selectable" onclick="window.location.href='{{ url_for('details', surah=surah_no, verse=x[0]) }}';" style="font-family: Lora; font-size: 100%; text-align: center; vertical-align: top; padding-top: 2%; border-radius: 3px;"> {{ x[0] }} </td>  -->
     		<td class="two wide selectable" onclick="showModal( {{ surah_no }} , {{ x[0] }} )" style="font-family: Lora; font-size: 100%; text-align: center; vertical-align: top; padding-top: 2%; border-radius: 3px;"> {{ x[0] }} </td> 
-    		<td style="{% block font_config %} {% endblock %}"> {{ x[1] }} </td> 
+    		<td>
+    		{% if x[0] == 1 %}
+    			{% block bismillah %} {% endblock %}
+    		{% endif %}
+	    		<div style="{% block font_config %} {% endblock %}">{{ x[1] }} </div>
+	    		</td> 
     	</tr>
     {% endfor %}
 	</tbody>
@@ -89,7 +94,7 @@
 	    	{
 	    		"drawCallback": function( settings ) {
 	    			// $('#cur_table_paginate > div').css('color', 'gray');
-	    			$('#cur_table_paginate > div').removeClass('ui stackable pagination menu').addClass('ui unstackable pagination menu');
+	    			// $('#cur_table_paginate > div').removeClass('ui stackable pagination menu').addClass('ui unstackable pagination menu');
 			        
 			    },
 	    		"stateSave": true,
