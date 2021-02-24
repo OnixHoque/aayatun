@@ -1,0 +1,344 @@
+{% extends 'base.html' %}
+
+{% block title %} Search Result for "{{ query }}" : Aayatun - An Ayah a Day {% endblock %}
+
+{% block menu %}
+
+<!-- <div class="item" style="outline: none;">
+<a class="ui icon basic huge left floated button" href= "/" ><i class="left arrow icon"></i></a>
+</div> -->
+
+<div class="ui header three wide item" style="font-size: 200%; display: inline-block; text-align: middle;">
+	<a href="{{ url_for('index') }}" style="font-family: Merriweather;">Quran Explorer</a>
+</div>
+
+<!-- <div class="item">
+<a class="ui icon basic right floated huge button" href= {% block url2 %} {% endblock %}><i class="right arrow icon"></i></a>
+</div> -->
+
+{% endblock %}
+
+
+
+{% block content %}
+
+<link href="https://fonts.googleapis.com/css2?family=Lora&display=swap" rel="stylesheet">
+<!-- <link href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.css" rel="stylesheet"> -->
+<link href="https://cdn.datatables.net/1.10.22/css/dataTables.semanticui.min.css" rel="stylesheet">
+
+<style>
+	* {
+		font-family: 'Open Sans', serif;
+	}
+	.match {
+		background-color: yellow;
+	}
+</style>
+
+
+<!-- <div style=""> -->
+	<br>
+	<!-- <a href=""><h4 style="text-align: center; font-size: 150%; font-family: 'Merriweather', serif;"> Surah Name</h4></a>  -->
+	<form class="ui form" method="POST" action="/search">
+		<div class="field" style="width: 100%;">
+			<div class="ui action large input">
+				<input type="text" name="query_str" style="font-family: Open Sans" value="{{ query }}" placeholder="Enter a keyword..."> 
+				<button class="ui primary large icon button" type="submit" style="flex: 0"><i class="search icon"></i></button>
+			</div>
+			<!-- <div class="ui error message" style="font-family: Open Sans"></div> -->
+		</div>
+		<div style="text-align: center;">
+
+			<span  style="display: inline-block;">
+			  Search 
+			  <div class="ui inline dropdown" id="cbofilter">
+			  	<input type="hidden" name="target_field">
+			    <div class="text">
+			      
+			    </div>
+			    <i class="dropdown icon"></i>
+			    <div class="menu">
+			      <div class="item" data-value="all:">
+			        the entire Quran
+			      </div>
+			      <div class="item" data-value="translation:">
+			        only in english translation
+			      </div>
+			      <div class="item" data-value="en_tafsir:">
+			        only in Tafsir Ibn Kathir
+			      </div>
+			      <div class="item" data-value="bn_tafsir:">
+			        only in Tafsir Abu Bakr Zakaria
+			      </div>
+			    </div>
+			  </div>
+			</span>
+		<span style="display: inline-block;">
+		  and show 
+		  <div class="ui inline dropdown" id='cbolimit'>
+		  	<input type="hidden" name="limit">
+		  	<div class="text">
+		      Select a value
+		    </div>
+		    <i class="dropdown icon"></i>
+		    <div class="menu">
+		      <div class="item" data-value="10">
+		        the top 10 results
+		      </div>
+		      <div class="item" data-value="25">
+		        the top 25 results
+		      </div>
+		      <div class="item" data-value="50">
+		        the top 50 results
+		      </div>
+		      <div class="item" data-value="75">
+		        the top 75 results
+		      </div>
+		      <div class="item" data-value="100">
+		        the top 100 results
+		      </div>
+		      <div class="item" data-value="-1">
+		        all results
+		      </div>
+		    </div>
+		  </div>
+		</span>
+		
+		<i class="idea circular blue icon" id="tips" data-variation="wide" data-position="bottom right" 
+		data-html=
+		"<div style='font-size: 90%; font-family: Open Sans'>
+			<h4>Use quotation to search for a phrase</h4>
+				<p>Example: &quot;But they who&quot;</p>
+			<h4>Use AND to conjunct two words</h4>
+				<p>Example: garden AND pleasure</p>
+			<h4>Other boolean operators</h4>
+				<p>Example: garden NOT (pleasure OR elevated)</p>
+			<h4>Wildcard expressions</h4>
+				<p>Use ? to represent a single character and * to represent any number of characters</p>
+				<p>Example: jin? </p>
+		</div>"
+		></i>
+		</div>
+
+
+		 
+		<!-- <div class="ui inline selection dropdown">
+	          <input type="hidden" name="gender">
+	          <i class="dropdown icon"></i>
+	          <div class="default text" data-value="25">top 25</div>
+	          <div class="menu">
+	              <div class="item" data-value="50">top 50</div>
+	              <div class="item" data-value="-1">all</div>
+	          </div>
+	     </div> -->
+	    
+
+		<!-- <div class="ui checkbox">
+		  <input type="checkbox" value="yes" name="showall">
+		  <label>Show all results instead of top 25 (might take longer time)</label>
+		</div> -->
+	</form>
+		
+	</div>
+	{% endblock %}
+
+	{% block content3 %} 
+	<div class="ui longer modal" id="verse_details_modal">
+		<i class="close icon"></i>
+		  <div class="header" id="verse_details_modal_heading" style="font-family: open sans; font-size: 120% width: 100%; text-align: center;">
+		  	Details
+		  </div>
+		  <div id="loadingdetails" style="width: 100%; padding-bottom: 5%; padding-top: 5%; text-align: center; opacity: 0.9; border-radius: 5px;" ><div class="ui active tiny inline loader" style="padding: 0px 15px"></div>Loading...</div>
+		  <!-- <div class="scrolling content" style="font-family: open sans; font-size: 110%;"> -->
+		  	<iframe src="" id="verse_details_modal_content" style="width: 100%; height: 60vh; overflow-y: hidden; border:0px solid lightgray;" >
+		  	</iframe>
+		  <!-- </div> -->
+		  <div class="actions">
+		    <a style="font-family: open sans" href="/" id="verse_details_modal_button" class="ui basic button">Go to Verse Page</a>
+		  </div>
+	</div>
+
+
+	<div class="ui container" style="padding: 0 5%;">
+		<!-- <h3 style="font-family: Open Sans">Search result for "{{ query }}"</h3> -->
+		<div class="ui horizontal divider">
+	    Search Result ({{ results|length }})
+	  	</div>
+	  	<br>
+	  	{% if results|length == 0 %}
+	  		{% if suggestions|length > 0 %}
+	  			<p style="text-align: center;">No result found! Did you mean- <strong><emp>{{ suggestions }}</emp></strong>?</p>
+	  		{% else %}
+				<p style="text-align: center;">No result found!</p>	  		
+	  		{% endif %}
+	  	{% else %}
+
+
+
+		<table class="ui center celled aligned striped table" id="cur_table">
+			<thead>
+				<tr style="text-align: center;">
+					<th class="ui one wide column" >Ser</th>
+					<th class="ui two wide column" >Verse</th>
+					<th class="ui five wide column" >Translation</th>
+					<th>Match</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for x in results %}
+		    	<tr style="padding: 1%"> 
+		    		<td style="text-align: center;">{{ x.ser }}</td>
+		    		<td style="text-align: center; padding: 5px;" class="selectable" onclick="showModal( {{ x.surah }} , {{ x.verse }} )"> <span style="color: #0E6EB8"> {{ x.surah }}:{{ x.verse }} </span> <br> Surah {{ x.surah_name }} </td> 
+		    		<td style="text-align: center;"> {{ x.actual_translation }} </td> 
+		    		<td>
+
+		    			<!-- <p> {{ x.matched_term }} </p>   -->
+		    			{% if x.ayah %}
+		    				<h4 style="font-family: Open Sans">Matched in the verse</h4>
+
+		    				<p style="font-family: 'Scheherazade', serif; font-size: 225%; text-align: right; "> ...{{ x.ayah }}... </p>
+		    				<hr style="width: 50%; color: lightgray; opacity: 50%;">
+		    			{% endif %}
+
+		    			{% if x.translation %}
+		    				<h4 style="font-family: Open Sans">Matched in English Translation</h4>
+		    				<p> ...{{ x.translation }}... </p>
+		    				<hr style="width: 50%; color: lightgray; opacity: 50%;">
+		    			{% endif %}
+
+		    			{% if x.bn_tafsir %}
+		    				<h4 style="font-family: Open Sans">Matched in Tafsir Abu Bakr Zakaria</h4>
+		    				<p> ...{{ x.bn_tafsir }}... </p>
+		    				<hr style="width: 50%; color: lightgray; opacity: 50%;">
+		    			{% endif %}
+
+		    			{% if x.en_tafsir %}
+		    				<h4 style="font-family: Open Sans">Matched in Tafsir Ibn Kathir</h4>
+		    				<p> ...{{ x.en_tafsir }}... </p>
+		    				<hr style="width: 50%; color: lightgray; opacity: 50%;">
+		    			{% endif %}
+		    		</td> 
+		    	</tr>
+		    {% endfor %}
+			</tbody>
+		</table>
+		{% endif %}
+	</div>
+	
+	<br>
+
+
+	<!-- <script src="https://code.jquery.com/jquery-3.5.1.js"></script> -->
+	<script src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.min.js"></script>
+	<script src="https://cdn.datatables.net/1.10.22/js/dataTables.semanticui.min.js"></script>
+
+
+	<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.js"></script> -->
+
+	<script>
+		$('#cbofilter')
+		  	.dropdown('set selected', '{{ filter_value }}');
+
+	  	{% if limit_label == -1 %}
+	  		$('#cbolimit')
+		  	.dropdown('set selected', '-1');
+		{% else %}
+			$('#cbolimit')
+		  	.dropdown('set selected', '{{ limit_label }}');
+		{% endif %}
+
+		
+		$('#tips')
+		  .popup()
+		;
+		$('#search-btn').hide();
+		$('#menubar').removeClass('three').addClass('one');
+		$(document).ready(function() {
+			$('#cur_table').DataTable(
+			{
+				
+				"drawCallback": function( settings ) {
+	    			// $('#cur_table_paginate > div').css('color', 'gray');
+	    			// $('#cur_table_paginate > div').removeClass('ui stackable pagination menu').addClass('ui unstackable pagination menu');
+
+	    		},
+	    		"info": false,
+
+	    		"oLanguage": {
+	    			"sInfo": "Showing _START_ to _END_ of _TOTAL_ verses",
+	    			"sLengthMenu": "_MENU_",
+	    			"sSearch": ""
+
+	    		},
+	    		"language": {
+	    			searchPlaceholder: 'Search within the result...',
+	    			lengthMenu: '<select>'+
+	    			'<option value="10">10</option>'+
+	    			'<option value="25">25</option>'+
+	    			'<option value="50">50</option>'+
+	    			'<option value="75">75</option>'+
+	    			'<option value="100">100</option>'+
+	    			'<option value="-1">All</option>'+
+	    			'</select>'
+	    		}},
+
+	    		);
+
+
+			$('#cur_table').on( 'page.dt', function () {
+				$('html, body').animate({
+					scrollTop: 0
+				}, 300);
+			} );
+
+			$('#cur_table_wrapper > div').removeClass('stackable').addClass('unstackable');
+			$('#cur_table_length').parent().removeClass('eight wide column').addClass('three wide column');
+			$('#cur_table_length').parent().css('padding-right', '0px');
+			$('#cur_table_length').css('font-size', '90%');
+			$('#cur_table_length .selection').css('width', '100%');
+
+			$('#cur_table_filter').parent().removeClass('eight wide column').addClass('thirteen wide column');
+			$('#cur_table_filter').parent().css('padding-left', '10px');
+			$('#cur_table_filter').parent().css('padding-right', '25px');
+			// $('#cur_table_filter').css('font-size', '90%');
+			$('#cur_table_filter').css('text-align', 'center');
+			$('#cur_table_filter .input').css('width', '100%');
+			$('#cur_table_filter .input').removeClass('ui input').addClass('ui icon input');
+			$('#cur_table_filter span').prepend('<i class="ui search icon"></i>');
+
+			$('#cur_table_info').css('font-size', '90%');
+
+			$('#cur_table_paginate').parent().removeClass('nine wide column').addClass('sixteen wide column');
+
+
+		});
+
+		function showModal(s, v){
+		$('#verse_details_modal_button').attr("href", "{{ url_for('details', surah=-1, verse=-2) }}".replace("-1", s).replace(-2, v));
+		$("#verse_details_modal_content").on("load", ()=>{
+			$("#verse_details_modal_content").contents().find("#menubar").hide(); 
+			$("#verse_details_modal_content").contents().find("#search-btn").hide(); 
+			// $("#verse_details_modal_content").contents().find("#collapse-btn").hide(); 
+
+			$("#verse_details_modal_content").contents().find("#collapse-btn").css("bottom","15px");; 
+			
+			$("#verse_details_modal_content")[0].contentWindow.navigation_allowed = false;
+			
+			$("#loadingdetails").hide(); 
+			$("#verse_details_modal_content").fadeIn();
+		});
+
+		$('#loadingdetails').show();
+		$("#verse_details_modal_content").hide();
+		document.querySelector('#verse_details_modal_content').setAttribute("src", "{{ url_for('details', surah=-1, verse=-2) }}".replace("-1", s).replace(-2, v)); 
+    	
+		$("#verse_details_modal_heading").html("Quran " + s + ":" + v);
+		$("#verse_details_modal").modal('show');
+		
+	            
+		
+	}
+	
+	</script>
+	{% endblock content3 %}
+

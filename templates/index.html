@@ -2,8 +2,15 @@
 
 {% block title %} Aayatun - An Ayah a Day {% endblock %}
 
+{% block start %} 
+<div style="height: 100vh; box-sizing: border-box; display: flex; flex-direction: column;">{% endblock start %}
+
+{% block js %} 
+<link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+{% endblock js %}
+
 {% block menu %}
-<div class="header item" style="width: 100%; font-size: 250%; font-family: Merriweather;">
+<div class="header item" style=" width: 100%; font-size: 250%; font-family: Merriweather;">
 <a id="title_link">
 <p> Aayatun </p>
 </a>
@@ -18,59 +25,68 @@
 </style>
 
 {% block content %}
-    <h2 style="text-align: center;font-family: Open Sans;"> Let's explore the Quran! </h1>
+    <h2 style="text-align: center;font-family: Open Sans;"> Let's explore the Quran! </h2>
 {% endblock %}
 
 {% block content2 %}
-<div style="font-family: Open Sans;font-size: 95%;">
-	<select class="ui search fluid dropdown" id="surah">
-	{% for s in surahs %}
-	  <option value="{{ s['surah_no'] }}" verse_count="{{ s['verse_count'] }}">{{ s['surah'] }}</option>
-	{% endfor %}
-	</select>
-	<br>
-	<div class="ui two column grid" id="verserow">
-		<div class="column" style="margin: auto;"><p style="text-align: right;"> Jump to verse </p></div>
-		<div class="column">
-			<select class="ui search fluid dropdown" id="verse">
-			  <option value="1">1</option>
-			</select>
+	<div style="font-family: Open Sans;font-size: 95%;">
+		<select class="ui search fluid dropdown" id="surah">
+		{% for s in surahs %}
+		  <option value="{{ s['surah_no'] }}" verse_count="{{ s['verse_count'] }}">{{ s['surah'] }}</option>
+		{% endfor %}
+		</select>
+		<br>
+		<div class="ui two column grid" id="verserow">
+			<div class="column" style="margin: auto;"><p style="text-align: right;"> Jump to verse </p></div>
+			<div class="column">
+				<select class="ui search fluid dropdown" id="verse">
+				  <option value="1">1</option>
+				</select>
+			</div>
 		</div>
-	</div>
-	
-	<br>
-	  
-	
-	<div style="margin-bottom: 20px;">
-	
-		<div class="ui blue fluid buttons">
-		  <div class="ui large blue button" style="font-family: 'Open Sans'; width: 90%" id="btnGo"><span style="width: 6%; display: inline-block;"></span>Open</div>
-		  <div class="ui floating dropdown icon button">
-		    <i class="dropdown icon"></i>
-		    <div class="fluid menu">
-		    	<div class="header"  style="font-family: 'Open Sans'; font-size: 90%">Read the whole surah</div>
-		      <div name="menuitem" class="item" style="font-family: 'Open Sans'">Arabic</div>
-		      <div name="menuitem" class="item" style="font-family: 'Open Sans'">English Translation</div>
-		      <div name="menuitem" class="item" style="font-family: 'Open Sans'">Bangla Tafseer</div>
-		      <div name="menuitem" class="item" style="font-family: 'Open Sans'">English Tafseer</div>
-		    </div>
-		  </div>
+		
+		<br>
+		  
+		
+		<div style="margin-bottom: 20px;">
+		
+			<div class="ui blue fluid buttons">
+			  <div class="ui large blue button" style="font-family: 'Open Sans'; width: 90%" id="btnGo"><span style="width: 29px; display: inline-block;"></span>Open</div>
+			  <div class="ui floating dropdown icon button" style="flex-grow: 0;">
+			    <i class="dropdown icon"></i>
+			    <div class="fluid menu">
+			      <div class="header"  style="font-family: 'Open Sans'; font-size: 90%">Read the whole surah</div>
+			      <div name="menuitem" class="item" style="font-family: 'Open Sans'; font-size: 90%">&nbsp;&nbsp;Arabic</div>
+			      <div name="menuitem" class="item" style="font-family: 'Open Sans'; font-size: 90%">&nbsp;&nbsp;English Translation</div>
+			      <div name="menuitem" class="item" style="font-family: 'Open Sans'; font-size: 90%">&nbsp;&nbsp;Bangla Tafseer</div>
+			      <div name="menuitem" class="item" style="font-family: 'Open Sans'; font-size: 90%">&nbsp;&nbsp;English Tafseer</div>
+			    </div>
+			  </div>
+			</div>
+		<!-- <button class="ui huge blue fluid button" style="font-family: Open Sans; font-size: 95%;" id='btnGo'> Open </button> -->
+		<p></p>
+		<button class="ui huge basic fluid button" style="font-family: Open Sans; font-size: 95%" id='btnSurprise'> Surprise me! </button>
 		</div>
-	<!-- <button class="ui huge blue fluid button" style="font-family: Open Sans; font-size: 95%;" id='btnGo'> Open </button> -->
-	<p></p>
-	<button class="ui huge basic fluid button" style="font-family: Open Sans; font-size: 95%" id='btnSurprise'> Surprise me! </button>
+		
 	</div>
+
+
+
 	
-</div>
 	<!-- <div style="text-align: center; padding: 3%">
 	<a href="#">Surprise me!</a>
 	</div> -->
 
 
+	
 
-<div style="position: fixed; bottom: 0; background: white; left: 0; font-family: open sans; font-size: 70%; color: gray; width: 100%; padding-bottom: 2%; z-index: -2">
-	<p style="text-align: center;">Aayatun v1.3.9</p>
-</div>
+
+
+
+
+<!-- <div style="position: fixed; bottom: 0; background: white; left: 0; font-family: open sans; color: gray; width: 100%; padding-bottom: 2%; opacity: 90%;">
+	<p style="text-align: center; font-size: 70%; padding: 2%;">Aayatun v1.3.9</p>
+</div> -->
 
 <script>
 	$('.ui.dropdown').dropdown({
@@ -80,7 +96,8 @@
 	let target_location = [	"{{ url_for('arabic_fulltext', surah=-1) }}",
 	"{{ url_for('translation', surah=-1) }}",
 	"{{ url_for('bn_tafsir', surah=-1) }}",
-	"{{ url_for('en_tafsir', surah=-1) }}"];
+	"{{ url_for('en_tafsir', surah=-1) }}",
+	"/search"];
 	// console.log(target_location[0]);
 	let options = document.querySelectorAll("[name='menuitem']");
 	console.log(options.length);
@@ -127,9 +144,56 @@
 
 </script>
 
-{% endblock %}
+
+
+{% endblock content2 %}
+
+{% block end_ %} 
+<div class="ui text container" style="font-family: 'Open Sans'; display: flex ;flex: 1; flex-direction: column-reverse;">
+		<p style="text-align: center; color: gray; opacity: 90%; padding-top: 2%; font-size: 70%;">Aayatun v1.4.2</p>
+		<div id="suggestion" class="ui mini message" style="display: none; color: gray">
+			<i class="close icon"></i>
+		  <div class="header">
+		    Suggested Reading
+		  </div>
+		  <p id="suggestionFriday" style="display: none;">It is sunnah to read <a href="/mushaf/18">Surah Kahf</a> on Friday.</p>
+		  <p id="suggestionNight" style="display: none;">It is sunnah to read <a href="/mushaf/67">Surah Mulk</a> and <a href="/2/285">the last two verses of Surah Baqarah</a> before going to sleep.</p>
+		</div>
+
+	</div>
+</div>
+{% endblock end_ %}
 
 {% block scriptcontent %}
+
+	$('.message .close')
+	  .on('click', function() {
+	    $(this)
+	      .closest('.message')
+	      .transition('fade')
+	    ;
+	  })
+	;
+
+	let d = new Date();
+
+	//surah Kahf friday 6am to 5pm
+	if (d.getDay() == 5)
+	{
+		if (d.getHours() > 5 && d.getHours() <= 17)
+		{
+			document.querySelector('#suggestion').style.display = "block";
+			document.querySelector('#suggestionFriday').style.display = "block";
+		}
+	}
+
+	//before sleep 8pm to 2am
+	if ((d.getHours() >= 20 && d.getHours() <= 23) || (d.getHours() >= 0 && d.getHours() <= 2))
+	{
+		document.querySelector('#suggestion').style.display = "block";
+		document.querySelector('#suggestionNight').style.display = "block";
+	}
+
 	let pageType = getPageType();
 	let location_ = getLocation();
 

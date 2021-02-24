@@ -3,6 +3,8 @@ import pandas as pd
 import library as lib
 import random
 from datetime import datetime
+from flask import request, redirect
+import searchtool as st
 
 def getVerseMaps():
 	x = pd.read_json('db/quran_stat.json')
@@ -10,8 +12,9 @@ def getVerseMaps():
 
 app = Flask(__name__)
 
-
-
+@app.route('/service-worker.js', methods=['GET'])
+def sw():
+    return app.send_static_file('service-worker.js'), 200, {'Content-Type': 'text/javascript'}
 
 @app.route('/')
 def index():
@@ -28,6 +31,41 @@ def index():
 @app.route('/<int:surah>/', strict_slashes=False)
 def details2(surah):
 	return render_template('versedetails.html', details=lib.p_getSurahInfo(surah, 1))
+
+@app.route('/search/', strict_slashes=False, methods = ['POST'])
+def search():
+	query_str = request.form['query_str']
+	n = 25
+	query_str_filter = query_str
+	t = "all:"
+	try:
+		t = request.form['target_field']
+		if t == "all:":
+			query_str_filter = query_str.strip()
+		else:
+			query_str_filter = t + "(" + query_str.strip() + ")"
+	except Exception:
+		pass
+
+	try:
+		m = request.form['limit']
+		if m == "-1":
+			n = None
+		else:
+			n = int(m)
+	except Exception:
+		pass
+
+	results_dict, suggestion = st.index_search(query_str_filter, n)
+	if n is None:
+		n = -1
+
+	return render_template('search.html', query=query_str, results=results_dict, suggestions=suggestion, limit_label=n, filter_value=t)
+
+# @app.route('/search/<query_str>', strict_slashes=False, methods = ['POST'])
+# def search2(query_str):
+# 	query_str = request.form['query_str']
+# 	return render_template('search.html', query=query_str)
 
 @app.route('/<int:surah>/<int:verse>', strict_slashes=False)
 def details(surah, verse):
@@ -60,3 +98,4 @@ def arabic_fulltext(surah):
 	prev_ = surah - 1 if surah != 1 else 114
 	next_ = surah + 1 if surah != 114 else 1
 	return render_template('arabic_fulltext.html', surah_name=a, surah_no=surah, verses=b, prev=prev_, nxt=next_)
+

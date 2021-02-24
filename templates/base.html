@@ -1,42 +1,86 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <!-- Required meta tags -->
-    <meta name="theme-color" content="#eeeeee">
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename= 'images/favicon.png') }}"/>
-    <!-- Bootstrap CSS -->
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
-	<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.6/dist/semantic.min.css">
-	<script src="https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.6/dist/semantic.min.js"></script>
-	<link href='//fonts.googleapis.com/css?family=Open+Sans:400,700,300&subset=latin,vietnamese' rel='stylesheet' type='text/css'>
-	<link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@700&display=swap" rel="stylesheet">
-	<link href="https://fonts.googleapis.com/css2?family=Amiri&family=Scheherazade:wght@700&display=swap" rel="stylesheet">
+<head>
+  <!-- Required meta tags -->
+  <meta name="theme-color" content="#eeeeee">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename= 'images/favicon.png') }}"/>
+  <!-- Bootstrap CSS -->
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.6/dist/semantic.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.6/dist/semantic.min.js"></script>
+  <link href='//fonts.googleapis.com/css?family=Open+Sans:400,700,300&subset=latin,vietnamese' rel='stylesheet' type='text/css'>
+  <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Amiri&family=Scheherazade:wght@700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Lora&display=swap" rel="stylesheet">
   <!-- <link href="https://fonts.maateen.me/bangla/font.css" rel="stylesheet"> -->
-	<!-- <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style.css') }}"> -->
+  <!-- <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style.css') }}"> -->
+  {% block js %} {% endblock js %}
   <title>{% block title %} {% endblock %}</title>
-  </head>
-  <body onload="hideLoading()" onbeforeunload="showLoading()">
+</head>
+<body onload="hideLoading()" onbeforeunload="showLoading()">
+  {% block start %} {% endblock start %}
 
-    <div class="ui blue borderless three item menu navbar fluid" id="menubar" style="width: 100%; background-color: #EEEEEE">
-    	{% block menu %} {% endblock %}
-    </div>
+  <div class="ui blue borderless three item menu navbar fluid" id="menubar" style="width: 100%; flex-shrink: 0; background-color: #EEEEEE">
+   {% block menu %} {% endblock %}
+ </div>
 
-    <footer id="loading-bar" style="position: fixed; bottom: 0; background: white; left: 0; font-family: open sans; font-size: 13px; width: 100%; padding-bottom: 1%; padding-top: 1%; text-align: center; opacity: 0.9; border-radius: 5px;">
-    <div class="ui active tiny inline loader" style="padding: 0px 15px"></div>Loading...
-  </footer>
-    
-    <div class="ui text container">
-        {% block content %} {% endblock %}
-        <br>{% block content2 %} {% endblock %}
-    </div>
+ <footer id="loading-bar" style="position: fixed; bottom: 0; background: white; left: 0; font-family: open sans; z-index: 2; font-size: 13px; width: 100%; padding-bottom: 1%; padding-top: 1%; text-align: center; opacity: 0.9; border-radius: 5px;">
+  <div class="ui active tiny inline loader" style="padding: 0px 15px"></div>Loading...
+</footer>
 
-  
-  <script src="{{ url_for('static', filename= 'js/script.js') }}"></script>
-  
-  <script type="text/javascript">
+
+<div class="ui basic modal" id="searchwindow">
+  <i class="close icon"></i>
+  <div class="ui icon header">
+    <!-- <i class="search icon"></i> -->
+    <p style="font-family: Open Sans">Search the Entire Quran</p>
+  </div>
+  <div class="content">
+    <form class="ui form" method="POST" action="/search">
+      <div class="field" style="width: 100%;">
+        <div class="ui action large input">
+          <input type="text" name="query_str" style="font-family: Open Sans" placeholder="Enter a keyword...">
+          <button class="ui primary large icon button" type="submit"><i class="search icon"></i></button>
+        </div>
+        <!-- <div class="ui error message" style="font-family: Open Sans"></div> -->
+      </div>
+    </form>
+  </div>
+</div>
+<button id="search-btn" style="position: fixed; background: white; box-shadow: all; bottom: 15px; right: 15px; opacity: 0.7; z-index: 3" class="circular ui basic huge icon button" onclick="$('#searchwindow').modal('show');">
+  <i class="icon search"></i>
+</button>
+
+
+<div class="ui text container">
+  {% block content %} {% endblock %}
+  <br>{% block content2 %} {% endblock %}
+</div>
+
+{% block content3 %} {% endblock content3 %}
+
+{% block end_ %} {% endblock end_ %}
+<script src="{{ url_for('static', filename= 'js/script.js') }}"></script>
+
+<script type="text/javascript">
+  $('.ui.form')
+    .form({
+      fields: {
+        query_str: {
+          identifier: 'query_str',
+          rules: [
+            {
+              type   : 'empty',
+              prompt : 'Please enter a keyword'
+            }
+          ]
+        }
+      }
+    })
+  ; 
+
   {% block scriptcontent %}  {% endblock %}
   function showLoading()
   {
@@ -46,7 +90,7 @@
   {
     $('#loading-bar').fadeOut();
   }
-  </script>
-  
-  </body>
+</script>
+
+</body>
 </html>
