@@ -7,25 +7,29 @@
     {
         "src": "/static/images/icon-64.png",
         "type": "image/png",
-        "sizes": "64x64"
+        "sizes": "64x64",
+        "purpose": "any maskable"
       },
       {
         "src": "/static/images/icon-96.png",
         "type": "image/png",
-        "sizes": "96x96"
+        "sizes": "96x96",
+        "purpose": "any maskable"
       },
       {
         "src": "/static/images/icon-192.png",
         "type": "image/png",
-        "sizes": "192x192"
+        "sizes": "192x192",
+        "purpose": "any maskable"
       },
       {
         "src": "/static/images/icon-512.png",
         "type": "image/png",
-        "sizes": "512x512"
+        "sizes": "512x512",
+        "purpose": "any maskable"
       }
   ],
   "start_url": "/",
   "display": "standalone",
-  "orientation": "any"
+  "orientation": "portrait"
 }

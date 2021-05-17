@@ -30,7 +30,7 @@
 	<div style="text-align: center;" id="pagecontent">
 	<br>
     <h1 style="font-size: 300%; font-family: 'Scheherazade', serif;"> {{ details['ayah'] }} </h1>
-    
+
     <div align="right" style="margin-bottom: 10px position: -50px; position: relative;">
 
     	<div id="audio-box" class="ui two grid" style="display: none;">
@@ -69,7 +69,7 @@
 					</button>
 				<i class="icon close" style="cursor: pointer;" onclick="$('#more-controls').hide(); $('#more-btn').show(); $('#play-btn').show()"></i>
 				</span>
-				
+
     		</span>
 			<button id="more-btn" data-tooltip="Comprehensive Reading" class="circular ui basic icon button" onclick="$('#more-btn').hide(); $('#play-btn').hide(); $('#more-controls').fadeIn();">
 			  <i class="icon ellipsis horizontal"></i>
@@ -86,7 +86,7 @@
     <button id="collapse-btn" style="display: none; position: fixed; background: white; box-shadow: all; bottom: 70px; right: 15px; opacity: 0.7;" class="circular ui basic huge icon button" onclick="collapseAll()">
 	  <i class="icon bars"></i>
 	</button>
-    
+
     <br>
 
     <div class="ui longer modal" id="word_details_modal">
@@ -94,9 +94,9 @@
 		  <div class="header" id="word_details_modal_heading" style="font-family: open sans; font-size: 120% width: 100%; text-align: center;">
 		  	Details
 		  </div>
-		  
+
 		  <div class="scrolling content" style="font-family: open sans; font-size: 110%;" id="word_details_modal_content">
-		  	
+
 		  </div>
 	</div>
 
@@ -107,7 +107,7 @@
 		  <div class="header" style="font-family: open sans; width: 100%; text-align: center;">
 		  	Other meanings of <span style="font-size: 150%; font-family: 'Scheherazade', serif;">{{ x['0'] }}</span>
 		  </div>
-		  
+
 		  <div class="scrolling content" style="font-size: 110%">
 		  	{% if (x['3']|length == 0) %}
 		  	<p style="width: 100%; text-align: center;">{{ x['3']|length }} variation</p>
@@ -122,10 +122,10 @@
 			    <th>Source</th>
 			  	</tr></thead>
 			  <tbody>
-			
+
 		    {% for y in x['3'] %}
 		    <tr>
-		    <td style="font-size: 150%; font-family: 'Scheherazade', serif;"> {{ y[0] }} </td> 
+		    <td style="font-size: 150%; font-family: 'Scheherazade', serif;"> {{ y[0] }} </td>
 		    <td> {{ y[1] }} </td>
 		    <td> <a target="_parent" href="{{ url_for('details', surah=y[2], verse=y[3]) }}">{{ y[2] }}:{{ y[3] }}</a> </td>
 			</tr>
@@ -162,7 +162,7 @@
 		  {% for x in details['wordforword'] %}
 		    <tr>
 		      <td style="border-radius: 3px; font-size: 150%; font-family: 'Scheherazade', serif;" name="word_index" class="ui selectable single line"> {{ x['0'] }} </td>
-		      
+
 		      {% if (x['3']|length) != 0 %}
 		      	<td><a href="" onclick="$('#related{{ x['4'] }}').modal('show'); return false;">{{ x['1'] }}</a></td>
 		      {% else %}
@@ -295,7 +295,7 @@
 	  	{% if (details['bn_zakaria']|length) == 0 %}
 	  	<p style="text-align: center; font-size: 90%"> No data found for this ayah </p>
 	  	{% else %}
-		    <div style="padding: 0 2%; text-align: justify; text-justify: auto;">
+		    <div style="font-family: 'Baloo Da 2', sans-serif; font-size: 1.2rem; padding: 0 2%; text-align: justify; text-justify: auto;">
 		    <!-- <div style="font-family: 'Bangla', sans-serif; font-size: 200%"> -->
 		    	{{ details['bn_zakaria'] }}
 		    </div>
@@ -329,7 +329,7 @@
 	  <div class="content">
 	    <iframe src="http://corpus.quran.com/treebank.jsp?chapter={{details['surah']}}&verse={{details['verse']}}" title="description" style="width: 100%; height: 800px; border:1px solid lightgray;"></iframe>
 	    <p style="font-size: 90%; color: gray; text-align: center;"> [Source: <a href="http://corpus.quran.com/treebank.jsp?chapter={{details['surah']}}&verse={{details['verse']}}" target="_blank">Corpus Quran</a>] </p>
-    	
+
 	  </div>
 
 	  <!-- <div class="title">
@@ -347,7 +347,7 @@
 
 	</div>
 
-	
+
 
 	</div>
 
@@ -372,7 +372,7 @@
 		$('#collapse-btn').fadeOut();
 	}
 	$('.ui.button.toggle').state();
-	
+
 	// let audio_src_link = ["http://www.everyayah.com/data/Alafasy_128kbps/{{'%03d' % details['surah']}}{{'%03d' % details['verse']}}.mp3", "http://www.everyayah.com/data/Husary_Mujawwad_64kbps/{{'%03d' % details['surah']}}{{'%03d' % details['verse']}}.mp3"];
 
 	let audio_src_link = ["http://www.everyayah.com/data/Alafasy_128kbps/{{'%03d' % details['surah']}}{{'%03d' % details['verse']}}.mp3", "http://www.everyayah.com/data/Husary_128kbps_Mujawwad/{{'%03d' % details['surah']}}{{'%03d' % details['verse']}}.mp3"];
@@ -420,19 +420,19 @@
 </script>
 <script>
 //Keypress Events
-	
+
 	document.onkeydown = function(event) {
         switch (event.keyCode) {
            case 37:
            		if (navigation_allowed)
            			window.location.href = "{{ url_for('details', surah=details['prev'][0], verse=details['prev'][1]) }}";
               break;
-           
+
            case 39:
            		if (navigation_allowed)
                 	window.location.href = "{{ url_for('details', surah=details['next'][0], verse=details['next'][1]) }}";
               break;
-           
+
         }
     };
 
@@ -440,11 +440,11 @@
 
     document.addEventListener('swiped-left', function(e) {
     	if (navigation_allowed)
-    		window.location.href = "{{ url_for('details', surah=details['next'][0], verse=details['next'][1]) }}";	    
+    		window.location.href = "{{ url_for('details', surah=details['next'][0], verse=details['next'][1]) }}";
 	});
 
 	document.addEventListener('swiped-right', function(e) {
-		if (navigation_allowed) 
+		if (navigation_allowed)
 	    	window.location.href = "{{ url_for('details', surah=details['prev'][0], verse=details['prev'][1]) }}";
 	});
 

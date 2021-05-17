@@ -6,31 +6,20 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename= 'images/favicon.png') }}"/>
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename= 'images/favicon.png') }}">
   <!-- Bootstrap CSS -->
-  <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+
   <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.6/dist/semantic.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.6/dist/semantic.min.js"></script>
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+Da+2&display=swap" rel="stylesheet">
   <link href='//fonts.googleapis.com/css?family=Open+Sans:400,700,300&subset=latin,vietnamese' rel='stylesheet' type='text/css'>
   <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Amiri&family=Scheherazade:wght@700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Lora&display=swap" rel="stylesheet">
-  <!-- <link href="https://fonts.maateen.me/bangla/font.css" rel="stylesheet"> -->
-  <!-- <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style.css') }}"> -->
   {% block js %} {% endblock js %}
   <title>{% block title %} {% endblock %}</title>
-  <style>
-  	body, p, h1, h2, h3, h4, h5, h6, .header, .menu, .item, .dropdown, .ui, input, #loading-bar, .table {
-  		background-color: #373737 !important;
-  		color: rgba(255, 255, 255, 0.9) !important;
-  		border-color: rgba(255, 255, 255, 0.4) !important;
-  	}
-  	/*.blue.button, .dropdown.icon.button {
-  		background-color: blue !important;
-  	}
-  	.button:hover, .dropdown.icon.button {
-  		background-color: rgba(255, 255, 255, 0.1) !important;
-  	}*/
-  </style>
 </head>
 <body onload="hideLoading()" onbeforeunload="showLoading()">
   {% block start %} {% endblock start %}
@@ -75,10 +64,11 @@
 {% block content3 %} {% endblock content3 %}
 
 {% block end_ %} {% endblock end_ %}
+
+
 <script src="{{ url_for('static', filename= 'js/script.js') }}"></script>
 
 <script type="text/javascript">
-	// $('.icon').toggleClass('inverted');
   $('.ui.form')
     .form({
       fields: {
@@ -93,7 +83,7 @@
         }
       }
     })
-  ; 
+  ;
 
   {% block scriptcontent %}  {% endblock %}
   function showLoading()

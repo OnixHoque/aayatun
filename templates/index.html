@@ -2,17 +2,17 @@
 
 {% block title %} Aayatun - An Ayah a Day {% endblock %}
 
-{% block start %} 
+{% block start %}
 <div style="height: 100vh; box-sizing: border-box; display: flex; flex-direction: column;">{% endblock start %}
 
-{% block js %} 
+{% block js %}
 <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
 {% endblock js %}
 
 {% block menu %}
 <div class="header item" style=" width: 100%; font-size: 250%; font-family: Merriweather;">
 <a id="title_link">
- Aayatun
+<p> Aayatun </p>
 </a>
 </div>
 {% endblock %}
@@ -21,7 +21,7 @@
     * {
         font-family: "Open Sans";
     }
-    
+
 </style>
 
 {% block content %}
@@ -44,12 +44,12 @@
 				</select>
 			</div>
 		</div>
-		
+
 		<br>
-		  
-		
+
+
 		<div style="margin-bottom: 20px;">
-		
+
 			<div class="ui blue fluid buttons">
 			  <div class="ui large blue button" style="font-family: 'Open Sans'; width: 90%" id="btnGo"><span style="width: 29px; display: inline-block;"></span>Open</div>
 			  <div class="ui floating dropdown icon button" style="flex-grow: 0;">
@@ -67,18 +67,18 @@
 		<p></p>
 		<button class="ui huge basic fluid button" style="font-family: Open Sans; font-size: 95%" id='btnSurprise'> Surprise me! </button>
 		</div>
-		
+
 	</div>
 
 
 
-	
+
 	<!-- <div style="text-align: center; padding: 3%">
 	<a href="#">Surprise me!</a>
 	</div> -->
 
 
-	
+
 
 
 
@@ -142,15 +142,32 @@
 		}
 	}
 
+
+    if('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register("/service-worker.js", { scope: '/' })
+                .then((reg) => console.log('Success: ', reg.scope))
+                .catch((err) => console.log('Failure: ', err));
+        })
+    }
+
+
 </script>
 
 
 
 {% endblock content2 %}
 
-{% block end_ %} 
+{% block end_ %}
 <div class="ui text container" style="font-family: 'Open Sans'; display: flex ;flex: 1; flex-direction: column-reverse;">
-		<p style="text-align: center; color: gray; opacity: 90%; padding-top: 2%; font-size: 70%;">Aayatun v1.4.2</p>
+		<p style="text-align: center; color: gray; opacity: 90%; padding-top: 2%; font-size: 70%;">Aayatun v1.4.3</p>
+		<div id="install-banner" class="ui mini message" style="display: none; color: gray">
+		    <i class="close icon"></i>
+		    <div class="header">
+		    App Available
+		  </div>
+		    <p>Aayatun is better on App. <a id="install-btn"href="#">Install Now</a></p>
+	    </div>
 		<div id="suggestion" class="ui mini message" style="display: none; color: gray">
 			<i class="close icon"></i>
 		  <div class="header">
@@ -159,6 +176,8 @@
 		  <p id="suggestionFriday" style="display: none;">It is sunnah to read <a href="/mushaf/18">Surah Kahf</a> on Friday.</p>
 		  <p id="suggestionNight" style="display: none;">It is sunnah to read <a href="/mushaf/67">Surah Mulk</a> and <a href="/2/285">the last two verses of Surah Baqarah</a> before going to sleep.</p>
 		</div>
+
+
 
 	</div>
 </div>
@@ -174,6 +193,8 @@
 	    ;
 	  })
 	;
+
+
 
 	let d = new Date();
 
@@ -199,7 +220,7 @@
 
 	if (pageType !== -1)
 	{
-		const page_title = document.getElementById("title_link"); 
+		const page_title = document.getElementById("title_link");
 		switch (Number(pageType))
 		{
 			case (pages.VERSE_DETAILS):
@@ -235,4 +256,34 @@
 			}
 		}
 	}
+
+	let deferredPrompt;
+    const addBanner = document.querySelector('#install-banner');
+    const addBtn = document.querySelector('#install-btn');
+    addBanner.style.display = 'none';
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      // Prevent Chrome 67 and earlier from automatically showing the prompt
+      e.preventDefault();
+      // Stash the event so it can be triggered later.
+      deferredPrompt = e;
+      // Update UI to notify the user they can add to home screen
+      addBanner.style.display = 'block';
+
+      addBtn.addEventListener('click', (e) => {
+        // hide our user interface that shows our A2HS button
+        addBanner.style.display = 'none';
+        // Show the prompt
+        deferredPrompt.prompt();
+        // Wait for the user to respond to the prompt
+        deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+              console.log('User accepted the A2HS prompt');
+            } else {
+              console.log('User dismissed the A2HS prompt');
+            }
+            deferredPrompt = null;
+          });
+      });
+    });
 {% endblock %}
