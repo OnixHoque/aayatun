@@ -44,7 +44,10 @@
       <div class="field" style="width: 100%;">
         <div class="ui action large input">
           <input type="text" name="query_str" style="font-family: Open Sans" placeholder="Enter a keyword...">
-          <button class="ui primary large icon button" type="submit"><i class="search icon"></i></button>
+          <button id="search-submit" class="ui primary large icon button"  
+          onclick="$('#search-submit').addClass('loading');$('#search-submit-icon').removeClass('search').addClass('loading');" type="submit">
+            <i id="search-submit-icon" class="search icon"></i>
+          </button>
         </div>
         <!-- <div class="ui error message" style="font-family: Open Sans"></div> -->
       </div>
