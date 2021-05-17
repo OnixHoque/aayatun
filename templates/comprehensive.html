@@ -93,6 +93,11 @@
 	    $('#cur_table').DataTable(
 	    	{
 	    		"drawCallback": function( settings ) {
+	    			//dark theme!
+	    			$('.pagination').addClass('inverted');
+	    			$('.icon.input').addClass('transparent inverted');
+					$('.selection').addClass('inverted');
+					// $('.pagination').addClass('inverted');
 	    			// $('#cur_table_paginate > div').css('color', 'gray');
 	    			// $('#cur_table_paginate > div').removeClass('ui stackable pagination menu').addClass('ui unstackable pagination menu');
 			        
@@ -125,6 +130,9 @@
 		    }, 300);
 		} );
 
+		
+		
+
 		$('#cur_table_wrapper > div').removeClass('stackable').addClass('unstackable');
 		$('#cur_table_length').parent().removeClass('eight wide column').addClass('five wide column');
 		$('#cur_table_length').parent().css('padding-right', '0px');
@@ -142,6 +150,11 @@
 		$('#cur_table_info').css('font-size', '90%');
 		
 		$('#cur_table_paginate').parent().removeClass('nine wide column').addClass('sixteen wide column');
+
+		//dark theme!
+		$('.pagination').addClass('inverted');
+		$('.icon.input').addClass('transparent inverted');
+		$('.selection').addClass('inverted');
 		
 		
 	});
@@ -149,6 +162,10 @@
 		$('#verse_details_modal_button').attr("href", "{{ url_for('details', surah=-1, verse=-2) }}".replace("-1", s).replace(-2, v));
 		$("#verse_details_modal_content").on("load", ()=>{
 			$("#verse_details_modal_content").contents().find("#menubar").hide(); 
+			$("#verse_details_modal_content").contents().find("#search-btn").hide(); 
+			// $("#verse_details_modal_content").contents().find("#collapse-btn").hide(); 
+
+			$("#verse_details_modal_content").contents().find("#collapse-btn").css("bottom","15px");; 
 			
 			$("#verse_details_modal_content")[0].contentWindow.navigation_allowed = false;
 			

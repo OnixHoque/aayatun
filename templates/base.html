@@ -54,21 +54,25 @@
 <button id="search-btn" style="position: fixed; background: white; box-shadow: all; bottom: 15px; right: 15px; opacity: 0.7; z-index: 3" class="circular ui basic huge icon button" onclick="$('#searchwindow').modal('show');">
   <i class="icon search"></i>
 </button>
+<div class="ui basic segment">
 
-
-<div class="ui text container">
+  <div class="ui text container">
+  
   {% block content %} {% endblock %}
   <br>{% block content2 %} {% endblock %}
-</div>
+  </div>
+
 
 {% block content3 %} {% endblock content3 %}
 
 {% block end_ %} {% endblock end_ %}
-
+<div>
 
 <script src="{{ url_for('static', filename= 'js/script.js') }}"></script>
 
 <script type="text/javascript">
+
+
   $('.ui.form')
     .form({
       fields: {
@@ -94,6 +98,53 @@
   {
     $('#loading-bar').fadeOut();
   }
+
+
+  //dark theme!
+  $('body').css('background-color', 'rgb(27, 28, 29)');
+  document.querySelector('meta[name="theme-color"]').setAttribute('content', 'rgb(27, 28, 29)');
+  $('.menu').removeClass('blue');
+  // $('.menu').addClass('gray');
+  // $('audio::-webkit-media-controls-play-button, audio::-webkit-media-controls-panel').css('background-color', 'rgb(27, 28, 29)');
+  // $('audio::-webkit-media-controls-play-button, audio::-webkit-media-controls-panel').css('color', 'white');
+  $('.menu').css('background-color', '');
+  $('.menu').addClass('inverted');
+  $('.menu').css('outline-style', 'solid');
+  $('.menu').css('outline-color', 'gray');
+  $('.menu a').css('color', '#0E6EB8')
+  $('.segment').addClass('inverted');
+  // $('#btnGo').css('outline-right', '0px solid white !important');
+  // $('#btnGo').css('border-right', '0px solid white !important');
+  $('.dropdown').addClass('inverted');
+  $('.button').addClass('inverted');
+  $('.table').addClass('inverted');
+  $('.icon').addClass('inverted');
+  $('.input').addClass('inverted transparent');
+  $('.input').css('border-bottom', '1px solid darkgray');
+  // $('.input').css('border-style', 'solid').css('border-color', 'white');
+  $('.message').addClass('inverted');
+  // $('#loading-bar, #loadingdetails').css('background', '');
+  $('#loading-bar, #loadingdetails').css('background-color', 'rgb(28, 29, 30)');
+  $('#loading-bar, #loadingdetails').css('color', 'white');
+  $('.modal').addClass('inverted');
+  $('.selection').addClass('inverted');
+  $('.huge.circular.button').css('background', '');
+  // $('.huge.circular.button').css('color', 'black');
+  // $('.huge.circular.button i').removeClass('inverted');
+  $('.accordion').addClass('inverted');
+  $('.accordion').removeClass('styled');
+  $('.accordion [class="title"][class="active"] span').css('font-weight', 'bold');
+  $('.accordion .title').css('font-size', '110%');
+  $('.accordion .title').css('padding', '10px 0px');
+  
+
+  $('.divider').addClass('inverted');
+  $('.match').css('color', 'black');
+  $('#tips').attr('data-variation', 'wide inverted');
+
+  // $('.accordion .title').css('border-style', 'solid');
+  // $('.accordion .title').css('border-color', 'gray');
+  // $('.pagination').addClass('inverted');
 </script>
 
 </body>

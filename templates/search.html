@@ -104,9 +104,13 @@
 		  </div>
 		</span>
 		
-		<i class="idea circular blue icon" id="tips" data-variation="wide" data-position="bottom right" 
+		<i 
+		class="idea circular blue icon" 
+		id="tips" 
+		data-variation="wide"
+		data-position="bottom right" 
 		data-html=
-		"<div style='font-size: 90%; font-family: Open Sans'>
+		"<div class='ui basic segment' style='font-size: 90%; font-family: Open Sans'>
 			<h4>Use quotation to search for a phrase</h4>
 				<p>Example: &quot;But they who&quot;</p>
 			<h4>Use AND to conjunct two words</h4>
@@ -167,9 +171,9 @@
 	  	<br>
 	  	{% if results|length == 0 %}
 	  		{% if suggestions|length > 0 %}
-	  			<p style="text-align: center;">No result found! Did you mean- <strong><emp>{{ suggestions }}</emp></strong>?</p>
+	  			<p class="ui basic segment" style="text-align: center;">No result found! Did you mean- <strong><emp>{{ suggestions }}</emp></strong>?</p>
 	  		{% else %}
-				<p style="text-align: center;">No result found!</p>	  		
+				<p class="ui basic segment" style="text-align: center;">No result found!</p>	  		
 	  		{% endif %}
 	  	{% else %}
 
@@ -249,8 +253,7 @@
 
 		
 		$('#tips')
-		  .popup()
-		;
+		  .popup();
 		$('#search-btn').hide();
 		$('#menubar').removeClass('three').addClass('one');
 		$(document).ready(function() {
@@ -258,6 +261,10 @@
 			{
 				
 				"drawCallback": function( settings ) {
+					//dark theme!
+	    			$('.pagination').addClass('inverted');
+	    			$('.icon.input').addClass('transparent inverted');
+					$('.selection').addClass('inverted');
 	    			// $('#cur_table_paginate > div').css('color', 'gray');
 	    			// $('#cur_table_paginate > div').removeClass('ui stackable pagination menu').addClass('ui unstackable pagination menu');
 
@@ -310,6 +317,10 @@
 
 			$('#cur_table_paginate').parent().removeClass('nine wide column').addClass('sixteen wide column');
 
+			//dark theme!
+			$('.pagination').addClass('inverted');
+			$('.icon.input').addClass('transparent inverted');
+			$('.selection').addClass('inverted');
 
 		});
 
