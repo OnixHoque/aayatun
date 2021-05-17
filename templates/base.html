@@ -18,6 +18,19 @@
   <!-- <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style.css') }}"> -->
   {% block js %} {% endblock js %}
   <title>{% block title %} {% endblock %}</title>
+  <style>
+  	body, p, h1, h2, h3, h4, h5, h6, .header, .menu, .item, .dropdown, .ui, input, #loading-bar, .table {
+  		background-color: #373737 !important;
+  		color: rgba(255, 255, 255, 0.9) !important;
+  		border-color: rgba(255, 255, 255, 0.4) !important;
+  	}
+  	/*.blue.button, .dropdown.icon.button {
+  		background-color: blue !important;
+  	}
+  	.button:hover, .dropdown.icon.button {
+  		background-color: rgba(255, 255, 255, 0.1) !important;
+  	}*/
+  </style>
 </head>
 <body onload="hideLoading()" onbeforeunload="showLoading()">
   {% block start %} {% endblock start %}
@@ -65,6 +78,7 @@
 <script src="{{ url_for('static', filename= 'js/script.js') }}"></script>
 
 <script type="text/javascript">
+	// $('.icon').toggleClass('inverted');
   $('.ui.form')
     .form({
       fields: {
