@@ -48,7 +48,7 @@
 	</style>
 
 
-	<div style="">
+	<div class="comprehensive-div" style="margin: 0px 10px">
 	<br>
     <a href="{{ url_for('details', surah=surah_no, verse=1) }}"><h4 style="text-align: center; font-size: 150%; font-family: 'Merriweather', serif;"> {{ surah_name }} </h4></a> 
     <br>
@@ -94,9 +94,13 @@
 	    	{
 	    		"drawCallback": function( settings ) {
 	    			//dark theme!
-	    			$('.pagination').addClass('inverted');
-	    			$('.icon.input').addClass('transparent inverted');
-					$('.selection').addClass('inverted');
+	    			if (is_dark_theme()==="true") {
+		    			$('.pagination').addClass('inverted');
+		    			$('.icon.input').addClass('transparent inverted');
+						$('.selection').addClass('inverted');
+						$('.icon.input').css('width', '95%');
+						$('.icon.input').css('border-bottom', '1px solid rgba(33, 184, 255, 0.3)');
+					}
 					// $('.pagination').addClass('inverted');
 	    			// $('#cur_table_paginate > div').css('color', 'gray');
 	    			// $('#cur_table_paginate > div').removeClass('ui stackable pagination menu').addClass('ui unstackable pagination menu');
@@ -152,9 +156,13 @@
 		$('#cur_table_paginate').parent().removeClass('nine wide column').addClass('sixteen wide column');
 
 		//dark theme!
-		$('.pagination').addClass('inverted');
-		$('.icon.input').addClass('transparent inverted');
-		$('.selection').addClass('inverted');
+		if (is_dark_theme()==="true") {
+			$('.pagination').addClass('inverted');
+			$('.icon.input').addClass('transparent inverted');
+			$('.selection').addClass('inverted');
+			$('.icon.input').css('width', '95%');
+			$('.icon.input').css('border-bottom', '1px solid rgba(33, 184, 255, 0.3)');
+		}
 		
 		
 	});

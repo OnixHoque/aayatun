@@ -2,7 +2,7 @@
 
 {% block url1 %} {{ url_for('bn_tafsir', surah=prev) }} {% endblock %}
 {% block url2 %} {{ url_for('bn_tafsir', surah=nxt) }} {% endblock %}
-{% block font_config %} font-family: 'Baloo Da 2', sans-serif; font-size: 1.2rem; text-align: left; {% endblock %}
+{% block font_config %} font-family: 'Baloo Da 2', sans-serif; font-size: 1.1rem; text-align: left; {% endblock %}
 
 {% block scriptcontent %}
 	setValues(pages.COMP_TAFSIR_BN, {{surah_no}});

@@ -7,6 +7,28 @@ const pages = {
 
 }
 
+function set_dark_theme(val)
+{
+	if(typeof(Storage) !== "undefined") {
+		localStorage.setItem("darktheme", val);
+		return true;
+	}
+	else
+		return false;
+}
+function is_dark_theme()
+{
+	if(typeof(Storage) !== "undefined") {
+		let tmp = localStorage.getItem("darktheme");
+		if (tmp !== null)
+			return tmp;
+		else
+			return false;
+	}
+	else
+		return false;
+}
+
 function setValues(pageType, location)
 {
 	if(typeof(Storage) !== "undefined") {
