@@ -196,7 +196,7 @@
 				{% for x in results %}
 		    	<tr style="padding: 1%"> 
 		    		<td style="text-align: center;">{{ x.ser }}</td>
-		    		<td style="text-align: center; padding: 5px;" class="selectable" onclick="showModal( {{ x.surah }} , {{ x.verse }} )"> <span style="color: #0E6EB8"> {{ x.surah }}:{{ x.verse }} </span> <br> Surah {{ x.surah_name }} </td> 
+		    		<td style="text-align: center; padding: 5px;" class="selectable" onclick="showModal( {{ x.surah }} , {{ x.verse }} )"> <span class="surahlink" style="color: #0E6EB8"> {{ x.surah }}:{{ x.verse }} </span> <br> Surah {{ x.surah_name }} </td> 
 		    		<td style="text-align: center;"> {{ x.actual_translation }} </td> 
 		    		<td>
 

@@ -57,7 +57,7 @@
 <button id="search-btn" style="position: fixed; background: white; box-shadow: all; bottom: 15px; right: 15px; opacity: 0.7; z-index: 3" class="circular ui basic huge icon button" onclick="$('#searchwindow').modal('show');">
   <i class="icon search"></i>
 </button>
-<div class="ui basic segment">
+<div class="ui basic segment" style="padding: 0 !important; margin: 0 !important;">
 
   <div class="ui text container">
   
@@ -106,27 +106,60 @@
 
   //dark theme!
   $('body').css('background-color', 'rgb(27, 28, 29)');
-  document.querySelector('meta[name="theme-color"]').setAttribute('content', 'rgb(27, 28, 29)');
+  document.querySelector('meta[name="theme-color"]').setAttribute('content', 'rgb(44, 44, 44)');
+
+
+  // document.querySelector('meta[name="theme-color"]').setAttribute('content', 'rgb(27, 28, 29)');
   $('.menu').removeClass('blue');
   // $('.menu').addClass('gray');
   // $('audio::-webkit-media-controls-play-button, audio::-webkit-media-controls-panel').css('background-color', 'rgb(27, 28, 29)');
   // $('audio::-webkit-media-controls-play-button, audio::-webkit-media-controls-panel').css('color', 'white');
   $('.menu').css('background-color', '');
   $('.menu').addClass('inverted');
-  $('.menu').css('outline-style', 'solid');
-  $('.menu').css('outline-color', 'gray');
-  $('.menu a').css('color', '#0E6EB8')
+  
+  $('.menu').css('border-top-left-radius', '0px');
+  $('.menu').css('border-top-right-radius', '0px');
+  $('.menu').css('background-color', 'rgb(44,44,44)');
+  $('.menu').css('border-bottom', '1px solid rgba(80,80,80, .8)');
+  $('.menu').css('box-shadow', 'inset 0px -10px 20px 15px rgba(70,70,70, .2)');
+  // $('.menu a').css('color', '#0E6EB8')
+  
+  $('.menu a').css('color', 'white')
+  
+  // $('.surahlink').css('color', 'rgba(231, 107, 0, 1)');
+  // $('a').css('color', 'rgba(231, 107, 0, 1)');
+  // $('.match').css('background-color', 'rgba(200, 100, 0, 1)');
+  // $('a i').css('color', '').addClass('orange');
+
+  // $('.menu').css('filter', 'drop-shadow(0px -10px 5px rgba(50,50,50, .4))');
+  // $('.menu').css('outline-style', 'solid');
+  // $('.menu').css('outline-color', 'gray');
+  
+
   $('.segment').addClass('inverted');
   // $('#btnGo').css('outline-right', '0px solid white !important');
   // $('#btnGo').css('border-right', '0px solid white !important');
+  
   $('.dropdown').addClass('inverted');
   $('.button').addClass('inverted');
+  // $('.large.primary.button').addClass('orange');
+  // $('.dropdown.button').addClass('orange');
+
   $('.table').addClass('inverted');
   $('.icon').addClass('inverted');
   $('.input').addClass('inverted transparent');
-  $('.input').css('border-bottom', '1px solid darkgray');
+
+  // $('.input').css('border-bottom', '1px solid rgba(231, 107, 0, 0.3)'); 
+  $('.input').css('border-bottom', '1px solid rgba(33, 184, 255, 0.3)');
   // $('.input').css('border-style', 'solid').css('border-color', 'white');
+  
   $('.message').addClass('inverted');
+  $('.message').css('border', '1px solid rgba(64,64,64, 0.5)');
+  $('.message').css('border-radius', '5px');
+  $('.message').css('background-color', 'rgba(30,30,30, 1)');
+  $('.modal').css('border', '1px solid rgba(64,64,64, 0.5)');
+  $('.modal').css('border-radius', '5px');
+  
   // $('#loading-bar, #loadingdetails').css('background', '');
   $('#loading-bar, #loadingdetails').css('background-color', 'rgb(28, 29, 30)');
   $('#loading-bar, #loadingdetails').css('color', 'white');
@@ -137,14 +170,27 @@
   // $('.huge.circular.button i').removeClass('inverted');
   $('.accordion').addClass('inverted');
   $('.accordion').removeClass('styled');
-  $('.accordion [class="title"][class="active"] span').css('font-weight', 'bold');
+  $('.text.container').addClass('very basic');
+  // $('.accordion .active span').css('font-weight', 'bold');
   $('.accordion .title').css('font-size', '110%');
-  $('.accordion .title').css('padding', '10px 0px');
+  $('.accordion .title').css('font-weight', 'bold');
+  $('.accordion .title').css('padding', '12px 12px');
+  // $('.accordion').css('padding', '0px');
+  // $('.accordion').css('margin', '0px');
+  // $('.accordion').css('border', '1px solid rgba(64,64,64, 0.5)');
+  $('.accordion .title').css('border', '1px solid rgba(64,64,64, 0.5)');
+  $('.accordion .content').css('border', '1px solid rgba(64,64,64, 0.5)');
+  $('.accordion .content').css('font-size', '120%');
+  $('.accordion .content').css('padding', '20px 10px');
+  $('.accordion .title:first-child').css('border-radius', '10px 10px 0px 0px');
+  // $('.accordion .title:last-child').css('border-radius', '0px 0px 10px 10px');
   
 
   $('.divider').addClass('inverted');
   $('.match').css('color', 'black');
+  // $('.match').css('background-color', 'lightorange');
   $('#tips').attr('data-variation', 'wide inverted');
+  // $('#tips').removeClass('blue').addClass('orange');
 
   // $('.accordion .title').css('border-style', 'solid');
   // $('.accordion .title').css('border-color', 'gray');

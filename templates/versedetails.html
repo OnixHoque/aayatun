@@ -141,7 +141,7 @@
 		</div>
     {% endif %}
     {% endfor %}
-    <div class="ui basic segment">
+    <div class="ui basic segment" style="padding: 0px; margin: 0px;">
     <div class="ui fluid styled accordion" style="text-align: left; font-size: 90%;">
 	  <div class="title">
 	    <i class="dropdown icon"></i>
@@ -327,8 +327,8 @@
 	    <span>Advanced Grammatical Breakdown</span>
 	  </div>
 	  <div class="content">
-	    <iframe src="http://corpus.quran.com/treebank.jsp?chapter={{details['surah']}}&verse={{details['verse']}}" title="description" style="width: 100%; height: 800px; border:1px solid lightgray;"></iframe>
-	    <p style="font-size: 90%; color: gray; text-align: center;"> [Source: <a href="http://corpus.quran.com/treebank.jsp?chapter={{details['surah']}}&verse={{details['verse']}}" target="_blank">Corpus Quran</a>] </p>
+	    <!-- <iframe src="http://corpus.quran.com/treebank.jsp?chapter={{details['surah']}}&verse={{details['verse']}}" title="description" style="width: 100%; height: 800px; border:1px solid lightgray;"></iframe> -->
+	    <p style="font-size: 90%; color: gray; text-align: center;"> <a href="http://corpus.quran.com/treebank.jsp?chapter={{details['surah']}}&verse={{details['verse']}}" target="_blank">Visit Corpus Quran <i style="color: #0E6EB8" class="ui small icon external"></i></a>  </p>
 
 	  </div>
 
