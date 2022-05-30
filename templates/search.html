@@ -42,8 +42,8 @@
 	<form class="ui form" method="POST" action="/search">
 		<div class="field" style="width: 100%;">
 			<div class="ui action large input">
-				<input type="text" name="query_str" style="font-family: Open Sans" value="{{ query }}" placeholder="Enter a keyword..."> 
-				<button id="search-submit2" class="ui primary large icon button"  
+				<input type="text" name="query_str" style="font-family: Open Sans" value="{{ query }}" placeholder="Enter a keyword...">
+				<button id="search-submit2" class="ui primary large icon button"
 		          onclick="$('#search-submit2').addClass('loading');$('#search-submit-icon2').removeClass('search').addClass('loading');" type="submit">
 		            <i id="search-submit-icon2" class="search icon"></i>
 		          </button>
@@ -54,11 +54,11 @@
 		<div style="text-align: center;">
 
 			<span  style="display: inline-block;">
-			  Search 
+			  Search
 			  <div class="ui inline dropdown" id="cbofilter">
 			  	<input type="hidden" name="target_field">
 			    <div class="text">
-			      
+
 			    </div>
 			    <i class="dropdown icon"></i>
 			    <div class="menu">
@@ -78,7 +78,7 @@
 			  </div>
 			</span>
 		<span style="display: inline-block;">
-		  and show 
+		  and show
 		  <div class="ui inline dropdown" id='cbolimit'>
 		  	<input type="hidden" name="limit">
 		  	<div class="text">
@@ -107,14 +107,14 @@
 		    </div>
 		  </div>
 		</span>
-		
-		<i 
-		class="idea circular blue icon" 
-		id="tips" 
+
+		<i
+		class="idea circular blue icon"
+		id="tips"
 		data-variation="wide"
-		data-position="bottom right" 
+		data-position="bottom right"
 		data-html=
-		"<div class='ui basic segment' style='font-size: 90%; font-family: Open Sans'>
+		"<div class='ui basic segment' style='font-size: 90%; max-height: 50vh; overflow-y:auto; font-family: Open Sans'>
 			<h4>Use quotation to search for a phrase</h4>
 				<p>Example: &quot;But they who&quot;</p>
 			<h4>Use AND to conjunct two words</h4>
@@ -129,7 +129,7 @@
 		</div>
 
 
-		 
+
 		<!-- <div class="ui inline selection dropdown">
 	          <input type="hidden" name="gender">
 	          <i class="dropdown icon"></i>
@@ -139,18 +139,18 @@
 	              <div class="item" data-value="-1">all</div>
 	          </div>
 	     </div> -->
-	    
+
 
 		<!-- <div class="ui checkbox">
 		  <input type="checkbox" value="yes" name="showall">
 		  <label>Show all results instead of top 25 (might take longer time)</label>
 		</div> -->
 	</form>
-		
+
 	</div>
 	{% endblock %}
 
-	{% block content3 %} 
+	{% block content3 %}
 	<div class="ui longer modal" id="verse_details_modal">
 		<i class="close icon"></i>
 		  <div class="header" id="verse_details_modal_heading" style="font-family: open sans; font-size: 120% width: 100%; text-align: center;">
@@ -177,7 +177,7 @@
 	  		{% if suggestions|length > 0 %}
 	  			<p class="ui basic segment" style="text-align: center;">No result found! Did you mean- <strong><emp>{{ suggestions }}</emp></strong>?</p>
 	  		{% else %}
-				<p class="ui basic segment" style="text-align: center;">No result found!</p>	  		
+				<p class="ui basic segment" style="text-align: center;">No result found!</p>
 	  		{% endif %}
 	  	{% else %}
 
@@ -194,10 +194,10 @@
 			</thead>
 			<tbody>
 				{% for x in results %}
-		    	<tr style="padding: 1%"> 
+		    	<tr style="padding: 1%">
 		    		<td style="text-align: center;">{{ x.ser }}</td>
-		    		<td style="text-align: center; padding: 5px;" class="selectable" onclick="showModal( {{ x.surah }} , {{ x.verse }} )"> <span class="surahlink" style="color: #0E6EB8"> {{ x.surah }}:{{ x.verse }} </span> <br> Surah {{ x.surah_name }} </td> 
-		    		<td style="text-align: center;"> {{ x.actual_translation }} </td> 
+		    		<td style="text-align: center; padding: 5px;" class="selectable" onclick="showModal( {{ x.surah }} , {{ x.verse }} )"> <span class="surahlink" style="color: #0E6EB8"> {{ x.surah }}:{{ x.verse }} </span> <br> Surah {{ x.surah_name }} </td>
+		    		<td style="text-align: center;"> {{ x.actual_translation }} </td>
 		    		<td>
 
 		    			<!-- <p> {{ x.matched_term }} </p>   -->
@@ -225,14 +225,14 @@
 		    				<p> ...{{ x.en_tafsir }}... </p>
 		    				<hr style="width: 50%; color: lightgray; opacity: 50%;">
 		    			{% endif %}
-		    		</td> 
+		    		</td>
 		    	</tr>
 		    {% endfor %}
 			</tbody>
 		</table>
 		{% endif %}
 	</div>
-	
+
 	<br>
 
 
@@ -255,7 +255,7 @@
 		  	.dropdown('set selected', '{{ limit_label }}');
 		{% endif %}
 
-		
+
 		$('#tips')
 		  .popup();
 		$('#search-btn').hide();
@@ -263,7 +263,7 @@
 		$(document).ready(function() {
 			$('#cur_table').DataTable(
 			{
-				
+
 				"drawCallback": function( settings ) {
 					//dark theme!
 					if (is_dark_theme()==="true") {
@@ -339,29 +339,29 @@
 		function showModal(s, v){
 		$('#verse_details_modal_button').attr("href", "{{ url_for('details', surah=-1, verse=-2) }}".replace("-1", s).replace(-2, v));
 		$("#verse_details_modal_content").on("load", ()=>{
-			$("#verse_details_modal_content").contents().find("#menubar").hide(); 
-			$("#verse_details_modal_content").contents().find("#search-btn").hide(); 
-			// $("#verse_details_modal_content").contents().find("#collapse-btn").hide(); 
+			$("#verse_details_modal_content").contents().find("#menubar").hide();
+			$("#verse_details_modal_content").contents().find("#search-btn").hide();
+			// $("#verse_details_modal_content").contents().find("#collapse-btn").hide();
 
-			$("#verse_details_modal_content").contents().find("#collapse-btn").css("bottom","15px");; 
-			
+			$("#verse_details_modal_content").contents().find("#collapse-btn").css("bottom","15px");;
+
 			$("#verse_details_modal_content")[0].contentWindow.navigation_allowed = false;
-			
-			$("#loadingdetails").hide(); 
+
+			$("#loadingdetails").hide();
 			$("#verse_details_modal_content").fadeIn();
 		});
 
 		$('#loadingdetails').show();
 		$("#verse_details_modal_content").hide();
-		document.querySelector('#verse_details_modal_content').setAttribute("src", "{{ url_for('details', surah=-1, verse=-2) }}".replace("-1", s).replace(-2, v)); 
-    	
+		document.querySelector('#verse_details_modal_content').setAttribute("src", "{{ url_for('details', surah=-1, verse=-2) }}".replace("-1", s).replace(-2, v));
+
 		$("#verse_details_modal_heading").html("Quran " + s + ":" + v);
 		$("#verse_details_modal").modal('show');
-		
-	            
-		
+
+
+
 	}
-	
+
 	</script>
 	{% endblock content3 %}
 

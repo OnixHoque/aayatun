@@ -104,6 +104,11 @@
     $('#loading-bar').fadeOut();
   }
 
+  $('.accordion .title').css('font-weight', 'bold');
+  $('.accordion .title').css('font-size', '110%');
+  $('.accordion .content').css('font-size', '120%');
+  $('.accordion .title').css('padding', '12px 12px');
+  $('.accordion .content').css('padding', '20px 10px');
 
   //dark theme!
   if (is_dark_theme()==="true") {
@@ -168,6 +173,7 @@
     $('.modal').addClass('inverted');
     $('.selection').addClass('inverted');
     $('.huge.circular.button').css('opacity', '.2');
+    
     // $('.huge.circular.button').css('background', '');
     // $('.huge.circular.button').css('color', 'black');
     $('.huge.circular.button i').removeClass('inverted').addClass('black');
@@ -175,20 +181,20 @@
     $('.accordion').removeClass('styled');
     // $('.text.container').addClass('very basic');
     // $('.accordion .active span').css('font-weight', 'bold');
-    $('.accordion .title').css('font-size', '110%');
-    $('.accordion .title').css('font-weight', 'bold');
-    $('.accordion .title').css('padding', '12px 12px');
+    
+    //accordion font formatting
+    
+
+    $('.accordion .title').css('border', '1px solid rgba(64,64,64, 0.5)');
+    $('.accordion .title:first-child').css('border-radius', '10px 10px 0px 0px');
+    $('.accordion .content').css('border', '1px solid rgba(64,64,64, 0.5)');
     // $('.accordion').css('padding', '0px');
     // $('.accordion').css('margin', '0px');
     // $('.accordion').css('border', '1px solid rgba(64,64,64, 0.5)');
-    $('.accordion .title').css('border', '1px solid rgba(64,64,64, 0.5)');
-    $('.accordion .content').css('border', '1px solid rgba(64,64,64, 0.5)');
-    $('.accordion .content').css('font-size', '120%');
-    $('.accordion .content').css('padding', '20px 10px');
-    $('.accordion .title:first-child').css('border-radius', '10px 10px 0px 0px');
-    // $('.accordion .title:last-child').css('border-radius', '0px 0px 10px 10px');
     
-
+    
+    
+    // $('.accordion .title:last-child').css('border-radius', '0px 0px 10px 10px');
     $('.divider').addClass('inverted');
     $('.match').css('color', 'black');
     // $('.match').css('background-color', 'lightorange');
