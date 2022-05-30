@@ -22,8 +22,15 @@ def index():
 	random.seed(datetime.now())
 	# i = random.randint(1, 114)
 	# j = random.randint(1, idx[i-1]['verse_count'])
-	p = [(i, j) for i in range(1, 115) for j in range(1, idx[i - 1]['verse_count'] + 1)]
-	i, j = p[random.randint(0, len(p))]
+
+	# --Old Surprise Me!--
+	# p = [(i, j) for i in range(1, 115) for j in range(1, idx[i - 1]['verse_count'] + 1)]
+	# i, j = p[random.randint(0, len(p))]
+	# --
+	ruku_list = []
+	with open('db/ruku_index.txt') as f:
+		ruku_list = eval(f.read())
+	i, j = random.choice(ruku_list)
 	resp =  render_template('index.html', surahs=getVerseMaps(), rand_surah = (i, j))
 	# resp.set_cookie('userID', user)
 	return resp
