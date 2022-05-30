@@ -95,7 +95,8 @@ def en_tafsir(surah):
 @app.route('/mushaf/<int:surah>', strict_slashes=False)
 def arabic_fulltext(surah):
 	a, b = lib.get_full_arabic(surah)
+	c, d = lib.get_full_tranlation(surah)
 	prev_ = surah - 1 if surah != 1 else 114
 	next_ = surah + 1 if surah != 114 else 1
-	return render_template('arabic_fulltext.html', surah_name=a, surah_no=surah, verses=b, prev=prev_, nxt=next_)
+	return render_template('arabic_fulltext.html', surah_name=a, surah_no=surah, verses=b,translation=list(d), prev=prev_, nxt=next_, mushaf='1')
 

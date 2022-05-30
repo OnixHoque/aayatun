@@ -1,4 +1,12 @@
 {% extends 'comprehensive.html' %}
+
+{% block options %}
+	
+	<div style="display: flex; justify-content: flex-end; padding: 20px 0">
+        <button class="circular active ui basic toggle icon button" onclick="update_translation_visibility(this)"> Show Translation </button>
+      </div>
+{% endblock %}
+
 {% block bismillah %} 
 	
 		{% if surah_no != 1 and surah_no != 9 %}
@@ -17,7 +25,20 @@
 {% block url2 %} {{ url_for('arabic_fulltext', surah=nxt) }} {% endblock %}
 {% block font_config %} font-family: 'Scheherazade', serif; font-size: 225%; text-align: right; {% endblock %}
 
+
 {% block scriptcontent %}
+
+	$('.ui.button.toggle').state();
+
+	function update_translation_visibility(e){
+		//console.log(e.classList.contains("active"));
+			$('.extra-translation').fadeToggle();
+		//document.querySelectorAll('.extra-translation').forEach(arg => {
+		//	arg.style.display = (e.classList.contains("active") ? "none" : // "block");	
+		//});
+		
+	}
+
 	setValues(pages.COMP_ARABIC, {{surah_no}});
 	
 	if (typeof bismillahDefined !== 'undefined') {

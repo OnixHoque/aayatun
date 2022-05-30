@@ -55,6 +55,8 @@
 
     <br>
 
+    {% block options %}{% endblock %}
+
     <table class="ui very basic unstackable left aligned table" id="cur_table">
     	<thead>
     		<tr style="display: none;">
@@ -73,8 +75,19 @@
     		{% if x[0] == 1 %}
     			{% block bismillah %} {% endblock %}
     		{% endif %}
-	    		<div style="{% block font_config %} {% endblock %}">{{ x[1] }} </div>
-	    		</td> 
+	    		<div style="{% block font_config %} {% endblock %}">
+	    			{{ x[1] }} 
+
+	    		{% if mushaf %}
+	    			<div class="extra-translation" style="transition: display 1s ease-out; opacity: .7;">
+		    			<!-- <br> -->
+		    			<p style="font-family: Open Sans; font-size:.35em;"> 
+		    				{{ translation[loop.index0][1] }} 
+		    			</p>
+	    			</div>
+	    		{% endif %}
+	    		</div>
+	    	</td> 
     	</tr>
     {% endfor %}
 	</tbody>
