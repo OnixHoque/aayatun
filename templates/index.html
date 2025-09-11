@@ -1,0 +1,303 @@
+{% extends 'base.html' %}
+
+{% block title %} Aayatun - An Ayah a Day {% endblock %}
+
+{% block start %}
+<div style="height: 100vh; box-sizing: border-box; display: flex; flex-direction: column;">{% endblock start %}
+
+{% block js %}
+<link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+{% endblock js %}
+
+{% block menu %}
+<div class="header item" style=" width: 100%; font-size: 250%; font-family: Merriweather;">
+<a id="title_link">
+<p> Aayatun </p>
+</a>
+</div>
+{% endblock %}
+
+<style>
+    * {
+        font-family: "Open Sans";
+    }
+
+</style>
+
+{% block content %}
+    <h2 style="text-align: center;font-family: Open Sans;"> Let's explore the Quran! </h2>
+{% endblock %}
+
+{% block content2 %}
+	<div style="font-family: Open Sans;font-size: 95%;">
+		<select class="ui search fluid dropdown" id="surah">
+		{% for s in surahs %}
+		  <option value="{{ s['surah_no'] }}" verse_count="{{ s['verse_count'] }}">{{ s['surah'] }}</option>
+		{% endfor %}
+		</select>
+		<br>
+		<div class="ui two column grid" id="verserow">
+			<div class="column" style="margin: auto;"><p style="text-align: right;"> Jump to verse </p></div>
+			<div class="column">
+				<select class="ui search fluid dropdown" id="verse">
+				  <option value="1">1</option>
+				</select>
+			</div>
+		</div>
+
+		<br>
+
+
+		<div style="margin-bottom: 20px;">
+
+			<div class="ui fluid buttons">
+			  <div class="ui large primary button" style="font-family: 'Open Sans'; width: 90%" id="btnGo"><span style="width: 29px; display: inline-block;"></span>Open</div>
+			  <div class="ui floating dropdown primary icon button" style="flex-grow: 0;">
+			    <i class="dropdown icon"></i>
+			    <div class="fluid menu">
+			      <div class="header"  style="font-family: 'Open Sans'; font-size: 90%">Read the whole surah</div>
+			      <div name="menuitem" class="item" style="font-family: 'Open Sans'; font-size: 90%">&nbsp;&nbsp;Arabic</div>
+			      <div name="menuitem" class="item" style="font-family: 'Open Sans'; font-size: 90%">&nbsp;&nbsp;English Translation</div>
+			      <div name="menuitem" class="item" style="font-family: 'Open Sans'; font-size: 90%">&nbsp;&nbsp;Bangla Tafseer</div>
+			      <div name="menuitem" class="item" style="font-family: 'Open Sans'; font-size: 90%">&nbsp;&nbsp;English Tafseer</div>
+			    </div>
+			  </div>
+			</div>
+		<!-- <button class="ui huge blue fluid button" style="font-family: Open Sans; font-size: 95%;" id='btnGo'> Open </button> -->
+		<p></p>
+		<button class="ui huge basic fluid button" style="font-family: Open Sans; font-size: 95%" id='btnSurprise'> Surprise me! </button>
+		</div>
+
+	</div>
+
+
+
+
+	<!-- <div style="text-align: center; padding: 3%">
+	<a href="#">Surprise me!</a>
+	</div> -->
+
+
+
+
+
+
+
+
+<!-- <div style="position: fixed; bottom: 0; background: white; left: 0; font-family: open sans; color: gray; width: 100%; padding-bottom: 2%; opacity: 90%;">
+	<p style="text-align: center; font-size: 70%; padding: 2%;">Aayatun v1.3.9</p>
+</div> -->
+
+<script>
+	$('.ui.dropdown').dropdown({
+		fullTextSearch: true
+	});
+
+	let target_location = [	"{{ url_for('arabic_fulltext', surah=-1) }}",
+	"{{ url_for('translation', surah=-1) }}",
+	"{{ url_for('bn_tafsir', surah=-1) }}",
+	"{{ url_for('en_tafsir', surah=-1) }}",
+	"/search"];
+	// console.log(target_location[0]);
+	let options = document.querySelectorAll("[name='menuitem']");
+	console.log(options.length);
+	for (let i = 0; i < options.length; i++)
+	{
+		options[i].onclick = function(){
+			let s = $('#surah').find(":selected").attr('value');
+			// var v = $('#verse').find(":selected").attr('value');
+			// console.log(target_location[i]);
+			window.parent.location.href = target_location[i].replace("-1", s);
+		}
+	}
+	$('#surah').dropdown('setting', 'onChange', updateVerse);
+	updateVerse();
+	$('#btnGo').click(function()
+	{
+		var s = $('#surah').find(":selected").attr('value');
+		var v = $('#verse').find(":selected").attr('value');
+		var base_url = window.location.origin;
+		window.location.replace(base_url + '/' + s + '/' + v);
+	})
+
+
+
+	$('#btnSurprise').click(function()
+	{
+		var s = {{ rand_surah[0] }};
+		var v = {{ rand_surah[1] }};
+		// alert("" + {{ rand_surah[0] }} + {{ rand_surah[1] }} + "")
+		var base_url = window.location.origin;
+		window.location.href = base_url + '/' + s + '/' + v;
+	})
+
+	function updateVerse()
+	{
+		var i;
+		var v_count = $('#surah').find(":selected").attr('verse_count');
+		// alert(v_count);
+		$('#verse option').remove();
+		for (i = 1; i <= v_count; i++) {
+		  $('#verse').append(new Option(i, i));
+		}
+	}
+
+
+    if('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register("/service-worker.js", { scope: '/' })
+                .then((reg) => console.log('Success: ', reg.scope))
+                .catch((err) => console.log('Failure: ', err));
+        })
+    }
+
+
+</script>
+
+
+
+{% endblock content2 %}
+
+{% block end_ %}
+<div class="ui text container" style="font-family: 'Open Sans'; display: flex ;flex: 1; flex-direction: column-reverse;">
+		<p style="text-align: center; color: gray; opacity: 90%; padding-top: 2%; font-size: 70%;">Aayatun v1.5.3 | <a href="#" id="change-theme">Dark Theme</a></p>
+		<div id="install-banner" class="ui mini message" style="display: none; color: gray">
+		    <i class="close icon"></i>
+		    <div class="header">
+		    App Available
+		  </div>
+		    <p>Aayatun is better on App. <a id="install-btn"href="#">Install Now</a></p>
+	    </div>
+		<div id="suggestion" class="ui mini message" style="display: none; color: gray">
+			<i class="close icon"></i>
+		  <div class="header">
+		    Suggested Reading
+		  </div>
+		  <p id="suggestionFriday" style="display: none;">It is sunnah to read <a href="/mushaf/18">Surah Kahf</a> on Friday.</p>
+		  <p id="suggestionNight" style="display: none;">It is sunnah to read <a href="/mushaf/67">Surah Mulk</a> and <a href="/2/285">the last two verses of Surah Baqarah</a> before going to sleep.</p>
+		</div>
+
+
+
+</div>
+<!-- </div> -->
+{% endblock end_ %}
+
+{% block scriptcontent %}
+
+	$('.message .close')
+	  .on('click', function() {
+	    $(this)
+	      .closest('.message')
+	      .transition('fade')
+	    ;
+	  })
+	;
+
+	const btnChangeTheme = document.querySelector('#change-theme');
+
+	if (is_dark_theme()==="true")
+		btnChangeTheme.innerHTML = 'Light Theme';
+
+	btnChangeTheme.addEventListener('click', (e)=>{
+		e.preventDefault();
+		console.log('current value' + is_dark_theme());
+		if (is_dark_theme()==="true")
+			set_dark_theme(false);
+		else
+			set_dark_theme(true);
+
+		window.location.reload(false);
+	});
+
+	let d = new Date();
+
+	//surah Kahf friday 6am to 5pm
+	if (d.getDay() == 5)
+	{
+		if (d.getHours() > 5 && d.getHours() <= 17)
+		{
+			document.querySelector('#suggestion').style.display = "block";
+			document.querySelector('#suggestionFriday').style.display = "block";
+		}
+	}
+
+	//before sleep 8pm to 2am
+	if ((d.getHours() >= 20 && d.getHours() <= 23) || (d.getHours() >= 0 && d.getHours() <= 2))
+	{
+		document.querySelector('#suggestion').style.display = "block";
+		document.querySelector('#suggestionNight').style.display = "block";
+	}
+
+	let pageType = getPageType();
+	let location_ = getLocation();
+
+	if (pageType !== -1)
+	{
+		const page_title = document.getElementById("title_link");
+		switch (Number(pageType))
+		{
+			case (pages.VERSE_DETAILS):
+			{
+				let tmp = location_.split(":");
+				let url = "{{ url_for('details', surah='-1', verse='-2') }}".replace("-1", tmp[0]).replace("-2", tmp[1]);
+				page_title.href = url;
+				break;
+			}
+			case (pages.COMP_ARABIC):
+			{
+				let url = "{{ url_for('arabic_fulltext', surah='-1') }}".replace("-1", location_);
+				page_title.href = url;
+				break;
+			}
+			case (pages.COMP_TRANSLATION):
+			{
+				let url = "{{ url_for('translation', surah='-1') }}".replace("-1", location_);
+				page_title.href = url;
+				break;
+			}
+			case (pages.COMP_TAFSIR_EN):
+			{
+				let url = "{{ url_for('en_tafsir', surah='-1') }}".replace("-1", location_);
+				page_title.href = url;
+				break;
+			}
+			case (pages.COMP_TAFSIR_BN):
+			{
+				let url = "{{ url_for('bn_tafsir', surah='-1') }}".replace("-1", location_);
+				page_title.href = url;
+				break;
+			}
+		}
+	}
+
+	let deferredPrompt;
+    const addBanner = document.querySelector('#install-banner');
+    const addBtn = document.querySelector('#install-btn');
+    addBanner.style.display = 'none';
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      // Prevent Chrome 67 and earlier from automatically showing the prompt
+      e.preventDefault();
+      // Stash the event so it can be triggered later.
+      deferredPrompt = e;
+      // Update UI to notify the user they can add to home screen
+      addBanner.style.display = 'block';
+
+      addBtn.addEventListener('click', (e) => {
+        // hide our user interface that shows our A2HS button
+        addBanner.style.display = 'none';
+        // Show the prompt
+        deferredPrompt.prompt();
+        // Wait for the user to respond to the prompt
+        deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+              console.log('User accepted the A2HS prompt');
+            } else {
+              console.log('User dismissed the A2HS prompt');
+            }
+            deferredPrompt = null;
+          });
+      });
+    });
+{% endblock %}
