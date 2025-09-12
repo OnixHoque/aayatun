@@ -1,1 +1,2 @@
 flask --app app.py run
+# Python 3.10
