@@ -19,7 +19,7 @@ def sw():
 @app.route('/')
 def index():
 	idx = getVerseMaps()
-	random.seed(datetime.now())
+	random.seed()
 	# i = random.randint(1, 114)
 	# j = random.randint(1, idx[i-1]['verse_count'])
 

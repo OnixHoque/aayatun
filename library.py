@@ -4,6 +4,8 @@ import sqlite3
 from flask import Markup
 import pickle
 
+from utils import json_to_html
+
 pos_tags = {}
 with open('db/pos_tags_dict.txt') as f:
 	pos_tags = eval(f.read())
@@ -235,6 +237,7 @@ def get_full_arabic(surah):
 	return curr_surah, zip(list(range(1, len(x)+1)), x)
 
 
+
 class RootDefAdder:
 	def __init__(self, details):
 		self.sarf_db = pd.read_json('db/sarf.json')
@@ -250,12 +253,23 @@ class RootDefAdder:
 
 	def add_slash_in_definions(self, item):
 		return (item[0], item[1], item[2], item[3].replace("/", " / "))
+	
+	def add_ai_explanation(self):
+		surah, verse = self.details['surah'], self.details['verse'] - 1
+		try:
+			with open(f'/mnt/d/PROJECTS/aayatun_ai_content/output/{surah}_{verse}.json') as f:
+				x = eval(f.read())
+			self.details['ai_explanation'] = json_to_html(x)
+		except Exception:
+			self.details['ai_explanation'] = ''
+			
 
 	def update(self):
 		for i in range(len(self.details['morph'])):
 			self.details['morph'][i] = self.add_root_def(self.details['morph'][i])
 		for i in range(len(self.details['definitions'])):
 			self.details['definitions'][i] = self.add_slash_in_definions(self.details['definitions'][i])
+		self.add_ai_explanation()
 		return self.details
 
 def p_getSurahInfo(surah, verse):
