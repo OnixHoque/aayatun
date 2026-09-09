@@ -74,8 +74,12 @@ def convert_links(data: dict) -> dict:
         if not isinstance(text, str):
             return text
 
+        # return pattern.sub(
+        #     r'<a href="\2" target="_blank" rel="noopener noreferrer">\1 (\2)</a>',
+        #     text
+        # )
         return pattern.sub(
-            r'<a href="\2" target="_blank" rel="noopener noreferrer">\1 (\2)</a>',
+            r'source: <a href="\2" target="_blank" rel="noopener noreferrer">\1</a>',
             text
         )
 
