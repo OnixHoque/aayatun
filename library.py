@@ -255,7 +255,7 @@ class RootDefAdder:
 		return (item[0], item[1], item[2], item[3].replace("/", " / "))
 	
 	def add_ai_explanation(self):
-		print('test')
+		# print('test')
 		surah, verse = self.details['surah'], self.details['verse'] - 1
 		try:
 			# with open(f'/mnt/d/PROJECTS/aayatun_ai_content/output/{surah}_{verse}.json') as f:
