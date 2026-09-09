@@ -255,12 +255,18 @@ class RootDefAdder:
 		return (item[0], item[1], item[2], item[3].replace("/", " / "))
 	
 	def add_ai_explanation(self):
+		print('test')
 		surah, verse = self.details['surah'], self.details['verse'] - 1
 		try:
-			with open(f'/mnt/d/PROJECTS/aayatun_ai_content/output/{surah}_{verse}.json') as f:
-				x = eval(f.read())
+			# with open(f'/mnt/d/PROJECTS/aayatun_ai_content/output/{surah}_{verse}.json') as f:
+			conn = get_db_connection('db/ai_context.db')
+			result = conn.execute("SELECT content FROM verse_analysis WHERE surah=? AND verse=?", (surah, verse)).fetchone()
+			conn.close()
+			# print(str(result["content"]))
+			x = eval(result["content"])
 			self.details['ai_explanation'] = json_to_html(x)
-		except Exception:
+		except Exception as e:
+			print(e)
 			self.details['ai_explanation'] = ''
 			
 
@@ -272,10 +278,31 @@ class RootDefAdder:
 		self.add_ai_explanation()
 		return self.details
 
+def get_verse_pickle(surah, verse):
+    DB_FILE = 'db2/quran_metadata.db'
+    conn = sqlite3.connect(DB_FILE)
+
+    row = conn.execute(
+        """
+        SELECT data
+        FROM verses
+        WHERE surah = ? AND verse = ?
+        """,
+        (surah, verse),
+    ).fetchone()
+
+    conn.close()
+
+    if row is None:
+        raise KeyError(f"Verse {surah}:{verse} not found")
+
+    return pickle.loads(row[0])
+
 def p_getSurahInfo(surah, verse):
 	if validate(surah, verse) == False:
 		abort(404)
-	b = {}
-	with open(f'db2/{surah}_{verse}.pickle', 'rb') as handle:
-	    b = pickle.load(handle)
+	# b = {}
+	# with open(f'db2/{surah}_{verse}.pickle', 'rb') as handle:
+	#     b = pickle.load(handle)
+	b = get_verse_pickle(surah, verse)
 	return RootDefAdder(b).update()
