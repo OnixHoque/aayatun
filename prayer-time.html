@@ -160,10 +160,11 @@
     .dates { font-size: .6em; }
   }
 
-  /* Between sunrise and Dhuhr: a row in the list, directly under Fajr */
-  #gap { margin: 0; padding: .3em 3.2rem .45em; line-height: 1.15; border-bottom: 2px solid var(--line); }
-  #gap b { display: inline-block; font-size: calc(var(--base) * 2); font-weight: 800; font-variant-numeric: tabular-nums; }
-  #gap span { font-size: calc(var(--base) * .85); font-weight: 600; }
+  /* Countdown rows between waqts: "till Dhuhr" sits under Fajr (sunrise to Dhuhr), "till Fajr" under Isha (midnight to Fajr) */
+  .gap { margin: 0; padding: .3em 3.2rem .45em; line-height: 1.15; border-bottom: 2px solid var(--line); }
+  .gap-night { border-bottom: 0; border-top: 2px solid var(--line); }
+  .gap b { display: inline-block; font-size: calc(var(--base) * 2); font-weight: 800; font-variant-numeric: tabular-nums; }
+  .gap span { font-size: calc(var(--base) * .85); font-weight: 600; }
 
   /* Header, prayers and pills form one block, centred vertically on the screen */
   #view {
@@ -192,7 +193,7 @@
     opacity: .88;
     transition: opacity .5s ease;
   }
-  .row:last-child { border-bottom: 0; }
+  .row:nth-last-child(2) { border-bottom: 0; }   /* Isha: the "till Fajr" row follows it and draws the line when shown */
   .row.active { opacity: 1; justify-content: center; column-gap: 1.2em; padding: .3em 3.2rem .45em; }
   .who { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: .6em; }
   .row.active .who { justify-content: center; }
@@ -355,7 +356,7 @@
   @media (orientation: landscape) and (max-height: 640px) {
     .app { padding-top: .3em; }
     .row { padding: .2em 0 .2em 3.2rem; }
-    .row.active, #gap { padding: .2em 3.2rem .35em; }
+    .row.active, .gap { padding: .2em 3.2rem .35em; }
     .list { margin: .3em 0 .5em; }
   }
   @media (prefers-reduced-motion: reduce) {
@@ -506,7 +507,7 @@
     { id: 'dhuhr',   name: 'Dhuhr',   ar: 'الظهر',  endsAt: 'Asr' },
     { id: 'asr',     name: 'Asr',     ar: 'العصر',  endsAt: 'Maghrib' },
     { id: 'maghrib', name: 'Maghrib', ar: 'المغرب', endsAt: 'Isha' },
-    { id: 'isha',    name: 'Isha',    ar: 'العشاء', endsAt: 'Fajr' },
+    { id: 'isha',    name: 'Isha',    ar: 'العشاء', endsAt: 'midnight' },
   ];
 
   // Aladhan calculation method ids
@@ -776,11 +777,16 @@
     };
   });
 
-  // Countdown to Dhuhr (shown between sunrise and Dhuhr) sits in the list right under Fajr
-  const gapRow = document.createElement('li');
-  gapRow.id = 'gap';
-  gapRow.hidden = true;
-  $('#list').insertBefore(gapRow, rows[1].el);
+  // Countdown rows shown between waqts: "till Dhuhr" right under Fajr, "till Fajr" right under Isha
+  const makeGap = (id, extra) => {
+    const li = document.createElement('li');
+    li.id = id; li.className = 'gap' + (extra ? ' ' + extra : ''); li.hidden = true;
+    return li;
+  };
+  const gapDhuhr = makeGap('gap-dhuhr');
+  const gapFajr = makeGap('gap-fajr', 'gap-night');
+  $('#list').insertBefore(gapDhuhr, rows[1].el);
+  $('#list').appendChild(gapFajr);
 
   const fmtClock = (epoch) => new Intl.DateTimeFormat('en-US', {
     timeZone: S.tz, hour: 'numeric', minute: '2-digit', hourCycle: prefs.h24 ? 'h23' : 'h12',
@@ -798,11 +804,20 @@
     const t = S.t;
     const starts = [t.Fajr, t.Dhuhr, t.Asr, t.Maghrib, t.Isha];
     const ends = [t.Sunrise, t.Asr, t.Maghrib, t.Isha, S.tm.Fajr];
-    if (now < t.Fajr) return { idx: 4, end: t.Fajr, start: null };          // still Isha from last night
+    // Isha runs until midnight; from midnight to Fajr nothing is active and we count down to Fajr
+    const night = (start) => {
+      const nextFajr = now < t.Fajr ? t.Fajr : S.tm.Fajr;
+      let end = midnightFor(now), endsAt = 'midnight';
+      if (start && end <= start) { end = nextFajr; endsAt = 'Fajr'; }   // far-north nights where midnight falls before Isha
+      if (now < end) return { idx: 4, end, start, endsAt };
+      return { idx: -1, next: nextFajr, nextName: 'Fajr', night: true };
+    };
+    if (now < t.Fajr) return night(null);                       // still last night
     let i = 4;
     while (i >= 0 && now < starts[i]) i--;
+    if (i === 4) return night(starts[4]);
     if (now < ends[i]) return { idx: i, end: ends[i], start: starts[i] };
-    return { idx: -1, next: starts[i + 1] };                    // after sunrise, before Dhuhr
+    return { idx: -1, next: starts[i + 1], nextName: 'Dhuhr' };  // after sunrise, before Dhuhr
   }
 
   // Hijri date from the browser's built-in Umm al-Qura calendar, shifted by the chosen adjustment.
@@ -889,17 +904,17 @@
       if (i === st.idx) r.el.setAttribute('aria-current', 'true'); else r.el.removeAttribute('aria-current');
     });
 
-    const gap = $('#gap');
     if (st.idx >= 0) {
       document.body.dataset.waqt = PRAYERS[st.idx].id;
-      gap.hidden = true;
+      gapDhuhr.hidden = true; gapFajr.hidden = true;
       const r = rows[st.idx];
       r.leftTime.textContent = fmtLeft(st.end - now);
-      r.leftNote.textContent = `left until ${PRAYERS[st.idx].endsAt}`;
+      r.leftNote.textContent = `till ${st.endsAt || PRAYERS[st.idx].endsAt}`;
     } else {
-      document.body.dataset.waqt = 'morning';
-      gap.hidden = false;
-      gap.innerHTML = `<b>${fmtLeft(st.next - now)}</b> <span>until Dhuhr</span>`;
+      const g = st.night ? gapFajr : gapDhuhr;
+      document.body.dataset.waqt = st.night ? 'isha' : 'morning';     // after midnight it's still the night colours
+      gapDhuhr.hidden = !!st.night; gapFajr.hidden = !st.night;
+      g.innerHTML = `<b>${fmtLeft(st.next - now)}</b> <span>till ${st.nextName}</span>`;
     }
 
     // Header: local date plus Hijri date (the Islamic day begins at Maghrib)
