@@ -23,6 +23,7 @@
     --k: 27.7;
     --hero: 2.6;
     --vh: 1vh;
+    --bar: 0rem;   /* height the top button row takes from the layout (portrait only, see .bar) */
     --base: 1.6rem; /* fallback for very old browsers */
     --bg: #0f1b33;
     --fg: #dce6f5;
@@ -32,10 +33,11 @@
     font-family: 'Bricolage Grotesque', 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
   }
   @media (orientation: landscape) { :root { --k: 20.2; --hero: 3; } }
+  @media (orientation: portrait) { :root { --bar: 2rem; } }
   @supports (height: 100dvh) { :root { --vh: 1dvh; } }
   @supports (width: min(1vw, 1vh)) {
     :root {
-      --fit: min((100vw - 6.4rem) / (4.5 * var(--hero) + 2.4), (100 * var(--vh) - 3.2rem) / var(--k), 3.6rem);
+      --fit: min((100vw - 6.4rem) / (4.5 * var(--hero) + 2.4), (100 * var(--vh) - 3.2rem - var(--bar)) / var(--k), 3.6rem);
       --base: max(.9rem, calc(var(--fit) * var(--scale) * var(--adjust)));
     }
   }
@@ -71,7 +73,7 @@
     position: relative;
     font-size: var(--base);
   }
-  .app.editing { padding-top: 4rem; }   /* room for the corner button */
+  .app.editing { padding-top: 3rem; }   /* room for the corner buttons (landscape; portrait has a real row) */
 
   /* Settings area (used up close, so it stays at a normal size) */
   .lookup, .opts, #msg { font-size: 1.15rem; }
@@ -128,6 +130,7 @@
     align-items: center;
     gap: .6em;
     margin-top: .35em;
+    padding: 0 4.5rem;     /* landscape: keeps clear of the corner buttons (back + stop on the left, settings on the right) */
     text-align: left;
   }
   .loc { flex: 0 1 auto; min-width: 0; }
@@ -152,7 +155,7 @@
     .d-short { display: inline; }
     .wx-range { display: none; }
     #d-hijri::after { content: none; }
-    .where { padding: 0 2rem; gap: .4em; }      /* room for the corner buttons */
+    .where { gap: .4em; }
     .when { padding-left: .4em; }
     .dates { font-size: .6em; }
   }
@@ -252,42 +255,54 @@
   .adhan input:checked + .box svg { opacity: 1; }
   .adhan input:focus-visible + .box { outline: 3px solid currentColor; outline-offset: 2px; }
 
-  /* Stop button while the adhan plays, and a small note for sound status */
-  /* Settings button: top-right corner, and pinned to the screen while the settings panel is open */
-  #change {
-    position: absolute;
-    top: .6rem;
-    right: .6rem;
+  /* Top button row: back on the left (the adhan stop button appears beside it), settings on the right.
+     Quiet, borderless icons that scale with the clock text instead of outgrowing it.
+     Landscape: the row is zero-high and the buttons sit in the top corners, with the header padded clear of them,
+     so it costs no height. Portrait: it is a real row above the header, so it can never cover the place,
+     weather or clock. It stays pinned while the settings panel scrolls. */
+  .bar {
+    position: sticky;
+    top: 0;
     z-index: 3;
-    width: 3rem;
-    height: 3rem;
+    flex: none;
+    height: 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: .5rem;
+  }
+  .bar-side { display: flex; align-items: center; gap: .2rem; margin-top: .3rem; }
+  .bar button {
+    position: relative;
+    width: 2rem;
+    height: 2rem;
     min-height: 0;
     padding: 0;
     display: grid;
     place-items: center;
+    border: 0;
     border-radius: 50%;
     background: transparent;
     color: inherit;
-    border: 2px solid var(--line-strong);
+    opacity: .6;
   }
-  #change svg { width: 1.6rem; height: 1.6rem; }
-  .app.editing #change { position: fixed; background: var(--bg); }
+  .bar button::before { content: ""; position: absolute; inset: -.2rem; }   /* touch area larger than the icon */
+  .bar button:hover, .bar button:focus-visible { opacity: 1; }
+  .bar button svg { width: clamp(.9rem, .75em, 1.35rem); height: clamp(.9rem, .75em, 1.35rem); }
+  /* While the settings panel is open the row floats over the scrolling form, so it needs a solid backing */
+  .app.editing .bar, .app.editing .bar button { background: var(--bg); }
 
-  /* Adhan stop button: top-left corner, only while the adhan plays */
-  #stop {
-    position: absolute;
-    top: .6rem;
-    left: .6rem;
-    z-index: 3;
-    width: 3rem;
-    height: 3rem;
-    min-height: 0;
-    padding: 0;
-    display: grid;
-    place-items: center;
-    border-radius: 50%;
+  /* Adhan stop button: only while the adhan plays. Stays filled so it is easy to find, in the same 2rem slot. */
+  #stop { width: 1.7rem; height: 1.7rem; margin: .15rem; opacity: 1; background: var(--fg); color: var(--bg); }
+  #stop::before { inset: -.35rem; }
+  #stop svg { width: .75rem; height: .75rem; }
+
+  @media (orientation: portrait) {
+    .bar { height: 2rem; }
+    .bar-side { margin-top: 0; }
+    .where { padding: 0; }
+    .app.editing { padding-top: .5em; }
   }
-  #stop svg { width: 1.3rem; height: 1.3rem; }
   #wakeVideo { position: fixed; left: 0; top: 0; width: 2px; height: 2px; opacity: .01; pointer-events: none; }
   #note {
     position: fixed;
@@ -350,6 +365,16 @@
 </head>
 <body data-waqt="isha">
 <main class="app editing" id="app">
+
+  <div class="bar">
+    <div class="bar-side">
+      <button type="button" id="back" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button>
+      <button type="button" id="stop" aria-label="Stop adhan" hidden><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2"/></svg></button>
+    </div>
+    <div class="bar-side">
+      <button type="button" id="change" aria-label="Settings" aria-expanded="false" hidden></button>
+    </div>
+  </div>
 
   <form id="lookup" class="lookup" novalidate>
     <div class="field">
@@ -460,13 +485,11 @@
   </section>
 
   <footer>
-    <button type="button" id="change" aria-label="Settings" aria-expanded="false" hidden></button>
     <p class="credit-line">
       Times: <a href="https://aladhan.com/prayer-times-api" target="_blank" rel="noopener">Aladhan</a> ·
       Places: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors, <a href="https://zippopotam.us" target="_blank" rel="noopener">Zippopotam.us</a> ·
       Weather: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>
     </p>
-    <button type="button" id="stop" aria-label="Stop adhan" hidden><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2"/></svg></button>
   </footer>
 </main>
 
@@ -1175,7 +1198,9 @@
   $('#lookup').addEventListener('submit', (e) => { e.preventDefault(); loadFromForm({ close: true }); });
   $('#locate').addEventListener('click', () => loadFromGps({ close: true }));
   // $('#clock').addEventListener('click', () => history.back());   // tapping the clock goes back
-  $('#clock').addEventListener('click', () => window.location.href = '/');
+  const goBack = () => { window.location.href = '/'; };
+  $('#clock').addEventListener('click', goBack);
+  $('#back').addEventListener('click', goBack);
   $('#change').addEventListener('click', () => setEditing(!app.classList.contains('editing')));
 
   // Method and Asr change the times, so they reload; the panel stays open for more changes
