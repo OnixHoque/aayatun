@@ -29,4 +29,4 @@
 
 # Run the app for testing
 
-flask --app app.py run
+flask --app app.py run --debug

@@ -146,7 +146,7 @@
     overflow: hidden;
   }
   .weather { margin: .05em 0 0; font-size: .64em; font-weight: 500; line-height: 1.2; min-height: 1.2em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .clock { font-size: .88em; font-weight: 800; line-height: 1.15; font-variant-numeric: tabular-nums; white-space: nowrap; opacity: .8; }
+  .clock { font-size: .88em; font-weight: 800; line-height: 1.15; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .dates { display: flex; flex-direction: column; margin: .1em 0 0; font-size: .64em; font-weight: 500; line-height: 1.2; white-space: nowrap; }
   #d-hijri::after { content: " AH"; }
   .d-short { display: none; }
@@ -160,8 +160,8 @@
     .dates { font-size: .6em; }
   }
 
-  /* Between sunrise and Dhuhr */
-  #gap { margin: .4em 0 0; line-height: 1.15; }
+  /* Between sunrise and Dhuhr: a row in the list, directly under Fajr */
+  #gap { margin: 0; padding: .3em 3.2rem .45em; line-height: 1.15; border-bottom: 2px solid var(--line); }
   #gap b { display: inline-block; font-size: calc(var(--base) * 2); font-weight: 800; font-variant-numeric: tabular-nums; }
   #gap span { font-size: calc(var(--base) * .85); font-weight: 600; }
 
@@ -355,7 +355,7 @@
   @media (orientation: landscape) and (max-height: 640px) {
     .app { padding-top: .3em; }
     .row { padding: .2em 0 .2em 3.2rem; }
-    .row.active { padding: .2em 3.2rem .35em; }
+    .row.active, #gap { padding: .2em 3.2rem .35em; }
     .list { margin: .3em 0 .5em; }
   }
   @media (prefers-reduced-motion: reduce) {
@@ -472,8 +472,6 @@
         <p id="dates" class="dates"><span id="d-greg"><span class="d-long"></span><span class="d-short"></span></span><span id="d-hijri"></span></p>
       </div>
     </header>
-
-    <p id="gap" hidden></p>
 
     <ol id="list" class="list"></ol>
 
@@ -777,6 +775,12 @@
       leftNote: li.querySelector('.left-note'),
     };
   });
+
+  // Countdown to Dhuhr (shown between sunrise and Dhuhr) sits in the list right under Fajr
+  const gapRow = document.createElement('li');
+  gapRow.id = 'gap';
+  gapRow.hidden = true;
+  $('#list').insertBefore(gapRow, rows[1].el);
 
   const fmtClock = (epoch) => new Intl.DateTimeFormat('en-US', {
     timeZone: S.tz, hour: 'numeric', minute: '2-digit', hourCycle: prefs.h24 ? 'h23' : 'h12',
