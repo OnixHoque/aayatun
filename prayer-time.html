@@ -153,7 +153,7 @@
   @media (max-width: 42rem) {
     .d-long { display: none; }
     .d-short { display: inline; }
-    .wx-range { display: none; }
+    /* .wx-range { display: none; } */
     #d-hijri::after { content: none; }
     .where { gap: .4em; }
     .when { padding-left: .4em; }
@@ -247,7 +247,7 @@
     height: 2rem;
     display: grid;
     place-items: center;
-    border: 2px solid var(--line-strong);
+    border: .5px solid var(--line-strong);
     border-radius: 8px;
   }
   .adhan .box svg { width: 1.2rem; height: 1.2rem; opacity: .55; }
@@ -747,7 +747,7 @@
   let lastIdx = -2;
   let prevIdx = null;      // null until the first tick after loading, so the adhan never fires mid-waqt
 
-  const BELL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>';
+  const BELL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>';
 
   const rows = PRAYERS.map((p) => {
     const li = document.createElement('li');
