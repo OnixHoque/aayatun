@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, send_from_directory
 import pandas as pd
 import library as lib
 import random
@@ -107,3 +107,6 @@ def arabic_fulltext(surah):
 	next_ = surah + 1 if surah != 114 else 1
 	return render_template('arabic_fulltext.html', surah_name=a, surah_no=surah, verses=b,translation=list(d), prev=prev_, nxt=next_, mushaf='1')
 
+@app.route("/prayer-time")
+def prayer_time():
+	return send_from_directory(".", "prayer-time.html")
