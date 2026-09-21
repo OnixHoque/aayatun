@@ -321,6 +321,33 @@
     text-align: center;
   }
 
+  /* Shown only when the browser wants a tap before it will keep the screen on (iPhone) */
+  #wakePrompt {
+    position: fixed;
+    left: 50%;
+    bottom: calc(3.6rem + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%);
+    z-index: 4;
+    width: max-content;
+    max-width: calc(100% - 2rem);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem 1rem;
+    padding: .75rem 1.1rem;
+    border-radius: 1.1rem;
+    background: var(--fg);
+    color: var(--bg);
+    font-size: 1rem;
+    font-weight: 600;
+    text-align: center;
+    box-shadow: 0 .4rem 1.4rem rgba(0, 0, 0, .35);
+  }
+  #wakePrompt .wake-btns { display: flex; gap: .6rem; }
+  #wakePrompt button { background: var(--bg); color: var(--fg); border: 2px solid var(--bg); min-height: 2.6rem; padding: .3rem 1.2rem; border-radius: 999px; }
+  #wakePrompt button.secondary { background: transparent; color: var(--bg); border-color: var(--bg); }
+
   /* Sunrise, sunset, midnight: three small tablets in one row */
   .pills {
     display: grid;
@@ -493,6 +520,13 @@
 </main>
 
 <div id="note" role="status" hidden></div>
+<div id="wakePrompt" role="group" aria-label="Keep the screen on" hidden>
+  <span>Keep the screen on while this page is open?</span>
+  <span class="wake-btns">
+    <button type="button" id="wakeYes">Keep on</button>
+    <button type="button" id="wakeNo" class="secondary">Not now</button>
+  </span>
+</div>
 <video id="wakeVideo" muted loop playsinline aria-hidden="true" tabindex="-1"></video>
 
 <script>
@@ -1078,7 +1112,8 @@
     try { audio.currentTime = 0; } catch (e) {}
   });
 
-  const unlockOnTap = () => {
+  const unlockOnTap = (e) => {
+    if (e && e.target && e.target.closest && e.target.closest('#wakeNo')) return;   // "Not now" shouldn't switch it on
     if (anyAdhan() && !audioUnlocked) primeAudio();
     requestWake();
   };
@@ -1096,6 +1131,8 @@
   let wakeLock = null;
   let wakeFailed = false;
   let videoOn = false;
+  let videoBlocked = false;         // the browser refused to autoplay the fallback video (needs a tap)
+  let wakePromptDismissed = false;  // "Not now" / "Keep on" pressed since the page was last shown
   const wakeSupported = 'wakeLock' in navigator;
 
   function updateWakeStatus() {
@@ -1105,6 +1142,11 @@
     else if (wakeSupported && wakeFailed) el.textContent = 'Tap the screen once to keep it on (browsers often need a tap after the page loads). If that doesn’t help, check battery saver.';
     else if (videoOn) el.textContent = 'The screen will stay on while this page is open (compatibility mode).';
     else el.textContent = 'Tap the screen once to start keeping it on.';
+
+    // Some browsers (iPhone) only allow it after a tap: ask with a small floating prompt
+    const holding = wakeLock && !wakeLock.released;
+    const needsTap = prefs.keepAwake && !document.hidden && !holding && (wakeSupported ? wakeFailed : videoBlocked);
+    $('#wakePrompt').hidden = !needsTap || wakePromptDismissed;
   }
 
   function startVideoWake() {
@@ -1112,8 +1154,8 @@
     wakeVideo.muted = true;
     const p = wakeVideo.play();
     if (p && p.then) {
-      p.then(() => { videoOn = true; updateWakeStatus(); })
-       .catch(() => { videoOn = false; updateWakeStatus(); });
+      p.then(() => { videoOn = true; videoBlocked = false; updateWakeStatus(); })
+       .catch(() => { videoOn = false; videoBlocked = true; updateWakeStatus(); });
     }
   }
   function stopVideoWake() {
@@ -1123,6 +1165,9 @@
   wakeVideo.addEventListener('pause', () => { videoOn = false; updateWakeStatus(); });
 
   // Asked again on return to the page and on taps, because browsers drop the lock when the page is hidden
+  $('#wakeYes').addEventListener('click', () => { wakePromptDismissed = true; updateWakeStatus(); requestWake(); });   // this tap is the gesture the browser wants
+  $('#wakeNo').addEventListener('click', () => { wakePromptDismissed = true; updateWakeStatus(); });
+
   let wakePending = false;
   async function requestWake() {
     if (!prefs.keepAwake || document.hidden) return;
@@ -1271,7 +1316,7 @@
   });
 
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) { tick(); requestWake(); if (Date.now() - wxAt > 30 * 60 * 1000) loadWeather(); }
+    if (!document.hidden) { wakePromptDismissed = false; tick(); requestWake(); if (Date.now() - wxAt > 30 * 60 * 1000) loadWeather(); }
   });
 
   let resizeTimer;
