@@ -1082,8 +1082,9 @@
     if (anyAdhan() && !audioUnlocked) primeAudio();
     requestWake();
   };
-  document.addEventListener('pointerdown', unlockOnTap, true);
-  document.addEventListener('keydown', unlockOnTap, true);
+  // A touch only counts as a user gesture when the finger lifts (pointerup / touchend / click), not on pointerdown,
+  // and some browsers (Safari, some Chromium versions) refuse a wake lock without one.
+  ['pointerup', 'touchend', 'click', 'keydown'].forEach((ev) => document.addEventListener(ev, unlockOnTap, true));
 
   /* ---------- keep the screen on ---------- */
   // 1) Screen Wake Lock API where the browser has it.
@@ -1101,8 +1102,8 @@
     const el = $('#wakeNote');
     if (!prefs.keepAwake) el.textContent = '';
     else if (wakeLock && !wakeLock.released) el.textContent = 'The screen will stay on while this page is open.';
+    else if (wakeSupported && wakeFailed) el.textContent = 'Tap the screen once to keep it on (browsers often need a tap after the page loads). If that doesn’t help, check battery saver.';
     else if (videoOn) el.textContent = 'The screen will stay on while this page is open (compatibility mode).';
-    else if (wakeSupported && wakeFailed) el.textContent = 'The browser wouldn’t keep the screen on. Tap the screen once, and check battery saver.';
     else el.textContent = 'Tap the screen once to start keeping it on.';
   }
 
@@ -1122,19 +1123,25 @@
   wakeVideo.addEventListener('pause', () => { videoOn = false; updateWakeStatus(); });
 
   // Asked again on return to the page and on taps, because browsers drop the lock when the page is hidden
+  let wakePending = false;
   async function requestWake() {
     if (!prefs.keepAwake || document.hidden) return;
     if (wakeSupported) {
-      if (wakeLock && !wakeLock.released) return;
+      if (wakePending || (wakeLock && !wakeLock.released)) return;
+      wakePending = true;
       try {
-        wakeLock = await navigator.wakeLock.request('screen');
+        const lock = await navigator.wakeLock.request('screen');
+        if (!prefs.keepAwake) { lock.release().catch(() => {}); return; }   // switched off while we waited
+        wakeLock = lock;
         wakeFailed = false;
-        wakeLock.addEventListener('release', updateWakeStatus);
+        lock.addEventListener('release', updateWakeStatus);
         stopVideoWake();
         updateWakeStatus();
         return;
       } catch (e) {
         wakeFailed = true;
+      } finally {
+        wakePending = false;
       }
     }
     if (!videoOn) startVideoWake();
@@ -1272,6 +1279,9 @@
   window.addEventListener('resize', onResize);
   window.addEventListener('orientationchange', onResize);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => fit(true));
+
+  // If the lock was dropped or refused (battery saver, page load without a tap), quietly try again now and then
+  setInterval(() => { if (wakeSupported && prefs.keepAwake && !document.hidden) requestWake(); }, 30000);
 
   updateNote();
   updateWakeStatus();
