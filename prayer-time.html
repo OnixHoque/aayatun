@@ -6,38 +6,39 @@
 <title>Prayer times by zip code</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,400..800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700;800&family=Merriweather:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
   /*
     Sized for a 7-inch tablet read from across a room, with everything on one screen.
     --fit is the largest base size at which the whole layout still fits the viewport. It is
     limited by the screen height (--k is the layout's height measured in --base units, which
     differs a little between portrait and landscape) and by the screen width. The script also
-    shrinks --adjust if anything still overflows. The four quiet prayers use --base and the
-    current waqt is --hero times --base: 3x when there is room (landscape), a little less in portrait,
-    which lets the four quiet prayers be bigger for the same size of headline.
+    shrinks --adjust if anything still overflows. Both orientations use five
+    prayer cards, a large clock and a bottom row of sunrise/sunset/midnight
+    times. Landscape uses tighter vertical spacing.
   */
   :root {
     --scale: 1;
     --adjust: 1;
     --k: 27.7;
-    --hero: 2.6;
     --vh: 1vh;
-    --bar: 0rem;   /* height the top button row takes from the layout (portrait only, see .bar) */
+    --bar: 2rem;   /* height of the top button row */
     --base: 1.6rem; /* fallback for very old browsers */
     --bg: #0f1b33;
     --fg: #dce6f5;
     --line: rgba(220, 230, 245, .22);
     --line-strong: rgba(220, 230, 245, .5);
     --field: #1f2b43;
-    font-family: 'Bricolage Grotesque', 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
+    --font: 'Open Sans', 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
+    --font-hero: 'Merriweather', Georgia, 'Times New Roman', serif;
+    font-family: var(--font);
   }
-  @media (orientation: landscape) { :root { --k: 20.2; --hero: 3; } }
-  @media (orientation: portrait) { :root { --bar: 2rem; } }
+  @media (orientation: landscape) { :root { --k: 20.2; } }
+  @media (orientation: portrait) { :root { --k: 12.5; } }
   @supports (height: 100dvh) { :root { --vh: 1dvh; } }
   @supports (width: min(1vw, 1vh)) {
     :root {
-      --fit: min((100vw - 6.4rem) / (4.5 * var(--hero) + 2.4), (100 * var(--vh) - 3.2rem - var(--bar)) / var(--k), 3.6rem);
+      --fit: min((100vw - 2rem) / 11, (100 * var(--vh) - 3.2rem - var(--bar)) / var(--k), 3.6rem);
       --base: max(.9rem, calc(var(--fit) * var(--scale) * var(--adjust)));
     }
   }
@@ -73,7 +74,7 @@
     position: relative;
     font-size: var(--base);
   }
-  .app.editing { padding-top: 3rem; }   /* room for the corner buttons (landscape; portrait has a real row) */
+  .app.editing { padding-top: .5em; }
 
   /* Settings area (used up close, so it stays at a normal size) */
   .lookup, .opts, #msg { font-size: 1.15rem; }
@@ -121,20 +122,17 @@
   #msg { min-height: 1.4em; margin: .8rem 0 0; text-align: center; }
   #msg.error { font-weight: 700; }
 
-  /* Location, date and settings button */
-  /* Header: place and weather on the left; clock with both dates stacked under it on the right.
-     The two columns sit close together and the pair is centred. */
+  /* Center column: place and dates, weather, clock, then the countdown. */
   .where {
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap: .6em;
-    margin-top: .35em;
-    padding: 0 4.5rem;     /* landscape: keeps clear of the corner buttons (back + stop on the left, settings on the right) */
-    text-align: left;
+    gap: clamp(.3rem, 1.3vh, .9rem);
+    margin: 0;
+    padding: 0;
+    text-align: center;
   }
-  .loc { flex: 0 1 auto; min-width: 0; }
-  .when { flex: 0 0 auto; padding-left: .6em; border-left: 2px solid var(--line); }
   .where h1 {
     margin: 0;
     font-size: .88em;
@@ -146,7 +144,8 @@
     overflow: hidden;
   }
   .weather { margin: .05em 0 0; font-size: .64em; font-weight: 500; line-height: 1.2; min-height: 1.2em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .clock { font-size: .88em; font-weight: 800; line-height: 1.15; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .wx-range { font-size: .82em; opacity: .8; }
+  .clock { font-family: var(--font-hero); font-size: .88em; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .dates { display: flex; flex-direction: column; margin: .1em 0 0; font-size: .64em; font-weight: 500; line-height: 1.2; white-space: nowrap; }
   #d-hijri::after { content: " AH"; }
   .d-short { display: none; }
@@ -155,71 +154,15 @@
     .d-short { display: inline; }
     /* .wx-range { display: none; } */
     #d-hijri::after { content: none; }
-    .where { gap: .4em; }
-    .when { padding-left: .4em; }
     .dates { font-size: .6em; }
   }
 
-  /* Countdown rows between waqts: "till Dhuhr" sits under Fajr (sunrise to Dhuhr), "till Fajr" under Isha (midnight to Fajr) */
-  .gap { margin: 0; padding: .3em 3.2rem .45em; line-height: 1.15; border-bottom: 2px solid var(--line); }
-  .gap-night { border-bottom: 0; border-top: 2px solid var(--line); }
-  .gap b { display: inline-block; font-size: calc(var(--base) * 2); font-weight: 800; font-variant-numeric: tabular-nums; }
-  .gap span { font-size: calc(var(--base) * .85); font-weight: 600; }
+  /* The five prayers and their adhan controls. */
+  #view { flex: 1; }
+  .list { list-style: none; padding: 0; }
+  .row { position: relative; }
+  .who { display: flex; }
 
-  /* Header, prayers and pills form one block, centred vertically on the screen */
-  #view {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    text-align: center;
-  }
-
-  /* The five prayers */
-  .list {
-    list-style: none;
-    margin: .4em 0 .6em;
-    padding: 0;
-  }
-  .row {
-    position: relative;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    justify-content: space-between;
-    column-gap: 1rem;
-    padding: .3em 0 .3em 3.2rem;
-    border-bottom: 2px solid var(--line);
-    opacity: .88;
-    transition: opacity .5s ease;
-  }
-  .row:nth-last-child(2) { border-bottom: 0; }   /* Isha: the "till Fajr" row follows it and draws the line when shown */
-  .row.active { opacity: 1; justify-content: center; column-gap: 1.2em; padding: .3em 3.2rem .45em; }
-  .who { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: .6em; }
-  .row.active .who { justify-content: center; }
-  .name, .time {
-    font-size: var(--base);
-    line-height: 1.1;
-    font-weight: 600;
-  }
-  .time { font-variant-numeric: tabular-nums; }
-  .ar { font-family: 'Amiri', 'Noto Naskh Arabic', serif; font-weight: 700; font-size: calc(var(--base) * 1.15); line-height: 1; }
-  .row.active .name,
-  .row.active .time { font-size: calc(var(--base) * var(--hero)); font-weight: 800; }
-  .row.active .ar { font-size: calc(var(--base) * 1.2); }
-  .left { display: none; flex-basis: 100%; margin-top: .15em; }
-  .row.active .left { display: block; }
-  .left-time {
-    display: inline-block;
-    min-width: 6em;               /* keeps the label from jiggling as digits change */
-    font-size: calc(var(--base) * 2);
-    font-weight: 800;
-    font-variant-numeric: tabular-nums;
-    line-height: 1.15;
-  }
-  .left-note { font-size: calc(var(--base) * .85); font-weight: 600; }
-
-  /* Adhan checkbox: one per prayer, in a column down the left edge */
   .adhan {
     position: absolute;
     left: 0;
@@ -256,23 +199,19 @@
   .adhan input:checked + .box svg { opacity: 1; }
   .adhan input:focus-visible + .box { outline: 3px solid currentColor; outline-offset: 2px; }
 
-  /* Top button row: back on the left (the adhan stop button appears beside it), settings on the right.
-     Quiet, borderless icons that scale with the clock text instead of outgrowing it.
-     Landscape: the row is zero-high and the buttons sit in the top corners, with the header padded clear of them,
-     so it costs no height. Portrait: it is a real row above the header, so it can never cover the place,
-     weather or clock. It stays pinned while the settings panel scrolls. */
+  /* Back and settings sit in their own row above the five prayers. */
   .bar {
     position: sticky;
     top: 0;
     z-index: 3;
     flex: none;
-    height: 0;
+    height: 2rem;
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     gap: .5rem;
   }
-  .bar-side { display: flex; align-items: center; gap: .2rem; margin-top: .3rem; }
+  .bar-side { display: flex; align-items: center; gap: .2rem; }
   .bar button {
     position: relative;
     width: 2rem;
@@ -298,12 +237,6 @@
   #stop::before { inset: -.35rem; }
   #stop svg { width: .75rem; height: .75rem; }
 
-  @media (orientation: portrait) {
-    .bar { height: 2rem; }
-    .bar-side { margin-top: 0; }
-    .where { padding: 0; }
-    .app.editing { padding-top: .5em; }
-  }
   #wakeVideo { position: fixed; left: 0; top: 0; width: 2px; height: 2px; opacity: .01; pointer-events: none; }
   #note {
     position: fixed;
@@ -348,7 +281,7 @@
   #wakePrompt button { background: var(--bg); color: var(--fg); border: 2px solid var(--bg); min-height: 2.6rem; padding: .3rem 1.2rem; border-radius: 999px; }
   #wakePrompt button.secondary { background: transparent; color: var(--bg); border-color: var(--bg); }
 
-  /* Sunrise, sunset, midnight: three small tablets in one row */
+  /* Sunrise, sunset and midnight: quiet cards with small line icons. */
   .pills {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -361,30 +294,292 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: space-between;
-    gap: .1em;
-    padding: .3em .4em;
-    border: 2px solid var(--line-strong);
-    border-radius: 1.1em;
+    justify-content: center;
+    gap: .2em;
+    padding: .4em .4em;
+    border: 0;
+    border-radius: .85em;
+    background: var(--field);
     text-align: center;
     line-height: 1.15;
   }
+  @supports (color: color-mix(in srgb, white 8%, transparent)) {
+    .pill { background: color-mix(in srgb, var(--fg) 7%, transparent); }
+  }
+  .pill-label { display: inline-flex; align-items: center; justify-content: center; gap: .35em; }
+  .pill-label svg { width: 1.15em; height: 1.15em; flex: none; }
   .pill span { font-size: calc(var(--base) * .65); font-weight: 600; }
   .pill b { font-size: calc(var(--base) * .9); font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  .hero-countdown { display: none; }
 
   footer { margin-top: .3rem; font-size: .75rem; text-align: center; }
   footer a { color: inherit; }
   .credit-line { margin: 0; line-height: 1.3; }
 
+  /* Portrait: prayer strip, center clock, then sunrise/sunset/midnight. */
+  @media (orientation: portrait) {
+    #view {
+      display: flex;
+      flex-direction: column;
+      justify-content: stretch;
+      gap: clamp(.5rem, 1.5vh, 1rem);
+      min-height: 0;
+      text-align: center;
+    }
+    #list {
+      flex: none;
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: .25em;
+      margin: 0;
+    }
+    #list .row, #list .row.active {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: .18rem;
+      min-width: 0;
+      min-height: 5.3rem;
+      padding: 1.2rem .1rem .45rem;
+      border: 0;
+      border-radius: .85rem;
+      opacity: 1;
+      background: var(--field);
+      transition: background-color .35s ease, color .35s ease, transform .35s ease;
+    }
+    @supports (color: color-mix(in srgb, white 8%, transparent)) {
+      #list .row { background: color-mix(in srgb, var(--fg) 9%, transparent); }
+    }
+    #list .row.active {
+      background: var(--fg);
+      color: var(--bg);
+      transform: translateY(-.1rem);
+      box-shadow: 0 .4rem 1.2rem rgba(0, 0, 0, .12);
+    }
+    #list .who { justify-content: center; }
+    #list .name, #list .row.active .name {
+      font: 700 clamp(.75rem, 2.8vw, 1.25rem)/1.2 var(--font);
+    }
+    #list .time, #list .row.active .time {
+      font: 700 clamp(.65rem, 2.45vw, 1.12rem)/1.2 var(--font);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    #list .adhan {
+      left: auto;
+      right: .08rem;
+      top: .08rem;
+      bottom: auto;
+      transform: none;
+      width: 1.8rem;
+      height: 1.8rem;
+    }
+    #list .adhan .box { width: 1.15rem; height: 1.15rem; border: 0; border-radius: 50%; }
+    #list .adhan .box svg { width: .95rem; height: .95rem; }
+
+    header.where {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: clamp(.3rem, 1.3vh, .9rem);
+      min-width: 0;
+      margin: 0;
+      padding: .25rem 0;
+      text-align: center;
+    }
+    .where h1 {
+      order: 0;
+      font-size: clamp(.9rem, 3vw, 1.3rem);
+      -webkit-line-clamp: 1;
+    }
+    .dates { order: 1; margin: 0; font-size: clamp(.75rem, 2.4vw, 1rem); white-space: normal; }
+    .weather {
+      order: 2;
+      margin: .3em 0 0;
+      min-height: 1.2em;
+      font-size: clamp(1rem, 3.5vw, 1.5rem);
+      white-space: normal;
+      overflow: visible;
+    }
+    .clock {
+      order: 3;
+      max-width: 100%;
+      font-size: clamp(3rem, 18vw, 10rem);
+      line-height: 1.1;
+    }
+    .hero-countdown {
+      order: 4;
+      display: flex;
+      flex-direction: column;
+      gap: .1em;
+      margin: 0;
+      line-height: 1.2;
+    }
+    .hero-countdown b {
+      font-family: var(--font-hero);
+      font-size: clamp(1.8rem, 7vw, 3.4rem);
+      font-variant-numeric: tabular-nums;
+    }
+    .hero-countdown span { font-size: clamp(.9rem, 3vw, 1.3rem); font-weight: 600; }
+
+    .pills { flex: none; gap: .3em; }
+    .pill { padding: .35em .1em; border-radius: .8em; }
+    .pill span { font-size: clamp(.72rem, 2.5vw, 1rem); }
+    .pill b { font-size: clamp(.8rem, 3vw, 1.2rem); }
+  }
+
+  /* Landscape: build the same three bands independently, with height-based type. */
+  @media (orientation: landscape) {
+    .app { padding: .35rem 1.25rem; }
+    .bar { height: 2rem; }
+
+    #view {
+      flex: 1;
+      display: grid;
+      grid-template-areas: "waqts" "center" "solar";
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      gap: clamp(.35rem, 1.5vh, .9rem);
+      width: 100%;
+      min-height: 0;
+      text-align: center;
+    }
+
+    #list {
+      grid-area: waqts;
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: clamp(.35rem, 1vw, .75rem);
+      width: 100%;
+      margin: 0;
+    }
+    #list .row, #list .row.active {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: .15rem;
+      min-width: 0;
+      min-height: clamp(3.5rem, 14vh, 5.3rem);
+      padding: 1.2rem .15rem .3rem;
+      border: 0;
+      border-radius: .85rem;
+      opacity: 1;
+      background: var(--field);
+      transition: background-color .35s ease, color .35s ease, transform .35s ease;
+    }
+    @supports (color: color-mix(in srgb, white 8%, transparent)) {
+      #list .row { background: color-mix(in srgb, var(--fg) 9%, transparent); }
+    }
+    #list .row.active {
+      background: var(--fg);
+      color: var(--bg);
+      transform: translateY(-.1rem);
+      box-shadow: 0 .4rem 1.2rem rgba(0, 0, 0, .12);
+    }
+    #list .who { justify-content: center; }
+    #list .name, #list .row.active .name {
+      font: 700 clamp(.85rem, 3.8vh, 1.4rem)/1.2 var(--font);
+    }
+    #list .time, #list .row.active .time {
+      font: 700 clamp(.8rem, 3.2vh, 1.2rem)/1.2 var(--font);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    #list .adhan {
+      left: auto;
+      right: .08rem;
+      top: .08rem;
+      bottom: auto;
+      transform: none;
+      width: 1.8rem;
+      height: 1.8rem;
+    }
+    #list .adhan .box { width: 1.15rem; height: 1.15rem; border: 0; border-radius: 50%; }
+    #list .adhan .box svg { width: .95rem; height: .95rem; }
+
+    header.where {
+      grid-area: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(.2rem, 1vh, .65rem);
+      width: 100%;
+      min-height: 0;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+    }
+    .where h1 { font-size: clamp(.85rem, 3vh, 1.3rem); -webkit-line-clamp: 1; }
+    .dates { margin: 0; font-size: clamp(.7rem, 2.4vh, 1rem); white-space: normal; }
+    .weather {
+      margin: .15rem 0 0;
+      min-height: 1.2em;
+      font-size: clamp(.9rem, 3.2vh, 1.4rem);
+      white-space: normal;
+      overflow: visible;
+      text-overflow: clip;
+    }
+    .clock {
+      max-width: 100%;
+      font-size: clamp(3.5rem, 20vh, 10rem);
+      line-height: 1.1;
+    }
+    .hero-countdown {
+      display: flex;
+      flex-direction: column;
+      gap: .1em;
+      margin: 0;
+      line-height: 1.2;
+    }
+    .hero-countdown b {
+      font-family: var(--font-hero);
+      font-size: clamp(1.5rem, 7vh, 3.5rem);
+      font-variant-numeric: tabular-nums;
+    }
+    .hero-countdown span { font-size: clamp(.8rem, 2.8vh, 1.2rem); font-weight: 600; }
+
+    .pills {
+      grid-area: solar;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: clamp(.35rem, 1vw, .75rem);
+      width: 100%;
+      margin: 0;
+    }
+    .pill { padding: .25rem .35rem; border-radius: .8rem; }
+    .pill span { font-size: clamp(.75rem, 2.5vh, 1rem); }
+    .pill b { font-size: clamp(.85rem, 3.2vh, 1.25rem); }
+  }
+
+  @media (orientation: landscape) and (max-height: 440px) {
+    #view { gap: .25rem; }
+    #list .row, #list .row.active { min-height: 3.4rem; }
+    header.where { gap: .15rem; }
+    .clock { font-size: clamp(3rem, 17vh, 5.5rem); }
+    .pill { padding: .12rem .25rem; }
+  }
+
+  /* Enabled adhan: a filled bell on a soft circular highlight in either orientation. */
+  #list .adhan input:checked + .box {
+    width: 1.45rem;
+    height: 1.45rem;
+    border: 0;
+    background: var(--line);
+    color: inherit;
+  }
+  @supports (color: color-mix(in srgb, white 8%, transparent)) {
+    #list .adhan input:checked + .box { background: color-mix(in srgb, currentColor 16%, transparent); }
+  }
+  #list .adhan input:checked + .box svg { width: 1.05rem; height: 1.05rem; }
+  #list .adhan input:checked + .box svg path:first-child { fill: currentColor; stroke-width: 1; }
+
   @media (max-width: 34rem) {
     .opts-grid { grid-template-columns: 1fr 1fr; }
-  }
-  /* Short landscape screens (7-inch tablet on its side) */
-  @media (orientation: landscape) and (max-height: 640px) {
-    .app { padding-top: .3em; }
-    .row { padding: .2em 0 .2em 3.2rem; }
-    .row.active, .gap { padding: .2em 3.2rem .35em; }
-    .list { margin: .3em 0 .5em; }
   }
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; }
@@ -490,23 +685,22 @@
   <p id="msg" role="status" aria-live="polite">Type a city, address or zip code, or tap Use my location.</p>
 
   <section id="view" hidden>
+    <ol id="list" class="list" aria-label="Five daily prayer times"></ol>
+
     <header class="where">
-      <div class="loc">
-        <h1 id="place"></h1>
-        <p id="weather" class="weather"></p>
-      </div>
-      <div class="when">
-        <div id="clock" class="clock" aria-hidden="true"></div>
-        <p id="dates" class="dates"><span id="d-greg"><span class="d-long"></span><span class="d-short"></span></span><span id="d-hijri"></span></p>
-      </div>
+      <h1 id="place"></h1>
+      <p id="dates" class="dates"><span id="d-greg"><span class="d-long"></span><span class="d-short"></span></span><span id="d-hijri"></span></p>
+      <p id="weather" class="weather"></p>
+      <div id="clock" class="clock" aria-hidden="true"></div>
+      <p id="hero-countdown" class="hero-countdown" hidden>
+        <b id="hero-left-time"></b><span id="hero-left-note"></span>
+      </p>
     </header>
 
-    <ol id="list" class="list"></ol>
-
     <ul class="pills" aria-label="Sunrise, sunset and midnight">
-      <li class="pill"><span>Sunrise</span><b id="t-sunrise">–</b></li>
-      <li class="pill"><span>Sunset</span><b id="t-sunset">–</b></li>
-      <li class="pill"><span>Midnight</span><b id="t-midnight">–</b></li>
+      <li class="pill"><span class="pill-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 19h18M7 19a5 5 0 0 1 10 0M12 3v8m-3-3 3-3 3 3"/></svg>Sunrise</span><b id="t-sunrise">–</b></li>
+      <li class="pill"><span class="pill-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 19h18M7 19a5 5 0 0 1 10 0M12 3v8m-3-3 3 3 3-3"/></svg>Sunset</span><b id="t-sunset">–</b></li>
+      <li class="pill"><span class="pill-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.7 16.4A8.7 8.7 0 0 1 7.6 3.3 8.8 8.8 0 1 0 20.7 16.4Z"/></svg>Midnight</span><b id="t-midnight">–</b></li>
     </ul>
   </section>
 
@@ -537,11 +731,11 @@
   const pad = (n) => String(n).padStart(2, '0');
 
   const PRAYERS = [
-    { id: 'fajr',    name: 'Fajr',    ar: 'الفجر',  endsAt: 'sunrise' },
-    { id: 'dhuhr',   name: 'Dhuhr',   ar: 'الظهر',  endsAt: 'Asr' },
-    { id: 'asr',     name: 'Asr',     ar: 'العصر',  endsAt: 'Maghrib' },
-    { id: 'maghrib', name: 'Maghrib', ar: 'المغرب', endsAt: 'Isha' },
-    { id: 'isha',    name: 'Isha',    ar: 'العشاء', endsAt: 'midnight' },
+    { id: 'fajr',    name: 'Fajr',    endsAt: 'sunrise' },
+    { id: 'dhuhr',   name: 'Dhuhr',   endsAt: 'Asr' },
+    { id: 'asr',     name: 'Asr',     endsAt: 'Maghrib' },
+    { id: 'maghrib', name: 'Maghrib', endsAt: 'Isha' },
+    { id: 'isha',    name: 'Isha',    endsAt: 'midnight' },
   ];
 
   // Aladhan calculation method ids
@@ -780,7 +974,7 @@
   let lastIdx = -2;
   let prevIdx = null;      // null until the first tick after loading, so the adhan never fires mid-waqt
 
-  const BELL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>';
+  const BELL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>';
 
   const rows = PRAYERS.map((p) => {
     const li = document.createElement('li');
@@ -790,9 +984,8 @@
         <input type="checkbox" aria-label="Play adhan for ${p.name}">
         <span class="box">${BELL}</span>
       </label>
-      <div class="who"><span class="name">${p.name}</span><span class="ar" lang="ar" dir="rtl">${p.ar}</span></div>
-      <span class="time"></span>
-      <div class="left"><span class="left-time"></span><span class="left-note"></span></div>`;
+      <div class="who"><span class="name">${p.name}</span></div>
+      <span class="time"></span>`;
     const box = li.querySelector('.adhan input');
     box.checked = !!(prefs.adhan && prefs.adhan[p.id]);
     box.addEventListener('change', () => {
@@ -806,21 +999,8 @@
     return {
       el: li,
       time: li.querySelector('.time'),
-      leftTime: li.querySelector('.left-time'),
-      leftNote: li.querySelector('.left-note'),
     };
   });
-
-  // Countdown rows shown between waqts: "till Dhuhr" right under Fajr, "till Fajr" right under Isha
-  const makeGap = (id, extra) => {
-    const li = document.createElement('li');
-    li.id = id; li.className = 'gap' + (extra ? ' ' + extra : ''); li.hidden = true;
-    return li;
-  };
-  const gapDhuhr = makeGap('gap-dhuhr');
-  const gapFajr = makeGap('gap-fajr', 'gap-night');
-  $('#list').insertBefore(gapDhuhr, rows[1].el);
-  $('#list').appendChild(gapFajr);
 
   const fmtClock = (epoch) => new Intl.DateTimeFormat('en-US', {
     timeZone: S.tz, hour: 'numeric', minute: '2-digit', hourCycle: prefs.h24 ? 'h23' : 'h12',
@@ -940,16 +1120,14 @@
 
     if (st.idx >= 0) {
       document.body.dataset.waqt = PRAYERS[st.idx].id;
-      gapDhuhr.hidden = true; gapFajr.hidden = true;
-      const r = rows[st.idx];
-      r.leftTime.textContent = fmtLeft(st.end - now);
-      r.leftNote.textContent = `till ${st.endsAt || PRAYERS[st.idx].endsAt}`;
+      $('#hero-left-time').textContent = fmtLeft(st.end - now);
+      $('#hero-left-note').textContent = `left in ${PRAYERS[st.idx].name} · until ${st.endsAt || PRAYERS[st.idx].endsAt}`;
     } else {
-      const g = st.night ? gapFajr : gapDhuhr;
       document.body.dataset.waqt = st.night ? 'isha' : 'morning';     // after midnight it's still the night colours
-      gapDhuhr.hidden = !!st.night; gapFajr.hidden = !st.night;
-      g.innerHTML = `<b>${fmtLeft(st.next - now)}</b> <span>till ${st.nextName}</span>`;
+      $('#hero-left-time').textContent = fmtLeft(st.next - now);
+      $('#hero-left-note').textContent = `until ${st.nextName}`;
     }
+    $('#hero-countdown').hidden = false;
 
     // Header: local date plus Hijri date (the Islamic day begins at Maghrib)
     const hij = hijriFor(now);
