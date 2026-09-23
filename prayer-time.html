@@ -6,7 +6,8 @@
 <title>Prayer times by zip code</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700;800&family=Merriweather:wght@400;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600;700&amp;family=Open+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&amp;icon_names=bedtime,wb_twilight,wb_twilight_2&amp;display=block" rel="stylesheet">
 <style>
   /*
     Sized for a 7-inch tablet read from across a room, with everything on one screen.
@@ -30,7 +31,7 @@
     --line-strong: rgba(220, 230, 245, .5);
     --field: #1f2b43;
     --font: 'Open Sans', 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
-    --font-hero: 'Merriweather', Georgia, 'Times New Roman', serif;
+    --font-clock: 'Fira Sans', 'Open Sans', system-ui, sans-serif;
     font-family: var(--font);
   }
   @media (orientation: landscape) { :root { --k: 20.2; } }
@@ -133,10 +134,30 @@
     padding: 0;
     text-align: center;
   }
+  .meta {
+    width: min(100%, 43rem);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .12rem;
+    min-width: 0;
+    opacity: .72;
+  }
+  .meta .dates { align-items: center; }
+  @media (min-width: 34rem) {
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: 1rem;
+      align-items: center;
+    }
+    .meta h1 { min-width: 0; text-align: left; }
+    .meta .dates { align-items: flex-end; text-align: right; }
+  }
   .where h1 {
     margin: 0;
     font-size: .88em;
-    font-weight: 800;
+    font-weight: 700;
     line-height: 1.15;
     display: -webkit-box;
     -webkit-box-orient: vertical;
@@ -145,7 +166,7 @@
   }
   .weather { margin: .05em 0 0; font-size: .64em; font-weight: 500; line-height: 1.2; min-height: 1.2em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .wx-range { font-size: .82em; opacity: .8; }
-  .clock { font-family: var(--font-hero); font-size: .88em; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .clock { font-family: var(--font-clock); font-size: .88em; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .dates { display: flex; flex-direction: column; margin: .1em 0 0; font-size: .64em; font-weight: 500; line-height: 1.2; white-space: nowrap; }
   #d-hijri::after { content: " AH"; }
   .d-short { display: none; }
@@ -307,9 +328,9 @@
     .pill { background: color-mix(in srgb, var(--fg) 7%, transparent); }
   }
   .pill-label { display: inline-flex; align-items: center; justify-content: center; gap: .35em; }
-  .pill-label svg { width: 1.15em; height: 1.15em; flex: none; }
-  .pill span { font-size: calc(var(--base) * .65); font-weight: 600; }
-  .pill b { font-size: calc(var(--base) * .9); font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .pill .pill-icon { font-size: 1.35em; font-weight: 400; opacity: 1; line-height: 1; flex: none; }
+  .pill span { font-size: calc(var(--base) * .58); font-weight: 600; opacity: .67; }
+  .pill b { font-family: var(--font-clock); font-size: calc(var(--base) * .8); font-weight: 700; opacity: .82; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
   .hero-countdown { display: none; }
 
@@ -363,7 +384,7 @@
       font: 700 clamp(.75rem, 2.8vw, 1.25rem)/1.2 var(--font);
     }
     #list .time, #list .row.active .time {
-      font: 700 clamp(.65rem, 2.45vw, 1.12rem)/1.2 var(--font);
+      font: 700 clamp(.75rem, 2.9vw, 1.3rem)/1.2 var(--font-clock);
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
     }
@@ -401,14 +422,14 @@
       order: 2;
       margin: .3em 0 0;
       min-height: 1.2em;
-      font-size: clamp(1rem, 3.5vw, 1.5rem);
+      font-size: clamp(1.05rem, 4vw, 1.7rem);
       white-space: normal;
       overflow: visible;
     }
     .clock {
       order: 3;
       max-width: 100%;
-      font-size: clamp(3rem, 18vw, 10rem);
+      font-size: clamp(3.6rem, 21vw, 13rem);
       line-height: 1.1;
     }
     .hero-countdown {
@@ -420,16 +441,16 @@
       line-height: 1.2;
     }
     .hero-countdown b {
-      font-family: var(--font-hero);
-      font-size: clamp(1.8rem, 7vw, 3.4rem);
+      font-family: var(--font-clock);
+      font-size: clamp(2.1rem, 9.5vw, 4.7rem);
       font-variant-numeric: tabular-nums;
     }
-    .hero-countdown span { font-size: clamp(.9rem, 3vw, 1.3rem); font-weight: 600; }
+    .hero-countdown .countdown-note { font-size: clamp(.95rem, 3.3vw, 1.4rem); font-weight: 600; }
 
     .pills { flex: none; gap: .3em; }
     .pill { padding: .35em .1em; border-radius: .8em; }
-    .pill span { font-size: clamp(.72rem, 2.5vw, 1rem); }
-    .pill b { font-size: clamp(.8rem, 3vw, 1.2rem); }
+    .pill span { font-size: clamp(.67rem, 2.1vw, .9rem); }
+    .pill b { font-size: clamp(.75rem, 2.6vw, 1.08rem); }
   }
 
   /* Landscape: build the same three bands independently, with height-based type. */
@@ -485,7 +506,7 @@
       font: 700 clamp(.85rem, 3.8vh, 1.4rem)/1.2 var(--font);
     }
     #list .time, #list .row.active .time {
-      font: 700 clamp(.8rem, 3.2vh, 1.2rem)/1.2 var(--font);
+      font: 700 clamp(.88rem, 3.7vh, 1.4rem)/1.2 var(--font-clock);
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
     }
@@ -519,14 +540,14 @@
     .weather {
       margin: .15rem 0 0;
       min-height: 1.2em;
-      font-size: clamp(.9rem, 3.2vh, 1.4rem);
+      font-size: clamp(1rem, 3.6vh, 1.6rem);
       white-space: normal;
       overflow: visible;
       text-overflow: clip;
     }
     .clock {
       max-width: 100%;
-      font-size: clamp(3.5rem, 20vh, 10rem);
+      font-size: clamp(4.2rem, 26vh, 12rem);
       line-height: 1.1;
     }
     .hero-countdown {
@@ -537,11 +558,11 @@
       line-height: 1.2;
     }
     .hero-countdown b {
-      font-family: var(--font-hero);
-      font-size: clamp(1.5rem, 7vh, 3.5rem);
+      font-family: var(--font-clock);
+      font-size: clamp(1.95rem, 9.3vh, 4.3rem);
       font-variant-numeric: tabular-nums;
     }
-    .hero-countdown span { font-size: clamp(.8rem, 2.8vh, 1.2rem); font-weight: 600; }
+    .hero-countdown .countdown-note { font-size: clamp(.85rem, 3.1vh, 1.3rem); font-weight: 600; }
 
     .pills {
       grid-area: solar;
@@ -552,8 +573,8 @@
       margin: 0;
     }
     .pill { padding: .25rem .35rem; border-radius: .8rem; }
-    .pill span { font-size: clamp(.75rem, 2.5vh, 1rem); }
-    .pill b { font-size: clamp(.85rem, 3.2vh, 1.25rem); }
+    .pill span { font-size: clamp(.7rem, 2.1vh, .9rem); }
+    .pill b { font-size: clamp(.78rem, 2.7vh, 1.1rem); }
   }
 
   @media (orientation: landscape) and (max-height: 440px) {
@@ -561,7 +582,45 @@
     #list .row, #list .row.active { min-height: 3.4rem; }
     header.where { gap: .15rem; }
     .clock { font-size: clamp(3rem, 17vh, 5.5rem); }
+    .hero-countdown b { font-size: clamp(1.5rem, 7vh, 2.7rem); }
     .pill { padding: .12rem .25rem; }
+  }
+
+  /* A little breathing room around the three solar cards. */
+  .pills { margin-top: .25rem; margin-bottom: .15rem; padding: .2rem .15rem; }
+
+  /* Keep the compact stack on narrow screens; use one line when each card has room. */
+  @media (min-width: 44rem), (orientation: landscape) and (min-width: 38rem) {
+    .pills .pill {
+      flex-direction: row;
+      justify-content: space-between;
+      gap: .45rem;
+      padding: .55rem clamp(.55rem, 1.2vw, .8rem);
+    }
+    .pill-label { white-space: nowrap; }
+  }
+
+  @media (orientation: landscape) and (max-height: 440px) {
+    .pills { margin: 0; padding: 0; }
+    .pills .pill { padding: .12rem .25rem; }
+    .weather { font-size: clamp(.9rem, 3.2vh, 1.4rem); }
+    .hero-countdown .countdown-note { font-size: clamp(.8rem, 2.8vh, 1.2rem); }
+  }
+
+  .countdown-line { display: flex; align-items: center; justify-content: center; gap: clamp(.5rem, 1.5vw, 1rem); }
+  .progress-ring { display: block; flex: none; width: clamp(2.5rem, 7vw, 4.5rem); aspect-ratio: 1; }
+  .progress-ring svg { display: block; width: 100%; height: 100%; transform: rotate(-90deg); }
+  .progress-ring circle { fill: none; stroke-width: 4; }
+  .progress-ring .ring-track { stroke: currentColor; opacity: .22; }
+  .progress-ring .ring-fill {
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-dasharray: 113.097;
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset .8s linear;
+  }
+  @media (orientation: landscape) {
+    .progress-ring { width: clamp(2.3rem, 8vh, 4rem); }
   }
 
   /* Enabled adhan: a filled bell on a soft circular highlight in either orientation. */
@@ -577,6 +636,12 @@
   }
   #list .adhan input:checked + .box svg { width: 1.05rem; height: 1.05rem; }
   #list .adhan input:checked + .box svg path:first-child { fill: currentColor; stroke-width: 1; }
+
+  /* The prayer names recede; their times and the active prayer stay clear. */
+  #list .row .name { opacity: .68; }
+  #list .row.active .name { opacity: .82; }
+  #list .row .time { opacity: .9; }
+  #list .row.active .time { opacity: 1; }
 
   @media (max-width: 34rem) {
     .opts-grid { grid-template-columns: 1fr 1fr; }
@@ -688,19 +753,22 @@
     <ol id="list" class="list" aria-label="Five daily prayer times"></ol>
 
     <header class="where">
-      <h1 id="place"></h1>
-      <p id="dates" class="dates"><span id="d-greg"><span class="d-long"></span><span class="d-short"></span></span><span id="d-hijri"></span></p>
+      <div class="meta">
+        <h1 id="place"></h1>
+        <p id="dates" class="dates"><span id="d-greg"><span class="d-long"></span><span class="d-short"></span></span><span id="d-hijri"></span></p>
+      </div>
       <p id="weather" class="weather"></p>
       <div id="clock" class="clock" aria-hidden="true"></div>
       <p id="hero-countdown" class="hero-countdown" hidden>
-        <b id="hero-left-time"></b><span id="hero-left-note"></span>
+        <span class="countdown-line"><span class="progress-ring" aria-hidden="true"><svg viewBox="0 0 44 44"><circle class="ring-track" cx="22" cy="22" r="18"/><circle id="remaining-ring" class="ring-fill" cx="22" cy="22" r="18"/></svg></span><b id="hero-left-time"></b></span>
+        <span id="hero-left-note" class="countdown-note"></span>
       </p>
     </header>
 
     <ul class="pills" aria-label="Sunrise, sunset and midnight">
-      <li class="pill"><span class="pill-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 19h18M7 19a5 5 0 0 1 10 0M12 3v8m-3-3 3-3 3 3"/></svg>Sunrise</span><b id="t-sunrise">–</b></li>
-      <li class="pill"><span class="pill-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 19h18M7 19a5 5 0 0 1 10 0M12 3v8m-3-3 3 3 3-3"/></svg>Sunset</span><b id="t-sunset">–</b></li>
-      <li class="pill"><span class="pill-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.7 16.4A8.7 8.7 0 0 1 7.6 3.3 8.8 8.8 0 1 0 20.7 16.4Z"/></svg>Midnight</span><b id="t-midnight">–</b></li>
+      <li class="pill"><span class="pill-label"><span class="material-symbols-outlined pill-icon" aria-hidden="true">wb_twilight</span>Sunrise</span><b id="t-sunrise">–</b></li>
+      <li class="pill"><span class="pill-label"><span class="material-symbols-outlined pill-icon" aria-hidden="true">wb_twilight_2</span>Sunset</span><b id="t-sunset">–</b></li>
+      <li class="pill"><span class="pill-label"><span class="material-symbols-outlined pill-icon" aria-hidden="true">bedtime</span>Midnight</span><b id="t-midnight">–</b></li>
     </ul>
   </section>
 
@@ -1034,6 +1102,24 @@
     return { idx: -1, next: starts[i + 1], nextName: 'Dhuhr' };  // after sunrise, before Dhuhr
   }
 
+  // Fill reflects the fraction of the current prayer or waiting period still remaining.
+  function remainingFraction(st, now) {
+    const end = st.idx >= 0 ? st.end : st.next;
+    let start;
+    if (st.idx >= 0) {
+      if (st.start) {
+        start = st.start;
+      } else {
+        // Before today's Fajr, the active Isha began yesterday.
+        const yesterday = addDays(S.ymd, -1), isha = tzParts(S.t.Isha, S.tz);
+        start = zonedToEpoch(yesterday.y, yesterday.m, yesterday.d, isha.h, isha.mi, S.tz);
+      }
+    } else {
+      start = st.night ? midnightFor(now) : S.t.Sunrise;
+    }
+    return end > start ? Math.max(0, Math.min(1, (end - now) / (end - start))) : 0;
+  }
+
   // Hijri date from the browser's built-in Umm al-Qura calendar, shifted by the chosen adjustment.
   // The Islamic day begins at Maghrib, so after Maghrib it can show the next day's number.
   const HIJRI_MONTHS = ['Muharram', 'Safar', 'Rabiʻ al-awwal', 'Rabiʻ al-thani', 'Jumada al-awwal', 'Jumada al-thani',
@@ -1127,6 +1213,7 @@
       $('#hero-left-time').textContent = fmtLeft(st.next - now);
       $('#hero-left-note').textContent = `until ${st.nextName}`;
     }
+    $('#remaining-ring').style.strokeDashoffset = String(2 * Math.PI * 18 * (1 - remainingFraction(st, now)));
     $('#hero-countdown').hidden = false;
 
     // Header: local date plus Hijri date (the Islamic day begins at Maghrib)
