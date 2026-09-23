@@ -30,7 +30,7 @@
       }
   ],
   "start_url": "/",
-  "display": "standalone",
-  "orientation": "portrait",
+  "display": "fullscreen",
+  "orientation": "any",
   "scope": "/"
 }
