@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600;700&amp;family=Open+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&amp;icon_names=bedtime,wb_twilight,wb_twilight_2&amp;display=block" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&amp;icon_names=bedtime,date_range,wb_twilight,wb_twilight_2&amp;display=block" rel="stylesheet">
 <style>
   /*
     Sized for a 7-inch tablet read from across a room, with everything on one screen.
@@ -164,8 +164,26 @@
     -webkit-line-clamp: 2;
     overflow: hidden;
   }
-  .weather { margin: .05em 0 0; font-size: .64em; font-weight: 500; line-height: 1.2; min-height: 1.2em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .weather { display: flex; align-items: center; justify-content: center; gap: .4em; max-width: 100%; margin: .05em 0 0; font-size: .64em; font-weight: 500; line-height: 1.2; min-height: 1.2em; white-space: nowrap; }
+  .weather-text { overflow: hidden; text-overflow: ellipsis; }
+  .forecast-button { display: grid; place-items: center; flex: none; width: 1.3em; height: 1.3em; min-height: 0; padding: 0; border: 0; border-radius: .3em; background: transparent; color: inherit; opacity: .55; transform: translateY(.12em); }
+  .forecast-button:hover, .forecast-button:focus-visible { background: var(--line); opacity: 1; }
+  .forecast-button .material-symbols-outlined { font-size: 1.12em; line-height: 1; }
   .wx-range { font-size: .82em; opacity: .8; }
+  .forecast-dialog { width: min(61rem, calc(100vw - 2rem)); max-width: calc(100vw - 2rem); max-height: min(38rem, calc(100dvh - 2rem)); padding: 1.15rem; border: 1px solid var(--line-strong); border-radius: 1.1rem; background: var(--bg); color: var(--fg); box-shadow: 0 1rem 3rem rgba(0,0,0,.4); font: 500 1rem/1.35 var(--font); overflow-x: hidden; overflow-y: auto; }
+  .forecast-dialog::backdrop { background: rgba(0, 0, 0, .55); }
+  .forecast-heading { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin-bottom: .55rem; }
+  .forecast-heading h2 { margin: 0; font-size: 1.2rem; }
+  .forecast-close { display: grid; place-items: center; width: 2.6rem; height: 2.6rem; min-height: 0; padding: 0; border-radius: 50%; background: transparent; color: inherit; font-size: 1.7rem; line-height: 1; }
+  .forecast-close:hover { background: var(--line); }
+  .forecast-place { margin: 0 0 .75rem; opacity: .75; font-size: .9rem; }
+  .forecast-days { display: grid; grid-template-columns: repeat(7, minmax(7.4rem, 1fr)); gap: .5rem; list-style: none; padding: 0 0 .35rem; margin: 0; overflow-x: auto; overscroll-behavior-inline: contain; }
+  .forecast-day { display: flex; flex-direction: column; align-items: center; gap: .45rem; padding: .8rem .35rem; border-radius: .7rem; background: var(--field); text-align: center; }
+  .forecast-day .day-date { font-size: .88rem; font-weight: 700; white-space: nowrap; }
+  .forecast-day .day-icon { font-size: 1.75rem; line-height: 1.2; }
+  .forecast-day .condition { min-height: 2.5em; font-size: .82rem; opacity: .8; }
+  .forecast-day .temperatures { display: flex; flex-direction: column; gap: .1rem; white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 700; }
+  .forecast-day .low { opacity: .65; }
   .clock { font-family: var(--font-clock); font-size: .88em; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; white-space: nowrap; text-shadow: 0 .025em .09em rgba(0, 0, 0, .18); }
   .dates { display: flex; flex-direction: column; margin: .1em 0 0; font-size: .64em; font-weight: 500; line-height: 1.2; white-space: nowrap; }
   #d-hijri::after { content: " AH"; }
@@ -760,7 +778,7 @@
         <h1 id="place"></h1>
         <p id="dates" class="dates"><span id="d-greg"><span class="d-long"></span><span class="d-short"></span></span><span id="d-hijri"></span></p>
       </div>
-      <p id="weather" class="weather"></p>
+      <p id="weather" class="weather"><span id="weather-text" class="weather-text"></span><button type="button" id="forecast-button" class="forecast-button" aria-label="Show 7-day weather forecast" aria-haspopup="dialog" aria-controls="forecast-dialog" hidden><span class="material-symbols-outlined" aria-hidden="true">date_range</span></button></p>
       <div id="clock" class="clock" aria-hidden="true"></div>
       <p id="hero-countdown" class="hero-countdown" hidden>
         <span class="countdown-line"><span class="progress-ring" aria-hidden="true"><svg viewBox="0 0 44 44"><circle class="ring-track" cx="22" cy="22" r="18"/><circle id="remaining-ring" class="ring-fill" cx="22" cy="22" r="18"/></svg></span><b id="hero-left-time"></b></span>
@@ -783,6 +801,12 @@
     </p>
   </footer>
 </main>
+
+<dialog id="forecast-dialog" class="forecast-dialog" aria-labelledby="forecast-title">
+  <div class="forecast-heading"><h2 id="forecast-title">7-day forecast</h2><button type="button" id="forecast-close" class="forecast-close" aria-label="Close forecast">×</button></div>
+  <p id="forecast-place" class="forecast-place"></p>
+  <ol id="forecast-days" class="forecast-days"></ol>
+</dialog>
 
 <div id="note" role="status" hidden></div>
 <div id="wakePrompt" role="group" aria-label="Keep the screen on" hidden>
@@ -1251,7 +1275,7 @@
     tick();
     clearInterval(timer);
     timer = setInterval(tick, 1000);
-    if (moved) { wx = null; renderWeather(); }
+    if (moved) { wx = null; $('#forecast-dialog').close(); renderWeather(); }
     loadWeather();
     clearInterval(wxTimer);
     wxTimer = setInterval(loadWeather, 30 * 60 * 1000);
@@ -1485,6 +1509,7 @@
   let wx = null;
   let wxAt = 0;
   let wxTimer = null;
+  let wxRequest = 0;
 
   function tempUnit() {
     if (prefs.tempUnit === 'f') return 'fahrenheit';
@@ -1495,8 +1520,9 @@
   }
 
   function renderWeather() {
-    const el = $('#weather');
-    el.textContent = '';
+    const el = $('#weather-text');
+    el.replaceChildren();
+    $('#forecast-button').hidden = !wx || !wx.days.length;
     if (!wx) return;
     const deg = wx.unit === 'fahrenheit' ? '°F' : '°C';
     const look = wxLook(wx.code, wx.day);
@@ -1509,31 +1535,80 @@
       range.textContent = ` · H ${Math.round(wx.hi)}° L ${Math.round(wx.lo)}°`;
       el.appendChild(range);
     }
+    if ($('#forecast-dialog').open) renderForecast();
+  }
+
+  function renderForecast() {
+    const list = $('#forecast-days');
+    list.replaceChildren();
+    if (!wx) return;
+    $('#forecast-place').textContent = S.loc.name;
+    const deg = wx.unit === 'fahrenheit' ? '°F' : '°C';
+    const dayFormat = new Intl.DateTimeFormat('en', { weekday: 'short', month: 'short', day: 'numeric' });
+    wx.days.forEach((day, i) => {
+      const [y, m, d] = day.date.split('-').map(Number);
+      const look = wxLook(day.code, true);
+      const item = document.createElement('li');
+      item.className = 'forecast-day';
+      const date = document.createElement('span');
+      date.className = 'day-date';
+      date.textContent = i === 0 ? 'Today' : dayFormat.format(new Date(y, m - 1, d));
+      const icon = document.createElement('span');
+      icon.className = 'day-icon';
+      icon.textContent = look[0];
+      icon.setAttribute('aria-hidden', 'true');
+      const condition = document.createElement('span');
+      condition.className = 'condition';
+      condition.textContent = look[1];
+      const temps = document.createElement('span');
+      temps.className = 'temperatures';
+      temps.textContent = `H ${Math.round(day.hi)}${deg}  `;
+      const low = document.createElement('span');
+      low.className = 'low';
+      low.textContent = `L ${Math.round(day.lo)}${deg}`;
+      temps.appendChild(low);
+      item.append(date, icon, condition, temps);
+      list.appendChild(item);
+    });
   }
 
   async function loadWeather() {
     if (!S) return;
     const lat = S.loc.lat, lng = S.loc.lng, unit = tempUnit();
+    const request = ++wxRequest;
     try {
       const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}`
-        + '&current=temperature_2m,weather_code,is_day&daily=temperature_2m_max,temperature_2m_min'
-        + `&temperature_unit=${unit}&timezone=auto&forecast_days=1`;
+        + '&current=temperature_2m,weather_code,is_day&daily=temperature_2m_max,temperature_2m_min,weather_code'
+        + `&temperature_unit=${unit}&timezone=auto&forecast_days=7`;
       const r = await fetch(url);
       if (!r.ok) throw new Error('weather http ' + r.status);
       const j = await r.json();
-      if (!S || S.loc.lat !== lat || S.loc.lng !== lng) return;      // the place changed while this was loading
+      if (request !== wxRequest || !S || S.loc.lat !== lat || S.loc.lng !== lng) return;
+      const days = j.daily.time.map((date, i) => ({
+        date, code: j.daily.weather_code[i], hi: j.daily.temperature_2m_max[i], lo: j.daily.temperature_2m_min[i],
+      }));
       wx = {
         t: j.current.temperature_2m, code: j.current.weather_code, day: j.current.is_day === 1,
-        hi: j.daily.temperature_2m_max[0], lo: j.daily.temperature_2m_min[0], unit,
+        hi: days[0].hi, lo: days[0].lo, unit, days,
       };
       wxAt = Date.now();
     } catch (e) {
+      if (request !== wxRequest || !S || S.loc.lat !== lat || S.loc.lng !== lng) return;
       if (Date.now() - wxAt > 3600e3) wx = null;                      // never keep showing a stale reading
     }
     renderWeather();
   }
 
   /* ---------- events ---------- */
+  $('#forecast-button').addEventListener('click', () => {
+    if (!wx || !wx.days.length) return;
+    renderForecast();
+    $('#forecast-dialog').showModal();
+  });
+  $('#forecast-close').addEventListener('click', () => $('#forecast-dialog').close());
+  $('#forecast-dialog').addEventListener('click', (e) => {
+    if (e.target === $('#forecast-dialog')) $('#forecast-dialog').close();
+  });
   $('#lookup').addEventListener('submit', (e) => { e.preventDefault(); loadFromForm({ close: true }); });
   $('#locate').addEventListener('click', () => loadFromGps({ close: true }));
   // $('#clock').addEventListener('click', () => history.back());   // tapping the clock goes back
