@@ -680,7 +680,7 @@
   .q-trans.dim { opacity: .65; font-style: italic; }
   .q-controls .q-details { height: 2.8rem; padding: 0 .9rem; border-radius: 999px; font-size: .9rem; white-space: nowrap; }
   /* Verse details: the aayatun.com page embedded in its own popup on top of the player */
-  .details-dialog { width: min(64rem, calc((100vw - 1rem) / var(--dz))); max-width: calc((100vw - 1rem) / var(--dz)); height: min(46rem, calc((100dvh - 1rem) / var(--dz))); max-height: calc((100dvh - 1rem) / var(--dz)); padding: .8rem; overflow: hidden; }
+  .details-dialog { --dz: 1; /* no shrink: the embedded page lays itself out at full size */ width: min(64rem, calc((100vw - 1rem) / var(--dz))); max-width: calc((100vw - 1rem) / var(--dz)); height: min(46rem, calc((100dvh - 1rem) / var(--dz))); max-height: calc((100dvh - 1rem) / var(--dz)); padding: .8rem; overflow: hidden; }
   .details-dialog[open] { display: flex; flex-direction: column; }
   .details-dialog .forecast-heading { flex: none; margin-bottom: .5rem; }
   .details-actions { display: flex; align-items: center; gap: .6rem; }
