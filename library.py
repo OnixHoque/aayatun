@@ -262,7 +262,7 @@ class RootDefAdder:
 			conn = get_db_connection('db/ai_context.db')
 			result = conn.execute("SELECT content FROM verse_analysis WHERE surah=? AND verse=?", (surah, verse)).fetchone()
 			conn.close()
-			# print(str(result["content"]))
+			print(str(result["content"]))
 			x = eval(result["content"])
 			self.details['ai_explanation'] = json_to_html(x)
 		except Exception as e:

@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600;700&amp;family=Open+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&amp;icon_names=bedtime,date_range,wb_twilight,wb_twilight_2&amp;display=block" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&amp;icon_names=bedtime,books_movies_and_music,date_range,wb_twilight,wb_twilight_2&amp;display=block" rel="stylesheet">
 <style>
   /*
     Sized for a 7-inch tablet read from across a room, with everything on one screen.
@@ -170,7 +170,9 @@
   .forecast-button:hover, .forecast-button:focus-visible { background: var(--line); opacity: 1; }
   .forecast-button .material-symbols-outlined { font-size: 1.12em; line-height: 1; }
   .wx-range { font-size: .82em; opacity: .8; }
-  .forecast-dialog { width: min(61rem, calc(100vw - 2rem)); max-width: calc(100vw - 2rem); max-height: min(38rem, calc(100dvh - 2rem)); padding: 1.15rem; border: 1px solid var(--line-strong); border-radius: 1.1rem; background: var(--bg); color: var(--fg); box-shadow: 0 1rem 3rem rgba(0,0,0,.4); font: 500 1rem/1.35 var(--font); overflow-x: hidden; overflow-y: auto; }
+  /* --dz scales every popup (forecast, player, details) as a whole: text, buttons and spacing together.
+     The size limits divide by it so the popups still fit the screen after scaling. */
+  .forecast-dialog { --dz: .85; zoom: var(--dz); width: min(61rem, calc((100vw - 2rem) / var(--dz))); max-width: calc((100vw - 2rem) / var(--dz)); max-height: min(38rem, calc((100dvh - 2rem) / var(--dz))); padding: 1.15rem; border: 1px solid var(--line-strong); border-radius: 1.1rem; background: var(--bg); color: var(--fg); box-shadow: 0 1rem 3rem rgba(0,0,0,.4); font: 500 1rem/1.35 var(--font); overflow-x: hidden; overflow-y: auto; }
   .forecast-dialog::backdrop { background: rgba(0, 0, 0, .55); }
   .forecast-heading { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin-bottom: .55rem; }
   .forecast-heading h2 { margin: 0; font-size: 1.2rem; }
@@ -667,6 +669,37 @@
   @media (max-width: 34rem) {
     .opts-grid { grid-template-columns: 1fr 1fr; }
   }
+  /* Quran player: a small popup opened from the play icon next to the forecast icon. */
+  .forecast-button svg { display: block; width: 1.12em; height: 1.12em; }
+  #quran-button.on { opacity: 1; background: var(--line); }
+  .quran-dialog { width: min(38rem, calc((100vw - 2rem) / var(--dz))); }
+  .q-now { margin: .1rem 0 0; text-align: center; font-size: 1.5rem; font-weight: 700; line-height: 1.2; }
+  .q-pos { margin: .15rem 0 .4rem; text-align: center; font-size: .85rem; opacity: .75; font-variant-numeric: tabular-nums; }
+  /* Fixed height so the controls never jump between short and long verses; long ones scroll inside. */
+  .q-trans { height: 6.5rem; overflow-y: auto; overscroll-behavior: contain; margin: 0 0 .5rem; padding: .55rem .8rem; border-radius: .7rem; background: var(--field); text-align: center; font-size: 1.05rem; line-height: 1.45; }
+  .q-trans.dim { opacity: .65; font-style: italic; }
+  .q-controls .q-details { height: 2.8rem; padding: 0 .9rem; border-radius: 999px; font-size: .9rem; white-space: nowrap; }
+  /* Verse details: the aayatun.com page embedded in its own popup on top of the player */
+  .details-dialog { width: min(64rem, calc((100vw - 1rem) / var(--dz))); max-width: calc((100vw - 1rem) / var(--dz)); height: min(46rem, calc((100dvh - 1rem) / var(--dz))); max-height: calc((100dvh - 1rem) / var(--dz)); padding: .8rem; overflow: hidden; }
+  .details-dialog[open] { display: flex; flex-direction: column; }
+  .details-dialog .forecast-heading { flex: none; margin-bottom: .5rem; }
+  .details-actions { display: flex; align-items: center; gap: .6rem; }
+  .details-new { color: inherit; font-size: .9rem; font-weight: 600; white-space: nowrap; }
+  .details-frame { flex: 1; width: 100%; min-height: 0; border: 0; border-radius: .6rem; background: #fff; }
+  .q-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .6rem; margin: .2rem 0 .3rem; }
+  .q-controls button { display: grid; place-items: center; min-height: 0; }
+  .q-step { width: 2.8rem; height: 2.8rem; padding: 0; border-radius: 50%; }
+  .q-step svg { width: 1.2rem; height: 1.2rem; }
+  .q-controls .q-play { width: 3.2rem; height: 3.2rem; padding: 0; border-radius: 50%; }
+  .q-play svg { width: 1.4rem; height: 1.4rem; }
+  .q-slider { display: block; width: 100%; min-height: 2.8rem; padding: 0; border: 0; background: transparent; accent-color: var(--fg); cursor: pointer; }
+  .q-status { min-height: 1.3em; margin: .3rem 0 0; text-align: center; font-size: .9rem; font-weight: 600; }
+  .q-jump { display: grid; grid-template-columns: 1fr 5.5rem auto; gap: .5rem; margin-top: .6rem; align-items: end; }
+  /* One scrollable line of small buttons (wheel, swipe or mouse-drag to scroll) */
+  .q-presets { display: flex; flex-wrap: nowrap; gap: .4rem; margin-top: .6rem; padding-bottom: .35rem; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; user-select: none; -webkit-user-select: none; cursor: grab; }
+  .q-presets button { flex: none; min-height: 2rem; padding: .15rem .8rem; border-radius: 999px; font-size: .85rem; white-space: nowrap; }
+  .quran-dialog .credit { text-align: center; }
+
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; }
   }
@@ -778,7 +811,7 @@
         <h1 id="place"></h1>
         <p id="dates" class="dates"><span id="d-greg"><span class="d-long"></span><span class="d-short"></span></span><span id="d-hijri"></span></p>
       </div>
-      <p id="weather" class="weather"><span id="weather-text" class="weather-text"></span><button type="button" id="forecast-button" class="forecast-button" aria-label="Show 7-day weather forecast" aria-haspopup="dialog" aria-controls="forecast-dialog" hidden><span class="material-symbols-outlined" aria-hidden="true">date_range</span></button></p>
+      <p id="weather" class="weather"><span id="weather-text" class="weather-text"></span><button type="button" id="forecast-button" class="forecast-button" aria-label="Show 7-day weather forecast" aria-haspopup="dialog" aria-controls="forecast-dialog" hidden><span class="material-symbols-outlined" aria-hidden="true">date_range</span></button><button type="button" id="quran-button" class="forecast-button" aria-label="Open Quran player" aria-haspopup="dialog" aria-controls="quran-dialog"><span class="material-symbols-outlined" aria-hidden="true">books_movies_and_music</span></button></p>
       <div id="clock" class="clock" aria-hidden="true"></div>
       <p id="hero-countdown" class="hero-countdown" hidden>
         <span class="countdown-line"><span class="progress-ring" aria-hidden="true"><svg viewBox="0 0 44 44"><circle class="ring-track" cx="22" cy="22" r="18"/><circle id="remaining-ring" class="ring-fill" cx="22" cy="22" r="18"/></svg></span><b id="hero-left-time"></b></span>
@@ -797,7 +830,8 @@
     <p class="credit-line">
       Times: <a href="https://aladhan.com/prayer-times-api" target="_blank" rel="noopener">Aladhan</a> ·
       Places: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors, <a href="https://zippopotam.us" target="_blank" rel="noopener">Zippopotam.us</a> ·
-      Weather: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>
+      Weather: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> ·
+      Recitation: Mishary Rashid Alafasy via <a href="https://everyayah.com/" target="_blank" rel="noopener">EveryAyah.com</a>
     </p>
   </footer>
 </main>
@@ -806,6 +840,38 @@
   <div class="forecast-heading"><h2 id="forecast-title">7-day forecast</h2><button type="button" id="forecast-close" class="forecast-close" aria-label="Close forecast">×</button></div>
   <p id="forecast-place" class="forecast-place"></p>
   <ol id="forecast-days" class="forecast-days"></ol>
+</dialog>
+
+<dialog id="quran-dialog" class="forecast-dialog quran-dialog" aria-labelledby="quran-title">
+  <div class="forecast-heading"><h2 id="quran-title">Quran recitation</h2><button type="button" id="quran-close" class="forecast-close" aria-label="Close player">×</button></div>
+  <p id="q-now" class="q-now"></p>
+  <p id="q-pos" class="q-pos"></p>
+  <div id="q-trans" class="q-trans dim" lang="en" aria-live="polite"></div>  <div class="q-controls">
+    <button type="button" id="q-prev" class="secondary q-step" aria-label="Previous verse"></button>
+    <button type="button" id="q-play" class="q-play"></button>
+    <button type="button" id="q-next" class="secondary q-step" aria-label="Next verse"></button>
+    <button type="button" id="q-details" class="secondary q-details" aria-haspopup="dialog" aria-controls="details-dialog">See details →</button>
+  </div>
+  <input id="q-slider" class="q-slider" type="range" min="1" max="6236" step="1" value="1" aria-label="Verse position, 1 to 6236">
+  <p id="q-status" class="q-status" role="status" aria-live="polite"></p>
+  <div class="q-jump">
+    <div class="field"><label for="q-surah">Surah</label><select id="q-surah"></select></div>
+    <div class="field"><label for="q-ayah">Verse</label><input id="q-ayah" type="number" inputmode="numeric" min="1" value="1"></div>
+    <button type="button" id="q-go" class="secondary">Go</button>
+  </div>
+  <div id="q-presets" class="q-presets"></div>
+  <p class="credit">Recitation: Mishary Rashid Alafasy. Audio from <a href="https://everyayah.com/" target="_blank" rel="noopener">EveryAyah.com</a>. Translation: Saheeh International, via <a href="https://alquran.cloud/" target="_blank" rel="noopener">AlQuran.cloud</a>.</p>
+</dialog>
+
+<dialog id="details-dialog" class="forecast-dialog details-dialog" aria-labelledby="details-title">
+  <div class="forecast-heading">
+    <h2 id="details-title">Verse details</h2>
+    <span class="details-actions">
+      <a id="details-new" class="details-new" href="https://www.aayatun.com/" target="_blank" rel="noopener">Open in new tab ↗</a>
+      <button type="button" id="details-close" class="forecast-close" aria-label="Close verse details">×</button>
+    </span>
+  </div>
+  <iframe id="details-frame" class="details-frame" title="Verse details" src="about:blank"></iframe>
 </dialog>
 
 <div id="note" role="status" hidden></div>
@@ -1377,6 +1443,7 @@
   }
 
   function playAdhan(idx) {
+    if (qPlaying) { qStop(); qResume = true; }     // pause the recitation; it resumes when the adhan ends
     setSrc(srcFor(idx));
     audio.muted = false;
     try { audio.currentTime = 0; } catch (e) {}
@@ -1398,11 +1465,14 @@
   audio.addEventListener('error', () => {
     $('#stop').hidden = true;
     flashNote('Couldn’t play the adhan audio. Check the address in Settings.');
+    qAfterAdhan();
   });
   $('#stop').addEventListener('click', () => {
     audio.pause();
     try { audio.currentTime = 0; } catch (e) {}
+    qAfterAdhan();
   });
+  audio.addEventListener('ended', () => qAfterAdhan());
 
   const unlockOnTap = (e) => {
     if (e && e.target && e.target.closest && e.target.closest('#wakeNo')) return;   // "Not now" shouldn't switch it on
@@ -1598,6 +1668,338 @@
     }
     renderWeather();
   }
+
+  /* ---------- Quran recitation (Mishary Rashid Alafasy, audio from everyayah.com) ---------- */
+  // One MP3 per verse, so a position from 1 to 6236 maps straight to a file name (SSSAAA.mp3).
+  const AYAH_COUNTS = [
+    7, 286, 200, 176, 120, 165, 206, 75, 129, 109,
+    123, 111, 43, 52, 99, 128, 111, 110, 98, 135,
+    112, 78, 118, 64, 77, 227, 93, 88, 69, 60,
+    34, 30, 73, 54, 45, 83, 182, 88, 75, 85,
+    54, 53, 89, 59, 37, 35, 38, 29, 18, 45,
+    60, 49, 62, 55, 78, 96, 29, 22, 24, 13,
+    14, 11, 11, 18, 12, 12, 30, 52, 52, 44,
+    28, 28, 20, 56, 40, 31, 50, 40, 46, 42,
+    29, 19, 36, 25, 22, 17, 19, 26, 30, 20,
+    15, 21, 11, 8, 8, 19, 5, 8, 8, 11,
+    11, 8, 3, 9, 5, 4, 7, 3, 6, 3,
+    5, 4, 5, 6,
+  ];
+  const SURAH_NAMES = `Al-Fatihah,Al-Baqarah,Al-Imran,An-Nisa,Al-Ma'idah,Al-An'am,Al-A'raf,Al-Anfal,At-Tawbah,Yunus,Hud,Yusuf,Ar-Ra'd,Ibrahim,Al-Hijr,An-Nahl,Al-Isra,Al-Kahf,Maryam,Ta-Ha,Al-Anbiya,Al-Hajj,Al-Mu'minun,An-Nur,Al-Furqan,Ash-Shu'ara,An-Naml,Al-Qasas,Al-Ankabut,Ar-Rum,Luqman,As-Sajdah,Al-Ahzab,Saba,Fatir,Ya-Sin,As-Saffat,Sad,Az-Zumar,Ghafir,Fussilat,Ash-Shura,Az-Zukhruf,Ad-Dukhan,Al-Jathiyah,Al-Ahqaf,Muhammad,Al-Fath,Al-Hujurat,Qaf,Adh-Dhariyat,At-Tur,An-Najm,Al-Qamar,Ar-Rahman,Al-Waqi'ah,Al-Hadid,Al-Mujadila,Al-Hashr,Al-Mumtahanah,As-Saff,Al-Jumu'ah,Al-Munafiqun,At-Taghabun,At-Talaq,At-Tahrim,Al-Mulk,Al-Qalam,Al-Haqqah,Al-Ma'arij,Nuh,Al-Jinn,Al-Muzzammil,Al-Muddaththir,Al-Qiyamah,Al-Insan,Al-Mursalat,An-Naba,An-Nazi'at,Abasa,At-Takwir,Al-Infitar,Al-Mutaffifin,Al-Inshiqaq,Al-Buruj,At-Tariq,Al-A'la,Al-Ghashiyah,Al-Fajr,Al-Balad,Ash-Shams,Al-Layl,Ad-Duha,Ash-Sharh,At-Tin,Al-Alaq,Al-Qadr,Al-Bayyinah,Az-Zalzalah,Al-Adiyat,Al-Qari'ah,At-Takathur,Al-Asr,Al-Humazah,Al-Fil,Quraysh,Al-Ma'un,Al-Kawthar,Al-Kafirun,An-Nasr,Al-Masad,Al-Ikhlas,Al-Falaq,An-Nas`.split(',');
+  const QURAN_TOTAL = AYAH_COUNTS.reduce((a, b) => a + b, 0);       // 6236
+  const SURAH_START = [];                                           // global position of each surah's first verse
+  AYAH_COUNTS.reduce((acc, n, i) => { SURAH_START[i] = acc + 1; return acc + n; }, 0);
+  const QURAN_BASE = 'https://everyayah.com/data/Alafasy_128kbps/';
+  const pad3 = (n) => String(n).padStart(3, '0');
+
+  function posToRef(pos) {
+    let lo = 0, hi = AYAH_COUNTS.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi + 1) >> 1;
+      if (SURAH_START[mid] <= pos) lo = mid; else hi = mid - 1;
+    }
+    return [lo + 1, pos - SURAH_START[lo] + 1];
+  }
+  const refToPos = (s, a) => SURAH_START[s - 1] + Math.min(Math.max(a, 1), AYAH_COUNTS[s - 1]) - 1;
+  const clampPos = (p) => Math.min(Math.max(Math.round(p) || 1, 1), QURAN_TOTAL);
+  const qUrl = (pos) => { const r = posToRef(pos); return `${QURAN_BASE}${pad3(r[0])}${pad3(r[1])}.mp3`; };
+
+  const Q_PRESETS = [
+    { label: 'Al-Fatihah', s: 1, a: 1 },
+    { label: 'Ayat al-Kursi', s: 2, a: 255 },
+    { label: 'Al-Mulk', s: 67, a: 1 },
+    { label: 'Al-Kahf', s: 18, a: 1 },
+    { label: 'Juz Amma', s: 78, a: 1 },
+    { label: 'Last 2 verses of Al-Baqarah', s: 2, a: 285 },
+    { label: 'Ya-Sin', s: 36, a: 1 },
+    { label: 'Ar-Rahman', s: 55, a: 1 },
+    { label: 'Al-Waqi\'ah', s: 56, a: 1 },
+  ];
+
+  const SVG_FILL = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">';
+  const Q_ICON_PLAY = SVG_FILL + '<path d="M8 5.5v13l11-6.5z"/></svg>';
+  const Q_ICON_STOP = SVG_FILL + '<rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
+  const Q_ICON_PREV = SVG_FILL + '<rect x="5" y="5" width="2.4" height="14" rx="1"/><path d="M19 5.5v13L8.5 12z"/></svg>';
+  const Q_ICON_NEXT = SVG_FILL + '<path d="M5 5.5v13L15.5 12z"/><rect x="16.6" y="5" width="2.4" height="14" rx="1"/></svg>';
+
+  const qDialog = $('#quran-dialog');
+  const qSlider = $('#q-slider');
+  const qPlayBtn = $('#q-play');
+  const qAudio = new Audio();       // plays the current verse
+  qAudio.preload = 'auto';
+  const qPre = new Audio();         // warms the browser cache with the next verse
+  qPre.preload = 'auto';
+  let qPos = clampPos(parseInt(prefs.quranPos, 10) || 1);
+  let qPlaying = false;
+  let qLoaded = '';                 // URL currently loaded in qAudio
+  let qBismDone = 0;                // position whose opening Bismillah has already been played
+  let qInBism = false;              // the Bismillah (not the verse itself) is what's loaded
+  let qDragging = false;
+  let qResume = false;              // recitation was paused by the adhan and should resume after it
+  let qRetries = 0;
+
+  function qNotice(text) {
+    $('#q-status').textContent = text;
+    if (text && !qDialog.open) flashNote(text);
+  }
+
+  function qLabel(pos) {
+    const r = posToRef(pos);
+    $('#q-now').textContent = `${SURAH_NAMES[r[0] - 1]} ${r[0]}:${r[1]}`;
+    $('#q-pos').textContent = `${r[1]} of ${AYAH_COUNTS[r[0] - 1]} in surah · verse ${pos} of ${QURAN_TOTAL}`;
+  }
+
+  // Keep the surah/verse boxes in step with playback, unless the person is using them
+  function qSyncJump(s, a) {
+    if ($('.q-jump').contains(document.activeElement)) return;
+    $('#q-surah').value = s;
+    $('#q-ayah').max = AYAH_COUNTS[s - 1];
+    $('#q-ayah').value = a;
+  }
+
+  // English translation (Saheeh International), fetched one surah at a time the first time it's needed
+  const qTransCache = {};           // surah number -> array of verse texts
+  const qTransPending = {};
+  const qTransFailed = {};          // surah number -> time of the last failed attempt
+  function qTransFor(s) {
+    if (qTransCache[s]) return qTransCache[s];
+    if (!qTransPending[s] && !(qTransFailed[s] && Date.now() - qTransFailed[s] < 30000)) {
+      qTransPending[s] = fetch(`https://api.alquran.cloud/v1/surah/${s}/en.sahih`)
+        .then((r) => { if (!r.ok) throw new Error('translation http ' + r.status); return r.json(); })
+        .then((j) => { qTransCache[s] = j.data.ayahs.map((x) => x.text); delete qTransFailed[s]; })
+        .catch(() => { qTransFailed[s] = Date.now(); })
+        .finally(() => { delete qTransPending[s]; qShowTrans(); });
+    }
+    return null;
+  }
+  let qTransKey = '';
+  function qShowTrans() {
+    if (!qDialog.open && !qPlaying) return;            // nothing to show (and nothing to fetch) until the player is used
+    const r = qInBism ? [1, 1] : posToRef(qPos);       // while the Bismillah plays, show its meaning
+    const list = qTransFor(r[0]);
+    const el = $('#q-trans');
+    const text = list ? list[r[1] - 1] : '';
+    const shown = list ? `${r[0]}:${r[1]}` : (qTransFailed[r[0]] ? 'failed' : 'loading');
+    if (shown !== qTransKey) {                         // only touch the box when something changed
+      qTransKey = shown;
+      el.textContent = text || (qTransFailed[r[0]] ? 'Translation unavailable right now. Check your connection.' : 'Loading translation…');
+      el.classList.toggle('dim', !text);
+      el.scrollTop = 0;
+    }
+    if (!qInBism && r[1] >= AYAH_COUNTS[r[0] - 1] - 2 && r[0] < 114) qTransFor(r[0] + 1);   // have the next surah ready
+  }
+
+  function qRender() {
+    const r = posToRef(qPos);
+    qLabel(qDragging ? +qSlider.value : qPos);
+    if (!qDragging) qSlider.value = qPos;
+    qSyncJump(r[0], r[1]);
+    qPlayBtn.innerHTML = qPlaying ? Q_ICON_STOP : Q_ICON_PLAY;     // icon only; the aria-label below names it for screen readers
+    qPlayBtn.setAttribute('aria-label', qPlaying ? 'Stop recitation' : 'Play recitation');
+    qShowTrans();    $('#quran-button').classList.toggle('on', qPlaying);
+    $('#quran-button').setAttribute('aria-label', qPlaying ? 'Open Quran player (playing)' : 'Open Quran player');
+    if ('mediaSession' in navigator) {
+      try {
+        navigator.mediaSession.playbackState = qPlaying ? 'playing' : 'paused';
+        if (qPlaying) navigator.mediaSession.metadata = new MediaMetadata({
+          title: `${SURAH_NAMES[r[0] - 1]} ${r[0]}:${r[1]}`, artist: 'Mishary Rashid Alafasy', album: 'Quran recitation',
+        });
+      } catch (e) { /* lock-screen info is optional */ }
+    }
+  }
+
+  // Every surah except At-Tawbah (9) opens with the Bismillah. Al-Fatihah (1) already has it as its verse 1.
+  const BISMILLAH_URL = QURAN_BASE + '001001.mp3';
+  const needsBism = (r) => r[1] === 1 && r[0] !== 1 && r[0] !== 9;
+
+  function qLoad() {
+    qInBism = needsBism(posToRef(qPos)) && qBismDone !== qPos;
+    const url = qInBism ? BISMILLAH_URL : qUrl(qPos);
+    if (qLoaded !== url) { qLoaded = url; qAudio.src = url; }
+    const p = qAudio.play();
+    if (p && p.catch) p.catch((err) => {
+      if (err && err.name === 'NotAllowedError') { qStop(); qNotice('Tap Play to start the recitation.'); }
+    });
+    if (qInBism) qPre.src = qUrl(qPos);                       // the verse that follows the Bismillah
+    else if (qPos < QURAN_TOTAL) qPre.src = needsBism(posToRef(qPos + 1)) ? BISMILLAH_URL : qUrl(qPos + 1);
+  }
+
+  function qStart() {
+    if (!audio.paused && !audio.muted) {            // the adhan takes over the speaker
+      audio.pause();
+      try { audio.currentTime = 0; } catch (e) {}
+    }
+    qResume = false;
+    qPlaying = true;
+    qRetries = 0;
+    qNotice('');
+    qLoad();
+    qRender();
+  }
+
+  function qStop() {
+    qPlaying = false;
+    qAudio.pause();
+    qRender();
+  }
+
+  // Jump to a position. It plays from there if asked to, or if it was already playing.
+  function qSeek(pos, play) {
+    qPos = clampPos(pos);
+    prefs.quranPos = qPos;
+    savePrefs();
+    qLoaded = '';                                   // force a reload so it starts at the beginning of that verse
+    qBismDone = 0;                                  // and a surah's first verse gets its Bismillah again
+    if (play || qPlaying) qStart(); else qRender();
+  }
+
+  function qAfterAdhan() {
+    if (qResume) { qResume = false; qStart(); }
+  }
+
+  qAudio.addEventListener('ended', () => {
+    if (!qPlaying) return;
+    if (qInBism) { qBismDone = qPos; qLoad(); qRender(); return; }   // Bismillah finished: now the surah's first verse
+    if (qPos >= QURAN_TOTAL) { qStop(); return; }   // the end of the Quran
+    qPos++;
+    prefs.quranPos = qPos;
+    savePrefs();
+    qLoad();
+    qRender();
+  });
+  qAudio.addEventListener('playing', () => { qRetries = 0; $('#q-status').textContent = ''; });
+  qAudio.addEventListener('error', () => {
+    if (!qPlaying) return;
+    if (qRetries < 2) {                             // brief network hiccup: try the same verse again
+      qRetries++;
+      setTimeout(() => {
+        if (!qPlaying) return;
+        qAudio.src = qLoaded;                        // same file again
+        qAudio.play().catch(() => {});
+      }, 1500);
+      return;
+    }
+    qStop();
+    qNotice('Couldn’t load the recitation. Check your connection and tap Play.');
+  });
+
+  // Controls
+  qSlider.max = QURAN_TOTAL;
+  $('#q-prev').innerHTML = Q_ICON_PREV;
+  $('#q-next').innerHTML = Q_ICON_NEXT;
+  SURAH_NAMES.forEach((n, i) => $('#q-surah').add(new Option(`${i + 1}. ${n}`, i + 1)));
+  Q_PRESETS.forEach((p) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'secondary';
+    b.textContent = p.label;
+    b.addEventListener('click', () => qSeek(refToPos(p.s, p.a), true));
+    $('#q-presets').appendChild(b);
+  });
+
+  // The preset row scrolls with the wheel or by dragging with a mouse. A drag that ends on a button
+  // must not count as a click, so scrolling never starts the recitation by accident.
+  const qStrip = $('#q-presets');
+  // A press that moved, or after which the row scrolled, is a scroll gesture, whatever the input type.
+  let qDownOn = false, qDownX = 0, qDownLeft = 0;
+  const qWasScroll = (e) => qDownOn && e.detail !== 0 && (Math.abs(e.clientX - qDownX) > 6 || Math.abs(qStrip.scrollLeft - qDownLeft) > 3);
+  let qDragId = null, qDragX = 0, qDragLeft = 0, qDragMoved = false;
+  qStrip.addEventListener('wheel', (e) => {
+    if (qStrip.scrollWidth > qStrip.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+      qStrip.scrollLeft += e.deltaY;
+      e.preventDefault();
+    }
+  }, { passive: false });
+  // Touch and pen never rely on the browser's click: a preset only starts when the finger lifts after a clean tap
+  // (no movement, no scrolling, no cancel). Any click the browser synthesises after touch is swallowed below.
+  let qLastType = 'mouse', qTapOk = false, qDownY = 0;
+  qStrip.addEventListener('pointerdown', (e) => {
+    qLastType = e.pointerType; qTapOk = true; qDownY = e.clientY;
+    qDownOn = true; qDownX = e.clientX; qDownLeft = qStrip.scrollLeft;
+    if (e.pointerType !== 'mouse' || e.button !== 0) return;      // only a mouse needs the drag-to-scroll below
+    qDragId = e.pointerId; qDragX = e.clientX; qDragLeft = qStrip.scrollLeft; qDragMoved = false;
+  });
+  qStrip.addEventListener('pointercancel', () => { qTapOk = false; });     // the browser took the gesture over to scroll
+  qStrip.addEventListener('pointerup', (e) => {
+    if (e.pointerType !== 'mouse' && qTapOk && Math.abs(qStrip.scrollLeft - qDownLeft) <= 3
+        && Math.abs(e.clientX - qDownX) <= 8 && Math.abs(e.clientY - qDownY) <= 8) {
+      const b = e.target.closest ? e.target.closest('button') : null;
+      if (b && qStrip.contains(b)) b.click();                              // a script-made click (detail 0) is let through
+    }
+    qTapOk = false;
+  });
+  qStrip.addEventListener('pointermove', (e) => {
+    if (qTapOk && (Math.abs(e.clientX - qDownX) > 8 || Math.abs(e.clientY - qDownY) > 8)) qTapOk = false;
+    if (e.pointerId !== qDragId) return;
+    const dx = e.clientX - qDragX;
+    if (!qDragMoved && Math.abs(dx) > 5) { qDragMoved = true; try { qStrip.setPointerCapture(e.pointerId); } catch (err) {} }
+    if (qDragMoved) qStrip.scrollLeft = qDragLeft - dx;
+  });
+  ['pointerup', 'pointercancel'].forEach((ev) => qStrip.addEventListener(ev, (e) => { if (e.pointerId === qDragId) qDragId = null; }));
+  qStrip.addEventListener('contextmenu', (e) => { if (qLastType !== 'mouse') e.preventDefault(); });   // no long-press menu on touch
+  qStrip.addEventListener('click', (e) => {
+    // detail 0 = keyboard or the script click above: always allowed. Real clicks from touch/pen are ignored
+    // (handled on pointerup); real mouse clicks are ignored only when they end a drag.
+    const ignore = e.detail !== 0 && (qLastType !== 'mouse' || qDragMoved || qWasScroll(e));
+    qDragMoved = false;
+    qDownOn = false;
+    if (ignore) { e.stopPropagation(); e.preventDefault(); }
+  }, true);
+
+  // Verse details: aayatun.com/<surah>/<verse> embedded in a popup on top of the player. Playback carries on.
+  // When this page is served from aayatun.com the address is relative to the same site; otherwise the full address is used.
+  const dDialog = $('#details-dialog');
+  const dFrame = $('#details-frame');
+  const aayatunBase = /(^|\.)aayatun\.com$/i.test(location.hostname) ? location.origin : 'https://www.aayatun.com';
+  $('#q-details').addEventListener('click', () => {
+    const r = posToRef(qPos);                       // the verse being played at this moment
+    const url = `${aayatunBase}/${r[0]}/${r[1]}`;
+    $('#details-title').textContent = `${SURAH_NAMES[r[0] - 1]} ${r[0]}:${r[1]}`;
+    $('#details-new').href = url;
+    dFrame.src = url;
+    if (!dDialog.open) dDialog.showModal();
+  });
+  dDialog.addEventListener('close', () => { dFrame.src = 'about:blank'; });   // stop loading and free the page
+  $('#details-close').addEventListener('click', () => dDialog.close());
+  let dDownOnBackdrop = false;
+  dDialog.addEventListener('pointerdown', (e) => { dDownOnBackdrop = e.target === dDialog; });
+  dDialog.addEventListener('click', (e) => { if (e.target === dDialog && dDownOnBackdrop) dDialog.close(); });
+
+  qPlayBtn.addEventListener('click', () => { if (qPlaying) qStop(); else qStart(); });
+  $('#q-prev').addEventListener('click', () => qSeek(qPos - 1, false));
+  $('#q-next').addEventListener('click', () => qSeek(qPos + 1, false));
+  // While dragging only the label moves. Letting go moves the position; it keeps playing from there
+  // if the recitation was already playing, and never starts playback on its own when it was stopped.
+  qSlider.addEventListener('input', () => { qDragging = true; qLabel(+qSlider.value); });
+  qSlider.addEventListener('change', () => { qDragging = false; qSeek(+qSlider.value, false); });
+  qSlider.addEventListener('blur', () => { if (qDragging) { qDragging = false; qRender(); } });
+  $('#q-surah').addEventListener('change', () => {
+    $('#q-ayah').max = AYAH_COUNTS[+$('#q-surah').value - 1];
+    $('#q-ayah').value = 1;
+  });
+  const qGo = () => {
+    const s = +$('#q-surah').value, a = Math.round(+$('#q-ayah').value) || 1;
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    qSeek(refToPos(s, a), true);
+  };
+  $('#q-go').addEventListener('click', qGo);
+  $('#q-ayah').addEventListener('keydown', (e) => { if (e.key === 'Enter') qGo(); });
+
+  $('#quran-button').addEventListener('click', () => { if (!qDialog.open) qDialog.showModal(); qRender(); });
+  $('#quran-close').addEventListener('click', () => qDialog.close());
+  // Close on a tap outside, but not when a slider drag merely ends outside the popup
+  let qDownOnBackdrop = false;
+  qDialog.addEventListener('pointerdown', (e) => { qDownOnBackdrop = e.target === qDialog; });
+  qDialog.addEventListener('click', (e) => { if (e.target === qDialog && qDownOnBackdrop) qDialog.close(); });
+
+  if ('mediaSession' in navigator) {
+    try {
+      [['play', () => qStart()], ['pause', () => qStop()],
+       ['previoustrack', () => qSeek(qPos - 1, qPlaying)], ['nexttrack', () => qSeek(qPos + 1, qPlaying)]]
+        .forEach(([k, f]) => navigator.mediaSession.setActionHandler(k, f));
+    } catch (e) { /* not every browser supports every action */ }
+  }
+  qRender();
 
   /* ---------- events ---------- */
   $('#forecast-button').addEventListener('click', () => {
