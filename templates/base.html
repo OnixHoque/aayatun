@@ -43,7 +43,7 @@
    {% block menu %} {% endblock %}
  </div>
 
- <footer id="loading-bar" style="position: fixed; bottom: 0; background: white; left: 0; font-family: open sans; z-index: 2; font-size: 13px; width: 100%; padding-bottom: 1%; padding-top: 1%; text-align: center; opacity: 0.9; border-radius: 5px; display: none;">
+ <footer id="loading-bar" style="position: fixed; top: auto; left: 0; right: 0; bottom: 0; width: 100%; box-sizing: border-box; background: white; font-family: 'Open Sans', open sans; z-index: 2000; font-size: 13px; padding: 8px 0 calc(8px + env(safe-area-inset-bottom, 0px)); text-align: center; opacity: 0.9; border-radius: 5px 5px 0 0; display: none;">
   <div class="ui active tiny inline loader" style="padding: 0px 15px"></div>Loading...
 </footer>
 
@@ -119,6 +119,9 @@ document.addEventListener('DOMContentLoaded', function () {
     $('#loading-bar').fadeOut();
   }
   window.addEventListener('pageshow', hideLoading);
+  // Mobile browsers (iOS Safari, Chrome) often skip beforeunload on navigation
+  // but do fire pagehide; use it so the loading bar shows reliably on phones.
+  window.addEventListener('pagehide', showLoading);
 
   $('.accordion .title').css('font-weight', 'bold');
   $('.accordion .title').css('font-size', '110%');

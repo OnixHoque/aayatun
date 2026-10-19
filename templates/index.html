@@ -34,7 +34,7 @@
         text-align: center;
         font-weight: 300;
         opacity: .65;
-        margin-bottom: 1.75rem;
+        margin: 0.25rem 0 1rem;
     }
 
     :focus-visible {
@@ -46,7 +46,7 @@
         display: flex;
         flex-wrap: wrap;
         justify-content: center;
-        gap: 8px;
+        gap: 4px;
         margin-top: 8px;
     }
 
@@ -78,14 +78,14 @@
 		  <option value="{{ s['surah_no'] }}" verse_count="{{ s['verse_count'] }}">{{ s['surah'] }}</option>
 		{% endfor %}
 		</select>
-		<div class="ui two column stackable grid" style="margin: 16px 0 0 0; position: relative;">
-			<div class="column" style="display: flex; flex-direction: column; justify-content: center;">
+		<div class="ui two column stackable grid" style="margin: 0; position: relative;">
+			<div class="column" style="display: flex; flex-direction: column; justify-content: center; padding-top: 0;">
 				<div class="home-section-label" style="font-family: 'Open Sans';">Read the whole surah</div>
 				<div id="whole-surah-row">
-				  <button name="menuitem" class="circular ui tiny basic icon button" style="font-family: 'Open Sans'; font-size: 90%;">Arabic</button>
-				  <button name="menuitem" class="circular ui tiny basic icon button" style="font-family: 'Open Sans'; font-size: 90%;">Translation</button>
-				  <button name="menuitem" class="circular ui tiny basic icon button" style="font-family: 'Open Sans'; font-size: 90%;">Tafsir (Bn)</button>
-				  <button name="menuitem" class="circular ui tiny basic icon button" style="font-family: 'Open Sans'; font-size: 90%;">Tafsir (En)</button>
+				  <button name="menuitem" class="circular ui tiny basic icon button" style="font-family: 'Open Sans'; font-size: 78%;">Arabic</button>
+				  <button name="menuitem" class="circular ui tiny basic icon button" style="font-family: 'Open Sans'; font-size: 78%;">Translation</button>
+				  <button name="menuitem" class="circular ui tiny basic icon button" style="font-family: 'Open Sans'; font-size: 78%;">Tafsir (Bn)</button>
+				  <button name="menuitem" class="circular ui tiny basic icon button" style="font-family: 'Open Sans'; font-size: 78%;">Tafsir (En)</button>
 				</div>
 			</div>
 
