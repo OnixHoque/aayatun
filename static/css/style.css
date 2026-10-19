@@ -7,3 +7,45 @@ body, h2{
 	font-family: 'Open Sans', sans-serif;
 	margin-bottom: 60px;
 }
+
+/* NOTE: do not animate `.ui.basic.segment` (or `.ui.text.container`) with
+   opacity/transform. They are ancestors of the index dropdown menu and of the
+   fixed #collapse-btn / modals; an animation there creates a stacking context
+   that traps the dropdown beneath the later-in-DOM banners, and a transform
+   would unpin the fixed button. */
+
+/* Home "Read the whole surah" label above the table-style option buttons */
+.home-section-label {
+	margin: 16px 0 6px;
+	font-size: 85%;
+	color: rgba(0, 0, 0, .45);
+}
+
+html.dark-theme .home-section-label {
+	color: rgba(255, 255, 255, .5);
+}
+
+/* Light theme: the styled accordion's outer edge is a Fomantic box-shadow
+   outline (not a border). Give it a real border at dark-theme strength so the
+   left/right sides stay visible. */
+html:not(.dark-theme) .ui.styled.accordion {
+	box-sizing: border-box;
+	border: 1px solid rgba(34, 36, 38, .5);
+	box-shadow: 0 1px 2px 0 rgba(34, 36, 38, .15);
+}
+
+#btnGo, #btnSurprise {
+	transition: transform .12s ease, box-shadow .2s ease;
+}
+
+#btnGo:hover, #btnSurprise:hover {
+	transform: translateY(-1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*, ::before, ::after {
+		animation-duration: .001ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: .001ms !important;
+	}
+}

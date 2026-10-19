@@ -2082,5 +2082,12 @@
   else if (prefs.query) loadFromForm({ close: true });
 })();
 </script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js', { scope: '/' }).catch(() => {});
+  });
+}
+</script>
 </body>
 </html>

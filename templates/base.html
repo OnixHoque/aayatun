@@ -5,20 +5,34 @@
   <meta name="theme-color" content="#eeeeee">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <script>
+    (function () {
+      try {
+        if (localStorage.getItem('darktheme') === 'true') {
+          document.documentElement.classList.add('dark-theme');
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', 'rgb(44,44,44)');
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <style>
+    html.dark-theme { color-scheme: dark; background-color: rgb(27, 28, 29); }
+    html.dark-theme body { background-color: rgb(27, 28, 29) !important; color: rgba(255, 255, 255, .87); }
+    html.dark-theme #menubar { background-color: rgb(44, 44, 44) !important; border-bottom: 1px solid rgba(80, 80, 80, .8); }
+  </style>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.6/dist/semantic.min.css">
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename= 'images/favicon.png') }}"/>
   <link rel="apple-touch-icon" href="{{ url_for('static', filename= 'images/favicon.png') }}">
-  <!-- Bootstrap CSS -->
 
 
-  <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.6/dist/semantic.min.js"></script>
-  <link rel="preconnect" href="https://fonts.gstatic.com">
-  <link href="https://fonts.googleapis.com/css2?family=Baloo+Da+2&display=swap" rel="stylesheet">
-  <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700,300&subset=latin,vietnamese' rel='stylesheet' type='text/css'>
-  <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@700&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Amiri&family=Scheherazade:wght@700&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Lora&display=swap" rel="stylesheet">
+  <script defer src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.6/dist/semantic.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;700&family=Merriweather:wght@700&family=Amiri&family=Scheherazade:wght@700&family=Lora&family=Baloo+Da+2&display=swap" rel="stylesheet">
   {% block js %} {% endblock js %}
   <title>{% block title %} {% endblock %}</title>
 </head>
@@ -29,7 +43,7 @@
    {% block menu %} {% endblock %}
  </div>
 
- <footer id="loading-bar" style="position: fixed; bottom: 0; background: white; left: 0; font-family: open sans; z-index: 2; font-size: 13px; width: 100%; padding-bottom: 1%; padding-top: 1%; text-align: center; opacity: 0.9; border-radius: 5px;">
+ <footer id="loading-bar" style="position: fixed; bottom: 0; background: white; left: 0; font-family: open sans; z-index: 2; font-size: 13px; width: 100%; padding-bottom: 1%; padding-top: 1%; text-align: center; opacity: 0.9; border-radius: 5px; display: none;">
   <div class="ui active tiny inline loader" style="padding: 0px 15px"></div>Loading...
 </footer>
 
@@ -77,7 +91,7 @@
 
 
 <script type="text/javascript">
-
+document.addEventListener('DOMContentLoaded', function () {
 
   $('.ui.form')
     .form({
@@ -114,6 +128,7 @@
 
   //dark theme!
   if (is_dark_theme()==="true") {
+    document.documentElement.classList.add('dark-theme');
     $('body').css('background-color', 'rgb(27, 28, 29)');
     document.querySelector('meta[name="theme-color"]').setAttribute('content', 'rgb(44, 44, 44)');
 
@@ -208,7 +223,13 @@
     // $('.accordion .title').css('border-style', 'solid');
     // $('.accordion .title').css('border-color', 'gray');
     // $('.pagination').addClass('inverted');
+  } else {
+    document.documentElement.classList.remove('dark-theme');
   }
+
+  window.showLoading = showLoading;
+  window.hideLoading = hideLoading;
+});
 </script>
 
 </body>

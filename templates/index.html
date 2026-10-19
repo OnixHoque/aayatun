@@ -17,15 +17,58 @@
 </div>
 {% endblock %}
 
+{% block content %}
 <style>
     * {
         font-family: "Open Sans";
     }
 
-</style>
+    .ui.basic.segment {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
 
-{% block content %}
-    <h2 style="text-align: center;font-family: Open Sans;"> Let's explore the Quran! </h2>
+    .home-tagline {
+        text-align: center;
+        font-weight: 300;
+        opacity: .65;
+        margin-bottom: 1.75rem;
+    }
+
+    :focus-visible {
+        outline: 2px solid #2185d0;
+        outline-offset: 2px;
+    }
+
+    #whole-surah-row {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 8px;
+    }
+
+    /* "or" divider: vertical between columns on tablet+, horizontal when stacked */
+    #home-or-v,
+    #home-or-h {
+        display: none !important;
+    }
+
+    @media (min-width: 768px) {
+        #home-or-v {
+            display: block !important;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        #home-or-h {
+            display: table !important;
+        }
+    }
+</style>
+    <h2 class="home-tagline" style="font-family: 'Open Sans';"> Let's explore the Quran! </h2>
 {% endblock %}
 
 {% block content2 %}
@@ -35,38 +78,34 @@
 		  <option value="{{ s['surah_no'] }}" verse_count="{{ s['verse_count'] }}">{{ s['surah'] }}</option>
 		{% endfor %}
 		</select>
-		<br>
-		<div class="ui two column grid" id="verserow">
-			<div class="column" style="margin: auto;"><p style="text-align: right;"> Jump to verse </p></div>
-			<div class="column">
-				<select class="ui search fluid dropdown" id="verse">
-				  <option value="1">1</option>
-				</select>
+		<div class="ui two column stackable grid" style="margin: 16px 0 0 0; position: relative;">
+			<div class="column" style="display: flex; flex-direction: column; justify-content: center;">
+				<div class="home-section-label" style="font-family: 'Open Sans';">Read the whole surah</div>
+				<div id="whole-surah-row">
+				  <button name="menuitem" class="circular ui tiny basic icon button" style="font-family: 'Open Sans'; font-size: 90%;">Arabic</button>
+				  <button name="menuitem" class="circular ui tiny basic icon button" style="font-family: 'Open Sans'; font-size: 90%;">Translation</button>
+				  <button name="menuitem" class="circular ui tiny basic icon button" style="font-family: 'Open Sans'; font-size: 90%;">Tafsir (Bn)</button>
+				  <button name="menuitem" class="circular ui tiny basic icon button" style="font-family: 'Open Sans'; font-size: 90%;">Tafsir (En)</button>
+				</div>
+			</div>
+
+			<div class="ui vertical divider" id="home-or-v" style="left: 50%;">or</div>
+			<div class="ui horizontal divider" id="home-or-h" style="width: 100%; flex: 0 0 100%;">or</div>
+
+			<div class="column" style="display: flex; flex-direction: column; justify-content: center;">
+				<div id="verserow" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+					<div style="font-family: 'Open Sans'; white-space: nowrap;"> Jump to verse </div>
+					<div style="width: 84px; flex: 0 0 auto;">
+						<select class="ui search fluid dropdown" id="verse">
+						  <option value="1">1</option>
+						</select>
+					</div>
+					<div class="ui primary button" id="btnGo" style="font-family: 'Open Sans'; white-space: nowrap;">Go <i class="arrow right icon" style="color: inherit;"></i></div>
+				</div>
 			</div>
 		</div>
 
-		<br>
-
-
-		<div style="margin-bottom: 20px;">
-
-			<div class="ui fluid buttons">
-			  <div class="ui large primary button" style="font-family: 'Open Sans'; width: 90%" id="btnGo"><span style="width: 29px; display: inline-block;"></span>Open</div>
-			  <div class="ui floating dropdown primary icon button" style="flex-grow: 0;">
-			    <i class="dropdown icon"></i>
-			    <div class="fluid menu">
-			      <div class="header"  style="font-family: 'Open Sans'; font-size: 90%">Read the whole surah</div>
-			      <div name="menuitem" class="item" style="font-family: 'Open Sans'; font-size: 90%">&nbsp;&nbsp;Arabic</div>
-			      <div name="menuitem" class="item" style="font-family: 'Open Sans'; font-size: 90%">&nbsp;&nbsp;English Translation</div>
-			      <div name="menuitem" class="item" style="font-family: 'Open Sans'; font-size: 90%">&nbsp;&nbsp;Bangla Tafseer</div>
-			      <div name="menuitem" class="item" style="font-family: 'Open Sans'; font-size: 90%">&nbsp;&nbsp;English Tafseer</div>
-			    </div>
-			  </div>
-			</div>
-		<!-- <button class="ui huge blue fluid button" style="font-family: Open Sans; font-size: 95%;" id='btnGo'> Open </button> -->
-		<p></p>
-		<button class="ui huge basic fluid button" style="font-family: Open Sans; font-size: 95%" id='btnSurprise'> Surprise me! </button>
-		</div>
+		<button class="ui huge basic fluid button" style="font-family: Open Sans; font-size: 95%; margin-top: 18px;" id='btnSurprise'> Surprise me! </button>
 
 	</div>
 
@@ -89,6 +128,7 @@
 </div> -->
 
 <script>
+document.addEventListener('DOMContentLoaded', function () {
 	$('.ui.dropdown').dropdown({
 		fullTextSearch: true
 	});
@@ -150,7 +190,7 @@
                 .catch((err) => console.log('Failure: ', err));
         })
     }
-
+});
 
 </script>
 
@@ -159,7 +199,7 @@
 {% endblock content2 %}
 
 {% block end_ %}
-<div class="ui text container" style="font-family: 'Open Sans'; display: flex ;flex: 1; flex-direction: column-reverse;">
+<div class="ui text container" style="font-family: 'Open Sans'; display: flex; flex: 0 0 auto; flex-direction: column-reverse;">
 		<p style="text-align: center; color: gray; opacity: 90%; padding-top: 2%; font-size: 70%;">Aayatun v1.5.5 | <a href="#" id="change-theme">Dark Theme</a> | <a href="{{ url_for('prayer_time') }}">Prayer Time</a> </p>
 		<div id="install-banner" class="ui mini message" style="display: none; color: gray">
 		    <i class="close icon"></i>

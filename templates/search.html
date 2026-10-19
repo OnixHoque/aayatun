@@ -22,7 +22,6 @@
 
 {% block content %}
 
-<link href="https://fonts.googleapis.com/css2?family=Lora&display=swap" rel="stylesheet">
 <!-- <link href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.css" rel="stylesheet"> -->
 <link href="https://cdn.datatables.net/1.10.22/css/dataTables.semanticui.min.css" rel="stylesheet">
 
@@ -237,13 +236,14 @@
 
 
 	<!-- <script src="https://code.jquery.com/jquery-3.5.1.js"></script> -->
-	<script src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.min.js"></script>
-	<script src="https://cdn.datatables.net/1.10.22/js/dataTables.semanticui.min.js"></script>
+	<script defer src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.min.js"></script>
+	<script defer src="https://cdn.datatables.net/1.10.22/js/dataTables.semanticui.min.js"></script>
 
 
 	<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.js"></script> -->
 
 	<script>
+	document.addEventListener('DOMContentLoaded', function () {
 		$('#cbofilter')
 		  	.dropdown('set selected', '{{ filter_value }}');
 
@@ -361,6 +361,9 @@
 
 
 	}
+
+	window.showModal = showModal;
+	});
 
 	</script>
 	{% endblock content3 %}

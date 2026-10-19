@@ -2,16 +2,37 @@
 
 {% block title %} {{ details['surah_name'] }} : Aayatun - An Ayah a Day {% endblock %}
 
+{% block js %}
+<script>
+(function () {
+	// Record travel direction, then navigate; the incoming page slides its text
+	// from the matching side. Used by the arrow links, keys and swipes.
+	window.navigateVerse = function (url, dir) {
+		try { sessionStorage.setItem('aayatun_nav', dir); } catch (e) {}
+		window.location.href = url;
+		return false;
+	};
+	try {
+		var d = sessionStorage.getItem('aayatun_nav');
+		sessionStorage.removeItem('aayatun_nav');
+		if (window.self === window.top && (d === 'next' || d === 'prev')) {
+			document.documentElement.classList.add('nav-' + d);
+		}
+	} catch (e) {}
+})();
+</script>
+{% endblock js %}
+
 {% block menu %}
 <div class="item" style="outline: none;">
-<a class="ui icon basic huge left floated button" href= {{ url_for('details', surah=details['prev'][0], verse=details['prev'][1]) }} ><i class="left arrow icon"></i></a>
+<a class="ui icon basic huge left floated button" href="{{ url_for('details', surah=details['prev'][0], verse=details['prev'][1]) }}" onclick="return navigateVerse(this.href, 'prev')"><i class="left arrow icon"></i></a>
 </div>
 
 <div class="header item" style="font-size: 200%; display: inline-block; text-align: middle;">
 <a href="{{ url_for('index') }}" style="font-family: Merriweather;">Quran</a> <a style="font-family: Merriweather;" href="{{ url_for('details', surah=details['surah'], verse=1) }}">{{ details['surah'] }}:{{ details['verse'] }}</a>
 </div>
 <div class="item">
-<a class="ui icon basic right floated huge button" href= {{ url_for('details', surah=details['next'][0], verse=details['next'][1]) }}><i class="right arrow icon"></i></a>
+<a class="ui icon basic right floated huge button" href="{{ url_for('details', surah=details['next'][0], verse=details['next'][1]) }}" onclick="return navigateVerse(this.href, 'next')"><i class="right arrow icon"></i></a>
 </div>
 {% endblock %}
 
@@ -22,6 +43,31 @@
 		* {
 			font-family: 'Open Sans'
 		}
+
+		/* Direction-aware entrance for the verse TEXT only: only next/prev
+		   navigation sets nav-next/nav-prev on <html> (see the head script).
+		   Containers (controls, accordion) stay fixed; only the ayah and the
+		   translation nudge, so nothing else shifts. */
+		@keyframes vd-in-right {
+			from { opacity: 0; transform: translate3d(16px, 0, 0); }
+			to   { opacity: 1; transform: none; }
+		}
+		@keyframes vd-in-left {
+			from { opacity: 0; transform: translate3d(-16px, 0, 0); }
+			to   { opacity: 1; transform: none; }
+		}
+		html.nav-next #pagecontent > h1,
+		html.nav-next #verse-translation {
+			animation: vd-in-right .3s cubic-bezier(.22, .61, .36, 1) both;
+		}
+		html.nav-prev #pagecontent > h1,
+		html.nav-prev #verse-translation {
+			animation: vd-in-left .3s cubic-bezier(.22, .61, .36, 1) both;
+		}
+		#verse-translation { animation-delay: .05s; }
+
+		/* Clip the transient horizontal offset of the text nudge. */
+		.ui.text.container { overflow-x: clip; }
 	</style>
 	<script type="text/javascript">
 		var navigation_allowed = true;
@@ -80,10 +126,10 @@
 		</div>
     </div>
 
-    <p>{{ details['translation'] }}</p>
+    <p id="verse-translation">{{ details['translation'] }}</p>
 
 
-    <button id="collapse-btn" style="display: none; position: fixed; background: white; box-shadow: all; bottom: 70px; right: 15px; opacity: 0.7; ; z-index: 3" class="circular ui basic huge icon button" onclick="collapseAll()">
+    <button id="collapse-btn" style="display: none; position: fixed; background: white; box-shadow: all; bottom: calc(15px + 3.67346939rem + 10px); right: 15px; opacity: 0.7; ; z-index: 3" class="circular ui basic huge icon button" onclick="collapseAll()">
 	  <i class="icon bars"></i>
 	</button>
 
@@ -383,6 +429,7 @@
 
 <script src="{{ url_for('static', filename= 'js/swiped-events.min.js') }}"></script>
 <script type="text/javascript" id="tagscript">
+document.addEventListener('DOMContentLoaded', function () {
 	$('.ui.accordion')
 	  .accordion(
 	  {
@@ -445,20 +492,24 @@
 		};
 	}
 
+	window.collapseAll = collapseAll;
+	window.changeAudioSrc = changeAudioSrc;
+});
+
 </script>
 <script>
-//Keypress Events
+//Keypress Events (window.navigateVerse is defined in the head script)
 
 	document.onkeydown = function(event) {
         switch (event.keyCode) {
            case 37:
            		if (navigation_allowed)
-           			window.location.href = "{{ url_for('details', surah=details['prev'][0], verse=details['prev'][1]) }}";
+           			navigateVerse("{{ url_for('details', surah=details['prev'][0], verse=details['prev'][1]) }}", "prev");
               break;
 
            case 39:
            		if (navigation_allowed)
-                	window.location.href = "{{ url_for('details', surah=details['next'][0], verse=details['next'][1]) }}";
+                	navigateVerse("{{ url_for('details', surah=details['next'][0], verse=details['next'][1]) }}", "next");
               break;
 
         }
@@ -468,12 +519,12 @@
 
     document.addEventListener('swiped-left', function(e) {
     	if (navigation_allowed)
-    		window.location.href = "{{ url_for('details', surah=details['next'][0], verse=details['next'][1]) }}";
+    		navigateVerse("{{ url_for('details', surah=details['next'][0], verse=details['next'][1]) }}", "next");
 	});
 
 	document.addEventListener('swiped-right', function(e) {
 		if (navigation_allowed)
-	    	window.location.href = "{{ url_for('details', surah=details['prev'][0], verse=details['prev'][1]) }}";
+	    	navigateVerse("{{ url_for('details', surah=details['prev'][0], verse=details['prev'][1]) }}", "prev");
 	});
 
 

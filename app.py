@@ -2,13 +2,22 @@ from flask import Flask, render_template, send_from_directory
 import pandas as pd
 import library as lib
 import random
+import ast
+from functools import lru_cache
 from datetime import datetime
 from flask import request, redirect
 import searchtool as st
 
+@lru_cache(maxsize=1)
 def getVerseMaps():
 	x = pd.read_json('db/quran_stat.json')
-	return [ {'surah': i, 'verse_count': j, 'surah_no': k} for i, j, k in zip(list(x['Surah']), list(x['Verses']), range(1, 115))]
+	return tuple({'surah': i, 'verse_count': j, 'surah_no': k} for i, j, k in zip(list(x['Surah']), list(x['Verses']), range(1, 115)))
+
+def getRukuList():
+	with open('db/ruku_index.txt') as f:
+		return ast.literal_eval(f.read())
+
+RUKU_LIST = getRukuList()
 
 app = Flask(__name__)
 
@@ -18,22 +27,8 @@ def sw():
 
 @app.route('/')
 def index():
-	idx = getVerseMaps()
-	random.seed()
-	# i = random.randint(1, 114)
-	# j = random.randint(1, idx[i-1]['verse_count'])
-
-	# --Old Surprise Me!--
-	# p = [(i, j) for i in range(1, 115) for j in range(1, idx[i - 1]['verse_count'] + 1)]
-	# i, j = p[random.randint(0, len(p))]
-	# --
-	ruku_list = []
-	with open('db/ruku_index.txt') as f:
-		ruku_list = eval(f.read())
-	i, j = random.choice(ruku_list)
-	resp =  render_template('index.html', surahs=getVerseMaps(), rand_surah = (i, j))
-	# resp.set_cookie('userID', user)
-	return resp
+	i, j = random.choice(RUKU_LIST)
+	return render_template('index.html', surahs=getVerseMaps(), rand_surah=(i, j))
 
 @app.route('/<int:surah>/', strict_slashes=False)
 def details2(surah):
