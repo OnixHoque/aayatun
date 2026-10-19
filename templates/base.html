@@ -104,6 +104,7 @@
   {
     $('#loading-bar').fadeOut();
   }
+  window.addEventListener('pageshow', hideLoading);
 
   $('.accordion .title').css('font-weight', 'bold');
   $('.accordion .title').css('font-size', '110%');
