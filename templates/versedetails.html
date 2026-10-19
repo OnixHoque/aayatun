@@ -113,12 +113,15 @@
 					<button style="font-family: 'Open Sans' font-size: 90%; " class="circular ui tiny basic icon button" onclick="window.parent.location.href ='{{ url_for('en_tafsir', surah=details['surah']) }}'">
 						Tafsir (En)
 					</button>
-				<i class="icon close" style="cursor: pointer;" onclick="$('#more-controls').hide(); $('#more-btn').show(); $('#play-btn').show()"></i>
+				<i class="icon close" style="cursor: pointer;" onclick="$('#more-controls').hide(); $('#more-btn').show(); $('#play-btn').show(); $('#share-btn').show()"></i>
 				</span>
 
     		</span>
-			<button id="more-btn" data-tooltip="Comprehensive Reading" class="circular ui basic icon button" onclick="$('#more-btn').hide(); $('#play-btn').hide(); $('#more-controls').fadeIn();">
+			<button id="more-btn" data-tooltip="Comprehensive Reading" class="circular ui basic icon button" onclick="$('#more-btn').hide(); $('#play-btn').hide(); $('#share-btn').hide(); $('#more-controls').fadeIn();">
 			  <i class="icon ellipsis horizontal"></i>
+			</button>
+	    	<button id="share-btn" data-tooltip="Share this ayah" class="circular ui basic icon button" onclick="shareVerse()">
+			  <i class="icon share alternate"></i>
 			</button>
 	    	<button id="play-btn" class="circular ui basic icon button" onclick="$('#audio-box').fadeIn(); $('#control-btns').hide(); $('#mainaudio').trigger('play');">
 			  <i class="icon play"></i>
@@ -492,8 +495,34 @@ document.addEventListener('DOMContentLoaded', function () {
 		};
 	}
 
+	function shareVerse()
+	{
+		var url = new URL("{{ url_for('details', surah=details['surah'], verse=details['verse']) }}", window.location.origin).href;
+		var ayah = {{ details['ayah']|tojson }};
+		var translation = {{ details['translation']|tojson }};
+		var title = {{ (details['surah_name'] ~ ' ' ~ details['surah'] ~ ':' ~ details['verse'])|tojson }};
+		if (navigator.share)
+		{
+			navigator.share({ title: title, text: ayah + "\n\n" + translation, url: url }).catch(function(){});
+		}
+		else if (navigator.clipboard)
+		{
+			navigator.clipboard.writeText(url).then(function(){
+				var b = document.getElementById('share-btn');
+				var old = b.innerHTML;
+				b.innerHTML = '<i class="icon check"></i>';
+				setTimeout(function(){ b.innerHTML = old; }, 1200);
+			});
+		}
+		else
+		{
+			window.prompt('Copy this link:', url);
+		}
+	}
+
 	window.collapseAll = collapseAll;
 	window.changeAudioSrc = changeAudioSrc;
+	window.shareVerse = shareVerse;
 });
 
 </script>
