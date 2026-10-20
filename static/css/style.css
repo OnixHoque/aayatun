@@ -25,14 +25,198 @@ html.dark-theme .home-section-label {
 	color: rgba(255, 255, 255, .5);
 }
 
-/* Light theme: the styled accordion's outer edge is a Fomantic box-shadow
-   outline (not a border). Give it a real border at dark-theme strength so the
-   left/right sides stay visible. */
-html:not(.dark-theme) .ui.styled.accordion {
-	box-sizing: border-box;
-	border: 1px solid rgba(34, 36, 38, .5);
-	box-shadow: 0 1px 2px 0 rgba(34, 36, 38, .15);
+/* Tajweed colour classes for the "quran-tajweed" edition markup.
+   Light  = code_v2 palette (quran.com's verse-text Tajweed toggle).
+   Dark   = quran.com's TajweedV4 colored-font dark palette.
+   Rule letters live in library.TAJWEED_RULES. */
+
+.ayah-tajweed .tj-h,
+.ayah-tajweed .tj-s,
+.ayah-tajweed .tj-l {
+	color: #AAAAAA;
 }
+
+/* The verse page has a scoped `* { font-family: 'Open Sans' }` rule that
+   matches every descendant ELEMENT directly (direct rules beat inherited
+   fonts), so the coloured spans inside #ayah must re-assert the mushaf
+   face explicitly or their Arabic glyphs fall to a non-Arabic font. */
+#ayah, #ayah span {
+	font-family: 'Scheherazade', serif;
+}
+
+/* Smooth tajwed on/off switching: the h1 fades out, its content is
+   swapped, then it fades back in. */
+#ayah {
+	transition: opacity .22s ease;
+}
+
+.ayah-tajweed .tj-n { color: #537FFF; }
+.ayah-tajweed .tj-p { color: #4050FF; }
+.ayah-tajweed .tj-m { color: #000EBC; }
+.ayah-tajweed .tj-q { color: #DD0008; }
+.ayah-tajweed .tj-o { color: #2144C1; }
+.ayah-tajweed .tj-c { color: #D500B7; }
+.ayah-tajweed .tj-f { color: #9400A8; }
+.ayah-tajweed .tj-w { color: #58B800; }
+.ayah-tajweed .tj-i { color: #26BFFD; }
+.ayah-tajweed .tj-a { color: #169777; }
+.ayah-tajweed .tj-u { color: #169200; }
+.ayah-tajweed .tj-d,
+.ayah-tajweed .tj-b { color: #A1A1A1; }
+.ayah-tajweed .tj-g { color: #FF7E1E; }
+
+/* Quran.com TajweedV4 font mode: the h1 HTML carries pre-formed
+   presentation-form word codepoints and all colouring comes from the COLR
+   font itself; only the box metrics need matching. */
+.ayah-qcf {
+	line-height: 1.85;
+	letter-spacing: 0;
+}
+
+/* Dark theme: quran.com's TajweedV4 dark palette — the colored mushaf font
+   they ship uses these exact hexes baked in (CPAL "dark" base-palette),
+   plus their TajweedBar dark legend for ikhafa/qalqalah. Verified by
+   extracting the CPAL table of quran.com's /fonts/quran/hafs/v4/colrv1
+   page fonts: dark palette = [#FFFFFF, #99999D, #999999, #0000E3, #3B8EFF,
+   #E0C1FF, #5DB526, #D5843C, #FFDE00, #8E5EFF, #689B00, #1C8AAA, ...]. */
+html.dark-theme .ayah-tajweed .tj-h,
+html.dark-theme .ayah-tajweed .tj-s,
+html.dark-theme .ayah-tajweed .tj-l { color: #999999; }
+
+html.dark-theme .ayah-tajweed .tj-n { color: #E0C1FF; }  /* madda natural (pale lilac) */
+html.dark-theme .ayah-tajweed .tj-p { color: #3B8EFF; }  /* madda permissible */
+html.dark-theme .ayah-tajweed .tj-m { color: #6A75FF; }  /* madda necessary (lifted from #000E3 for dark bg) */
+html.dark-theme .ayah-tajweed .tj-o { color: #8E5EFF; }  /* madda obligatory (violet-pink) */
+html.dark-theme .ayah-tajweed .tj-q { color: #00DEFF; }  /* qalaqah (their dark legend) */
+html.dark-theme .ayah-tajweed .tj-c { color: #E14FBE; }  /* ikhafa shafawi */
+html.dark-theme .ayah-tajweed .tj-f { color: #5DB526; }  /* ikhafa (their dark legend green) */
+html.dark-theme .ayah-tajweed .tj-w { color: #5DB526; }  /* idgham shafawi */
+html.dark-theme .ayah-tajweed .tj-i { color: #26BFFD; }  /* iqlab */
+html.dark-theme .ayah-tajweed .tj-a { color: #35D9B4; }  /* idgham ghunnah */
+html.dark-theme .ayah-tajweed .tj-u { color: #7FE07F; }  /* idgham wo ghunnah */
+html.dark-theme .ayah-tajweed .tj-d,
+html.dark-theme .ayah-tajweed .tj-b { color: #999999; }
+html.dark-theme .ayah-tajweed .tj-g { color: #FFA352; }  /* ghunnah */
+
+/* Legend + credit, in normal flow under the ayah, shown by the JS while
+   tajweed rendering is enabled. The rule grid stays collapsed behind the
+   header's chevron until it's tapped; the credit is a separate plain line
+   below the legend box. */
+#tajweed-legend
+{
+	display: none;
+	margin: -4px 0 18px;
+}
+
+#tajweed-legend.show { display: block; }
+
+#tajweed-legend-box {
+	box-sizing: border-box;
+	background: #ffffff;
+	border: 1px solid rgba(34, 36, 38, .15);
+	border-radius: 6px;
+	padding: 8px 12px;
+	width: min(360px, calc(100vw - 32px));
+	max-width: calc(100vw - 32px);
+	margin: 0 auto;
+	font-family: 'Open Sans', sans-serif;
+	font-size: 11px;
+	line-height: 1.35;
+	color: rgba(0, 0, 0, .8);
+	text-align: left;
+}
+
+#tajweed-strip-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	cursor: pointer;
+	font-size: 10.5px;
+	font-weight: 600;
+	letter-spacing: .02em;
+	-webkit-tap-highlight-color: transparent;
+}
+
+#tajweed-chevron {
+	flex: 0 0 auto;
+	transition: transform .15s ease;
+	color: rgba(0, 0, 0, .5);
+	margin-left: 2px !important;
+}
+
+#tajweed-legend.open #tajweed-chevron { transform: rotate(90deg); }
+
+/* Expanded rule grid: quran.com's rule list (8 entries) wrapping into two
+   centered rows. */
+#tajweed-legend-grid {
+	display: none;
+	margin-top: 9px;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 7px 6px;
+	align-items: start;
+}
+
+#tajweed-legend.open #tajweed-legend-grid { display: grid; }
+
+#tajweed-legend-grid .tjleg-row {
+	display: flex;
+	align-items: flex-start;
+	gap: 3px;
+	font-size: 9.5px;
+	line-height: 1.25;
+}
+
+#tajweed-legend .tjleg-src {
+	display: block;
+	margin: 6px auto 0;
+	font-size: 10px;
+	text-align: center;
+	color: rgba(0, 0, 0, .45);
+}
+
+#tajweed-legend .tjleg-dot {
+	flex: 0 0 9px;
+	width: 9px;
+	height: 9px;
+	margin-top: 1px;
+	border-radius: 50%;
+	background: currentColor;
+}
+
+#tajweed-legend .tjleg-row.qgray { color: #a5a5a5; }
+#tajweed-legend .tjleg-row.qmad2 { color: #ce9e00; }
+#tajweed-legend .tjleg-row.qsep { color: #ff7b00; }
+#tajweed-legend .tjleg-row.qcon { color: #f40000; }
+#tajweed-legend .tjleg-row.qnec { color: #b50000; }
+#tajweed-legend .tjleg-row.qikh { color: #09b000; }
+#tajweed-legend .tjleg-row.qqal { color: #2fadff; }
+#tajweed-legend .tjleg-row.qtaf { color: #3f48e6; }
+
+html.dark-theme #tajweed-legend .tjleg-row.qgray { color: #999999; }
+html.dark-theme #tajweed-legend .tjleg-row.qmad2 { color: #ffc1e0; }
+html.dark-theme #tajweed-legend .tjleg-row.qsep { color: #ff8e3b; }
+html.dark-theme #tajweed-legend .tjleg-row.qcon { color: #ff5e8e; }
+html.dark-theme #tajweed-legend .tjleg-row.qnec { color: #e30000; }
+html.dark-theme #tajweed-legend .tjleg-row.qikh { color: #26b55d; }
+html.dark-theme #tajweed-legend .tjleg-row.qqal { color: #00deff; }
+html.dark-theme #tajweed-legend .tjleg-row.qtaf { color: #3c84d5; }
+
+html.dark-theme #tajweed-legend-box {
+	background: rgb(44, 44, 44);
+	border-color: rgba(255, 255, 255, .2);
+	color: rgba(255, 255, 255, .8);
+}
+
+html.dark-theme #tajweed-chevron { color: rgba(255, 255, 255, .5); }
+
+html.dark-theme #tajweed-legend .tjleg-src {
+	color: rgba(255, 255, 255, .5);
+}
+
+/* Tajweed toggle button: the tint icon brightens while active. */
+#tajweed-toggle-btn.tajweed-on .tint.icon { color: #3B8EFF; }
+html.dark-theme #tajweed-toggle-btn.tajweed-on .tint.icon { color: #9CC4FF; }
 
 #btnGo, #btnSurprise {
 	transition: transform .12s ease, box-shadow .2s ease;

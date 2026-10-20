@@ -147,6 +147,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			let s = $('#surah').find(":selected").attr('value');
 			// var v = $('#verse').find(":selected").attr('value');
 			// console.log(target_location[i]);
+			if (window.showLoading) { window.showLoading(); }
 			window.parent.location.href = target_location[i].replace("-1", s);
 		}
 	}
@@ -157,6 +158,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		var s = $('#surah').find(":selected").attr('value');
 		var v = $('#verse').find(":selected").attr('value');
 		var base_url = window.location.origin;
+		if (window.showLoading) { window.showLoading(); }
 		window.location.replace(base_url + '/' + s + '/' + v);
 	})
 
@@ -200,7 +202,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 {% block end_ %}
 <div class="ui text container" style="font-family: 'Open Sans'; display: flex; flex: 0 0 auto; flex-direction: column-reverse;">
-		<p style="text-align: center; color: gray; opacity: 90%; padding-top: 2%; font-size: 70%;">Aayatun v1.6 | <a href="#" id="change-theme">Dark Theme</a> | <a href="{{ url_for('prayer_time') }}">Prayer Time</a> </p>
+		<p style="text-align: center; color: gray; opacity: 90%; padding-top: 2%; font-size: 70%;">Aayatun v1.6.1 | <a href="#" id="change-theme">Dark Theme</a> | <a href="{{ url_for('prayer_time') }}">Prayer Time</a> </p>
 		<div id="install-banner" class="ui mini message" style="display: none; color: gray">
 		    <i class="close icon"></i>
 		    <div class="header">

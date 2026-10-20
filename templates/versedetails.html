@@ -9,6 +9,7 @@
 	// from the matching side. Used by the arrow links, keys and swipes.
 	window.navigateVerse = function (url, dir) {
 		try { sessionStorage.setItem('aayatun_nav', dir); } catch (e) {}
+		if (window.showLoading) { window.showLoading(); }
 		window.location.href = url;
 		return false;
 	};
@@ -58,16 +59,21 @@
 		}
 		html.nav-next #pagecontent > h1,
 		html.nav-next #verse-translation {
-			animation: vd-in-right .3s cubic-bezier(.22, .61, .36, 1) both;
+			/* fill=backwards: covers the pre-delay state but does not pin
+			   styles after finishing, so the tajweed fade's opacity
+			   transitions keep working after the entrance animation. */
+			animation: vd-in-right .3s cubic-bezier(.22, .61, .36, 1) backwards;
 		}
 		html.nav-prev #pagecontent > h1,
 		html.nav-prev #verse-translation {
-			animation: vd-in-left .3s cubic-bezier(.22, .61, .36, 1) both;
+			animation: vd-in-left .3s cubic-bezier(.22, .61, .36, 1) backwards;
 		}
 		#verse-translation { animation-delay: .05s; }
 
-		/* Clip the transient horizontal offset of the text nudge. */
-		.ui.text.container { overflow-x: clip; }
+		/* The slide-in nudge transiently overflows horizontally; hide the
+		   overflow at the root so no scrollbar appears (and nothing else —
+		   e.g. the styled accordion's outline — gets clipped). */
+		html { overflow-x: hidden; }
 	</style>
 	<script type="text/javascript">
 		var navigation_allowed = true;
@@ -75,7 +81,31 @@
 
 	<div style="text-align: center;" id="pagecontent">
 	<br>
-    <h1 style="font-size: 300%; font-family: 'Scheherazade', serif;"> {{ details['ayah'] }} </h1>
+    <h1 id="ayah" class="ayah-plain" style="font-size: 300%; font-family: 'Scheherazade', serif;">
+    	{{- details['ayah'] -}}
+	</h1>
+    {%- if details['qcf_page'] %}<span id="ayah-codev2" data-page="{{ details['qcf_page'] }}" hidden data-text="{{ details['ayah_codev2'] }}"></span>{% endif -%}
+    {%- if details['ayah_tajweed'] %}<span id="ayah-markup-src" hidden>{{ details['ayah_tajweed'] }}</span>{% endif -%}
+
+	<div id="tajweed-legend">
+		<div id="tajweed-legend-box">
+			<div id="tajweed-strip-head" onclick="toggleTajweedLegendGrid(event)">
+			<span>Tajweed colors</span>
+			<i class="icon chevron right" id="tajweed-chevron"></i>
+		</div>
+		<div id="tajweed-legend-grid">
+			<div class="tjleg-row qgray"><span class="tjleg-dot"></span><span>Silent letter</span></div>
+			<div class="tjleg-row qmad2"><span class="tjleg-dot"></span><span>Normal madd (2)</span></div>
+			<div class="tjleg-row qsep"><span class="tjleg-dot"></span><span>Separated madd (2/4/6)</span></div>
+			<div class="tjleg-row qcon"><span class="tjleg-dot"></span><span>Connected madd (4/5)</span></div>
+			<div class="tjleg-row qnec"><span class="tjleg-dot"></span><span>Necessary madd (6)</span></div>
+			<div class="tjleg-row qikh"><span class="tjleg-dot"></span><span>Ghunna/ikhfa'</span></div>
+			<div class="tjleg-row qqal"><span class="tjleg-dot"></span><span>Qalqala (echo)</span></div>
+			<div class="tjleg-row qtaf"><span class="tjleg-dot"></span><span>Tafkhim (heavy)</span></div>
+			</div>
+		</div>
+		<div class="tjleg-src">Colored mushaf font &copy; <a href="https://qurancomplex.gov.sa/" target="_blank">King Fahd Complex</a> &middot; packaged by <a href="https://quran.com" target="_blank">quran.com</a><span id="tajweed-markup-credit"> &middot; fallback: <a href="https://alquran.cloud" target="_blank">Al Quran Cloud</a></span></div>
+	</div>
 
     <div align="right" style="margin-bottom: 10px position: -50px; position: relative;">
 
@@ -97,7 +127,8 @@
 			</div>
     		<p style="width: 100%; font-size: 80%; color: gray; text-align: center; padding-bottom: 30px;"> [Source: <a href="https://everyayah.com/data/getfile.php" target="_blank">Verse By Verse Quran MP3 Project</a>] </p>
     	</div>
-    	<div id="control-btns" style="padding-bottom: 20px">
+    	<div id="control-btns" style="position: relative; padding-bottom: 20px">
+
     		<span id="more-controls" style="display: none;">
     			<span style="font-size: .8em; color: gray; text-align: center; padding-right: 30px;">Surah {{ details['surah_name'] }}</span>
     			<span style="display: inline-block;">
@@ -113,17 +144,20 @@
 					<button style="font-family: 'Open Sans' font-size: 90%; " class="circular ui tiny basic icon button" onclick="window.parent.location.href ='{{ url_for('en_tafsir', surah=details['surah']) }}'">
 						Tafsir (En)
 					</button>
-				<i class="icon close" style="cursor: pointer;" onclick="$('#more-controls').hide(); $('#more-btn').show(); $('#play-btn').show(); $('#share-btn').show()"></i>
+				<i class="icon close" style="cursor: pointer;" onclick="$('#more-controls').hide(); $('#more-btn').show(); $('#play-btn').show(); $('#share-btn').show(); $('#tajweed-toggle-btn').show()"></i>
 				</span>
 
     		</span>
-			<button id="more-btn" data-tooltip="Comprehensive Reading" class="circular ui basic icon button" onclick="$('#more-btn').hide(); $('#play-btn').hide(); $('#share-btn').hide(); $('#more-controls').fadeIn();">
+			<button id="more-btn" data-tooltip="Comprehensive Reading" class="circular ui basic icon button" onclick="$('#more-btn').hide(); $('#play-btn').hide(); $('#share-btn').hide(); $('#tajweed-toggle-btn').hide(); $('#more-controls').fadeIn();">
 			  <i class="icon ellipsis horizontal"></i>
 			</button>
 	    	<button id="share-btn" data-tooltip="Share this ayah" class="circular ui basic icon button" onclick="shareVerse()">
 			  <i class="icon share alternate"></i>
 			</button>
-	    	<button id="play-btn" class="circular ui basic icon button" onclick="$('#audio-box').fadeIn(); $('#control-btns').hide(); $('#mainaudio').trigger('play');">
+	    	<button id="tajweed-toggle-btn" data-tooltip="Tajweed colors" class="circular ui basic icon button" onclick="toggleTajweed()">
+			  <i class="icon tint"></i>
+		</button>
+    	<button id="play-btn" class="circular ui basic icon button" onclick="$('#audio-box').fadeIn(); $('#control-btns').hide(); $('#mainaudio').trigger('play');">
 			  <i class="icon play"></i>
 			</button>
 		</div>
@@ -523,6 +557,181 @@ document.addEventListener('DOMContentLoaded', function () {
 	window.collapseAll = collapseAll;
 	window.changeAudioSrc = changeAudioSrc;
 	window.shareVerse = shareVerse;
+
+	// Tajweed is OFF by default; the tint button toggles it (persisted in
+	// localStorage). ON priority: quran.com's colored mushaf font (TajweedV4
+	// COLRv1 — colours and every madda annotation baked into the font),
+	// falling back to the markup-span colouring, and to plain text last. The
+	// legend + credit strip under the ayah shows only while tajweed is on.
+	(function ()
+	{
+		var ayah = document.getElementById('ayah');
+		var btn = document.getElementById('tajweed-toggle-btn');
+		var strip = document.getElementById('tajweed-legend');
+		var markupSrc = document.getElementById('ayah-markup-src');
+		var holder = document.getElementById('ayah-codev2');
+		if (!ayah || !btn || !strip) return;
+
+		var KEY = 'ayahTajweedOn';
+		var plainHTML;
+		var mode = null;          // null = plain, 'font', 'markup'
+		var fontFam = null;
+		var observer = null;
+
+		function isTajweedPersisted() { return localStorage.getItem(KEY) === '1'; }
+		function markBtn(on) { btn.classList.toggle('tajweed-on', on); }
+		function markStrip(on) { strip.classList.toggle('show', on); }
+
+		function restorePlain()
+		{
+			ayah.innerHTML = plainHTML;
+			ayah.className = 'ayah-plain';
+			ayah.style.fontFamily = "'Scheherazade', serif";
+			ayah.style.removeProperty('font-palette');
+		}
+
+		function applyMarkupFallback()
+		{
+			var credit = document.getElementById('tajweed-markup-credit');
+			if (credit) credit.style.display = '';
+			if (!markupSrc || !markupSrc.innerHTML.trim()) return restorePlain();
+			ayah.innerHTML = markupSrc.innerHTML;
+			ayah.className = 'ayah-tajweed';
+			ayah.style.fontFamily = "'Scheherazade', serif";
+			ayah.style.removeProperty('font-palette');
+			mode = 'markup';
+		}
+
+		function applyFont()
+		{
+			var page = holder.getAttribute('data-page');
+			var codeV2 = holder.getAttribute('data-text');
+			ayah.textContent = codeV2;
+			ayah.className = 'ayah-qcf';
+			ayah.style.fontFamily = "'" + fontFam + "', 'Scheherazade', serif";
+			ayah.style.fontPalette = document.documentElement.classList.contains('dark-theme')
+				? '--qcf-dark' : '--qcf-light';
+			mode = 'font';
+			var credit = document.getElementById('tajweed-markup-credit');
+			if (credit) credit.style.display = 'none';
+		}
+
+		function preparePaletteCss()
+		{
+			fontFam = 'QCF-V4-' + holder.getAttribute('data-page');
+			var styleEl = document.createElement('style');
+			styleEl.textContent = "@font-palette-values --qcf-dark { font-family:'" +
+				fontFam + "'; base-palette:1; } @font-palette-values --qcf-light { font-family:'" +
+				fontFam + "'; base-palette:0; }";
+			document.head.appendChild(styleEl);
+		}
+
+		function loadFont()
+		{
+			if (!holder || !window.CSS || !CSS.supports || !CSS.supports('font-palette', 'normal'))
+				return Promise.reject(new Error('unsupported'));
+			preparePaletteCss();
+			var face = new FontFace(fontFam, "url('/font/v4/" +
+				holder.getAttribute('data-page') + ".woff2') format('woff2')");
+			return face.load().then(function (loaded)
+			{
+				document.fonts.add(loaded);
+				return loaded;
+			});
+		}
+
+		// Fade the h1 out, run the swap, fade back in; a stale fade (the
+		// user re-toggled while one was pending) is skipped so commits apply
+		// in request order only.
+		var fadeSeq = 0;
+		function fadeSwap(fn)
+		{
+			var seq = ++fadeSeq;
+			ayah.style.opacity = '0';
+			setTimeout(function ()
+			{
+				if (seq !== fadeSeq) return;
+				fn();
+				ayah.style.opacity = '1';
+			}, 240);
+		}
+
+		function enable()
+		{
+			markBtn(true);
+			markStrip(true);
+			if (mode === 'font') return;
+			if (holder && holder.getAttribute('data-page') && holder.getAttribute('data-text'))
+			{
+				loadFont().then(function ()
+				{
+					if (mode !== 'font')
+					{
+						fadeSwap(function ()
+						{
+							applyFont();
+							if (!observer)
+							{
+								observer = new MutationObserver(function ()
+								{
+									if (mode === 'font') applyFont();
+								});
+								observer.observe(document.documentElement,
+									{attributes: true, attributeFilter: ['class']});
+							}
+						});
+					}
+				}).catch(function ()
+				{
+					if (mode === null && isTajweedPersisted())
+						fadeSwap(applyMarkupFallback);
+				});
+			}
+			else
+			{
+				fadeSwap(applyMarkupFallback);
+			}
+		}
+
+		function disable()
+		{
+			markBtn(false);
+			markStrip(false);
+			fadeSwap(function ()
+			{
+				restorePlain();
+				mode = null;
+			});
+		}
+
+		window.toggleTajweed = function ()
+		{
+			if (isTajweedPersisted())
+			{
+				localStorage.setItem(KEY, '0');
+				disable();
+			}
+			else
+			{
+				localStorage.setItem(KEY, '1');
+				enable();
+			}
+		};
+
+		// The rule grid starts collapsed on every page; the header's chevron
+		// expands it. Links inside the header keep their normal behaviour.
+		window.toggleTajweedLegendGrid = function (e)
+		{
+			if (e && e.target && e.target.closest && e.target.closest('a')) return;
+			strip.classList.toggle('open');
+		};
+
+		if (!markupSrc) { var c = document.getElementById('tajweed-markup-credit'); if (c) c.style.display = 'none'; }
+		plainHTML = ayah.innerHTML;
+
+		if (isTajweedPersisted()) enable();
+		else markBtn(false);
+	})();
 });
 
 </script>

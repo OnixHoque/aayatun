@@ -43,7 +43,7 @@
    {% block menu %} {% endblock %}
  </div>
 
- <footer id="loading-bar" style="position: fixed; top: auto; left: 0; right: 0; bottom: 0; width: 100%; box-sizing: border-box; background: white; font-family: 'Open Sans', open sans; z-index: 2000; font-size: 13px; padding: 8px 0 calc(8px + env(safe-area-inset-bottom, 0px)); text-align: center; opacity: 0.9; border-radius: 5px 5px 0 0; display: none;">
+ <footer id="loading-bar" style="position: fixed; top: auto; left: 0; right: 0; bottom: 0; width: 100%; box-sizing: border-box; background: rgba(255, 255, 255, .85); font-family: 'Open Sans', open sans; z-index: 2000; font-size: 13px; padding: 8px 0 calc(8px + env(safe-area-inset-bottom, 0px)); text-align: center; opacity: 1; display: none;">
   <div class="ui active tiny inline loader" style="padding: 0px 15px"></div>Loading...
 </footer>
 
@@ -122,6 +122,20 @@ document.addEventListener('DOMContentLoaded', function () {
   // Mobile browsers (iOS Safari, Chrome) often skip beforeunload on navigation
   // but do fire pagehide; use it so the loading bar shows reliably on phones.
   window.addEventListener('pagehide', showLoading);
+  // Unload-time changes often never repaint on mobile (the old document is
+  // torn down), so also show the bar synchronously at TAP time, before the
+  // default navigation begins: a style change made inside a user-gesture
+  // handler renders on screen. See also navigateVerse() and the index page,
+  // which call showLoading() for JS-driven redirects.
+  document.addEventListener('click', function (e) {
+    var a = e.target && e.target.closest && e.target.closest('a[href]');
+    if (!a) return;
+    var href = a.getAttribute('href');
+    if (!href || href.charAt(0) === '#') return;
+    if (a.target === '_blank' || a.hasAttribute('download')) return;
+    if (a.origin && a.origin !== window.location.origin) return;
+    showLoading();
+  }, true);
 
   $('.accordion .title').css('font-weight', 'bold');
   $('.accordion .title').css('font-size', '110%');
@@ -152,6 +166,8 @@ document.addEventListener('DOMContentLoaded', function () {
     // $('.menu a').css('color', '#0E6EB8')
 
     $('.menu a').css('color', 'white')
+
+    $('#loading-bar').css('background-color', 'rgba(44, 44, 44, .85)').css('color', 'white')
 
     // $('.surahlink').css('color', 'rgba(231, 107, 0, 1)');
     // $('a').css('color', 'rgba(231, 107, 0, 1)');
@@ -188,7 +204,7 @@ document.addEventListener('DOMContentLoaded', function () {
     $('.modal').css('border-radius', '5px');
 
     // $('#loading-bar, #loadingdetails').css('background', '');
-    $('#loading-bar, #loadingdetails').css('background-color', 'rgb(28, 29, 30)');
+    $('#loading-bar, #loadingdetails').css('background-color', 'rgba(28, 29, 30, .85)');
     $('#loading-bar, #loadingdetails').css('color', 'white');
     $('.modal').addClass('inverted');
     $('.selection').addClass('inverted');

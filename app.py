@@ -1,4 +1,5 @@
 from flask import Flask, render_template, send_from_directory
+from werkzeug.exceptions import abort
 import pandas as pd
 import library as lib
 import random
@@ -72,6 +73,19 @@ def search():
 @app.route('/<int:surah>/<int:verse>', strict_slashes=False)
 def details(surah, verse):
 	return render_template('versedetails.html', details=lib.p_getSurahInfo(surah, verse))
+
+@app.route('/font/v4/<int:page>.woff2', strict_slashes=False)
+def qcf_font(page):
+	# quran.com's per-page TajweedV4 (colrv1) mushaf fonts, cached on disk;
+	# immutable per page, so they cache hard in the browser + service worker.
+	if not (1 <= page <= 604):
+		abort(404)
+	b = lib.get_qcf_font(page)
+	if not b:
+		abort(404)
+	resp = app.response_class(b, mimetype='font/woff2')
+	resp.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+	return resp
 
 @app.route('/translation/<int:surah>', strict_slashes=False)
 def translation(surah):

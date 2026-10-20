@@ -1,1 +1,6 @@
 __pycache__/
+
+# runtime caches (built on demand)
+db/qcf_cache.db
+db/tajweed_cache.db
+db/fonts/
