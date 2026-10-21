@@ -1,0 +1,70 @@
+	  	{% if (details['morph']|length) == 0 %}
+	  	<p style="text-align: center; font-size: 90%"> No data found for this ayah </p>
+	  	{% else %}
+	  	<div class="ui text container">
+	  	<br>
+	  	{% for x in details['morph'] %}
+	  	<div name="word_details">
+	  		<div style="text-align: center; padding-top: 20px;">
+		    <h1 style="font-size: 250%; font-family: 'Scheherazade', serif;"> {{ x['word'] }} </h1>
+		    <span style="font-size: 90%"> {{ x['meaning'].capitalize() }} </span>
+		    {% if (x['lemma']|length) != 0  %}
+		    | <span style="font-size: 90%; display: inline-block;"> Lemma: </span> <span style="font-size: 150%; font-family: 'Scheherazade', serif;"> <a href="http://arabiclexicon.hawramani.com/search/{{ x['lemma'] }}?cat=50" target="_blank">{{ x['lemma'] }}</a> </span>
+		    {% endif %}
+		    {% if (x['verb_type']|length) != 0  %}
+		    | <span style="font-size: 90%; display: inline-block;"> Verb Form {{ x['verb_type'] }} </span>
+		    {% endif %}
+			</div>
+
+			<br>
+			{% for y in x['annot'] %}
+
+		    <p style="padding-left: 20%;"> <span style="font-size: 150%; font-family: 'Scheherazade', serif;"> {{ y[0] }}
+		    	 → </span> <span style="font-size: 90%"> {{ y[1] }} </span> </p>
+
+		    {% endfor %}
+
+		    {% if (x['root_def']) %}
+			<div>
+				<br>
+				<table class="ui unstackable center aligned collapsing very basic very compact small table" style="width: 80%; margin: 0 auto;">
+				  <thead>
+				  	<tr><td colspan="3"><strong>Different Verb Forms of <span style="font-size: 150%; font-family: 'Scheherazade', serif;">{{ x['root'] }}</span></strong></td></tr>
+				    <tr><th>Baab</th>
+				    <th>Form</th>
+				    <th>Meaning</th>
+				  </tr></thead>
+				  <tbody>
+					{% for y in x['root_def'] %}
+						<tr>
+							<td style="font-size: 150%; font-family: 'Scheherazade', serif;">{{ y[0] }}</td>
+							<td>{{ y[1] }}</td>
+							<td>{{ y[2] }}</td>
+						</tr>
+					{% endfor %}
+				  </tbody>
+				</table>
+			</div>
+			{% endif %}
+
+		    <br>
+
+		    {% if (x['verb_form']|length) != 0 %}
+		    <table class="ui unstackable center aligned collapsing very basic very compact small table" style="margin: 0 auto;">
+			  <tbody>
+			  	<tr><td colspan="2">Root: <span style="font-size: 150%; font-family: 'Scheherazade', serif;"> <a href="http://arabiclexicon.hawramani.com/search/{{ x['root'] }}?cat=50" target="_blank">{{ x['root'] }}</a> </span> </td></tr>
+		    {% for y in x['verb_form'] %}
+		    <tr>
+		    <td> {{ y[0] }} </td> <td style="font-size: 150%; font-family: 'Scheherazade', serif;"> {{ y[1] }} </td>
+			</tr>
+		    {% endfor %}
+		    </tbody>
+			</table>
+			{% endif %}
+		</div>
+			<hr style="width: 80%; opacity: 50%;">
+		<br>
+		{% endfor %}
+	    <p style="font-size: 80%; color: gray; text-align: center;"> [Source: <a href="https://gtaf.org/apps/quran" target="_blank">Al Quran (Tafsir & by Word) by Greentech Apps Foundation</a> and <a href="http://www.quransarf.com/sarfs" target="_blank">Sarf Generator</a>] </p>
+		</div>
+		{% endif %}

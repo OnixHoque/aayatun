@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aayatun-v21';
+const CACHE_NAME = 'aayatun-v22';
 
 const CORE_ASSETS = [
   '/',
@@ -87,6 +87,14 @@ self.addEventListener('fetch', (evt) => {
     return;
   }
 
+  const url = new URL(req.url);
+
+  // Authenticated, per-session API responses must never be cached (and must
+  // not be replayed by staleWhileRevalidate).
+  if (url.origin === self.location.origin && url.pathname.startsWith('/api/')) {
+    return;
+  }
+
   if (req.mode === 'navigate') {
     evt.respondWith(
       fetch(req)
@@ -102,7 +110,6 @@ self.addEventListener('fetch', (evt) => {
     return;
   }
 
-  const url = new URL(req.url);
   if (!isCacheable(url)) {
     return;
   }

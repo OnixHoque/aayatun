@@ -3,11 +3,14 @@
 {% block title %} {{ details['surah_name'] }} : Aayatun - An Ayah a Day {% endblock %}
 
 {% block js %}
+<meta name="aayatun-api-token" content="{{ api_token }}">
 <script>
 (function () {
-	// Record travel direction, then navigate; the incoming page slides its text
-	// from the matching side. Used by the arrow links, keys and swipes.
-	window.navigateVerse = function (url, dir) {
+	// Full-page fallback. verse-nav.js replaces this with the fetch-based
+	// version once it loads; if that script fails, navigation still works.
+	window.navigateVerse = function (url, dir, event) {
+		if (event && (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey ||
+			(event.button && event.button !== 0))) return true;
 		try { sessionStorage.setItem('aayatun_nav', dir); } catch (e) {}
 		if (window.showLoading) { window.showLoading(); }
 		window.location.href = url;
@@ -40,18 +43,19 @@
 	} catch (e) {}
 })();
 </script>
+<script defer src="{{ url_for('static', filename='js/verse-nav.js') }}"></script>
 {% endblock js %}
 
 {% block menu %}
 <div class="item" style="outline: none;">
-<a class="ui icon basic huge left floated button" href="{{ url_for('details', surah=details['prev'][0], verse=details['prev'][1]) }}" onclick="return navigateVerse(this.href, 'prev')"><i class="left arrow icon"></i></a>
+<a id="prev-arrow" class="ui icon basic huge left floated button" href="{{ url_for('details', surah=details['prev'][0], verse=details['prev'][1]) }}" onclick="return navigateVerse(this.href, 'prev', event)"><i class="left arrow icon"></i></a>
 </div>
 
 <div class="header item" style="font-size: 200%; display: inline-block; text-align: middle;">
-<a href="{{ url_for('index') }}" style="font-family: Merriweather;">Quran</a> <a style="font-family: Merriweather;" href="{{ url_for('details', surah=details['surah'], verse=1) }}">{{ details['surah'] }}:{{ details['verse'] }}</a>
+<a href="{{ url_for('index') }}" style="font-family: Merriweather;">Quran</a> <a id="surah-verse-link" style="font-family: Merriweather;" href="{{ url_for('details', surah=details['surah'], verse=1) }}">{{ details['surah'] }}:{{ details['verse'] }}</a>
 </div>
 <div class="item">
-<a class="ui icon basic right floated huge button" href="{{ url_for('details', surah=details['next'][0], verse=details['next'][1]) }}" onclick="return navigateVerse(this.href, 'next')"><i class="right arrow icon"></i></a>
+<a id="next-arrow" class="ui icon basic right floated huge button" href="{{ url_for('details', surah=details['next'][0], verse=details['next'][1]) }}" onclick="return navigateVerse(this.href, 'next', event)"><i class="right arrow icon"></i></a>
 </div>
 {% endblock %}
 
@@ -64,9 +68,9 @@
 		}
 
 		/* Direction-aware entrance for the verse TEXT only: only next/prev
-		   navigation sets nav-next/nav-prev on <html> (see the head script).
-		   Containers (controls, accordion) stay fixed; only the ayah and the
-		   translation nudge, so nothing else shifts. */
+		   navigation sets nav-next/nav-prev on <html>. Containers (controls,
+		   accordion) stay fixed; only the ayah and the translation nudge, so
+		   nothing else shifts. */
 		@keyframes vd-in-right {
 			from { opacity: 0; transform: translate3d(16px, 0, 0); }
 			to   { opacity: 1; transform: none; }
@@ -119,13 +123,17 @@
 		var navigation_allowed = true;
 	</script>
 
-	<div style="text-align: center;" id="pagecontent">
+	<div style="text-align: center;" id="pagecontent"
+		data-surah="{{ details['surah'] }}" data-verse="{{ details['verse'] }}"
+		data-prev-surah="{{ details['prev'][0] }}" data-prev-verse="{{ details['prev'][1] }}"
+		data-next-surah="{{ details['next'][0] }}" data-next-verse="{{ details['next'][1] }}">
 	<br>
     <h1 id="ayah" class="ayah-plain" style="font-family: 'Scheherazade', serif;">
     	{{- details['ayah'] -}}
 	</h1>
-    {%- if details['qcf_page'] %}<span id="ayah-codev2" data-page="{{ details['qcf_page'] }}" hidden data-text="{{ details['ayah_codev2'] }}"></span>{% endif -%}
-    {%- if details['ayah_tajweed'] %}<span id="ayah-markup-src" hidden>{{ details['ayah_tajweed'] }}</span>{% endif -%}
+    <span id="ayah-codev2" data-page="{{ details['qcf_page'] or '' }}" data-text="{{ details['ayah_codev2'] or '' }}" hidden></span>
+    <span id="ayah-markup-src" hidden>{{ details['ayah_tajweed'] or '' }}</span>
+    <span id="ayah-plain-src" hidden>{{ details['ayah'] }}</span>
 
 	<div id="tajweed-legend">
 		<div id="tajweed-legend-box">
@@ -170,7 +178,7 @@
     	<div id="control-btns" style="position: relative; padding-bottom: 20px">
 
     		<span id="more-controls" style="display: none;">
-    			<span style="font-size: .8em; color: gray; text-align: center; padding-right: 30px;">Surah {{ details['surah_name'] }}</span>
+    			<span style="font-size: .8em; color: gray; text-align: center; padding-right: 30px;">Surah <span id="surah-name-label">{{ details['surah_name'] }}</span></span>
     			<span style="display: inline-block;">
 	    			<button style="font-family: 'Open Sans' font-size: 90%;" class="circular ui tiny basic icon button" onclick="window.parent.location.href ='{{ url_for('arabic_fulltext', surah=details['surah']) }}'">
 						Arabic
@@ -209,27 +217,27 @@
     // before the first paint. The head script hid the server-rendered plain
     // verse behind .tajweed-pending; this removes it once the coloured
     // rendering is ready, so verse navigation never flashes plain -> tajweed.
-    (function ()
+    window.VerseTajweed = (function ()
     {
     	var ayah = document.getElementById('ayah');
     	var btn = document.getElementById('tajweed-toggle-btn');
     	var strip = document.getElementById('tajweed-legend');
     	var markupSrc = document.getElementById('ayah-markup-src');
     	var holder = document.getElementById('ayah-codev2');
-    	if (!ayah || !btn || !strip) return;
-
     	var KEY = 'ayahTajweedOn';
-    	var plainHTML;
+    	var plainText = '';
     	var mode = null;          // null = plain, 'font', 'markup'
     	var fontFam = null;
     	var observer = null;
-    	var initialLoad = document.documentElement.classList.contains('tajweed-pending');
+    	var initialLoad = false;
     	var loadSeq = 0;          // invalidates in-flight loads after a toggle off
     	var revealTimer = null;
+    	var paletteStyle = null;
+    	var fontCache = {};
 
     	function isTajweedPersisted() { return localStorage.getItem(KEY) === '1'; }
-    	function markBtn(on) { btn.classList.toggle('tajweed-on', on); }
-    	function markStrip(on) { strip.classList.toggle('show', on); }
+    	function markBtn(on) { if (btn) btn.classList.toggle('tajweed-on', on); }
+    	function markStrip(on) { if (strip) strip.classList.toggle('show', on); }
 
     	function reveal()
     	{
@@ -239,7 +247,7 @@
 
     	function restorePlain()
     	{
-    		ayah.innerHTML = plainHTML;
+    		ayah.textContent = plainText;
     		ayah.className = 'ayah-plain';
     		ayah.style.fontFamily = "'Scheherazade', serif";
     		ayah.style.removeProperty('font-palette');
@@ -248,8 +256,12 @@
     	function applyMarkupFallback()
     	{
     		var credit = document.getElementById('tajweed-markup-credit');
+    		if (!markupSrc || !markupSrc.innerHTML.trim())
+    		{
+    			if (credit) credit.style.display = 'none';
+    			return restorePlain();
+    		}
     		if (credit) credit.style.display = '';
-    		if (!markupSrc || !markupSrc.innerHTML.trim()) return restorePlain();
     		ayah.innerHTML = markupSrc.innerHTML;
     		ayah.className = 'ayah-tajweed';
     		ayah.style.fontFamily = "'Scheherazade', serif";
@@ -259,8 +271,9 @@
 
     	function applyFont()
     	{
-    		var page = holder.getAttribute('data-page');
+    		if (!holder) return;
     		var codeV2 = holder.getAttribute('data-text');
+    		if (!codeV2) return restorePlain();
     		ayah.textContent = codeV2;
     		ayah.className = 'ayah-qcf';
     		ayah.style.fontFamily = "'" + fontFam + "', 'Scheherazade', serif";
@@ -274,23 +287,31 @@
     	function preparePaletteCss()
     	{
     		fontFam = 'QCF-V4-' + holder.getAttribute('data-page');
-    		var styleEl = document.createElement('style');
-    		styleEl.textContent = "@font-palette-values --qcf-dark { font-family:'" +
+    		var css = "@font-palette-values --qcf-dark { font-family:'" +
     			fontFam + "'; base-palette:1; } @font-palette-values --qcf-light { font-family:'" +
     			fontFam + "'; base-palette:0; }";
-    		document.head.appendChild(styleEl);
+    		if (!paletteStyle)
+    		{
+    			paletteStyle = document.createElement('style');
+    			document.head.appendChild(paletteStyle);
+    		}
+    		paletteStyle.textContent = css;
     	}
 
     	function loadFont()
     	{
-    		if (!holder || !window.CSS || !CSS.supports || !CSS.supports('font-palette', 'normal'))
+    		if (!holder || !holder.getAttribute('data-page'))
+    			return Promise.reject(new Error('no page'));
+    		if (!window.CSS || !CSS.supports || !CSS.supports('font-palette', 'normal'))
     			return Promise.reject(new Error('unsupported'));
+    		var page = holder.getAttribute('data-page');
+    		if (fontCache[page]) return Promise.resolve(fontCache[page]);
     		preparePaletteCss();
-    		var face = new FontFace(fontFam, "url('/font/v4/" +
-    			holder.getAttribute('data-page') + ".woff2') format('woff2')");
+    		var face = new FontFace(fontFam, "url('/font/v4/" + page + ".woff2') format('woff2')");
     		return face.load().then(function (loaded)
     		{
     			document.fonts.add(loaded);
+    			fontCache[page] = loaded;
     			return loaded;
     		});
     	}
@@ -311,8 +332,9 @@
     		}, 240);
     	}
 
-    	// On the initial persisted load the plain verse is hidden, so the
-    	// swap can happen instantly; user-initiated toggles keep the fade.
+    	// On the initial persisted load (and on client-side verse navigation)
+    	// the plain verse is hidden, so the swap can happen instantly;
+    	// user-initiated toggles keep the fade.
     	function commit(fn)
     	{
     		if (initialLoad)
@@ -378,7 +400,56 @@
     		reveal();
     	}
 
-    	window.toggleTajweed = function ()
+    	// Used by verse-nav.js when the verse changes. Resets the module to the
+    	// new data and, when tajweed is persisted ON, keeps the h1 hidden until
+    	// the new page's font (or the markup fallback) is ready.
+    	function setData(data, deferReveal)
+    	{
+    		++loadSeq;
+    		mode = null;
+    		initialLoad = !!deferReveal;
+    		if (revealTimer) { clearTimeout(revealTimer); revealTimer = null; }
+    		if (holder)
+    		{
+    			holder.setAttribute('data-page', data.qcf_page || '');
+    			holder.setAttribute('data-text', data.ayah_codev2 || '');
+    		}
+    		if (markupSrc) markupSrc.innerHTML = data.ayah_tajweed || '';
+    		var credit = document.getElementById('tajweed-markup-credit');
+    		if (credit) credit.style.display = data.ayah_tajweed ? '' : 'none';
+    		plainText = data.ayah || '';
+    		ayah.textContent = plainText;
+    		ayah.className = 'ayah-plain';
+    		ayah.style.fontFamily = "'Scheherazade', serif";
+    		ayah.style.removeProperty('font-palette');
+    		ayah.style.opacity = '';
+
+    		if (isTajweedPersisted())
+    		{
+    			if (deferReveal)
+    			{
+    				document.documentElement.classList.add('tajweed-pending');
+    				// Safety valve: never leave the verse blank if the font is
+    				// slow or unavailable.
+    				revealTimer = setTimeout(function ()
+    				{
+    					revealTimer = null;
+    					initialLoad = false;
+    					reveal();
+    				}, 1500);
+    			}
+    			enable();
+    		}
+    		else
+    		{
+    			initialLoad = false;
+    			markBtn(false);
+    			markStrip(false);
+    			reveal();
+    		}
+    	}
+
+    	function toggle()
     	{
     		if (isTajweedPersisted())
     		{
@@ -390,18 +461,28 @@
     			localStorage.setItem(KEY, '1');
     			enable();
     		}
-    	};
+    	}
 
     	// The rule grid starts collapsed on every page; the header's chevron
     	// expands it. Links inside the header keep their normal behaviour.
-    	window.toggleTajweedLegendGrid = function (e)
+    	function toggleLegendGrid(e)
     	{
+    		if (!strip) return;
     		if (e && e.target && e.target.closest && e.target.closest('a')) return;
     		strip.classList.toggle('open');
-    	};
+    	}
 
-    	if (!markupSrc) { var c = document.getElementById('tajweed-markup-credit'); if (c) c.style.display = 'none'; }
-    	plainHTML = ayah.innerHTML;
+    	window.toggleTajweed = toggle;
+    	window.toggleTajweedLegendGrid = toggleLegendGrid;
+
+    	if (!ayah || !btn || !strip) return { setData: function () {} };
+
+    	if (!markupSrc || !markupSrc.innerHTML.trim()) {
+    		var c = document.getElementById('tajweed-markup-credit');
+    		if (c) c.style.display = 'none';
+    	}
+    	plainText = ayah.textContent;
+    	initialLoad = document.documentElement.classList.contains('tajweed-pending');
 
     	if (isTajweedPersisted())
     	{
@@ -424,6 +505,8 @@
     		initialLoad = false;
     		markBtn(false);
     	}
+
+    	return { setData: setData };
     })();
     </script>
 
@@ -447,278 +530,66 @@
 		  </div>
 	</div>
 
-    {% for x in details['wordforword'] %}
-    {% if (x['3']|length) != 0 %}
-    	<div class="ui mini modal" id="related{{ x['4'] }}">
-    		<i class="close icon"></i>
-		  <div class="header" style="font-family: open sans; width: 100%; text-align: center;">
-		  	Other meanings of <span style="font-size: 150%; font-family: 'Scheherazade', serif;">{{ x['0'] }}</span>
-		  </div>
-
-		  <div class="scrolling content" style="font-size: 110%">
-		  	{% if (x['3']|length == 0) %}
-		  	<p style="width: 100%; text-align: center;">{{ x['3']|length }} variation</p>
-		  	{% else %}
-		  	<p style="width: 100%; text-align: center;">{{ x['3']|length }} variations</p>
-		  	{% endif %}
-		    <table class="ui unstackable center aligned collapsing very basic compact small table" style="margin: 0 auto;">
-			  <thead>
-			    <tr>
-			    <th>Arabic</th>
-			    <th>Meaning</th>
-			    <th>Source</th>
-			  	</tr></thead>
-			  <tbody>
-
-		    {% for y in x['3'] %}
-		    <tr>
-		    <td style="font-size: 150%; font-family: 'Scheherazade', serif;"> {{ y[0] }} </td>
-		    <td> {{ y[1] }} </td>
-		    <td> <a target="_parent" href="{{ url_for('details', surah=y[2], verse=y[3]) }}">{{ y[2] }}:{{ y[3] }}</a> </td>
-			</tr>
-		    {% endfor %}
-		    </tbody>
-			</table>
-		  </div>
-		  <!-- <div class="actions">
-		    <div class="ui approve button">Approve</div>
-		    <div class="ui button">Neutral</div>
-		    <div class="ui cancel button">Cancel</div>
-		  </div> -->
-		</div>
-    {% endif %}
-    {% endfor %}
     <div class="ui basic segment" style="padding: 0px; margin: 0px;">
-    <div class="ui fluid styled accordion" style="text-align: left; font-size: 90%;">
+    <div class="ui fluid styled accordion" id="verse-sections" style="text-align: left; font-size: 90%;">
 
 	  <div class="title">
 	    <i class="dropdown icon"></i>
 	    <span>AI Overview 🤖</span>
 	  </div>
-	  <div class="content">
-		<div style="display: flex; justify-content: center;">
-			<div class="ui tiny icon message" style="width: 90%; margin: 0 auto;">
-			<i class="orange corner exclamation triangle icon" style="font-size: 2em;"></i>
-			
-			<p>This content was generated by AI and may not always be accurate. If you notice any misleading information, please report it <a href="https://forms.gle/thSyKchKUQPn6wiDA">here</a>.</p>
-
-			</div>
-		</div>
-		<br>
-	  	{% if (details['ai_explanation']|length) == 0 %}
-	  	<p style="text-align: center; font-size: 90%"> No data found for this ayah </p>
-	  	{% else %}
-		    <div style="padding: 0 2%; text-align: justify; text-justify: auto;">
-		    <!-- <div style="font-family: 'Bangla', sans-serif; font-size: 200%"> -->
-		    	{{ details['ai_explanation'] }}
-		    </div>
-			<!-- </div> -->
-	    <br>
-	    <!-- <p style="font-size: 90%; color: gray; text-align: center;"> [Source: <a href="https://gtaf.org/apps/quran" target="_blank">Al Quran (Tafsir & by Word) by Greentech Apps Foundation</a>] </p> -->
-	    {% endif %}
+	  <div class="content" data-section="ai" data-loaded="1">
+	    {% include 'partials/_section_ai.html' %}
 	  </div>
 
 	  <div class="title">
 	    <i class="dropdown icon"></i>
 	    <span>Word for Word Meaning</span>
 	  </div>
-	  <div class="content">
-	  	{% if (details['wordforword']|length == 0) %}
-	  	<p style="text-align: center;"> No data found for this ayah </p>
-	  	{% else %}
-
-	    <table class="ui unstackable center aligned table">
-		  <thead>
-		    <tr><th>Word</th>
-		    <th>Meaning</th>
-		    <th>Root</th>
-		  </tr></thead>
-		  <tbody>
-		  {% for x in details['wordforword'] %}
-		    <tr>
-		      <td style="border-radius: 3px; font-size: 150%; font-family: 'Scheherazade', serif;" name="word_index" class="ui selectable single line"> {{ x['0'] }} </td>
-
-		      {% if (x['3']|length) != 0 %}
-		      	<td><a href="" onclick="$('#related{{ x['4'] }}').modal('show'); return false;">{{ x['1'] }}</a></td>
-		      {% else %}
-		      	<td>{{ x['1'] }}</td>
-		      {% endif %}
-
-		      {% if x['2'] != '-' %}
-		      <td style="border-radius: 3px; font-size: 150%; font-family: 'Scheherazade', serif; padding: .78571429em .78571429em;" name="root_index" class="ui single line selectable"> {{ x['2'] }} </td>
-		      {% else %}
-		      <td style="font-size: 150%; font-family: 'Scheherazade', serif;" class="ui single line"> {{ x['2'] }} </td>
-		      {% endif %}
-		    </tr>
-		   {% endfor %}
-		  </tbody>
-		</table>
-		<p style="font-size: 90%; color: gray; text-align: center;"> [Source: <a href="https://gtaf.org/apps/quran" target="_blank">Al Quran (Tafsir & by Word) by Greentech Apps Foundation</a>] </p>
-		{% endif %}
+	  <div class="content" data-section="wfw" data-loaded="1">
+	    {% include 'partials/_section_wfw.html' %}
 	  </div>
 
 	  <div class="title">
 	    <i class="dropdown icon"></i>
 	    <span>Word Definitions</span>
 	  </div>
-	  <div class="content">
-	  	{% if (details['definitions']|length) == 0 %}
-	  	<p style="text-align: center; font-size: 90%"> No data found for this ayah </p>
-	  	{% else %}
-	  	<div class="ui text container" style="padding: 0 2%;">
-	    {% for x in details['definitions'] %}
-	    <div name="root_details" style="text-align: justify; text-justify: auto;">
-		    <h2 style="font-size: 250%; font-family: 'Scheherazade', serif; padding-top: 20px;"> {{ x[0] }} </h2>
-		    <h4 style="font-family: 'Open Sans'"> {{ x[1].capitalize() }} ({{ x[2] }}) </h4>
-		    <div style="padding-right: 5%">
-		    <p style="font-size: 90%"> {{ x[3] }} </p>
-		</div>
-	    <!-- <br> -->
-		</div>
-	    {% endfor %}
-	    <p style="font-size: 80%; padding-top: 30px; color: gray; text-align: center;"> [Source: <a href="https://www.quranhive.com" target="_blank">www.quranhive.com</a>] </p>
-		</div>
-		{% endif %}
+	  <div class="content" data-section="defs" data-loaded="1">
+	    {% include 'partials/_section_defs.html' %}
 	  </div>
 
 	  <div class="title">
 	    <i class="dropdown icon"></i>
 	    <span>Morphology</span>
 	  </div>
-	  <div class="content">
-	  	{% if (details['morph']|length) == 0 %}
-	  	<p style="text-align: center; font-size: 90%"> No data found for this ayah </p>
-	  	{% else %}
-	  	<div class="ui text container">
-	  	<br>
-	  	{% for x in details['morph'] %}
-	  	<div name="word_details">
-	  		<div style="text-align: center; padding-top: 20px;">
-		    <h1 style="font-size: 250%; font-family: 'Scheherazade', serif;"> {{ x['word'] }} </h1>
-		    <span style="font-size: 90%"> {{ x['meaning'].capitalize() }} </span>
-		    {% if (x['lemma']|length) != 0  %}
-		    | <span style="font-size: 90%; display: inline-block;"> Lemma: </span> <span style="font-size: 150%; font-family: 'Scheherazade', serif;"> <a href="http://arabiclexicon.hawramani.com/search/{{ x['lemma'] }}?cat=50" target="_blank">{{ x['lemma'] }}</a> </span>
-		    {% endif %}
-		    {% if (x['verb_type']|length) != 0  %}
-		    | <span style="font-size: 90%; display: inline-block;"> Verb Form {{ x['verb_type'] }} </span>
-		    {% endif %}
-			</div>
-
-			<br>
-			{% for y in x['annot'] %}
-
-		    <p style="padding-left: 20%;"> <span style="font-size: 150%; font-family: 'Scheherazade', serif;"> {{ y[0] }}
-		    	 → </span> <span style="font-size: 90%"> {{ y[1] }} </span> </p>
-
-		    {% endfor %}
-
-		    {% if (x['root_def']) %}
-			<div>
-				<br>
-				<table class="ui unstackable center aligned collapsing very basic very compact small table" style="width: 80%; margin: 0 auto;">
-				  <thead>
-				  	<tr><td colspan="3"><strong>Different Verb Forms of <span style="font-size: 150%; font-family: 'Scheherazade', serif;">{{ x['root'] }}</span></strong></td></tr>
-				    <tr><th>Baab</th>
-				    <th>Form</th>
-				    <th>Meaning</th>
-				  </tr></thead>
-				  <tbody>
-					{% for y in x['root_def'] %}
-						<tr>
-							<td style="font-size: 150%; font-family: 'Scheherazade', serif;">{{ y[0] }}</td>
-							<td>{{ y[1] }}</td>
-							<td>{{ y[2] }}</td>
-						</tr>
-					{% endfor %}
-				  </tbody>
-				</table>
-			</div>
-			{% endif %}
-
-		    <br>
-
-		    {% if (x['verb_form']|length) != 0 %}
-		    <table class="ui unstackable center aligned collapsing very basic very compact small table" style="margin: 0 auto;">
-			  <!-- <thead>
-			    <tr><th>Form</th>
-			    <th>Verb</th>
-			  </tr></thead> -->
-			  <tbody>
-			  	<tr><td colspan="2">Root: <span style="font-size: 150%; font-family: 'Scheherazade', serif;"> <a href="http://arabiclexicon.hawramani.com/search/{{ x['root'] }}?cat=50" target="_blank">{{ x['root'] }}</a> </span> </td></tr>
-		    {% for y in x['verb_form'] %}
-		    <tr>
-		    <td> {{ y[0] }} </td> <td style="font-size: 150%; font-family: 'Scheherazade', serif;"> {{ y[1] }} </td>
-			</tr>
-		    {% endfor %}
-		    </tbody>
-			</table>
-			{% endif %}
-		</div>
-			<hr style="width: 80%; opacity: 50%;">
-		<br>
-		{% endfor %}
-	    <p style="font-size: 80%; color: gray; text-align: center;"> [Source: <a href="https://gtaf.org/apps/quran" target="_blank">Al Quran (Tafsir & by Word) by Greentech Apps Foundation</a> and <a href="http://www.quransarf.com/sarfs" target="_blank">Sarf Generator</a>] </p>
-		</div>
-		{% endif %}
+	  <div class="content" data-section="morph" data-loaded="1">
+	    {% include 'partials/_section_morph.html' %}
 	  </div>
 
 	  <div class="title">
 	    <i class="dropdown icon"></i>
 	    <span>Bangla Tafsir (Abu Bakr Zakaria)</span>
 	  </div>
-	  <div class="content">
-	  	{% if (details['bn_zakaria']|length) == 0 %}
-	  	<p style="text-align: center; font-size: 90%"> No data found for this ayah </p>
-	  	{% else %}
-		    <div style="font-family: 'Baloo Da 2', sans-serif; font-size: 1.15rem; padding: 0 2%; text-align: justify; text-justify: auto;">
-		    <!-- <div style="font-family: 'Bangla', sans-serif; font-size: 200%"> -->
-		    	{{ details['bn_zakaria'] }}
-		    </div>
-			<!-- </div> -->
-	    <br>
-	    <p style="font-size: 90%; color: gray; text-align: center;"> [Source: <a href="https://gtaf.org/apps/quran" target="_blank">Al Quran (Tafsir & by Word) by Greentech Apps Foundation</a>] </p>
-	    {% endif %}
+	  <div class="content" data-section="bn" data-loaded="1">
+	    {% include 'partials/_section_bn.html' %}
 	  </div>
 
 	  <div class="title">
 	    <i class="dropdown icon"></i>
 	    <span>English Tafsir (Ibn Kathir)</span>
 	  </div>
-	  <div class="content">
-	  	{% if (details['en_kathir']|length) == 0 %}
-	  	<p style="text-align: center; font-size: 90%"> No data found for this ayah </p>
-	  	{% else %}
-	  		<div style="padding: 0 2%; text-align: justify; text-justify: auto;">
-			    {{ details['en_kathir'] }}
-			</div>
-	    <br><br>
-	    <p style="font-size: 90%; color: gray; text-align: center;"> [Source: <a href="https://gtaf.org/apps/quran" target="_blank">Al Quran (Tafsir & by Word) by Greentech Apps Foundation</a>] </p>
-	    {% endif %}
-
+	  <div class="content" data-section="en" data-loaded="1">
+	    {% include 'partials/_section_en.html' %}
 	  </div>
 
 	  <div class="title">
 	    <i class="dropdown icon"></i>
 	    <span>Advanced Grammatical Breakdown</span>
 	  </div>
-	  <div class="content">
+	  <div class="content" data-section="grammar" data-loaded="1">
 	    <!-- <iframe src="http://corpus.quran.com/treebank.jsp?chapter={{details['surah']}}&verse={{details['verse']}}" title="description" style="width: 100%; height: 800px; border:1px solid lightgray;"></iframe> -->
-	    <p style="font-size: 90%; color: gray; text-align: center;"> <a href="http://corpus.quran.com/treebank.jsp?chapter={{details['surah']}}&verse={{details['verse']}}" target="_blank">Visit Corpus Quran <i style="color: #0E6EB8" class="ui small icon external"></i></a>  </p>
+	    <p style="font-size: 90%; color: gray; text-align: center;"> <a id="corpus-link" href="http://corpus.quran.com/treebank.jsp?chapter={{details['surah']}}&verse={{details['verse']}}" target="_blank">Visit Corpus Quran <i style="color: #0E6EB8" class="ui small icon external"></i></a>  </p>
 
 	  </div>
-
-	  <!-- <div class="title">
-	    <i class="dropdown icon"></i>
-	    <span>Comprehensive Reading</span>
-	  </div>
-	  <div class="content">
-	  	<div style="padding-left: 5%; width: 100%;">
-	  	  <p><a href="{{ url_for('arabic_fulltext', surah=details['surah']) }}">Arabic Text</a></p>
-		  <p><a href="{{ url_for('translation', surah=details['surah']) }}">Translation</a></p>
-		  <p><a href="{{ url_for('bn_tafsir', surah=details['surah']) }}">Bangla Tafsir (Abu Bakr Zakaria)</a></p>
-		  <p><a href="{{ url_for('en_tafsir', surah=details['surah']) }}">English Tafsir (Ibn Kathir)</a></p>
-		</div>
-	  </div> -->
 
 	</div>
 	</div>
@@ -729,134 +600,6 @@
 	<br>
 
 <script src="{{ url_for('static', filename= 'js/swiped-events.min.js') }}"></script>
-<script type="text/javascript" id="tagscript">
-document.addEventListener('DOMContentLoaded', function () {
-	$('.ui.accordion')
-	  .accordion(
-	  {
-	  	onOpen : function(){
-	  		$('#collapse-btn').show();
-	  	}
-	  })
-	;
-
-	function collapseAll(){
-		for (let i = 0; i<6; i++)
-		{
-			$(".accordion").accordion("close", i);
-		}
-		$('#collapse-btn').fadeOut();
-	}
-	$('.ui.button.toggle').state();
-
-	// let audio_src_link = ["http://www.everyayah.com/data/Alafasy_128kbps/{{'%03d' % details['surah']}}{{'%03d' % details['verse']}}.mp3", "http://www.everyayah.com/data/Husary_Mujawwad_64kbps/{{'%03d' % details['surah']}}{{'%03d' % details['verse']}}.mp3"];
-
-	let audio_src_link = ["http://www.everyayah.com/data/Alafasy_128kbps/{{'%03d' % details['surah']}}{{'%03d' % details['verse']}}.mp3", "http://www.everyayah.com/data/Husary_128kbps_Mujawwad/{{'%03d' % details['surah']}}{{'%03d' % details['verse']}}.mp3"];
-	let audio_src = 0;
-	const audio_element = document.querySelector('audio');
-	function changeAudioSrc()
-	{
-		audio_src = (audio_src + 1) % 2;
-		audio_element.src = audio_src_link[audio_src];
-		audio_element.play();
-	}
-
-	let words = document.getElementsByName("word_index");
-	let word_details_list = document.getElementsByName("word_details");
-	for (let i = 0; i< words.length; i++)
-	{
-		words[i].onclick = () => {
-			$("#word_details_modal_content").html(word_details_list[i].outerHTML);
-			$("#word_details_modal_heading").html("Morphological Details");
-			$("#word_details_modal").modal('show');
-			document.querySelector('#word_details_modal_content').scrollTop = 0;
-			// $(".accordion").accordion("open", 2);
-			// setTimeout(function() {
-			//   word_details_list[i].scrollIntoView({behavior: "smooth"});
-			// }, 500)
-		};
-	}
-
-	let roots = document.getElementsByName("root_index");
-	let root_details_list = document.getElementsByName("root_details");
-	for (let i = 0; i< roots.length; i++)
-	{
-		roots[i].onclick = () => {
-			$("#word_details_modal_content").html(root_details_list[i].outerHTML);
-			$("#word_details_modal_heading").html("Word Definition");
-			$("#word_details_modal").modal('show');
-			document.querySelector('#word_details_modal_content').scrollTop = 0;
-			// $(".accordion").accordion("open", 1);
-			// setTimeout(function() {
-			//   root_details_list[i].scrollIntoView({behavior: "smooth"});
-			// }, 500)
-		};
-	}
-
-	function shareVerse()
-	{
-		var url = new URL("{{ url_for('details', surah=details['surah'], verse=details['verse']) }}", window.location.origin).href;
-		var ayah = {{ details['ayah']|tojson }};
-		var translation = {{ details['translation']|tojson }};
-		var title = {{ (details['surah_name'] ~ ' ' ~ details['surah'] ~ ':' ~ details['verse'])|tojson }};
-		if (navigator.share)
-		{
-			navigator.share({ title: title, text: ayah + "\n\n" + translation, url: url }).catch(function(){});
-		}
-		else if (navigator.clipboard)
-		{
-			navigator.clipboard.writeText(url).then(function(){
-				var b = document.getElementById('share-btn');
-				var old = b.innerHTML;
-				b.innerHTML = '<i class="icon check"></i>';
-				setTimeout(function(){ b.innerHTML = old; }, 1200);
-			});
-		}
-		else
-		{
-			window.prompt('Copy this link:', url);
-		}
-	}
-
-	window.collapseAll = collapseAll;
-	window.changeAudioSrc = changeAudioSrc;
-	window.shareVerse = shareVerse;
-
-});
-
-</script>
-<script>
-//Keypress Events (window.navigateVerse is defined in the head script)
-
-	document.onkeydown = function(event) {
-        switch (event.keyCode) {
-           case 37:
-           		if (navigation_allowed)
-           			navigateVerse("{{ url_for('details', surah=details['prev'][0], verse=details['prev'][1]) }}", "prev");
-              break;
-
-           case 39:
-           		if (navigation_allowed)
-                	navigateVerse("{{ url_for('details', surah=details['next'][0], verse=details['next'][1]) }}", "next");
-              break;
-
-        }
-    };
-
-    //Swipe left/right button
-
-    document.addEventListener('swiped-left', function(e) {
-    	if (navigation_allowed)
-    		navigateVerse("{{ url_for('details', surah=details['next'][0], verse=details['next'][1]) }}", "next");
-	});
-
-	document.addEventListener('swiped-right', function(e) {
-		if (navigation_allowed)
-	    	navigateVerse("{{ url_for('details', surah=details['prev'][0], verse=details['prev'][1]) }}", "prev");
-	});
-
-
-</script>
 {% endblock %}
 
 {% block scriptcontent %}

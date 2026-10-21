@@ -1,0 +1,9 @@
+	  	{% if (details['en_kathir']|length) == 0 %}
+	  	<p style="text-align: center; font-size: 90%"> No data found for this ayah </p>
+	  	{% else %}
+	  		<div style="padding: 0 2%; text-align: justify; text-justify: auto;">
+			    {{ details['en_kathir'] }}
+			</div>
+	    <br><br>
+	    <p style="font-size: 90%; color: gray; text-align: center;"> [Source: <a href="https://gtaf.org/apps/quran" target="_blank">Al Quran (Tafsir & by Word) by Greentech Apps Foundation</a>] </p>
+	    {% endif %}

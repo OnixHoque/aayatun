@@ -4,9 +4,14 @@ import pandas as pd
 import library as lib
 import random
 import ast
+import hmac
+import os
+import secrets
+import time
 from functools import lru_cache
 from datetime import datetime
-from flask import request, redirect
+from urllib.parse import urlparse
+from flask import request, redirect, session, jsonify, make_response
 import searchtool as st
 
 @lru_cache(maxsize=1)
@@ -22,6 +27,96 @@ RUKU_LIST = getRukuList()
 
 app = Flask(__name__)
 
+# Session signing key for the nav API token. Prefer an env var; otherwise keep
+# a generated key in a gitignored file so sessions survive reloads/restarts and
+# stay valid across the workers on one host.
+def load_secret_key():
+	key = os.environ.get('AAYATUN_SECRET_KEY')
+	if key:
+		return key
+	path = 'db/.secret_key'
+	# Several workers may start at once: create the file atomically, then let
+	# the losers read the winner's key instead of generating a different one.
+	for _ in range(10):
+		try:
+			with open(path) as f:
+				key = f.read().strip()
+			if key:
+				return key
+		except OSError:
+			pass
+		try:
+			fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+		except FileExistsError:
+			time.sleep(0.05)
+			continue
+		except OSError:
+			break
+		key = secrets.token_hex(32)
+		with os.fdopen(fd, 'w') as f:
+			f.write(key)
+		return key
+	try:
+		with open(path) as f:
+			key = f.read().strip()
+		if key:
+			return key
+	except OSError:
+		pass
+	# Read-only deploy without AAYATUN_SECRET_KEY set: sessions will not be
+	# shared between workers, but the page still works via full navigations.
+	return secrets.token_hex(32)
+
+app.secret_key = load_secret_key()
+app.config.update(
+	SESSION_COOKIE_HTTPONLY=True,
+	SESSION_COOKIE_SAMESITE='Lax',
+	# Set AAYATUN_HTTPS=1 in production so the cookie is only sent over TLS.
+	SESSION_COOKIE_SECURE=os.environ.get('AAYATUN_HTTPS') == '1',
+)
+
+# The verse nav API is for this site's own pages only. A browser token cannot
+# be truly secret (it ships in the page), so the goal is narrower: block
+# third-party sites/hotlinking, bind requests to a session, and keep the token
+# revocable. Cross-origin reads are additionally blocked because no CORS
+# headers are sent.
+def api_token():
+	tok = session.get('api_token')
+	if not tok:
+		tok = secrets.token_urlsafe(32)
+		session['api_token'] = tok
+	return tok
+
+def same_site_request():
+	site = request.headers.get('Sec-Fetch-Site')
+	if site and site not in ('same-origin', 'same-site'):
+		return False
+	ref = request.headers.get('Origin') or request.headers.get('Referer')
+	if ref:
+		if urlparse(ref).netloc != request.host:
+			return False
+	return True
+
+def require_api_token():
+	tok = session.get('api_token')
+	sent = request.headers.get('X-Aayatun-Token', '')
+	if not tok or not sent or not hmac.compare_digest(tok, sent):
+		abort(403)
+	if not same_site_request():
+		abort(403)
+
+def no_store(resp):
+	resp.headers['Cache-Control'] = 'private, no-store'
+	return resp
+
+def private_page(resp):
+	# The verse HTML now carries the per-session API token, so shared caches
+	# must never store it (a cached page would hand one session's token to
+	# another, and its API calls would then be rejected).
+	resp.headers['Cache-Control'] = 'private, max-age=0, must-revalidate'
+	return resp
+
+
 @app.route('/service-worker.js', methods=['GET'])
 def sw():
     return app.send_static_file('service-worker.js'), 200, {'Content-Type': 'text/javascript'}
@@ -33,7 +128,8 @@ def index():
 
 @app.route('/<int:surah>/', strict_slashes=False)
 def details2(surah):
-	return render_template('versedetails.html', details=lib.p_getSurahInfo(surah, 1))
+	return private_page(make_response(render_template('versedetails.html',
+		details=lib.get_verse_details(surah, 1), api_token=api_token())))
 
 @app.route('/search/', strict_slashes=False, methods = ['POST'])
 def search():
@@ -72,7 +168,29 @@ def search():
 
 @app.route('/<int:surah>/<int:verse>', strict_slashes=False)
 def details(surah, verse):
-	return render_template('versedetails.html', details=lib.p_getSurahInfo(surah, verse))
+	return private_page(make_response(render_template('versedetails.html',
+		details=lib.get_verse_details(surah, verse), api_token=api_token())))
+
+# Lightweight payload used by next/prev navigation. Only the parts that change
+# on screen are sent; accordion sections are fetched on demand.
+@app.route('/api/v1/verse/<int:surah>/<int:verse>', strict_slashes=False)
+def verse_api(surah, verse):
+	require_api_token()
+	return no_store(jsonify(lib.get_verse_core(surah, verse)))
+
+# Server-rendered accordion content, so the markup has a single source of truth
+# (the Jinja partials) instead of being rebuilt in JavaScript.
+@app.route('/api/v1/verse/<int:surah>/<int:verse>/<section>', strict_slashes=False)
+def verse_section_api(surah, verse, section):
+	require_api_token()
+	if section not in lib.VERSE_SECTIONS:
+		abort(404)
+	html = render_template('partials/_section_%s.html' % section,
+		details=lib.get_verse_details(surah, verse))
+	resp = make_response(html)
+	resp.headers['Content-Type'] = 'text/html; charset=utf-8'
+	return no_store(resp)
+
 
 @app.route('/font/v4/<int:page>.woff2', strict_slashes=False)
 def qcf_font(page):

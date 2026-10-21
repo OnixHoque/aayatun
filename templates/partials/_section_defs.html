@@ -1,0 +1,17 @@
+	  	{% if (details['definitions']|length) == 0 %}
+	  	<p style="text-align: center; font-size: 90%"> No data found for this ayah </p>
+	  	{% else %}
+	  	<div class="ui text container" style="padding: 0 2%;">
+	    {% for x in details['definitions'] %}
+	    <div name="root_details" style="text-align: justify; text-justify: auto;">
+		    <h2 style="font-size: 250%; font-family: 'Scheherazade', serif; padding-top: 20px;"> {{ x[0] }} </h2>
+		    <h4 style="font-family: 'Open Sans'"> {{ x[1].capitalize() }} ({{ x[2] }}) </h4>
+		    <div style="padding-right: 5%">
+		    <p style="font-size: 90%"> {{ x[3] }} </p>
+		</div>
+	    <!-- <br> -->
+		</div>
+	    {% endfor %}
+	    <p style="font-size: 80%; padding-top: 30px; color: gray; text-align: center;"> [Source: <a href="https://www.quranhive.com" target="_blank">www.quranhive.com</a>] </p>
+		</div>
+		{% endif %}

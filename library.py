@@ -6,6 +6,7 @@ from flask import Markup
 import pickle
 import re
 import json
+import copy
 import time
 import threading
 import urllib.request
@@ -26,6 +27,11 @@ roman_number = {str(i): j for i, j in  zip(range(1, 16), roman)}
 roman_number[''] = ''
 
 curr_surah = ''
+
+@lru_cache(maxsize=1)
+def quran_stat():
+	# Read-only; shared by validate(), p_getSurahInfo() and the nav API.
+	return pd.read_json('db/quran_stat.json')
 
 def get_db_connection(db_name):
 	conn = sqlite3.connect(db_name)
@@ -605,10 +611,10 @@ def get_morph(surah, verse):
 
 def validate(surah, verse):
 	global curr_surah
-	x = pd.read_json('db/quran_stat.json')
-	curr_surah = x['Surah'].iloc[surah-1].split('.')[1].strip()
+	x = quran_stat()
 	if surah > 114 or surah < 1:
 		return False
+	curr_surah = x['Surah'].iloc[surah-1].split('.')[1].strip()
 	if (verse < 1) or verse > int(x.loc[surah]['Verses']):
 		return False
 	return True
@@ -819,9 +825,45 @@ def p_getSurahInfo(surah, verse):
 	d['qcf_page'] = qcf[0] if qcf else None
 	d['ayah_codev2'] = Markup(qcf[1]) if qcf else None
 	try:
-		_vcount = pd.read_json('db/quran_stat.json')['Verses'].loc[int(surah)]
+		_vcount = int(quran_stat()['Verses'].loc[int(surah)])
 		warm_tajweed_surah(int(surah), int(_vcount))
 		warm_qcf_surah(int(surah), int(_vcount))
 	except Exception:
 		pass
 	return d
+
+# ---------------------------------------------------------------------------
+# Verse navigation API.
+#
+# The page is still rendered server-side on first load. Next/prev then ask for
+# this small "core" payload (and fetch accordion sections only when opened),
+# so a nav does not ship the morphology/tafsir/AI blocks again.
+VERSE_CORE_KEYS = ('surah_name', 'surah', 'verse', 'prev', 'next', 'ayah', 'translation')
+VERSE_SECTIONS = ('ai', 'wfw', 'defs', 'morph', 'bn', 'en')
+
+def get_verse_core(surah, verse):
+	"""Small, fast per-verse payload for client-side navigation."""
+	if not validate(surah, verse):
+		abort(404)
+	b = get_verse_pickle(surah, verse)
+	d = {k: b[k] for k in VERSE_CORE_KEYS}
+	t = get_ayah_tajweed(surah, verse)
+	d['ayah_tajweed'] = t or ''
+	qcf = get_qcf_ayah(surah, verse)
+	d['qcf_page'] = qcf[0] if qcf else None
+	d['ayah_codev2'] = qcf[1] if qcf else ''
+	try:
+		_vcount = int(quran_stat()['Verses'].loc[int(surah)])
+		warm_tajweed_surah(int(surah), _vcount)
+		warm_qcf_surah(int(surah), _vcount)
+	except Exception:
+		pass
+	return d
+
+@lru_cache(maxsize=24)
+def _verse_details_cached(surah, verse):
+	return p_getSurahInfo(surah, verse)
+
+def get_verse_details(surah, verse):
+	"""(Deep-copied) full details, shared by the SSR page and section API."""
+	return copy.deepcopy(_verse_details_cached(surah, verse))

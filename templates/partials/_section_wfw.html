@@ -1,0 +1,70 @@
+	  	{% if (details['wordforword']|length) == 0 %}
+	  	<p style="text-align: center;"> No data found for this ayah </p>
+	  	{% else %}
+
+	    <table class="ui unstackable center aligned table">
+		  <thead>
+		    <tr><th>Word</th>
+		    <th>Meaning</th>
+		    <th>Root</th>
+		  </tr></thead>
+		  <tbody>
+		  {% for x in details['wordforword'] %}
+		    <tr>
+		      <td style="border-radius: 3px; font-size: 150%; font-family: 'Scheherazade', serif;" name="word_index" class="ui selectable single line"> {{ x['0'] }} </td>
+
+		      {% if (x['3']|length) != 0 %}
+		      	<td><a href="" onclick="$('#related{{ x['4'] }}').modal('show'); return false;">{{ x['1'] }}</a></td>
+		      {% else %}
+		      	<td>{{ x['1'] }}</td>
+		      {% endif %}
+
+		      {% if x['2'] != '-' %}
+		      <td style="border-radius: 3px; font-size: 150%; font-family: 'Scheherazade', serif; padding: .78571429em .78571429em;" name="root_index" class="ui single line selectable"> {{ x['2'] }} </td>
+		      {% else %}
+		      <td style="font-size: 150%; font-family: 'Scheherazade', serif;" class="ui single line"> {{ x['2'] }} </td>
+		      {% endif %}
+		    </tr>
+		   {% endfor %}
+		  </tbody>
+		</table>
+		<p style="font-size: 90%; color: gray; text-align: center;"> [Source: <a href="https://gtaf.org/apps/quran" target="_blank">Al Quran (Tafsir & by Word) by Greentech Apps Foundation</a>] </p>
+		{% endif %}
+    {# The accordion fades in its direct children. Keep the inline
+       display:none so Fomantic's skipInlineHidden leaves these closed. #}
+    {% for x in details['wordforword'] %}
+    {% if (x['3']|length) != 0 %}
+    	<div class="ui mini modal" id="related{{ x['4'] }}" style="display: none;">
+    		<i class="close icon"></i>
+		  <div class="header" style="font-family: open sans; width: 100%; text-align: center;">
+		  	Other meanings of <span style="font-size: 150%; font-family: 'Scheherazade', serif;">{{ x['0'] }}</span>
+		  </div>
+
+		  <div class="scrolling content" style="font-size: 110%">
+		  	{% if (x['3']|length == 0) %}
+		  	<p style="width: 100%; text-align: center;">{{ x['3']|length }} variation</p>
+		  	{% else %}
+		  	<p style="width: 100%; text-align: center;">{{ x['3']|length }} variations</p>
+		  	{% endif %}
+		    <table class="ui unstackable center aligned collapsing very basic compact small table" style="margin: 0 auto;">
+			  <thead>
+			    <tr>
+			    <th>Arabic</th>
+			    <th>Meaning</th>
+			    <th>Source</th>
+			  	</tr></thead>
+			  <tbody>
+
+		    {% for y in x['3'] %}
+		    <tr>
+		    <td style="font-size: 150%; font-family: 'Scheherazade', serif;"> {{ y[0] }} </td>
+		    <td> {{ y[1] }} </td>
+		    <td> <a target="_parent" href="{{ url_for('details', surah=y[2], verse=y[3]) }}">{{ y[2] }}:{{ y[3] }}</a> </td>
+			</tr>
+		    {% endfor %}
+		    </tbody>
+			</table>
+		  </div>
+		</div>
+    {% endif %}
+    {% endfor %}
