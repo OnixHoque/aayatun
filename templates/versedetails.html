@@ -20,6 +20,24 @@
 			document.documentElement.classList.add('nav-' + d);
 		}
 	} catch (e) {}
+	try {
+		// Tajweed persisted ON: the server-rendered h1 is the PLAIN text, so
+		// hide it until the coloured rendering is applied (the parse-time
+		// init script below removes .tajweed-pending). Starts the font
+		// download at head time as well, so the hidden window is minimal.
+		if (localStorage.getItem('ayahTajweedOn') === '1') {
+			document.documentElement.classList.add('tajweed-pending');
+			{% if details['qcf_page'] %}
+			var preload = document.createElement('link');
+			preload.rel = 'preload';
+			preload.as = 'font';
+			preload.type = 'font/woff2';
+			preload.crossOrigin = 'anonymous';
+			preload.href = '/font/v4/{{ details["qcf_page"] }}.woff2';
+			document.head.appendChild(preload);
+			{% endif %}
+		}
+	} catch (e) {}
 })();
 </script>
 {% endblock js %}
@@ -74,6 +92,28 @@
 		   overflow at the root so no scrollbar appears (and nothing else —
 		   e.g. the styled accordion's outline — gets clipped). */
 		html { overflow-x: hidden; }
+
+		/* With tajweed persisted, the h1 ships as plain text; it stays
+		   invisible until the coloured rendering has been applied, so
+		   navigating between verses never flashes plain -> tajweed.
+		   visibility (not display) keeps the layout stable. */
+		html.tajweed-pending #ayah {
+			visibility: hidden;
+		}
+
+		/* Show the legend and the active tint icon from the first paint too,
+		   so switching tajweed on doesn't shift the page a second later. */
+		html.tajweed-pending #tajweed-legend {
+			display: block;
+		}
+
+		html.tajweed-pending #tajweed-toggle-btn .tint.icon {
+			color: #3B8EFF;
+		}
+
+		html.dark-theme.tajweed-pending #tajweed-toggle-btn .tint.icon {
+			color: #9CC4FF;
+		}
 	</style>
 	<script type="text/javascript">
 		var navigation_allowed = true;
@@ -81,7 +121,7 @@
 
 	<div style="text-align: center;" id="pagecontent">
 	<br>
-    <h1 id="ayah" class="ayah-plain" style="font-size: 300%; font-family: 'Scheherazade', serif;">
+    <h1 id="ayah" class="ayah-plain" style="font-family: 'Scheherazade', serif;">
     	{{- details['ayah'] -}}
 	</h1>
     {%- if details['qcf_page'] %}<span id="ayah-codev2" data-page="{{ details['qcf_page'] }}" hidden data-text="{{ details['ayah_codev2'] }}"></span>{% endif -%}
@@ -162,6 +202,230 @@
 			</button>
 		</div>
     </div>
+
+    <script>
+    // Tajweed rendering. Runs at parse time (not on DOMContentLoaded, which
+    // waits for the deferred CDN scripts) so a persisted ON state is applied
+    // before the first paint. The head script hid the server-rendered plain
+    // verse behind .tajweed-pending; this removes it once the coloured
+    // rendering is ready, so verse navigation never flashes plain -> tajweed.
+    (function ()
+    {
+    	var ayah = document.getElementById('ayah');
+    	var btn = document.getElementById('tajweed-toggle-btn');
+    	var strip = document.getElementById('tajweed-legend');
+    	var markupSrc = document.getElementById('ayah-markup-src');
+    	var holder = document.getElementById('ayah-codev2');
+    	if (!ayah || !btn || !strip) return;
+
+    	var KEY = 'ayahTajweedOn';
+    	var plainHTML;
+    	var mode = null;          // null = plain, 'font', 'markup'
+    	var fontFam = null;
+    	var observer = null;
+    	var initialLoad = document.documentElement.classList.contains('tajweed-pending');
+    	var loadSeq = 0;          // invalidates in-flight loads after a toggle off
+    	var revealTimer = null;
+
+    	function isTajweedPersisted() { return localStorage.getItem(KEY) === '1'; }
+    	function markBtn(on) { btn.classList.toggle('tajweed-on', on); }
+    	function markStrip(on) { strip.classList.toggle('show', on); }
+
+    	function reveal()
+    	{
+    		document.documentElement.classList.remove('tajweed-pending');
+    		if (revealTimer) { clearTimeout(revealTimer); revealTimer = null; }
+    	}
+
+    	function restorePlain()
+    	{
+    		ayah.innerHTML = plainHTML;
+    		ayah.className = 'ayah-plain';
+    		ayah.style.fontFamily = "'Scheherazade', serif";
+    		ayah.style.removeProperty('font-palette');
+    	}
+
+    	function applyMarkupFallback()
+    	{
+    		var credit = document.getElementById('tajweed-markup-credit');
+    		if (credit) credit.style.display = '';
+    		if (!markupSrc || !markupSrc.innerHTML.trim()) return restorePlain();
+    		ayah.innerHTML = markupSrc.innerHTML;
+    		ayah.className = 'ayah-tajweed';
+    		ayah.style.fontFamily = "'Scheherazade', serif";
+    		ayah.style.removeProperty('font-palette');
+    		mode = 'markup';
+    	}
+
+    	function applyFont()
+    	{
+    		var page = holder.getAttribute('data-page');
+    		var codeV2 = holder.getAttribute('data-text');
+    		ayah.textContent = codeV2;
+    		ayah.className = 'ayah-qcf';
+    		ayah.style.fontFamily = "'" + fontFam + "', 'Scheherazade', serif";
+    		ayah.style.fontPalette = document.documentElement.classList.contains('dark-theme')
+    			? '--qcf-dark' : '--qcf-light';
+    		mode = 'font';
+    		var credit = document.getElementById('tajweed-markup-credit');
+    		if (credit) credit.style.display = 'none';
+    	}
+
+    	function preparePaletteCss()
+    	{
+    		fontFam = 'QCF-V4-' + holder.getAttribute('data-page');
+    		var styleEl = document.createElement('style');
+    		styleEl.textContent = "@font-palette-values --qcf-dark { font-family:'" +
+    			fontFam + "'; base-palette:1; } @font-palette-values --qcf-light { font-family:'" +
+    			fontFam + "'; base-palette:0; }";
+    		document.head.appendChild(styleEl);
+    	}
+
+    	function loadFont()
+    	{
+    		if (!holder || !window.CSS || !CSS.supports || !CSS.supports('font-palette', 'normal'))
+    			return Promise.reject(new Error('unsupported'));
+    		preparePaletteCss();
+    		var face = new FontFace(fontFam, "url('/font/v4/" +
+    			holder.getAttribute('data-page') + ".woff2') format('woff2')");
+    		return face.load().then(function (loaded)
+    		{
+    			document.fonts.add(loaded);
+    			return loaded;
+    		});
+    	}
+
+    	// Fade the h1 out, run the swap, fade back in; a stale fade (the
+    	// user re-toggled while one was pending) is skipped so commits apply
+    	// in request order only.
+    	var fadeSeq = 0;
+    	function fadeSwap(fn)
+    	{
+    		var seq = ++fadeSeq;
+    		ayah.style.opacity = '0';
+    		setTimeout(function ()
+    		{
+    			if (seq !== fadeSeq) return;
+    			fn();
+    			ayah.style.opacity = '1';
+    		}, 240);
+    	}
+
+    	// On the initial persisted load the plain verse is hidden, so the
+    	// swap can happen instantly; user-initiated toggles keep the fade.
+    	function commit(fn)
+    	{
+    		if (initialLoad)
+    		{
+    			initialLoad = false;
+    			fn();
+    			reveal();
+    		}
+    		else
+    		{
+    			fadeSwap(fn);
+    		}
+    	}
+
+    	function enable()
+    	{
+    		markBtn(true);
+    		markStrip(true);
+    		if (mode === 'font') return;
+    		var seq = ++loadSeq;
+    		if (holder && holder.getAttribute('data-page') && holder.getAttribute('data-text'))
+    		{
+    			loadFont().then(function ()
+    			{
+    				if (seq !== loadSeq || mode === 'font') return;
+    				commit(function ()
+    				{
+    					applyFont();
+    					if (!observer)
+    					{
+    						observer = new MutationObserver(function ()
+    						{
+    							if (mode === 'font') applyFont();
+    						});
+    						observer.observe(document.documentElement,
+    							{attributes: true, attributeFilter: ['class']});
+    					}
+    				});
+    			}).catch(function ()
+    			{
+    				if (seq !== loadSeq) return;
+    				if (mode === null && isTajweedPersisted())
+    					commit(applyMarkupFallback);
+    			});
+    		}
+    		else
+    		{
+    			commit(applyMarkupFallback);
+    		}
+    	}
+
+    	function disable()
+    	{
+    		++loadSeq;
+    		initialLoad = false;
+    		markBtn(false);
+    		markStrip(false);
+    		fadeSwap(function ()
+    		{
+    			restorePlain();
+    			mode = null;
+    		});
+    		reveal();
+    	}
+
+    	window.toggleTajweed = function ()
+    	{
+    		if (isTajweedPersisted())
+    		{
+    			localStorage.setItem(KEY, '0');
+    			disable();
+    		}
+    		else
+    		{
+    			localStorage.setItem(KEY, '1');
+    			enable();
+    		}
+    	};
+
+    	// The rule grid starts collapsed on every page; the header's chevron
+    	// expands it. Links inside the header keep their normal behaviour.
+    	window.toggleTajweedLegendGrid = function (e)
+    	{
+    		if (e && e.target && e.target.closest && e.target.closest('a')) return;
+    		strip.classList.toggle('open');
+    	};
+
+    	if (!markupSrc) { var c = document.getElementById('tajweed-markup-credit'); if (c) c.style.display = 'none'; }
+    	plainHTML = ayah.innerHTML;
+
+    	if (isTajweedPersisted())
+    	{
+    		if (initialLoad)
+    		{
+    			// Safety valve: never leave the verse blank if the font is
+    			// slow or unavailable — show the plain text after 1.5s and
+    			// let any late font swap fade in.
+    			revealTimer = setTimeout(function ()
+    			{
+    				revealTimer = null;
+    				initialLoad = false;
+    				reveal();
+    			}, 1500);
+    		}
+    		enable();
+    	}
+    	else
+    	{
+    		initialLoad = false;
+    		markBtn(false);
+    	}
+    })();
+    </script>
 
     <p id="verse-translation">{{ details['translation'] }}</p>
 
@@ -558,180 +822,6 @@ document.addEventListener('DOMContentLoaded', function () {
 	window.changeAudioSrc = changeAudioSrc;
 	window.shareVerse = shareVerse;
 
-	// Tajweed is OFF by default; the tint button toggles it (persisted in
-	// localStorage). ON priority: quran.com's colored mushaf font (TajweedV4
-	// COLRv1 — colours and every madda annotation baked into the font),
-	// falling back to the markup-span colouring, and to plain text last. The
-	// legend + credit strip under the ayah shows only while tajweed is on.
-	(function ()
-	{
-		var ayah = document.getElementById('ayah');
-		var btn = document.getElementById('tajweed-toggle-btn');
-		var strip = document.getElementById('tajweed-legend');
-		var markupSrc = document.getElementById('ayah-markup-src');
-		var holder = document.getElementById('ayah-codev2');
-		if (!ayah || !btn || !strip) return;
-
-		var KEY = 'ayahTajweedOn';
-		var plainHTML;
-		var mode = null;          // null = plain, 'font', 'markup'
-		var fontFam = null;
-		var observer = null;
-
-		function isTajweedPersisted() { return localStorage.getItem(KEY) === '1'; }
-		function markBtn(on) { btn.classList.toggle('tajweed-on', on); }
-		function markStrip(on) { strip.classList.toggle('show', on); }
-
-		function restorePlain()
-		{
-			ayah.innerHTML = plainHTML;
-			ayah.className = 'ayah-plain';
-			ayah.style.fontFamily = "'Scheherazade', serif";
-			ayah.style.removeProperty('font-palette');
-		}
-
-		function applyMarkupFallback()
-		{
-			var credit = document.getElementById('tajweed-markup-credit');
-			if (credit) credit.style.display = '';
-			if (!markupSrc || !markupSrc.innerHTML.trim()) return restorePlain();
-			ayah.innerHTML = markupSrc.innerHTML;
-			ayah.className = 'ayah-tajweed';
-			ayah.style.fontFamily = "'Scheherazade', serif";
-			ayah.style.removeProperty('font-palette');
-			mode = 'markup';
-		}
-
-		function applyFont()
-		{
-			var page = holder.getAttribute('data-page');
-			var codeV2 = holder.getAttribute('data-text');
-			ayah.textContent = codeV2;
-			ayah.className = 'ayah-qcf';
-			ayah.style.fontFamily = "'" + fontFam + "', 'Scheherazade', serif";
-			ayah.style.fontPalette = document.documentElement.classList.contains('dark-theme')
-				? '--qcf-dark' : '--qcf-light';
-			mode = 'font';
-			var credit = document.getElementById('tajweed-markup-credit');
-			if (credit) credit.style.display = 'none';
-		}
-
-		function preparePaletteCss()
-		{
-			fontFam = 'QCF-V4-' + holder.getAttribute('data-page');
-			var styleEl = document.createElement('style');
-			styleEl.textContent = "@font-palette-values --qcf-dark { font-family:'" +
-				fontFam + "'; base-palette:1; } @font-palette-values --qcf-light { font-family:'" +
-				fontFam + "'; base-palette:0; }";
-			document.head.appendChild(styleEl);
-		}
-
-		function loadFont()
-		{
-			if (!holder || !window.CSS || !CSS.supports || !CSS.supports('font-palette', 'normal'))
-				return Promise.reject(new Error('unsupported'));
-			preparePaletteCss();
-			var face = new FontFace(fontFam, "url('/font/v4/" +
-				holder.getAttribute('data-page') + ".woff2') format('woff2')");
-			return face.load().then(function (loaded)
-			{
-				document.fonts.add(loaded);
-				return loaded;
-			});
-		}
-
-		// Fade the h1 out, run the swap, fade back in; a stale fade (the
-		// user re-toggled while one was pending) is skipped so commits apply
-		// in request order only.
-		var fadeSeq = 0;
-		function fadeSwap(fn)
-		{
-			var seq = ++fadeSeq;
-			ayah.style.opacity = '0';
-			setTimeout(function ()
-			{
-				if (seq !== fadeSeq) return;
-				fn();
-				ayah.style.opacity = '1';
-			}, 240);
-		}
-
-		function enable()
-		{
-			markBtn(true);
-			markStrip(true);
-			if (mode === 'font') return;
-			if (holder && holder.getAttribute('data-page') && holder.getAttribute('data-text'))
-			{
-				loadFont().then(function ()
-				{
-					if (mode !== 'font')
-					{
-						fadeSwap(function ()
-						{
-							applyFont();
-							if (!observer)
-							{
-								observer = new MutationObserver(function ()
-								{
-									if (mode === 'font') applyFont();
-								});
-								observer.observe(document.documentElement,
-									{attributes: true, attributeFilter: ['class']});
-							}
-						});
-					}
-				}).catch(function ()
-				{
-					if (mode === null && isTajweedPersisted())
-						fadeSwap(applyMarkupFallback);
-				});
-			}
-			else
-			{
-				fadeSwap(applyMarkupFallback);
-			}
-		}
-
-		function disable()
-		{
-			markBtn(false);
-			markStrip(false);
-			fadeSwap(function ()
-			{
-				restorePlain();
-				mode = null;
-			});
-		}
-
-		window.toggleTajweed = function ()
-		{
-			if (isTajweedPersisted())
-			{
-				localStorage.setItem(KEY, '0');
-				disable();
-			}
-			else
-			{
-				localStorage.setItem(KEY, '1');
-				enable();
-			}
-		};
-
-		// The rule grid starts collapsed on every page; the header's chevron
-		// expands it. Links inside the header keep their normal behaviour.
-		window.toggleTajweedLegendGrid = function (e)
-		{
-			if (e && e.target && e.target.closest && e.target.closest('a')) return;
-			strip.classList.toggle('open');
-		};
-
-		if (!markupSrc) { var c = document.getElementById('tajweed-markup-credit'); if (c) c.style.display = 'none'; }
-		plainHTML = ayah.innerHTML;
-
-		if (isTajweedPersisted()) enable();
-		else markBtn(false);
-	})();
 });
 
 </script>

@@ -13,6 +13,11 @@
           var meta = document.querySelector('meta[name="theme-color"]');
           if (meta) meta.setAttribute('content', 'rgb(44,44,44)');
         }
+        // Arrived from another page of this site: show the loading bar on
+        // this page's first paint (see #loading-bar rules above).
+        if (sessionStorage.getItem('aayatun_loading') === '1') {
+          document.documentElement.classList.add('is-loading');
+        }
       } catch (e) {}
     })();
   </script>
@@ -20,6 +25,14 @@
     html.dark-theme { color-scheme: dark; background-color: rgb(27, 28, 29); }
     html.dark-theme body { background-color: rgb(27, 28, 29) !important; color: rgba(255, 255, 255, .87); }
     html.dark-theme #menubar { background-color: rgb(44, 44, 44) !important; border-bottom: 1px solid rgba(80, 80, 80, .8); }
+
+    /* Loading bar: hidden by default, but visible from the destination
+       page's very first paint when we arrived via an in-site navigation
+       (the head script above sets .is-loading from sessionStorage). This
+       matters on iOS Chrome, which drops the outgoing page's fade-in before
+       it can be painted. */
+    #loading-bar { display: none; }
+    html.is-loading #loading-bar { display: block; }
   </style>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -43,9 +56,54 @@
    {% block menu %} {% endblock %}
  </div>
 
- <footer id="loading-bar" style="position: fixed; top: auto; left: 0; right: 0; bottom: 0; width: 100%; box-sizing: border-box; background: rgba(255, 255, 255, .85); font-family: 'Open Sans', open sans; z-index: 2000; font-size: 13px; padding: 8px 0 calc(8px + env(safe-area-inset-bottom, 0px)); text-align: center; opacity: 1; display: none;">
+ <footer id="loading-bar" style="position: fixed; top: auto; left: 0; right: 0; bottom: 0; width: 100%; box-sizing: border-box; background: rgba(255, 255, 255, .85); font-family: 'Open Sans', open sans; z-index: 2000; font-size: 13px; padding: 8px 0 calc(8px + env(safe-area-inset-bottom, 0px)); text-align: center; opacity: 1;">
   <div class="ui active tiny inline loader" style="padding: 0px 15px"></div>Loading...
 </footer>
+
+ <script>
+ (function () {
+   // Loading bar. It must not depend on jQuery or DOMContentLoaded: if a CDN
+   // script fails, the bar still has to be hideable, and it has to be shown
+   // synchronously (no fade-in) so mobile browsers paint it before the
+   // navigation starts. The "loading" flag in sessionStorage lets the next
+   // page render the bar from its very first paint (iOS Chrome otherwise
+   // discards the outgoing page's change).
+   function showLoading()
+   {
+     try { sessionStorage.setItem('aayatun_loading', '1'); } catch (e) {}
+     document.documentElement.classList.add('is-loading');
+     var bar = document.getElementById('loading-bar');
+     if (bar) { bar.style.opacity = '1'; bar.style.display = 'block'; }
+   }
+   function hideLoading()
+   {
+     try { sessionStorage.removeItem('aayatun_loading'); } catch (e) {}
+     document.documentElement.classList.remove('is-loading');
+     var bar = document.getElementById('loading-bar');
+     if (bar) { bar.style.display = 'none'; }
+   }
+   window.showLoading = showLoading;
+   window.hideLoading = hideLoading;
+
+   window.addEventListener('pageshow', hideLoading);
+   // Mobile browsers (iOS Safari, Chrome) often skip beforeunload on
+   // navigation but do fire pagehide; set the flag there as well.
+   window.addEventListener('pagehide', showLoading);
+   // Unload-time changes often never repaint on mobile (the old document is
+   // torn down), so also show the bar at TAP time, before the default
+   // navigation begins. See also navigateVerse() and the index page, which
+   // call showLoading() for JS-driven redirects.
+   document.addEventListener('click', function (e) {
+     var a = e.target && e.target.closest && e.target.closest('a[href]');
+     if (!a) return;
+     var href = a.getAttribute('href');
+     if (!href || href.charAt(0) === '#') return;
+     if (a.target === '_blank' || a.hasAttribute('download')) return;
+     if (a.origin && a.origin !== window.location.origin) return;
+     showLoading();
+   }, true);
+ })();
+ </script>
 
 <script src="{{ url_for('static', filename= 'js/script.js') }}"></script>
 
@@ -110,32 +168,6 @@ document.addEventListener('DOMContentLoaded', function () {
   ;
 
   {% block scriptcontent %}  {% endblock %}
-  function showLoading()
-  {
-    $('#loading-bar').fadeIn();
-  }
-  function hideLoading()
-  {
-    $('#loading-bar').fadeOut();
-  }
-  window.addEventListener('pageshow', hideLoading);
-  // Mobile browsers (iOS Safari, Chrome) often skip beforeunload on navigation
-  // but do fire pagehide; use it so the loading bar shows reliably on phones.
-  window.addEventListener('pagehide', showLoading);
-  // Unload-time changes often never repaint on mobile (the old document is
-  // torn down), so also show the bar synchronously at TAP time, before the
-  // default navigation begins: a style change made inside a user-gesture
-  // handler renders on screen. See also navigateVerse() and the index page,
-  // which call showLoading() for JS-driven redirects.
-  document.addEventListener('click', function (e) {
-    var a = e.target && e.target.closest && e.target.closest('a[href]');
-    if (!a) return;
-    var href = a.getAttribute('href');
-    if (!href || href.charAt(0) === '#') return;
-    if (a.target === '_blank' || a.hasAttribute('download')) return;
-    if (a.origin && a.origin !== window.location.origin) return;
-    showLoading();
-  }, true);
 
   $('.accordion .title').css('font-weight', 'bold');
   $('.accordion .title').css('font-size', '110%');
@@ -245,9 +277,6 @@ document.addEventListener('DOMContentLoaded', function () {
   } else {
     document.documentElement.classList.remove('dark-theme');
   }
-
-  window.showLoading = showLoading;
-  window.hideLoading = hideLoading;
 });
 </script>
 

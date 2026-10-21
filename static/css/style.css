@@ -48,6 +48,17 @@ html.dark-theme .home-section-label {
    swapped, then it fades back in. */
 #ayah {
 	transition: opacity .22s ease;
+	font-size: 300%;
+}
+
+/* Both tajweed renderers (quran.com's coloured mushaf font and the coloured
+   markup fallback) draw noticeably larger than Scheherazade at the same
+   font-size (the QCF page font is ~1.4x taller/wider), so scale the verse
+   down while tajweed is on. 220% keeps it close to the plain text's visual
+   size. */
+#ayah.ayah-tajweed,
+#ayah.ayah-qcf {
+	font-size: 220%;
 }
 
 .ayah-tajweed .tj-n { color: #537FFF; }
