@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aayatun-v27';
+const CACHE_NAME = 'aayatun-v28';
 
 const CORE_ASSETS = [
   '/',
@@ -54,6 +54,22 @@ function isCacheable(url) {
   return url.origin === self.location.origin || CACHEABLE_HOSTS.includes(url.hostname);
 }
 
+// A failed fetch with nothing cached must still resolve to a Response:
+// respondWith(undefined) throws "Failed to convert value to 'Response'" and
+// hides the real network error behind a TypeError.
+function networkError() {
+  return new Response('', { status: 504, statusText: 'Offline' });
+}
+
+function offlineShell() {
+  return new Response(
+    '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">' +
+      '<title>Offline</title><p style="font-family:sans-serif;text-align:center;padding:2rem">' +
+      'You are offline and this page has not been saved yet.</p>',
+    { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+  );
+}
+
 function staleWhileRevalidate(req) {
   return caches.open(CACHE_NAME).then((cache) =>
     cache.match(req).then((cached) => {
@@ -64,7 +80,7 @@ function staleWhileRevalidate(req) {
           }
           return res;
         })
-        .catch(() => cached);
+        .catch(() => cached || networkError());
       return cached || network;
     })
   );
@@ -79,7 +95,7 @@ function cacheFirst(req) {
       const copy = res.clone();
       caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
       return res;
-    });
+    }).catch(() => networkError());
   });
 }
 
@@ -105,8 +121,12 @@ self.addEventListener('fetch', (evt) => {
           caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
           return res;
         })
-        .catch(() =>
-          caches.match(req).then((cached) => cached || caches.match('/static/offline.html'))
+        .catch(
+          () =>
+            caches.match(req).then((cached) =>
+              cached ||
+              caches.match('/static/offline.html').then((offline) => offline || offlineShell())
+            )
         )
     );
     return;
