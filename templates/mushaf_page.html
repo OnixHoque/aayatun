@@ -41,6 +41,9 @@
 		<button id="translation-toggle-btn" class="circular ui basic toggle icon button" onclick="update_translation_visibility(this)">
 			Show Translation
 		</button>
+		<button id="layout-toggle-btn" data-tooltip="Mushaf line layout" class="circular ui basic toggle icon button" onclick="toggleMushafLayout()">
+			<i class="icon align justify"></i> Mushaf layout
+		</button>
 	</div>
 	<p id="qcf-credit" class="qcf-credit" style="display: none;">Colored mushaf font &copy; <a href="https://qurancomplex.gov.sa/" target="_blank">King Fahd Complex</a> &middot; packaged by <a href="https://quran.com" target="_blank">quran.com</a></p>
 
@@ -72,6 +75,19 @@
 		</tbody>
 	{% endfor %}
 	</table>
+
+	<div class="mushaf-layout" id="mushaf-layout" dir="rtl" lang="ar">
+	{% for ln in lines %}
+		{% if ln.type == 'header' %}
+		<div class="mushaf-line-head" dir="ltr"><span class="mushaf-surah-name">{{ ln.name }}</span></div>
+		{% elif ln.type == 'basmala' %}
+		<div class="mushaf-line-basmala"><span class="mushaf-bismillah">&#xFDFD;</span></div>
+		{% else %}
+		<div class="mushaf-line" data-endblock="{{ 1 if ln.endblock else 0 }}" style="font-family: 'QCF-V4-{{ page_no }}', 'Scheherazade', serif;">{% for seg in ln.segments %}{% if not loop.first %} {% endif %}<span class="mushaf-seg" data-surah="{{ seg.surah }}" data-verse="{{ seg.verse }}" onclick="showModal({{ seg.surah }}, {{ seg.verse }})">{{ seg.glyphs }}</span>{% endfor %}</div>
+		{% endif %}
+	{% endfor %}
+	<p class="mushaf-layout-credit">Mushaf layout by <a href="https://github.com/zonetecde/mushaf-layout" target="_blank" rel="noopener">zonetecde/mushaf-layout</a> (ISC) &middot; QPC glyphs &copy; <a href="https://qurancomplex.gov.sa/" target="_blank" rel="noopener">King Fahd Complex</a></p>
+	</div>
 
 	<p class="mushaf-page-count">{{ verse_count }} verse{% if verse_count != 1 %}s{% endif %}</p>
 	<br>
@@ -147,4 +163,123 @@
 		// Translation is on unless the reader turned it off on a mushaf page.
 		if (stored !== '0') applyTranslation(true);
 	})();
+
+	// ------------------------------------------------------------------
+	// Third reading mode: the page as a real mushaf (QPC2 line layout).
+	// The markup for both views ships in the page; this only swaps which one
+	// is visible, paints the per-page colored font and scales it so the
+	// widest line fills the column. Nothing here touches the table state, so
+	// turning the mode off restores the reader's previous toggles.
+	// ------------------------------------------------------------------
+	var LAYOUT_KEY = 'aayatun_mushaf_layout_v1';
+	var layoutPage = {{ page_no }};
+	var layoutView = document.getElementById('mushaf-layout');
+	var layoutTable = document.getElementById('mushaf-page-table');
+	var layoutBtn = document.getElementById('layout-toggle-btn');
+	var layoutTajweedBtn = document.getElementById('tajweed-toggle-btn');
+	var layoutTranslationBtn = document.getElementById('translation-toggle-btn');
+	var layoutLines = layoutView ? Array.prototype.slice.call(layoutView.querySelectorAll('.mushaf-line')) : [];
+	var layoutOn = false;
+	var layoutResizeTimer = null;
+
+	function layoutTextWidth(el)
+	{
+		if (el.getClientRects().length === 0) return 0;
+		var range = document.createRange();
+		range.selectNodeContents(el);
+		return range.getBoundingClientRect().width;
+	}
+
+	function fitMushafLayout()
+	{
+		if (!layoutOn || !layoutLines.length) return;
+		var base = 100;
+		layoutLines.forEach(function (el) {
+			el.style.fontSize = base + 'px';
+			el.style.textAlign = 'right';
+			el.style.textAlignLast = 'auto';
+		});
+		var cs = window.getComputedStyle(layoutView);
+		var avail = layoutView.clientWidth -
+			parseFloat(cs.paddingLeft || 0) - parseFloat(cs.paddingRight || 0);
+		if (!(avail > 0)) return;
+		var widths = layoutLines.map(layoutTextWidth);
+		var widest = Math.max.apply(null, widths.concat([1]));
+		var scaled = Math.max(10, Math.min(64, base * avail / widest));
+		layoutLines.forEach(function (el, i) {
+			el.style.fontSize = scaled.toFixed(2) + 'px';
+			// Every line is justified to the column edge except where the
+			// printed page itself leaves it short: the last line of a surah
+			// and the last line of the page (unless it already fills it).
+			var endsBlock = el.getAttribute('data-endblock') === '1';
+			if (!endsBlock || widths[i] >= widest * 0.94) {
+				el.style.textAlign = 'justify';
+				el.style.textAlignLast = 'justify';
+			} else {
+				el.style.textAlign = 'right';
+				el.style.textAlignLast = 'auto';
+			}
+		});
+	}
+
+	function fitAndRevealLayout()
+	{
+		window.requestAnimationFrame(function () {
+			window.requestAnimationFrame(function () {
+				fitMushafLayout();
+				if (layoutView) layoutView.style.visibility = 'visible';
+			});
+		});
+	}
+
+	function paintMushafLayout()
+	{
+		if (window.QcfFont && QcfFont.supports()) {
+			layoutLines.forEach(function (el) { QcfFont.apply(el, layoutPage); });
+		}
+		// Two frames: one for the font/palette, one for the resulting layout,
+		// so the measurement sees the real glyph widths.
+		fitAndRevealLayout();
+	}
+
+	function setLayoutMode(on)
+	{
+		layoutOn = !!on;
+		if (layoutBtn) layoutBtn.classList.toggle('active', layoutOn);
+		if (layoutView) {
+			// Stay invisible until the glyph font is painted and fitted, so
+			// the fallback face never flashes PUA boxes.
+			if (layoutOn) layoutView.style.visibility = 'hidden';
+			layoutView.style.display = layoutOn ? 'block' : 'none';
+		}
+		if (layoutTable) layoutTable.style.display = layoutOn ? 'none' : '';
+		if (layoutTajweedBtn) layoutTajweedBtn.style.display = layoutOn ? 'none' : '';
+		if (layoutTranslationBtn) layoutTranslationBtn.style.display = layoutOn ? 'none' : '';
+		if (!layoutOn) return;
+		if (window.QcfFont && QcfFont.supports()) {
+			if (QcfFont.isLoaded(layoutPage)) paintMushafLayout();
+			else QcfFont.load(layoutPage).then(paintMushafLayout, paintMushafLayout);
+		} else {
+			// No colored-font support: keep the fallback face but still fit.
+			fitAndRevealLayout();
+		}
+	}
+
+	window.toggleMushafLayout = function () {
+		var on = !layoutOn;
+		setLayoutMode(on);
+		try { localStorage.setItem(LAYOUT_KEY, on ? '1' : '0'); } catch (e) {}
+	};
+
+	(function () {
+		var stored = null;
+		try { stored = localStorage.getItem(LAYOUT_KEY); } catch (e) {}
+		if (stored === '1') setLayoutMode(true);
+	})();
+
+	window.addEventListener('resize', function () {
+		if (!layoutOn) return;
+		if (layoutResizeTimer) window.clearTimeout(layoutResizeTimer);
+		layoutResizeTimer = window.setTimeout(fitMushafLayout, 150);
+	});
 {% endblock scriptcontent %}

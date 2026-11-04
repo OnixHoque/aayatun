@@ -14,25 +14,78 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 	var detailTpl = "{{ url_for('details', surah=111111, verse=222222) }}";
+	var readyTimer = null;
+	var readyToken = 0;
+
+	function dressFrame(frame)
+	{
+		var doc = frame.contentDocument;
+		if (!doc) return;
+		var menu = doc.getElementById('menubar');
+		if (menu) menu.style.display = 'none';
+		var search = doc.getElementById('search-btn');
+		if (search) search.style.display = 'none';
+		var collapse = doc.getElementById('collapse-btn');
+		if (collapse) collapse.style.bottom = '15px';
+		try { frame.contentWindow.navigation_allowed = false; } catch (e) {}
+	}
+
+	function revealModal()
+	{
+		var frame = document.getElementById('verse_details_modal_content');
+		if (!frame) return;
+		try { dressFrame(frame); } catch (e) {}
+		$("#loadingdetails").hide();
+		$("#verse_details_modal_content").fadeIn();
+	}
+
+	function stopReadyWatch()
+	{
+		if (readyTimer) {
+			clearInterval(readyTimer);
+			readyTimer = null;
+		}
+	}
 
 	function showModal(s, v)
 	{
 		var url = detailTpl.replace("111111", s).replace("222222", v);
 		$('#verse_details_modal_button').attr("href", url);
 		$("#verse_details_modal_content").off("load").on("load", function () {
-			$("#verse_details_modal_content").contents().find("#menubar").hide();
-			$("#verse_details_modal_content").contents().find("#search-btn").hide();
-			$("#verse_details_modal_content").contents().find("#collapse-btn").css("bottom", "15px");
-			$("#verse_details_modal_content")[0].contentWindow.navigation_allowed = false;
-			$("#loadingdetails").hide();
-			$("#verse_details_modal_content").fadeIn();
+			stopReadyWatch();
+			revealModal();
 		});
 
 		$('#loadingdetails').show();
 		$("#verse_details_modal_content").hide();
 		document.querySelector('#verse_details_modal_content').setAttribute("src", url);
-		$("#verse_details_modal_heading").html("Verse #" + v);
+		$("#verse_details_modal_heading").text("Surah " + s + ":" + v);
 		$("#verse_details_modal").modal('show');
+
+		// The iframe's DOM is usable at DOMContentLoaded (readyState
+		// 'interactive'), often ~350ms before `load` waits for audio and
+		// fonts. Reveal then, and let the load handler do the final pass.
+		stopReadyWatch();
+		var token = ++readyToken;
+		readyTimer = setInterval(function () {
+			if (token !== readyToken) return;
+			var frame = document.querySelector('#verse_details_modal_content');
+			var doc = null;
+			var sameDoc = false;
+			try {
+				doc = frame && frame.contentDocument;
+				sameDoc = !!(doc && doc.location && doc.location.pathname === url);
+			} catch (e) {}
+			// Skip the empty about:blank document that exists until the
+			// navigation commits: only reveal the verse page itself.
+			if (doc && doc.readyState !== 'loading' && doc.body && sameDoc) {
+				stopReadyWatch();
+				revealModal();
+			}
+		}, 40);
+		window.setTimeout(function () {
+			if (token === readyToken) stopReadyWatch();
+		}, 15000);
 	}
 
 	window.showModal = showModal;

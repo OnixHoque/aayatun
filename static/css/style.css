@@ -265,7 +265,9 @@ html.dark-theme #tajweed-toggle-btn.tajweed-on .tint.icon { color: #9CC4FF; }
 .mushaf-ayah {
 	font-family: 'Scheherazade', serif;
 	font-size: 225%;
-	line-height: 1.9;
+	/* Match the verse-detail h1 leading (Fomantic's 1.2857em) so a wrapped
+	   verse is as tight here as it is on /<surah>/<verse>. */
+	line-height: 1.2857;
 	text-align: right;
 }
 
@@ -287,7 +289,7 @@ html.dark-theme #tajweed-toggle-btn.tajweed-on .tint.icon { color: #9CC4FF; }
 .mushaf-ayah.ayah-qcf .mushaf-plain { display: none; }
 
 .mushaf-surah-head td {
-	padding-top: 1.4rem !important;
+	padding-top: 2rem !important;
 	border-top: none !important;
 }
 
@@ -331,6 +333,64 @@ html.dark-theme .mushaf-verse-no { color: rgba(255, 255, 255, .5); }
 	text-align: center;
 	opacity: .5;
 	font-size: 80%;
+}
+
+/* Mushaf line layout (third reading toggle): the QPC2 page as printed, one
+   block per line, no table and no translations. Font family and size are set
+   by the page script (family from /font/v4/<page>.woff2, size measured to
+   fit the widest line), so this only carries the box model. */
+.mushaf-layout {
+	display: none; /* shown by toggleMushafLayout() */
+	direction: rtl;
+	padding: 4px 2px 0;
+	/* The fit pass measures lines at 100px before scaling them down; hide
+	   that oversized first layout instead of flashing a scrollbar. */
+	overflow: hidden;
+}
+
+.mushaf-line {
+	white-space: nowrap;
+	line-height: 1.75;
+	text-align: justify;
+	text-align-last: justify;
+	direction: rtl;
+}
+
+/* The scoped `* { font-family: 'Open Sans' }` on reading pages matches spans
+   directly, so verse segments must re-inherit the QCF face from their line. */
+.mushaf-layout .mushaf-seg {
+	font-family: inherit;
+	cursor: pointer;
+}
+
+.mushaf-layout .mushaf-seg:hover {
+	background: rgba(59, 142, 255, .12);
+}
+
+/* Breathing room between the last line of a surah and the next banner. */
+.mushaf-line-head {
+	margin-top: 2rem;
+}
+
+.mushaf-line-head:first-child {
+	margin-top: 0;
+}
+
+.mushaf-line-head .mushaf-surah-name,
+.mushaf-line-basmala .mushaf-bismillah {
+	display: block;
+}
+
+.mushaf-line-basmala {
+	margin: .1rem 0 .3rem;
+}
+
+.mushaf-layout-credit {
+	direction: ltr;
+	font-size: 72%;
+	text-align: center;
+	opacity: .5;
+	margin: 1.2rem 0 .4rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

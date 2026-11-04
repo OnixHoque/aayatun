@@ -38,11 +38,35 @@ def get_db_connection(db_name):
 	conn.row_factory = sqlite3.Row
 	return conn
 
+# db/quran.db and db/en_quran.db are FTS3 virtual tables, so a
+# `where sura = ? and ayah = ?` lookup scans the whole index (a few hundred
+# ms on a slow disk). Both tables are immutable, so load them once and answer
+# every later request from memory (about 6,236 rows / 1.2 MB each).
+_text_mem = {'ar': None, 'en': None}
+_text_lock = threading.Lock()
+
+
+def _load_text_table(db_name, which):
+	with _text_lock:
+		if _text_mem[which] is not None:
+			return _text_mem[which]
+		conn = get_db_connection(db_name)
+		rows = conn.execute('select sura, ayah, text from verses').fetchall()
+		conn.close()
+		_text_mem[which] = {(r['sura'], r['ayah']): r['text'] for r in rows}
+		return _text_mem[which]
+
+
+def _quran_text():
+	return _load_text_table('db/quran.db', 'ar')
+
+
+def _quran_translation():
+	return _load_text_table('db/en_quran.db', 'en')
+
+
 def get_ayah(surah, verse):
-	conn = get_db_connection('db/quran.db')
-	arabic = conn.execute(f'select text from verses where sura = {surah} and ayah = {verse}').fetchone()
-	conn.close()
-	return arabic['text']
+	return _quran_text().get((surah, verse), '')
 
 # ---------------------------------------------------------------------------
 # Tajweed (color-coded) ayah text.
@@ -571,10 +595,7 @@ def get_ayah_tajweed(surah, verse):
 		return None
 
 def get_translation(surah, verse):
-	conn = get_db_connection('db/en_quran.db')
-	translation = conn.execute(f'select text from verses where sura = {surah} and ayah = {verse}').fetchone()
-	conn.close()
-	return translation['text']
+	return _quran_translation().get((surah, verse), '')
 
 def get_en_kathir(surah, verse):
 	conn = get_db_connection('db/en_kathir.db')
@@ -737,11 +758,10 @@ def get_full_tranlation(surah):
 
 	x = quran_stat()
 	curr_surah = x['Surah'].iloc[surah-1].split('.')[1].strip()
-	conn = get_db_connection('db/en_quran.db')
-	result = conn.execute(f'select text from verses where sura = {surah}').fetchall()
-	conn.close()
-	x = [row['text'] for row in result]
-	return curr_surah, tuple(zip(range(1, len(x) + 1), x))
+	text = _quran_translation()
+	count = int(x['Verses'].loc[int(surah)])
+	rows = [text.get((surah, v), '') for v in range(1, count + 1)]
+	return curr_surah, tuple(zip(range(1, len(rows) + 1), rows))
 
 
 def get_full_en_tafsir(surah):
@@ -774,12 +794,10 @@ def get_full_arabic(surah):
 
 	x = quran_stat()
 	curr_surah = x['Surah'].iloc[surah-1].split('.')[1].strip()
-	conn = get_db_connection('db/quran.db')
-	result = conn.execute(f'select text from verses where sura = {surah}').fetchall()
-	conn.close()
-
-	x = [row['text'] for row in result]
-	return curr_surah, tuple(zip(range(1, len(x) + 1), x))
+	text = _quran_text()
+	count = int(x['Verses'].loc[int(surah)])
+	rows = [text.get((surah, v), '') for v in range(1, count + 1)]
+	return curr_surah, tuple(zip(range(1, len(rows) + 1), rows))
 
 
 
@@ -967,6 +985,70 @@ def get_mushaf_page(page):
 		'surah_names': tuple(g['name'] for g in groups),
 		'count': sum(len(g['rows']) for g in groups),
 	}
+
+# ---------------------------------------------------------------------------
+# Mushaf line layout
+#
+# db/mushaf_lines.json is generated from zonetecde/mushaf-layout's QPC2 pages
+# (one file per Madani page). Each page is a list of typed lines:
+#   ['h', surah]              surah banner
+#   ['b']                     basmala (U+FDFD in Amiri)
+#   ['x', [[surah, verse, glyphs], ...]]
+# Page membership and line breaks are the V2 (QPC2) ones, so they match the
+# per-page fonts served by /font/v4/<page>.woff2. The file is loaded once into
+# memory (about 560 KB) and reused by every /page/<n> request.
+MUSHAF_LINES_JSON = 'db/mushaf_lines.json'
+_mushaf_lines_mem = None
+_mushaf_lines_lock = threading.Lock()
+
+
+def _mushaf_lines():
+	global _mushaf_lines_mem
+	if _mushaf_lines_mem is not None:
+		return _mushaf_lines_mem
+	with _mushaf_lines_lock:
+		if _mushaf_lines_mem is None:
+			with open(MUSHAF_LINES_JSON, encoding='utf-8') as f:
+				_mushaf_lines_mem = json.load(f)['pages']
+	return _mushaf_lines_mem
+
+
+@lru_cache(maxsize=16)
+def get_mushaf_lines(page):
+	"""Typed layout lines for one Madani page (1-604).
+
+	Returns a tuple of dicts: {'type': 'header', 'surah', 'name'},
+	{'type': 'basmala'} or {'type': 'text', 'segments': (...)}, where each
+	segment is {'surah', 'verse', 'glyphs'} in mushaf order. Rendered by
+	templates/mushaf_page.html's layout view.
+	"""
+	if not (1 <= page <= 604):
+		abort(404)
+	raw = _mushaf_lines().get(str(page))
+	if not raw:
+		return ()
+	out = []
+	for i, ln in enumerate(raw):
+		if ln[0] == 'h':
+			s = int(ln[1])
+			out.append({'type': 'header', 'surah': s, 'name': get_full_arabic(s)[0]})
+		elif ln[0] == 'b':
+			out.append({'type': 'basmala'})
+		else:
+			# The only lines that may stay short in print are the last line
+			# of a surah (next line is a banner) and the last line of the
+			# page; every other line is justified to the column edge.
+			endblock = i + 1 >= len(raw) or raw[i + 1][0] != 'x'
+			out.append({
+				'type': 'text',
+				'endblock': endblock,
+				'segments': tuple(
+					{'surah': int(a), 'verse': int(b), 'glyphs': c}
+					for a, b, c in ln[1]
+				),
+			})
+	return tuple(out)
+
 
 def _surah_verse_count(surah):
 	return int(quran_stat()['Verses'].loc[int(surah)])
