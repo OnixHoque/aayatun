@@ -4,6 +4,7 @@ const pages = {
 	"COMP_TRANSLATION" : 3,
 	"COMP_TAFSIR_BN" : 4,
 	"COMP_TAFSIR_EN" : 5,
+	"COMP_MUSHAF_PAGE" : 6,
 
 }
 

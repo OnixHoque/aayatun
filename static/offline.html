@@ -2,19 +2,105 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<title>Network not available</title>
 		<style>
-			*{
-				font-family: "Open Sans", "Arial";
+			* {
+				font-family: "Open Sans", "Arial", sans-serif;
+			}
+			html, body {
+				margin: 0;
+				background: #fff;
+				color: #333;
+			}
+			body {
+				padding: 24px 16px 48px;
 				text-align: center;
 			}
-		</style>	
+			h1 {
+				font-size: 1.4rem;
+				font-weight: 400;
+			}
+			a { color: #2185d0; }
+			#offline-verse {
+				max-width: 720px;
+				margin: 12px auto 0;
+			}
+			.ov-label {
+				font-size: .8rem;
+				opacity: .55;
+				text-transform: uppercase;
+				letter-spacing: .06em;
+			}
+			#ov-ref {
+				margin: .2rem 0 1rem;
+				font-weight: 600;
+			}
+			#ov-ayah {
+				font-family: "Scheherazade", "Amiri", "Times New Roman", serif;
+				font-size: 2rem;
+				line-height: 2;
+				direction: rtl;
+				text-align: right;
+				margin: 0 0 1rem;
+			}
+			#ov-translation {
+				font-size: 1rem;
+				line-height: 1.6;
+				opacity: .8;
+				margin: 0 auto 1.5rem;
+				max-width: 40rem;
+			}
+			html.dark-theme, html.dark-theme body {
+				background: rgb(27, 28, 29);
+				color: rgba(255, 255, 255, .87);
+			}
+		</style>
 	</head>
 	<body>
-		<div>
+		<div id="offline-main">
 			<h1>Looks like you are not connected with the Internet</h1>
 			<p>Please connect to the internet and <a href="/">try again</a>.</p>
 		</div>
-	    <!-- Rest of the page content -->
+
+		<div id="offline-verse" hidden>
+			<p class="ov-label">Saved verse</p>
+			<h2 id="ov-ref"></h2>
+			<p id="ov-ayah" lang="ar"></p>
+			<p id="ov-translation"></p>
+			<p><a id="ov-retry" href="">Reload this verse</a> &middot; <a href="/">Home</a></p>
+		</div>
+
+		<script>
+		(function () {
+			try {
+				if (localStorage.getItem('darktheme') === 'true') {
+					document.documentElement.classList.add('dark-theme');
+				}
+			} catch (e) {}
+
+			// A verse page that was read while online keeps its Arabic and
+			// translation in localStorage (see verse-nav.js). If the requested
+			// URL is one of those verses, show it here instead of the generic
+			// "no connection" message.
+			try {
+				var m = /^\/(\d+)\/(\d+)\/?$/.exec(window.location.pathname);
+				if (!m) return;
+				var key = m[1] + ':' + m[2];
+				var store = JSON.parse(localStorage.getItem('aayatun_verse_offline_v1') || '{}');
+				var d = store[key];
+				if (!d || !d.ayah) return;
+
+				document.getElementById('offline-main').hidden = true;
+				document.getElementById('offline-verse').hidden = false;
+				document.getElementById('ov-ref').textContent =
+					(d.surah_name ? d.surah_name + ' — ' : '') + key;
+				document.getElementById('ov-ayah').textContent = d.ayah;
+				document.getElementById('ov-translation').textContent = d.translation || '';
+				document.getElementById('ov-retry').href = window.location.pathname;
+				document.title = key + ' : Aayatun - An Ayah a Day';
+			} catch (e) {}
+		})();
+		</script>
 	</body>
 </html>

@@ -1,0 +1,40 @@
+{# Shared verse-details modal for the mushaf/fulltext reading pages. #}
+<div class="ui longer modal" id="verse_details_modal">
+	<i class="close icon"></i>
+	  <div class="header" id="verse_details_modal_heading" style="font-family: open sans; font-size: 120% width: 100%; text-align: center;">
+	  	Details
+	  </div>
+	  <div id="loadingdetails" style="width: 100%; padding-bottom: 5%; padding-top: 5%; text-align: center; opacity: 0.9; border-radius: 5px;" ><div class="ui active tiny inline loader" style="padding: 0px 15px"></div>Loading...</div>
+	  	<iframe src="" id="verse_details_modal_content" style="width: 100%; height: 60vh; overflow-y: hidden; border:0px solid lightgray;" >
+	  	</iframe>
+	  <div class="actions">
+	    <a style="font-family: open sans" href="/" id="verse_details_modal_button" class="ui basic button">Go to Verse Page</a>
+	  </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+	var detailTpl = "{{ url_for('details', surah=111111, verse=222222) }}";
+
+	function showModal(s, v)
+	{
+		var url = detailTpl.replace("111111", s).replace("222222", v);
+		$('#verse_details_modal_button').attr("href", url);
+		$("#verse_details_modal_content").off("load").on("load", function () {
+			$("#verse_details_modal_content").contents().find("#menubar").hide();
+			$("#verse_details_modal_content").contents().find("#search-btn").hide();
+			$("#verse_details_modal_content").contents().find("#collapse-btn").css("bottom", "15px");
+			$("#verse_details_modal_content")[0].contentWindow.navigation_allowed = false;
+			$("#loadingdetails").hide();
+			$("#verse_details_modal_content").fadeIn();
+		});
+
+		$('#loadingdetails').show();
+		$("#verse_details_modal_content").hide();
+		document.querySelector('#verse_details_modal_content').setAttribute("src", url);
+		$("#verse_details_modal_heading").html("Verse #" + v);
+		$("#verse_details_modal").modal('show');
+	}
+
+	window.showModal = showModal;
+});
+</script>

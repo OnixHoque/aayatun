@@ -4,6 +4,7 @@
 
 {% block js %}
 <meta name="aayatun-api-token" content="{{ api_token }}">
+<script src="{{ url_for('static', filename='js/qcf-font.js') }}"></script>
 <script>
 (function () {
 	// Full-page fallback. verse-nav.js replaces this with the fetch-based
@@ -11,18 +12,10 @@
 	window.navigateVerse = function (url, dir, event) {
 		if (event && (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey ||
 			(event.button && event.button !== 0))) return true;
-		try { sessionStorage.setItem('aayatun_nav', dir); } catch (e) {}
 		if (window.showLoading) { window.showLoading(); }
 		window.location.href = url;
 		return false;
 	};
-	try {
-		var d = sessionStorage.getItem('aayatun_nav');
-		sessionStorage.removeItem('aayatun_nav');
-		if (window.self === window.top && (d === 'next' || d === 'prev')) {
-			document.documentElement.classList.add('nav-' + d);
-		}
-	} catch (e) {}
 	try {
 		// Tajweed persisted ON: the server-rendered h1 is the PLAIN text, so
 		// hide it until the coloured rendering is applied (the parse-time
@@ -67,30 +60,45 @@
 			font-family: 'Open Sans'
 		}
 
-		/* Direction-aware entrance for the verse TEXT only: only next/prev
-		   navigation sets nav-next/nav-prev on <html>. Containers (controls,
-		   accordion) stay fixed; only the ayah and the translation nudge, so
-		   nothing else shifts. */
-		@keyframes vd-in-right {
-			from { opacity: 0; transform: translate3d(16px, 0, 0); }
-			to   { opacity: 1; transform: none; }
+		/* Swipe carousel: one verse fills the content area. The track holds
+		   prev/current/next side by side; dragging moves it so both halves are
+		   visible, and a commit re-centres it on the new current pane. Only the
+		   two text viewports move — the legend, controls and accordion stay
+		   fixed. */
+		.verse-viewport {
+			position: relative;
+			overflow: hidden;
+			width: 100%;
+			touch-action: pan-y;
+			-webkit-user-select: none;
+			user-select: none;
 		}
-		@keyframes vd-in-left {
-			from { opacity: 0; transform: translate3d(-16px, 0, 0); }
-			to   { opacity: 1; transform: none; }
+
+		.verse-track {
+			display: flex;
+			align-items: flex-start;
+			width: 300%;
+			transform: translate3d(-33.333333%, 0, 0);
+			will-change: transform;
 		}
-		html.nav-next #pagecontent > h1,
-		html.nav-next #verse-translation {
-			/* fill=backwards: covers the pre-delay state but does not pin
-			   styles after finishing, so the tajweed fade's opacity
-			   transitions keep working after the entrance animation. */
-			animation: vd-in-right .3s cubic-bezier(.22, .61, .36, 1) backwards;
+
+		.verse-track.is-settling {
+			transition: transform .22s cubic-bezier(.22, .61, .36, 1);
 		}
-		html.nav-prev #pagecontent > h1,
-		html.nav-prev #verse-translation {
-			animation: vd-in-left .3s cubic-bezier(.22, .61, .36, 1) backwards;
+
+		.verse-viewport.is-dragging .verse-track {
+			transition: none;
 		}
-		#verse-translation { animation-delay: .05s; }
+
+		.ayah-pane,
+		.translation-pane {
+			flex: 0 0 33.333333%;
+			width: 33.333333%;
+			min-width: 0;
+			/* Establish a BFC so the child's margins stay inside the pane and
+			   the measured height matches what is on screen. */
+			overflow: hidden;
+		}
 
 		/* The slide-in nudge transiently overflows horizontally; hide the
 		   overflow at the root so no scrollbar appears (and nothing else —
@@ -118,6 +126,10 @@
 		html.dark-theme.tajweed-pending #tajweed-toggle-btn .tint.icon {
 			color: #9CC4FF;
 		}
+
+		@media (prefers-reduced-motion: reduce) {
+			.verse-track.is-settling { transition: none; }
+		}
 	</style>
 	<script type="text/javascript">
 		var navigation_allowed = true;
@@ -128,9 +140,21 @@
 		data-prev-surah="{{ details['prev'][0] }}" data-prev-verse="{{ details['prev'][1] }}"
 		data-next-surah="{{ details['next'][0] }}" data-next-verse="{{ details['next'][1] }}">
 	<br>
-    <h1 id="ayah" class="ayah-plain" style="font-family: 'Scheherazade', serif;">
-    	{{- details['ayah'] -}}
-	</h1>
+	<div id="ayah-viewport" class="verse-viewport">
+		<div id="ayah-track" class="verse-track">
+			<div class="ayah-pane" data-rel="prev" aria-hidden="true">
+				<div class="ayah-text ayah-plain" style="font-family: 'Scheherazade', serif;"></div>
+			</div>
+			<div class="ayah-pane is-current">
+				<h1 id="ayah" class="ayah-text ayah-plain" style="font-family: 'Scheherazade', serif;">
+					{{- details['ayah'] -}}
+				</h1>
+			</div>
+			<div class="ayah-pane" data-rel="next" aria-hidden="true">
+				<div class="ayah-text ayah-plain" style="font-family: 'Scheherazade', serif;"></div>
+			</div>
+		</div>
+	</div>
     <span id="ayah-codev2" data-page="{{ details['qcf_page'] or '' }}" data-text="{{ details['ayah_codev2'] or '' }}" hidden></span>
     <span id="ayah-markup-src" hidden>{{ details['ayah_tajweed'] or '' }}</span>
     <span id="ayah-plain-src" hidden>{{ details['ayah'] }}</span>
@@ -207,7 +231,7 @@
 		</button>
     	<button id="play-btn" class="circular ui basic icon button" onclick="$('#audio-box').fadeIn(); $('#control-btns').hide(); $('#mainaudio').trigger('play');">
 			  <i class="icon play"></i>
-			</button>
+		</button>
 		</div>
     </div>
 
@@ -217,250 +241,235 @@
     // before the first paint. The head script hid the server-rendered plain
     // verse behind .tajweed-pending; this removes it once the coloured
     // rendering is ready, so verse navigation never flashes plain -> tajweed.
+    //
+    // The carousel paints three verses at once (prev/current/next), so the
+    // same renderer is exposed as renderInto(el, data) for any pane, plus
+    // preloadPage(page) so the incoming half is already coloured mid-drag.
     window.VerseTajweed = (function ()
     {
     	var ayah = document.getElementById('ayah');
     	var btn = document.getElementById('tajweed-toggle-btn');
     	var strip = document.getElementById('tajweed-legend');
+    	var plainSrc = document.getElementById('ayah-plain-src');
     	var markupSrc = document.getElementById('ayah-markup-src');
     	var holder = document.getElementById('ayah-codev2');
     	var KEY = 'ayahTajweedOn';
-    	var plainText = '';
+    	var root = document.documentElement;
+    	var current = null;
     	var mode = null;          // null = plain, 'font', 'markup'
-    	var fontFam = null;
-    	var observer = null;
-    	var initialLoad = false;
-    	var loadSeq = 0;          // invalidates in-flight loads after a toggle off
+    	var renderSeq = 0;
     	var revealTimer = null;
-    	var paletteStyle = null;
-    	var fontCache = {};
+    	var repaint = null;
 
-    	function isTajweedPersisted() { return localStorage.getItem(KEY) === '1'; }
+    	// Fonts, palettes and the persisted on/off flag live in qcf-font.js,
+    	// shared with the mushaf page and the surah arabic view.
+    	function isOn() { return QcfFont.isOn(); }
     	function markBtn(on) { if (btn) btn.classList.toggle('tajweed-on', on); }
     	function markStrip(on) { if (strip) strip.classList.toggle('show', on); }
+    	function markCredit(show)
+    	{
+    		var c = document.getElementById('tajweed-markup-credit');
+    		if (c) c.style.display = show ? '' : 'none';
+    	}
+
+    	function supportsPalette() { return QcfFont.supports(); }
+    	function family(page) { return QcfFont.family(page); }
+    	function paletteVar(page) { return QcfFont.paletteVar(page); }
+    	function loadPage(page) { return QcfFont.load(page); }
 
     	function reveal()
     	{
-    		document.documentElement.classList.remove('tajweed-pending');
+    		root.classList.remove('tajweed-pending');
     		if (revealTimer) { clearTimeout(revealTimer); revealTimer = null; }
     	}
 
-    	function restorePlain()
+    	function safetyReveal()
     	{
-    		ayah.textContent = plainText;
-    		ayah.className = 'ayah-plain';
-    		ayah.style.fontFamily = "'Scheherazade', serif";
-    		ayah.style.removeProperty('font-palette');
+    		if (revealTimer) clearTimeout(revealTimer);
+    		revealTimer = setTimeout(function ()
+    		{
+    			revealTimer = null;
+    			reveal();
+    		}, 1500);
     	}
 
-    	function applyMarkupFallback()
+    	function applyPlain(el, data)
     	{
-    		var credit = document.getElementById('tajweed-markup-credit');
-    		if (!markupSrc || !markupSrc.innerHTML.trim())
+    		el.textContent = (data && data.ayah) || '';
+    		el.className = 'ayah-text ayah-plain';
+    		QcfFont.clear(el);
+    		el._tjData = data;
+    	}
+
+    	function applyFont(el, data)
+    	{
+    		el.textContent = data.ayah_codev2 || '';
+    		el.className = 'ayah-text ayah-qcf';
+    		QcfFont.apply(el, data.qcf_page);
+    		el._tjData = data;
+    	}
+
+    	function applyMarkup(el, data)
+    	{
+    		if (!data.ayah_tajweed) return applyPlain(el, data);
+    		el.innerHTML = data.ayah_tajweed;
+    		el.className = 'ayah-text ayah-tajweed';
+    		el.style.fontFamily = "'Scheherazade', serif";
+    		el.style.removeProperty('font-palette');
+    		el._tjData = data;
+    	}
+
+    	// Paint one pane. Synchronous when the page font is cached, which is
+    	// the normal case for the current and neighbour verses.
+    	function renderInto(el, data)
+    	{
+    		if (!el || !data) return 'plain';
+    		var token = ++renderSeq;
+    		el._tjToken = token;
+    		if (!isOn()) { applyPlain(el, data); return 'plain'; }
+    		if (data.qcf_page && data.ayah_codev2 && supportsPalette())
     		{
-    			if (credit) credit.style.display = 'none';
-    			return restorePlain();
+    			if (QcfFont.isLoaded(data.qcf_page))
+    			{
+    				applyFont(el, data);
+    				return 'font';
+    			}
+    			applyPlain(el, data);
+    			loadPage(data.qcf_page).then(function ()
+    			{
+    				if (el._tjToken !== token || !isOn()) return;
+    				applyFont(el, data);
+    			}, function () {});
+    			return 'loading';
     		}
-    		if (credit) credit.style.display = '';
-    		ayah.innerHTML = markupSrc.innerHTML;
-    		ayah.className = 'ayah-tajweed';
-    		ayah.style.fontFamily = "'Scheherazade', serif";
-    		ayah.style.removeProperty('font-palette');
-    		mode = 'markup';
+    		if (data.ayah_tajweed) { applyMarkup(el, data); return 'markup'; }
+    		applyPlain(el, data);
+    		return 'plain';
     	}
 
-    	function applyFont()
-    	{
-    		if (!holder) return;
-    		var codeV2 = holder.getAttribute('data-text');
-    		if (!codeV2) return restorePlain();
-    		ayah.textContent = codeV2;
-    		ayah.className = 'ayah-qcf';
-    		ayah.style.fontFamily = "'" + fontFam + "', 'Scheherazade', serif";
-    		ayah.style.fontPalette = document.documentElement.classList.contains('dark-theme')
-    			? '--qcf-dark' : '--qcf-light';
-    		mode = 'font';
-    		var credit = document.getElementById('tajweed-markup-credit');
-    		if (credit) credit.style.display = 'none';
-    	}
-
-    	function preparePaletteCss()
-    	{
-    		fontFam = 'QCF-V4-' + holder.getAttribute('data-page');
-    		var css = "@font-palette-values --qcf-dark { font-family:'" +
-    			fontFam + "'; base-palette:1; } @font-palette-values --qcf-light { font-family:'" +
-    			fontFam + "'; base-palette:0; }";
-    		if (!paletteStyle)
-    		{
-    			paletteStyle = document.createElement('style');
-    			document.head.appendChild(paletteStyle);
-    		}
-    		paletteStyle.textContent = css;
-    	}
-
-    	function loadFont()
-    	{
-    		if (!holder || !holder.getAttribute('data-page'))
-    			return Promise.reject(new Error('no page'));
-    		if (!window.CSS || !CSS.supports || !CSS.supports('font-palette', 'normal'))
-    			return Promise.reject(new Error('unsupported'));
-    		var page = holder.getAttribute('data-page');
-    		if (fontCache[page]) return Promise.resolve(fontCache[page]);
-    		preparePaletteCss();
-    		var face = new FontFace(fontFam, "url('/font/v4/" + page + ".woff2') format('woff2')");
-    		return face.load().then(function (loaded)
-    		{
-    			document.fonts.add(loaded);
-    			fontCache[page] = loaded;
-    			return loaded;
-    		});
-    	}
-
-    	// Fade the h1 out, run the swap, fade back in; a stale fade (the
-    	// user re-toggled while one was pending) is skipped so commits apply
-    	// in request order only.
-    	var fadeSeq = 0;
+    	// Fade the h1 out, run the swap, fade back in (user-initiated toggles).
     	function fadeSwap(fn)
     	{
-    		var seq = ++fadeSeq;
     		ayah.style.opacity = '0';
     		setTimeout(function ()
     		{
-    			if (seq !== fadeSeq) return;
     			fn();
     			ayah.style.opacity = '1';
-    		}, 240);
+    		}, 220);
     	}
 
-    	// On the initial persisted load (and on client-side verse navigation)
-    	// the plain verse is hidden, so the swap can happen instantly;
-    	// user-initiated toggles keep the fade.
-    	function commit(fn)
+    	// Current verse. deferReveal is true only when the page is already
+    	// hidden by .tajweed-pending (initial load).
+    	function setData(data, deferReveal)
     	{
-    		if (initialLoad)
+    		current = data;
+    		var token = ++renderSeq;
+    		ayah._tjToken = token;
+    		markCredit(!!data.ayah_tajweed);
+
+    		if (!isOn())
     		{
-    			initialLoad = false;
-    			fn();
+    			applyPlain(ayah, data);
+    			mode = null;
+    			markBtn(false);
+    			markStrip(false);
     			reveal();
+    			return;
     		}
-    		else
+
+    		markBtn(true);
+    		markStrip(true);
+
+    		if (data.qcf_page && data.ayah_codev2 && supportsPalette())
     		{
-    			fadeSwap(fn);
+    			if (QcfFont.isLoaded(data.qcf_page))
+    			{
+    				applyFont(ayah, data);
+    				mode = 'font';
+    				reveal();
+    				return;
+    			}
+    			applyPlain(ayah, data);
+    			if (deferReveal)
+    			{
+    				root.classList.add('tajweed-pending');
+    				safetyReveal();
+    			}
+    			loadPage(data.qcf_page).then(function ()
+    			{
+    				if (ayah._tjToken !== token || !isOn()) return;
+    				applyFont(ayah, data);
+    				mode = 'font';
+    				reveal();
+    			}, function ()
+    			{
+    				if (ayah._tjToken !== token) return;
+    				if (data.ayah_tajweed) { applyMarkup(ayah, data); mode = 'markup'; }
+    				else { applyPlain(ayah, data); mode = null; }
+    				reveal();
+    			});
+    			return;
     		}
+
+    		if (data.ayah_tajweed) { applyMarkup(ayah, data); mode = 'markup'; }
+    		else { applyPlain(ayah, data); mode = null; }
+    		reveal();
     	}
 
     	function enable()
     	{
     		markBtn(true);
     		markStrip(true);
-    		if (mode === 'font') return;
-    		var seq = ++loadSeq;
-    		if (holder && holder.getAttribute('data-page') && holder.getAttribute('data-text'))
+    		if (!current) return;
+    		if (current.qcf_page && current.ayah_codev2 && supportsPalette())
     		{
-    			loadFont().then(function ()
+    			if (QcfFont.isLoaded(current.qcf_page))
     			{
-    				if (seq !== loadSeq || mode === 'font') return;
-    				commit(function ()
+    				fadeSwap(function () { applyFont(ayah, current); mode = 'font'; });
+    				return;
+    			}
+    			loadPage(current.qcf_page).then(function ()
+    			{
+    				if (!isOn()) return;
+    				fadeSwap(function () { applyFont(ayah, current); mode = 'font'; });
+    			}, function ()
+    			{
+    				if (!isOn()) return;
+    				fadeSwap(function ()
     				{
-    					applyFont();
-    					if (!observer)
-    					{
-    						observer = new MutationObserver(function ()
-    						{
-    							if (mode === 'font') applyFont();
-    						});
-    						observer.observe(document.documentElement,
-    							{attributes: true, attributeFilter: ['class']});
-    					}
+    					if (current.ayah_tajweed) { applyMarkup(ayah, current); mode = 'markup'; }
+    					else { applyPlain(ayah, current); mode = null; }
     				});
-    			}).catch(function ()
-    			{
-    				if (seq !== loadSeq) return;
-    				if (mode === null && isTajweedPersisted())
-    					commit(applyMarkupFallback);
     			});
+    			return;
     		}
-    		else
+    		fadeSwap(function ()
     		{
-    			commit(applyMarkupFallback);
-    		}
+    			if (current.ayah_tajweed) { applyMarkup(ayah, current); mode = 'markup'; }
+    			else { applyPlain(ayah, current); mode = null; }
+    		});
     	}
 
     	function disable()
     	{
-    		++loadSeq;
-    		initialLoad = false;
     		markBtn(false);
     		markStrip(false);
-    		fadeSwap(function ()
-    		{
-    			restorePlain();
-    			mode = null;
-    		});
-    		reveal();
-    	}
-
-    	// Used by verse-nav.js when the verse changes. Resets the module to the
-    	// new data and, when tajweed is persisted ON, keeps the h1 hidden until
-    	// the new page's font (or the markup fallback) is ready.
-    	function setData(data, deferReveal)
-    	{
-    		++loadSeq;
-    		mode = null;
-    		initialLoad = !!deferReveal;
-    		if (revealTimer) { clearTimeout(revealTimer); revealTimer = null; }
-    		if (holder)
-    		{
-    			holder.setAttribute('data-page', data.qcf_page || '');
-    			holder.setAttribute('data-text', data.ayah_codev2 || '');
-    		}
-    		if (markupSrc) markupSrc.innerHTML = data.ayah_tajweed || '';
-    		var credit = document.getElementById('tajweed-markup-credit');
-    		if (credit) credit.style.display = data.ayah_tajweed ? '' : 'none';
-    		plainText = data.ayah || '';
-    		ayah.textContent = plainText;
-    		ayah.className = 'ayah-plain';
-    		ayah.style.fontFamily = "'Scheherazade', serif";
-    		ayah.style.removeProperty('font-palette');
-    		ayah.style.opacity = '';
-
-    		if (isTajweedPersisted())
-    		{
-    			if (deferReveal)
-    			{
-    				document.documentElement.classList.add('tajweed-pending');
-    				// Safety valve: never leave the verse blank if the font is
-    				// slow or unavailable.
-    				revealTimer = setTimeout(function ()
-    				{
-    					revealTimer = null;
-    					initialLoad = false;
-    					reveal();
-    				}, 1500);
-    			}
-    			enable();
-    		}
-    		else
-    		{
-    			initialLoad = false;
-    			markBtn(false);
-    			markStrip(false);
-    			reveal();
-    		}
+    		if (current) fadeSwap(function () { applyPlain(ayah, current); mode = null; });
     	}
 
     	function toggle()
     	{
-    		if (isTajweedPersisted())
+    		if (isOn())
     		{
-    			localStorage.setItem(KEY, '0');
+    			QcfFont.setOn(false);
     			disable();
     		}
     		else
     		{
-    			localStorage.setItem(KEY, '1');
+    			QcfFont.setOn(true);
     			enable();
     		}
+    		if (repaint) repaint();
     	}
 
     	// The rule grid starts collapsed on every page; the header's chevron
@@ -475,42 +484,57 @@
     	window.toggleTajweed = toggle;
     	window.toggleTajweedLegendGrid = toggleLegendGrid;
 
-    	if (!ayah || !btn || !strip) return { setData: function () {} };
+    	if (!ayah || !btn || !strip)
+    		return { setData: function () {}, renderInto: function () {}, preloadPage: function () {}, isOn: isOn, setRepaint: function () {} };
 
-    	if (!markupSrc || !markupSrc.innerHTML.trim()) {
-    		var c = document.getElementById('tajweed-markup-credit');
-    		if (c) c.style.display = 'none';
-    	}
-    	plainText = ayah.textContent;
-    	initialLoad = document.documentElement.classList.contains('tajweed-pending');
-
-    	if (isTajweedPersisted())
+    	try
     	{
-    		if (initialLoad)
-    		{
-    			// Safety valve: never leave the verse blank if the font is
-    			// slow or unavailable — show the plain text after 1.5s and
-    			// let any late font swap fade in.
-    			revealTimer = setTimeout(function ()
-    			{
-    				revealTimer = null;
-    				initialLoad = false;
-    				reveal();
-    			}, 1500);
-    		}
-    		enable();
+    		if (!markupSrc || !markupSrc.innerHTML.trim()) markCredit(false);
+    	} catch (e) {}
+
+    	current = {
+    		ayah: (plainSrc && plainSrc.textContent) || ayah.textContent || '',
+    		translation: '',
+    		qcf_page: holder ? holder.getAttribute('data-page') : '',
+    		ayah_codev2: holder ? holder.getAttribute('data-text') : '',
+    		ayah_tajweed: markupSrc ? markupSrc.innerHTML : ''
+    	};
+
+    	if (isOn())
+    	{
+    		setData(current, root.classList.contains('tajweed-pending'));
     	}
     	else
     	{
-    		initialLoad = false;
     		markBtn(false);
+    		markStrip(false);
+    		reveal();
     	}
 
-    	return { setData: setData };
+    	return {
+    		setData: setData,
+    		renderInto: renderInto,
+    		preloadPage: function (page) { if (page) loadPage(page).catch(function () {}); },
+    		isOn: isOn,
+    		supportsFont: supportsPalette,
+    		setRepaint: function (fn) { repaint = fn; }
+    	};
     })();
     </script>
 
-    <p id="verse-translation">{{ details['translation'] }}</p>
+	<div id="translation-viewport" class="verse-viewport">
+		<div id="translation-track" class="verse-track">
+			<div class="translation-pane" data-rel="prev" aria-hidden="true">
+				<p class="verse-translation-text"></p>
+			</div>
+			<div class="translation-pane is-current">
+				<p id="verse-translation" class="verse-translation-text">{{ details['translation'] }}</p>
+			</div>
+			<div class="translation-pane" data-rel="next" aria-hidden="true">
+				<p class="verse-translation-text"></p>
+			</div>
+		</div>
+	</div>
 
 
     <button id="collapse-btn" style="display: none; position: fixed; background: white; box-shadow: all; bottom: calc(15px + 3.67346939rem + 10px); right: 15px; opacity: 0.7; ; z-index: 3" class="circular ui basic huge icon button" onclick="collapseAll()">
@@ -537,48 +561,48 @@
 	    <i class="dropdown icon"></i>
 	    <span>AI Overview 🤖</span>
 	  </div>
-	  <div class="content" data-section="ai" data-loaded="1">
-	    {% include 'partials/_section_ai.html' %}
+	  <div class="content" data-section="ai" data-loaded="0">
+	    <div class="ui active centered inline loader" style="margin: 24px auto;"></div>
 	  </div>
 
 	  <div class="title">
 	    <i class="dropdown icon"></i>
 	    <span>Word for Word Meaning</span>
 	  </div>
-	  <div class="content" data-section="wfw" data-loaded="1">
-	    {% include 'partials/_section_wfw.html' %}
+	  <div class="content" data-section="wfw" data-loaded="0">
+	    <div class="ui active centered inline loader" style="margin: 24px auto;"></div>
 	  </div>
 
 	  <div class="title">
 	    <i class="dropdown icon"></i>
 	    <span>Word Definitions</span>
 	  </div>
-	  <div class="content" data-section="defs" data-loaded="1">
-	    {% include 'partials/_section_defs.html' %}
+	  <div class="content" data-section="defs" data-loaded="0">
+	    <div class="ui active centered inline loader" style="margin: 24px auto;"></div>
 	  </div>
 
 	  <div class="title">
 	    <i class="dropdown icon"></i>
 	    <span>Morphology</span>
 	  </div>
-	  <div class="content" data-section="morph" data-loaded="1">
-	    {% include 'partials/_section_morph.html' %}
+	  <div class="content" data-section="morph" data-loaded="0">
+	    <div class="ui active centered inline loader" style="margin: 24px auto;"></div>
 	  </div>
 
 	  <div class="title">
 	    <i class="dropdown icon"></i>
 	    <span>Bangla Tafsir (Abu Bakr Zakaria)</span>
 	  </div>
-	  <div class="content" data-section="bn" data-loaded="1">
-	    {% include 'partials/_section_bn.html' %}
+	  <div class="content" data-section="bn" data-loaded="0">
+	    <div class="ui active centered inline loader" style="margin: 24px auto;"></div>
 	  </div>
 
 	  <div class="title">
 	    <i class="dropdown icon"></i>
 	    <span>English Tafsir (Ibn Kathir)</span>
 	  </div>
-	  <div class="content" data-section="en" data-loaded="1">
-	    {% include 'partials/_section_en.html' %}
+	  <div class="content" data-section="en" data-loaded="0">
+	    <div class="ui active centered inline loader" style="margin: 24px auto;"></div>
 	  </div>
 
 	  <div class="title">
@@ -598,8 +622,6 @@
 	</div>
 
 	<br>
-
-<script src="{{ url_for('static', filename= 'js/swiped-events.min.js') }}"></script>
 {% endblock %}
 
 {% block scriptcontent %}

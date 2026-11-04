@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+
+{% block title %}Page {{ page_no }} : Aayatun - An Ayah a Day{% endblock %}
+
+{% block js %}
+<script defer src="{{ url_for('static', filename='js/qcf-font.js') }}"></script>
+{% endblock js %}
+
+{% block menu %}
+<div class="item" style="outline: none;">
+<a class="ui icon basic huge left floated button" href="{{ url_for('mushaf_page', page_no=prev) }}"><i class="left arrow icon"></i></a>
+</div>
+
+<div class="ui header item" style="font-size: 200%; display: inline-block; text-align: middle;">
+<a href="{{ url_for('index') }}" style="font-family: Merriweather;">Page {{ page_no }}</a>
+</div>
+
+<div class="item">
+<a class="ui icon basic right floated huge button" href="{{ url_for('mushaf_page', page_no=nxt) }}"><i class="right arrow icon"></i></a>
+</div>
+{% endblock %}
+
+
+{% block content %}
+	{% include 'partials/_verse_modal.html' %}
+
+	<style>
+		* {
+			font-family: 'Open Sans', serif;
+		}
+	</style>
+
+	<div class="comprehensive-div" style="margin: 0px 10px">
+	<br>
+	<p class="mushaf-page-surahs">{{ surah_names|join(' · ') }}</p>
+
+	<div class="mushaf-controls">
+		<button id="tajweed-toggle-btn" data-tooltip="Colored mushaf font" class="circular ui basic icon button" onclick="toggleTajweedFont()">
+			<i class="icon tint"></i> Tajweed font
+		</button>
+		<button id="translation-toggle-btn" class="circular ui basic toggle icon button" onclick="update_translation_visibility(this)">
+			Show Translation
+		</button>
+	</div>
+	<p id="qcf-credit" class="qcf-credit" style="display: none;">Colored mushaf font &copy; <a href="https://qurancomplex.gov.sa/" target="_blank">King Fahd Complex</a> &middot; packaged by <a href="https://quran.com" target="_blank">quran.com</a></p>
+
+	<table class="ui very basic unstackable left aligned table" id="mushaf-page-table">
+	{% for g in groups %}
+		<tbody class="mushaf-surah-group" data-surah="{{ g.surah }}">
+		{% if g.start %}
+			<tr class="mushaf-surah-head">
+				<td></td>
+				<td>
+					<div class="mushaf-surah-name">{{ g.name }}</div>
+					{% if g.bismillah %}
+					<div class="mushaf-bismillah">&#xFDFD;</div>
+					{% endif %}
+				</td>
+			</tr>
+		{% endif %}
+		{% for r in g.rows %}
+			<tr>
+				<td class="two wide selectable mushaf-verse-no" onclick="showModal({{ r.surah }}, {{ r.verse }})">{{ r.surah }}:{{ r.verse }}</td>
+				<td>
+					<div class="mushaf-ayah" data-page="{{ r.qcf_page }}"><span class="mushaf-plain">{{ r.arabic }}</span><span class="mushaf-qcf">{{ r.codev2 }}</span></div>
+					<div class="extra-translation" style="display: none;">
+						<p style="font-family: Open Sans; font-size: .8rem;">{{ r.translation }}</p>
+					</div>
+				</td>
+			</tr>
+		{% endfor %}
+		</tbody>
+	{% endfor %}
+	</table>
+
+	<p class="mushaf-page-count">{{ verse_count }} verse{% if verse_count != 1 %}s{% endif %}</p>
+	<br>
+	</div>
+{% endblock %}
+
+
+{% block scriptcontent %}
+	setValues(pages.COMP_MUSHAF_PAGE, {{ page_no }});
+
+	(function () {
+		var btn = document.getElementById('tajweed-toggle-btn');
+		var credit = document.getElementById('qcf-credit');
+		var rows = Array.prototype.slice.call(document.querySelectorAll('.mushaf-ayah[data-page]'));
+		var page = rows.length ? parseInt(rows[0].getAttribute('data-page'), 10) : 0;
+		var shown = false;
+
+		function paint() {
+			if (!window.QcfFont) return;
+			rows.forEach(function (el) {
+				QcfFont.apply(el, page);
+				el.classList.add('ayah-qcf');
+			});
+		}
+
+		function show(on) {
+			shown = on;
+			if (btn) btn.classList.toggle('tajweed-on', on);
+			if (credit) credit.style.display = on ? '' : 'none';
+			if (!on) {
+				rows.forEach(function (el) {
+					el.classList.remove('ayah-qcf');
+					if (window.QcfFont) QcfFont.clear(el);
+				});
+				return;
+			}
+			if (!window.QcfFont || !page) return;
+			if (QcfFont.isLoaded(page)) paint();
+			else QcfFont.load(page).then(paint, function () {});
+		}
+
+		window.toggleTajweedFont = function () {
+			var on = !shown;
+			if (window.QcfFont) QcfFont.setOn(on);
+			show(on);
+		};
+
+		// Defaults: colored font off, translation on. An explicit choice made
+		// on any page (verse page, fulltext, here) wins and is remembered.
+		var stored = window.QcfFont ? QcfFont.get() : false;
+		show(stored === null ? false : stored);
+	})();
+
+	var TR_KEY = 'aayatun_mushaf_translation_v1';
+
+	function applyTranslation(on)
+	{
+		$('.extra-translation').toggle(on);
+		var btn = document.getElementById('translation-toggle-btn');
+		if (btn) btn.classList.toggle('active', on);
+	}
+
+	function update_translation_visibility(e) {
+		var on = !$(e).hasClass('active');
+		applyTranslation(on);
+		try { localStorage.setItem(TR_KEY, on ? '1' : '0'); } catch (err) {}
+	}
+	window.update_translation_visibility = update_translation_visibility;
+
+	(function () {
+		var stored = null;
+		try { stored = localStorage.getItem(TR_KEY); } catch (e) {}
+		// Translation is on unless the reader turned it off on a mushaf page.
+		if (stored !== '0') applyTranslation(true);
+	})();
+{% endblock scriptcontent %}

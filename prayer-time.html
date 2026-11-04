@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Prayer times by zip code</title>
+<link rel="manifest" href="/static/manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600;700&amp;family=Open+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
@@ -920,6 +921,132 @@
     document.documentElement.dataset.size = prefs.size;
   };
 
+  /* ---------- offline cache (the last fetched times) ---------- */
+  // The times themselves are saved, so the page still shows today's (and
+  // tomorrow's) schedule with no connection. Whole Aladhan calendar months are
+  // kept because the Isha/midnight math needs tomorrow's Fajr and Sunrise, and
+  // because the date can roll over while the phone is offline.
+  const OFFLINE_KEY = 'prayer-times-offline-v1';
+  const OFFLINE_KEYS = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Sunset', 'Maghrib', 'Isha', 'Midnight'];
+  let offline = null;
+  try { offline = JSON.parse(localStorage.getItem(OFFLINE_KEY)); } catch (e) { offline = null; }
+  const saveOffline = () => { try { localStorage.setItem(OFFLINE_KEY, JSON.stringify(offline)); } catch (e) {} };
+  const monthKey = (y, m) => `${y}-${pad(m)}`;
+  const dayKey = (y, m, d) => `${y}-${pad(m)}-${pad(d)}`;
+  const samePlace = (a, b) => !!a && !!b && Math.abs(a.lat - b.lat) < 1e-4 && Math.abs(a.lng - b.lng) < 1e-4;
+  // Only this place and these calculation settings may be served from the cache.
+  const offlineFor = (loc) => !!offline && offline.v === 1 && !!offline.tz && !!offline.months
+    && samePlace(offline.loc, loc) && offline.method === prefs.method && offline.school === prefs.school;
+
+  function cachedDay(y, m, d) {
+    const month = offline && offline.months && offline.months[monthKey(y, m)];
+    return (month && month[dayKey(y, m, d)]) || null;
+  }
+
+  // Newest day saved, used when the cache no longer covers today.
+  function lastCachedDay() {
+    if (!offline || !offline.months) return null;
+    let best = null;
+    for (const mk of Object.keys(offline.months)) {
+      const month = offline.months[mk] || {};
+      for (const dk of Object.keys(month)) {
+        const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dk);
+        const day = month[dk];
+        if (!m || !day || !day.timings || !day.timings.Fajr) continue;
+        if (!best || dk > best.key) best = { key: dk, ymd: { y: +m[1], m: +m[2], d: +m[3] }, day };
+      }
+    }
+    return best;
+  }
+
+  async function fetchCalendar(y, m, loc) {
+    const url = `https://api.aladhan.com/v1/calendar/${y}/${m}?latitude=${loc.lat}&longitude=${loc.lng}`
+      + `&method=${prefs.method}&school=${prefs.school}`;
+    const r = await fetch(url);
+    if (!r.ok) throw new Error('calendar http ' + r.status);
+    const j = await r.json();
+    if (j.code !== 200 || !Array.isArray(j.data)) throw new Error('calendar bad response');
+    const days = {};
+    for (const entry of j.data) {
+      const g = entry.date && entry.date.gregorian;
+      if (!g || !entry.timings) continue;
+      const timings = {};
+      for (const k of OFFLINE_KEYS) if (entry.timings[k]) timings[k] = entry.timings[k];
+      days[dayKey(y, m, +g.day)] = { timings, hijri: hijriText(entry.date.hijri) };
+    }
+    return days;
+  }
+
+  // Refresh the saved months in the background: the page must never wait for
+  // this, and a failure only means the previous saved copy stays in place.
+  async function cacheMonth(loc, tz) {
+    if (!tz) return;
+    const p = tzParts(Date.now(), tz);
+    const today = { y: p.y, m: p.m, d: p.d };
+    // This month and the next one: two months is enough to cover the end of a
+    // month (tomorrow's times) and a long stretch with no connection.
+    const next = today.m === 12 ? { y: today.y + 1, m: 1 } : { y: today.y, m: today.m + 1 };
+    const wanted = [monthKey(today.y, today.m), monthKey(next.y, next.m)];
+
+    const store = offlineFor(loc) ? offline : {
+      v: 1, savedAt: 0, tz,
+      loc: { lat: loc.lat, lng: loc.lng, name: loc.name, cc: loc.cc || '' },
+      method: prefs.method, school: prefs.school, months: {},
+    };
+    let changed = false;
+    for (const key of wanted) {
+      if (store.months[key]) continue;
+      const [y, m] = key.split('-').map(Number);
+      store.months[key] = await fetchCalendar(y, m, loc);
+      changed = true;
+    }
+    if (!changed) return;
+    for (const key of Object.keys(store.months)) if (!wanted.includes(key)) delete store.months[key];
+    store.savedAt = Date.now();
+    store.tz = tz;
+    offline = store;
+    saveOffline();
+  }
+
+  // The same shape fetchAll() returns, rebuilt from the saved month.
+  function fromCache(loc) {
+    if (!offlineFor(loc)) return null;
+    const p = tzParts(Date.now(), offline.tz);
+    const today = { y: p.y, m: p.m, d: p.d };
+    const d0 = cachedDay(today.y, today.m, today.d);
+    const n = addDays(today, 1);
+    const d1 = cachedDay(n.y, n.m, n.d);
+    if (!d0 || !d1) return null;
+    return {
+      loc, tz: offline.tz, ymd: today,
+      t: buildEpochs(d0.timings, today, offline.tz),
+      tm: buildEpochs(d1.timings, n, offline.tz),
+      hijriToday: d0.hijri, hijriTomorrow: d1.hijri,
+      savedAt: offline.savedAt, offline: true,
+    };
+  }
+
+  // Cache too old for today: show the newest saved day, clearly labelled.
+  function staleCache(loc) {
+    if (!offlineFor(loc)) return null;
+    const last = lastCachedDay();
+    if (!last) return null;
+    return {
+      loc, tz: offline.tz, ymd: last.ymd,
+      t: buildEpochs(last.day.timings, last.ymd, offline.tz),
+      tm: null,
+      hijriToday: last.day.hijri, hijriTomorrow: '',
+      savedAt: offline.savedAt, offline: true, stale: true,
+    };
+  }
+
+  function offlineMsg(data) {
+    if (data.stale) return `Offline — showing the last saved times (${savedDateText(data.ymd, true)}). Connect to refresh.`;
+    const time = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' })
+      .format(new Date(data.savedAt || Date.now()));
+    return `Offline — showing times saved at ${time}.`;
+  }
+
   /* ---------- form setup ---------- */
   METHODS.forEach(([v, n]) => $('#method').add(new Option(n, v)));
   $('#query').value = prefs.query || '';
@@ -1257,7 +1384,8 @@
     [t.Fajr, t.Dhuhr, t.Asr, t.Maghrib, t.Isha].forEach((e, i) => { rows[i].time.textContent = fmtClock(e); });
     $('#t-sunrise').textContent = fmtClock(t.Sunrise);
     $('#t-sunset').textContent = fmtClock(t.Sunset);
-    $('#t-midnight').textContent = fmtClock(midnightFor(Date.now()));
+    // Without tomorrow's times (stale cache) the night cannot be halved.
+    $('#t-midnight').textContent = S.stale ? '—' : fmtClock(midnightFor(Date.now()));
   }
 
   // "Saturday, September 19" on wide screens, "Sat, Sep 19" on narrow ones
@@ -1272,16 +1400,33 @@
     return gregFmt[key].format(new Date(now));
   }
 
+  // A saved calendar date (offline cache) as text, independent of "now".
+  function savedDateText(ymd, long) {
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: 'UTC', weekday: long ? 'long' : 'short', month: long ? 'long' : 'short', day: 'numeric',
+    }).format(new Date(Date.UTC(ymd.y, ymd.m - 1, ymd.d)));
+  }
+
   function tick() {
     if (!S) return;
+    if (S.stale) return;                  // saved day from the cache: no countdown to run
     const now = Date.now();
 
     // New calendar day at the location: quietly fetch fresh times
     const p = tzParts(now, S.tz);
     if (!sameDay({ y: p.y, m: p.m, d: p.d }, S.ymd) && !refreshing) {
       refreshing = true;
-      fetchAll(S.loc).then((data) => { S = { ...data, loc: S.loc }; renderTimes(); })
-        .catch(() => {}).finally(() => { refreshing = false; });
+      const loc = S.loc;
+      fetchAll(loc).then((data) => {
+        if (!S) return;
+        S = { ...data, loc };
+        renderTimes();
+        cacheMonth(loc, data.tz).catch(() => {});
+      }).catch(() => {
+        // No connection across midnight: use the saved month if it covers today.
+        const cached = fromCache(loc);
+        if (cached) { commit(cached); setMsg(offlineMsg(cached)); }
+      }).finally(() => { refreshing = false; });
     }
 
     const st = computeState(now);
@@ -1338,9 +1483,27 @@
     $('#change').hidden = false;
     setMsg('');
     prevIdx = null;
+    if (S.stale) {
+      // Saved times from an earlier day: label them with that day and skip the
+      // waqt/countdown, which would otherwise point at the wrong date.
+      $('#d-greg .d-long').textContent = savedDateText(S.ymd, true);
+      $('#d-greg .d-short').textContent = savedDateText(S.ymd, false);
+      $('#d-hijri').textContent = S.hijriToday || '';
+      $('#d-hijri').hidden = !S.hijriToday;
+      $('#clock').textContent = '';
+      $('#hero-countdown').hidden = true;
+    }
     tick();
     clearInterval(timer);
     timer = setInterval(tick, 1000);
+    if (S.offline) {
+      // No connection: keep the weather widget empty instead of polling for it.
+      wx = null;
+      $('#forecast-dialog').close();
+      clearInterval(wxTimer);
+      renderWeather();
+      return;
+    }
     if (moved) { wx = null; $('#forecast-dialog').close(); renderWeather(); }
     loadWeather();
     clearInterval(wxTimer);
@@ -1351,11 +1514,12 @@
   async function loadWith(resolveLoc, opts) {
     const close = !opts || opts.close !== false;
     const id = ++loadId;
+    let loc = null;
     $('#go').disabled = true;
     $('#locate').disabled = true;
     setMsg((opts && opts.msg) || 'Looking up prayer times…');
     try {
-      const loc = await resolveLoc();
+      loc = await resolveLoc();
       if (id !== loadId) return;
       if (!loc) {
         setMsg('We couldn’t find that place. Try a city, a full address or a zip code (add the country if it isn’t in the US).', true);
@@ -1369,8 +1533,19 @@
       savePrefs();
       commit({ ...data, loc });
       if (close) setEditing(false);
+      cacheMonth(loc, data.tz).catch(() => {});     // background, for offline use later
     } catch (e) {
       if (id !== loadId) return;
+      // A real network failure (not "place not found" / blocked location): show
+      // the saved times rather than an empty page.
+      const saved = loc || prefs.loc;
+      const cached = (e && e.userMessage) ? null : (saved && (fromCache(saved) || staleCache(saved)));
+      if (cached) {
+        commit(cached);
+        if (close) setEditing(false);
+        setMsg(offlineMsg(cached));
+        return;
+      }
       setMsg(e && e.userMessage ? e.userMessage : 'We couldn’t reach the prayer-times service. Check your connection and try again.', true);
     } finally {
       if (id === loadId) { $('#go').disabled = false; $('#locate').disabled = false; }
@@ -1380,6 +1555,16 @@
   function loadFromForm(opts) {
     const q = $('#query').value.trim();
     if (!q) { setMsg('Type a city, address or zip code, or tap Use my location.', true); return; }
+    // The same place while offline: no lookup needed, show the saved times.
+    if (navigator.onLine === false && prefs.loc && q === (prefs.query || '')) {
+      const cached = fromCache(prefs.loc) || staleCache(prefs.loc);
+      if (cached) {
+        commit(cached);
+        if (!opts || opts.close !== false) setEditing(false);
+        setMsg(offlineMsg(cached));
+        return;
+      }
+    }
     return loadWith(() => searchPlace(q), opts);
   }
 
@@ -2062,6 +2247,11 @@
 
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) { wakePromptDismissed = false; tick(); requestWake(); if (Date.now() - wxAt > 30 * 60 * 1000) loadWeather(); }
+  });
+
+  // Back online: swap the saved copy for fresh times.
+  window.addEventListener('online', () => {
+    if (S && S.offline) loadWith(() => Promise.resolve(S.loc), { close: false, msg: 'Back online — updating prayer times…' });
   });
 
   let resizeTimer;

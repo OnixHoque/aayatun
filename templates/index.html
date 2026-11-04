@@ -5,10 +5,6 @@
 {% block start %}
 <div style="min-height: 100vh; min-height: 100dvh; box-sizing: border-box; display: flex; flex-direction: column;">{% endblock start %}
 
-{% block js %}
-<link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
-{% endblock js %}
-
 {% block menu %}
 <div class="header item" style=" width: 100%; font-size: 250%; font-family: Merriweather;">
 <a id="title_link">
@@ -93,8 +89,18 @@
 			<div class="ui horizontal divider" id="home-or-h" style="width: 100%; flex: 0 0 100%;">or</div>
 
 			<div class="column" style="display: flex; flex-direction: column; justify-content: center;">
-				<div id="verserow" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
-					<div style="font-family: 'Open Sans'; white-space: nowrap;"> Jump to verse </div>
+				<div id="verserow" style="display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">
+					<div style="font-family: 'Open Sans'; white-space: nowrap; display: flex; align-items: center; gap: 4px;">
+						<span>Jump to</span>
+						<div class="ui inline dropdown" id="jumpmode" tabindex="0">
+							<div class="text">verse</div>
+							<i class="dropdown icon"></i>
+							<div class="menu">
+								<div class="item active selected" data-value="verse">verse</div>
+								<div class="item" data-value="page">page</div>
+							</div>
+						</div>
+					</div>
 					<div style="width: 84px; flex: 0 0 auto;">
 						<select class="ui search fluid dropdown" id="verse">
 						  <option value="1">1</option>
@@ -151,7 +157,10 @@ document.addEventListener('DOMContentLoaded', function () {
 			window.parent.location.href = target_location[i].replace("-1", s);
 		}
 	}
-	$('#surah').dropdown('setting', 'onChange', updateVerse);
+	$('#surah').dropdown('setting', 'onChange', function () {
+		if (!isJumpToPage()) updateVerse();
+	});
+	$('#jumpmode').dropdown('setting', 'onChange', updateJumpMode);
 	updateVerse();
 	$('#btnGo').click(function()
 	{
@@ -159,7 +168,10 @@ document.addEventListener('DOMContentLoaded', function () {
 		var v = $('#verse').find(":selected").attr('value');
 		var base_url = window.location.origin;
 		if (window.showLoading) { window.showLoading(); }
-		window.location.replace(base_url + '/' + s + '/' + v);
+		if (isJumpToPage())
+			window.location.replace(base_url + '/page/' + v);
+		else
+			window.location.replace(base_url + '/' + s + '/' + v);
 	})
 
 
@@ -173,15 +185,43 @@ document.addEventListener('DOMContentLoaded', function () {
 		window.location.href = base_url + '/' + s + '/' + v;
 	})
 
-	function updateVerse()
+	function isJumpToPage()
 	{
-		var i;
-		var v_count = $('#surah').find(":selected").attr('verse_count');
-		// alert(v_count);
+		return $('#jumpmode').dropdown('get value') === 'page';
+	}
+
+	function fillVerseOptions()
+	{
+		var v_count = parseInt($('#surah').find(":selected").attr('verse_count'), 10) || 1;
+		$('#verse').dropdown('clear');
 		$('#verse option').remove();
-		for (i = 1; i <= v_count; i++) {
+		for (var i = 1; i <= v_count; i++) {
 		  $('#verse').append(new Option(i, i));
 		}
+		$('#verse').dropdown('refresh');
+		$('#verse').dropdown('set selected', '1');
+	}
+
+	function fillPageOptions()
+	{
+		$('#verse').dropdown('clear');
+		$('#verse option').remove();
+		for (var i = 1; i <= 604; i++) {
+		  $('#verse').append(new Option(i, i));
+		}
+		$('#verse').dropdown('refresh');
+		$('#verse').dropdown('set selected', '1');
+	}
+
+	function updateVerse()
+	{
+		if (isJumpToPage()) fillPageOptions();
+		else fillVerseOptions();
+	}
+
+	function updateJumpMode()
+	{
+		updateVerse();
 	}
 
 
@@ -307,6 +347,12 @@ document.addEventListener('DOMContentLoaded', function () {
 			case (pages.COMP_TAFSIR_BN):
 			{
 				let url = "{{ url_for('bn_tafsir', surah='-1') }}".replace("-1", location_);
+				page_title.href = url;
+				break;
+			}
+			case (pages.COMP_MUSHAF_PAGE):
+			{
+				let url = "{{ url_for('mushaf_page', page_no='-1') }}".replace("-1", location_);
 				page_title.href = url;
 				break;
 			}

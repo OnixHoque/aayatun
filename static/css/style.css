@@ -38,17 +38,22 @@ html.dark-theme .home-section-label {
 
 /* The verse page has a scoped `* { font-family: 'Open Sans' }` rule that
    matches every descendant ELEMENT directly (direct rules beat inherited
-   fonts), so the coloured spans inside #ayah must re-assert the mushaf
-   face explicitly or their Arabic glyphs fall to a non-Arabic font. */
-#ayah, #ayah span {
+   fonts), so the coloured spans inside the verse h1 must re-assert the
+   mushaf face explicitly or their Arabic glyphs fall to a non-Arabic font.
+   .ayah-text covers all three carousel panes (#ayah is the current one). */
+.ayah-text, .ayah-text span {
 	font-family: 'Scheherazade', serif;
 }
 
 /* Smooth tajwed on/off switching: the h1 fades out, its content is
-   swapped, then it fades back in. */
-#ayah {
+   swapped, then it fades back in. Neighbour panes use a div (only one h1
+   per page) but must match the h1's box exactly. */
+.ayah-text {
 	transition: opacity .22s ease;
 	font-size: 300%;
+	display: block;
+	font-weight: 700;
+	margin: .67em 0;
 }
 
 /* Both tajweed renderers (quran.com's coloured mushaf font and the coloured
@@ -56,8 +61,8 @@ html.dark-theme .home-section-label {
    font-size (the QCF page font is ~1.4x taller/wider), so scale the verse
    down while tajweed is on. 220% keeps it close to the plain text's visual
    size. */
-#ayah.ayah-tajweed,
-#ayah.ayah-qcf {
+.ayah-text.ayah-tajweed,
+.ayah-text.ayah-qcf {
 	font-size: 220%;
 }
 
@@ -235,6 +240,97 @@ html.dark-theme #tajweed-toggle-btn.tajweed-on .tint.icon { color: #9CC4FF; }
 
 #btnGo:hover, #btnSurprise:hover {
 	transform: translateY(-1px);
+}
+
+/* Mushaf reading views (/mushaf/<surah> and /page/<n>): one row per verse,
+   plain Scheherazade by default, swapped to the per-page QCF colored font
+   when "Tajweed font" is on. Both spans stay in the DOM so the swap is a
+   class change with no text rebuild. The QCF face draws ~1.4x taller at the
+   same font-size, so it is scaled down to match the plain text. */
+.mushaf-page-surahs {
+	text-align: center;
+	opacity: .6;
+	font-size: 95%;
+	margin: -6px 0 12px;
+}
+
+.mushaf-controls {
+	display: flex;
+	justify-content: flex-end;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding: 6px 0 10px;
+}
+
+.mushaf-ayah {
+	font-family: 'Scheherazade', serif;
+	font-size: 225%;
+	line-height: 1.9;
+	text-align: right;
+}
+
+.mushaf-ayah .mushaf-qcf { display: none; }
+
+/* Reading pages carry a scoped `* { font-family: 'Open Sans' }` rule that
+   matches every descendant element directly, so the two Arabic spans must
+   re-inherit the face set on .mushaf-ayah (inline QCF family or the CSS
+   Scheherazade default) instead of falling back to a non-Arabic font. */
+.mushaf-ayah .mushaf-plain,
+.mushaf-ayah .mushaf-qcf { font-family: inherit; }
+
+.mushaf-ayah.ayah-qcf {
+	font-size: 165%;
+	line-height: 2.1;
+}
+
+.mushaf-ayah.ayah-qcf .mushaf-qcf { display: inline; }
+.mushaf-ayah.ayah-qcf .mushaf-plain { display: none; }
+
+.mushaf-surah-head td {
+	padding-top: 1.4rem !important;
+	border-top: none !important;
+}
+
+.mushaf-surah-name {
+	font-family: 'Merriweather', serif;
+	text-align: center;
+	font-size: 115%;
+	opacity: .75;
+}
+
+.mushaf-bismillah {
+	font-family: 'Amiri', serif;
+	/* U+FDFD is the whole basmala as one wide ligature (~12x the font size),
+	   so size it to the viewport: at a fixed 200% it made the table wider
+	   than the screen and pushed the page into horizontal scroll. */
+	font-size: clamp(1.15rem, 6.2vw, 2.2rem);
+	text-align: center;
+	padding: .3rem 0 .1rem;
+}
+
+.mushaf-verse-no {
+	cursor: pointer;
+	color: rgba(0, 0, 0, .55);
+	font-family: Lora;
+	font-size: 90%;
+	text-align: center;
+	vertical-align: top;
+	padding-top: 2%;
+}
+
+html.dark-theme .mushaf-verse-no { color: rgba(255, 255, 255, .5); }
+
+.qcf-credit {
+	font-size: 72%;
+	text-align: center;
+	opacity: .5;
+	margin: 0 0 8px;
+}
+
+.mushaf-page-count {
+	text-align: center;
+	opacity: .5;
+	font-size: 80%;
 }
 
 @media (prefers-reduced-motion: reduce) {

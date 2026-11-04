@@ -356,10 +356,13 @@ def warm_tajweed_surah(surah, count):
 # the markup-based <span> version as the server-side default and swaps to
 # this font at runtime when its woff2 loads.
 QCF_CACHE_DB = 'db/qcf_cache.db'
+QCF_VERSES_JSON = 'db/qcf_verses.json'
 QCF_FONT_URL = 'https://quran.com/fonts/quran/hafs/v4/colrv1/woff2/p{page}.woff2'
 qcf_cooldown = {'until': 0.0}
-qcf_mem = {}       # (surah, verse) -> (mushaf_page, code_v2)
-qcf_font_mem = {}  # page -> font bytes
+qcf_mem = {}        # (surah, verse) -> (mushaf_page, code_v2)
+qcf_page_index = {} # mushaf page -> ((surah, verse), ...) in reading order
+qcf_font_mem = {}   # page -> font bytes
+_qcf_load_lock = threading.Lock()
 
 
 def _qcf_cache_conn():
@@ -371,16 +374,40 @@ def _qcf_cache_conn():
 	return conn
 
 
+def _build_qcf_page_index():
+	idx = {}
+	for (s, v), (p, _c) in qcf_mem.items():
+		idx.setdefault(p, []).append((s, v))
+	qcf_page_index.clear()
+	for p, rows in idx.items():
+		qcf_page_index[p] = tuple(sorted(rows))
+
+
 def _qcf_load_cache():
+	# db/qcf_verses.json ships the page + code_v2 of all 6,236 verses, so the
+	# carousel never snapshots a half-filled network cache again (that was the
+	# "tajweed font stops working after a few swipes" bug). The sqlite cache
+	# is only a fallback for an install without the seed file.
 	if qcf_mem:
 		return
-	try:
-		conn = _qcf_cache_conn()
-		for s, v, p, c in conn.execute('select sura, ayah, page, codev2 from qcf'):
-			qcf_mem[(s, v)] = (p, c)
-		conn.close()
-	except Exception:
-		pass
+	with _qcf_load_lock:
+		if qcf_mem:
+			return
+		try:
+			with open(QCF_VERSES_JSON, encoding='utf-8') as f:
+				for s, v, p, c in json.load(f)['verses']:
+					qcf_mem[(s, v)] = (p, c)
+		except Exception:
+			pass
+		if not qcf_mem:
+			try:
+				conn = _qcf_cache_conn()
+				for s, v, p, c in conn.execute('select sura, ayah, page, codev2 from qcf'):
+					qcf_mem[(s, v)] = (p, c)
+				conn.close()
+			except Exception:
+				pass
+		_build_qcf_page_index()
 
 
 def get_qcf_ayah(surah, verse):
@@ -468,7 +495,13 @@ def _preheat_qcf_surah(surah, count):
 
 
 def warm_qcf_surah(surah, count):
-	"""Preheat quran.com's per-verse mushaf data (page + code_v2) in background."""
+	"""Preheat quran.com's per-verse mushaf data (page + code_v2) in background.
+
+	The shipped seed already covers every verse, so this is a no-op unless the
+	seed file is missing and the sqlite cache is incomplete."""
+	_qcf_load_cache()
+	if all((surah, v) in qcf_mem for v in range(1, count + 1)):
+		return
 	with _qcf_warm_lock:
 		if surah in _qcf_warmed:
 			return
@@ -698,16 +731,17 @@ def getSurahInfo(surah, verse):
 	'bn_zakaria' : Markup(get_bn_zakaria(surah, verse).replace('\n', '<br>'))
 	}
 
+@lru_cache(maxsize=8)
 def get_full_tranlation(surah):
 	if (surah < 1 or surah > 114): abort(404)
 
-	x = pd.read_json('db/quran_stat.json')
+	x = quran_stat()
 	curr_surah = x['Surah'].iloc[surah-1].split('.')[1].strip()
 	conn = get_db_connection('db/en_quran.db')
 	result = conn.execute(f'select text from verses where sura = {surah}').fetchall()
 	conn.close()
-	x = [x['text'] for x in result]
-	return curr_surah, zip(list(range(1, len(x)+1)), x)
+	x = [row['text'] for row in result]
+	return curr_surah, tuple(zip(range(1, len(x) + 1), x))
 
 
 def get_full_en_tafsir(surah):
@@ -734,17 +768,18 @@ def get_full_bn_tafsir(surah):
 	x = [Markup(x['text'].replace('\n', '<br>')) for x in result]
 	return curr_surah, zip(list(range(1, len(x)+1)), x)
 
+@lru_cache(maxsize=8)
 def get_full_arabic(surah):
 	if (surah < 1 or surah > 114): abort(404)
 
-	x = pd.read_json('db/quran_stat.json')
+	x = quran_stat()
 	curr_surah = x['Surah'].iloc[surah-1].split('.')[1].strip()
 	conn = get_db_connection('db/quran.db')
 	result = conn.execute(f'select text from verses where sura = {surah}').fetchall()
 	conn.close()
 
-	x = [x['text'] for x in result]
-	return curr_surah, zip(list(range(1, len(x)+1)), x)
+	x = [row['text'] for row in result]
+	return curr_surah, tuple(zip(range(1, len(x) + 1), x))
 
 
 
@@ -859,6 +894,110 @@ def get_verse_core(surah, verse):
 	except Exception:
 		pass
 	return d
+
+def peek_qcf_ayah(surah, verse):
+	"""(mushaf_page, code_v2) only if already cached locally.
+
+	Like get_qcf_ayah() but never touches the network, so a whole-surah build
+	can read 286 verses without waiting on quran.com. The background warmers
+	fill the gaps for the next request."""
+	_qcf_load_cache()
+	return qcf_mem.get((surah, verse))
+
+def get_surah_qcf(surah):
+	"""((mushaf_page, code_v2), ...) for a whole surah, in verse order."""
+	_qcf_load_cache()
+	return tuple(qcf_mem.get((surah, v)) or (None, '')
+	             for v in range(1, _surah_verse_count(surah) + 1))
+
+@lru_cache(maxsize=8)
+def get_mushaf_page(page):
+	"""One Madani mushaf page as verse groups (surah boundaries included).
+
+	Page membership comes from db/qcf_verses.json (quran.com's by_page
+	endpoint, which is authoritative: some verses carry a stale per-verse
+	page_number). A page can span up to three surahs; each group gets a
+	banner/bismillah only when the page contains that surah's first verse.
+	"""
+	if not (1 <= page <= 604):
+		abort(404)
+	_qcf_load_cache()
+	rows = qcf_page_index.get(page) or ()
+	texts = {}
+	groups = []
+	for s, v in rows:
+		q = qcf_mem.get((s, v))
+		if not q:
+			continue
+		if s not in texts:
+			name, arabic = get_full_arabic(s)
+			_, translation = get_full_tranlation(s)
+			texts[s] = {
+				'name': name,
+				'ar': [t for _, t in arabic],
+				'tr': [t for _, t in translation],
+			}
+		t = texts[s]
+		if not groups or groups[-1]['surah'] != s:
+			groups.append({
+				'surah': s,
+				'name': t['name'],
+				'start': v == 1,
+				'bismillah': v == 1 and s not in (1, 9),
+				'rows': [],
+			})
+		groups[-1]['rows'].append({
+			'surah': s,
+			'verse': v,
+			'surah_name': t['name'],
+			'arabic': t['ar'][v-1] if v-1 < len(t['ar']) else '',
+			'translation': t['tr'][v-1] if v-1 < len(t['tr']) else '',
+			'qcf_page': q[0] or page,
+			'codev2': q[1],
+			'start': v == 1,
+			'bismillah': v == 1 and s not in (1, 9),
+		})
+	for g in groups:
+		g['rows'] = tuple(g['rows'])
+	return {
+		'page': page,
+		'prev': page - 1 if page > 1 else 604,
+		'next': page + 1 if page < 604 else 1,
+		'groups': tuple(groups),
+		'surah_names': tuple(g['name'] for g in groups),
+		'count': sum(len(g['rows']) for g in groups),
+	}
+
+def _surah_verse_count(surah):
+	return int(quran_stat()['Verses'].loc[int(surah)])
+
+# The text of every verse of a surah, for the swipe carousel: the client asks
+# once and then moves between verses without any further round trip. Kept
+# compact (arrays, no repeated keys) since Al-Baqarah alone is ~200 KB.
+@lru_cache(maxsize=4)
+def get_surah_core(surah):
+	if surah < 1 or surah > 114:
+		abort(404)
+	name, arabic = get_full_arabic(surah)
+	_, translation = get_full_tranlation(surah)
+	ar = [t for _, t in arabic]
+	tr = [t for _, t in translation]
+	n = min(len(ar), len(tr))
+	verses = []
+	for i in range(n):
+		q = peek_qcf_ayah(surah, i + 1) or (None, '')
+		verses.append((ar[i], tr[i], q[0], q[1]))
+	prev_ = ((surah - 1, _surah_verse_count(surah - 1)) if surah > 1
+		else (114, _surah_verse_count(114)))
+	next_ = ((surah + 1, 1) if surah < 114 else (1, 1))
+	return {
+		'surah': surah,
+		'name': name,
+		'count': n,
+		'verses': tuple(verses),
+		'prev': prev_,
+		'next': next_,
+	}
 
 @lru_cache(maxsize=24)
 def _verse_details_cached(surah, verse):

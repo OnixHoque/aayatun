@@ -4,7 +4,9 @@ import pandas as pd
 import library as lib
 import random
 import ast
+import gzip
 import hmac
+import json
 import os
 import secrets
 import time
@@ -168,8 +170,10 @@ def search():
 
 @app.route('/<int:surah>/<int:verse>', strict_slashes=False)
 def details(surah, verse):
+	# Only the core payload: the accordion sections are fetched when opened,
+	# which keeps this page at a few KB instead of the whole tafsir/morphology.
 	return private_page(make_response(render_template('versedetails.html',
-		details=lib.get_verse_details(surah, verse), api_token=api_token())))
+		details=lib.get_verse_core(surah, verse), api_token=api_token())))
 
 # Lightweight payload used by next/prev navigation. Only the parts that change
 # on screen are sent; accordion sections are fetched on demand.
@@ -177,6 +181,26 @@ def details(surah, verse):
 def verse_api(surah, verse):
 	require_api_token()
 	return no_store(jsonify(lib.get_verse_core(surah, verse)))
+
+# Whole-surah text (Arabic + translation + QCF data) for the swipe carousel:
+# one request per surah, then next/prev need no further round trip. Public
+# text, so no token; no-store keeps the cache in verse-nav.js memory only
+# (the service worker already skips /api/).
+@lru_cache(maxsize=8)
+def _surah_payload(surah, gzipped):
+	body = json.dumps(lib.get_surah_core(surah), ensure_ascii=False,
+		separators=(',', ':')).encode('utf-8')
+	return gzip.compress(body, 6) if gzipped else body
+
+@app.route('/api/v1/surah/<int:surah>', strict_slashes=False)
+def surah_api(surah):
+	gz = 'gzip' in (request.headers.get('Accept-Encoding') or '').lower()
+	resp = app.response_class(_surah_payload(surah, gz), mimetype='application/json')
+	resp.headers['Cache-Control'] = 'no-store'
+	resp.headers['Vary'] = 'Accept-Encoding'
+	if gz:
+		resp.headers['Content-Encoding'] = 'gzip'
+	return resp
 
 # Server-rendered accordion content, so the markup has a single source of truth
 # (the Jinja partials) instead of being rebuilt in JavaScript.
@@ -232,7 +256,19 @@ def arabic_fulltext(surah):
 	c, d = lib.get_full_tranlation(surah)
 	prev_ = surah - 1 if surah != 1 else 114
 	next_ = surah + 1 if surah != 114 else 1
-	return render_template('arabic_fulltext.html', surah_name=a, surah_no=surah, verses=b,translation=list(d), prev=prev_, nxt=next_, mushaf='1')
+	return render_template('arabic_fulltext.html', surah_name=a, surah_no=surah, verses=b,
+		translation=list(d), qcf=lib.get_surah_qcf(surah), prev=prev_, nxt=next_, mushaf='1')
+
+@app.route('/page/<int:page_no>', strict_slashes=False)
+def mushaf_page(page_no):
+	# One Madani mushaf page (1-604), a row per verse; prev/next wrap so the
+	# reading view is circular like the surah pages.
+	if not (1 <= page_no <= 604):
+		abort(404)
+	data = lib.get_mushaf_page(page_no)
+	return render_template('mushaf_page.html', page_no=page_no,
+		groups=data['groups'], surah_names=data['surah_names'],
+		verse_count=data['count'], prev=data['prev'], nxt=data['next'])
 
 @app.route("/prayer-time")
 def prayer_time():
