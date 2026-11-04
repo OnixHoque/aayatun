@@ -262,6 +262,23 @@ html.dark-theme #tajweed-toggle-btn.tajweed-on .tint.icon { color: #9CC4FF; }
 	padding: 6px 0 10px;
 }
 
+/* Icon-only controls: the Material "translate" glyph stands in for the old
+   "Show Translation" label and matches the Fomantic icon metrics. */
+.mushaf-controls .translate-icon {
+	width: 1em;
+	height: 1em;
+	vertical-align: -.125em;
+	fill: currentColor;
+	pointer-events: none;
+}
+
+/* Translation text under a verse: same 16px body size as the verse detail
+   page and /translation (no inline em/rem scaling). */
+.extra-translation-text {
+	line-height: 1.5;
+	margin: .25rem 0 0;
+}
+
 .mushaf-ayah {
 	font-family: 'Scheherazade', serif;
 	font-size: 225%;
@@ -363,8 +380,13 @@ html.dark-theme .mushaf-verse-no { color: rgba(255, 255, 255, .5); }
 	cursor: pointer;
 }
 
-.mushaf-layout .mushaf-seg:hover {
-	background: rgba(59, 142, 255, .12);
+.mushaf-layout .mushaf-seg-active {
+	background: rgba(59, 142, 255, .14);
+	border-radius: 3px;
+}
+
+html.dark-theme .mushaf-layout .mushaf-seg-active {
+	background: rgba(156, 196, 255, .2);
 }
 
 /* Breathing room between the last line of a surah and the next banner. */

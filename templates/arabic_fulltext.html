@@ -6,11 +6,13 @@
 
 {% block options %}
 	
-	<div style="display: flex; justify-content: flex-end; padding: 20px 0; gap: 8px; flex-wrap: wrap;">
-		<button id="tajweed-toggle-btn" data-tooltip="Colored mushaf font" class="circular ui basic icon button" onclick="toggleTajweedFont()">
-			<i class="icon tint"></i> Tajweed font
+	<div class="mushaf-controls" style="display: flex; justify-content: flex-end; padding: 20px 0 8px; gap: 8px; flex-wrap: wrap;">
+		<button id="tajweed-toggle-btn" type="button" title="Colored mushaf font" aria-label="Colored mushaf font" aria-pressed="false" data-tooltip="Colored mushaf font" class="circular ui basic icon button" onclick="toggleTajweedFont()">
+			<i class="icon tint" aria-hidden="true"></i>
 		</button>
-		<button class="circular active ui basic toggle icon button" onclick="update_translation_visibility(this)"> Show Translation </button>
+		<button id="translation-toggle-btn" type="button" title="Show translation" aria-label="Show translation" aria-pressed="true" class="circular active ui basic toggle icon button" onclick="update_translation_visibility(this)">
+			<svg class="translate-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
+		</button>
 	</div>
 	<p id="qcf-credit" class="qcf-credit" style="display: none;">Colored mushaf font &copy; <a href="https://qurancomplex.gov.sa/" target="_blank">King Fahd Complex</a> &middot; packaged by <a href="https://quran.com" target="_blank">quran.com</a></p>
 {% endblock %}
@@ -33,15 +35,19 @@
 
 {% block scriptcontent %}
 
-	$('.ui.button.toggle').state();
+	// Translation visibility is tracked here (not with Fomantic's `.state()`)
+	// so the icon-only button can keep `aria-pressed` in sync. Default on,
+	// matching the mushaf page.
+	var translationsOn = true;
 
-	function update_translation_visibility(e){
-		//console.log(e.classList.contains("active"));
-			$('.extra-translation').fadeToggle();
-		//document.querySelectorAll('.extra-translation').forEach(arg => {
-		//	arg.style.display = (e.classList.contains("active") ? "none" : // "block");	
-		//});
-		
+	function update_translation_visibility(e) {
+		var btn = e || document.getElementById('translation-toggle-btn');
+		translationsOn = !translationsOn;
+		$('.extra-translation').toggle(translationsOn);
+		if (btn) {
+			btn.classList.toggle('active', translationsOn);
+			btn.setAttribute('aria-pressed', translationsOn ? 'true' : 'false');
+		}
 	}
 	window.update_translation_visibility = update_translation_visibility;
 
@@ -57,7 +63,10 @@
 		var observer = null;
 
 		function mark(on) {
-			if (btn) btn.classList.toggle('tajweed-on', on);
+			if (btn) {
+				btn.classList.toggle('tajweed-on', on);
+				btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+			}
 			if (credit) credit.style.display = on ? '' : 'none';
 		}
 

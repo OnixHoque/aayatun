@@ -35,14 +35,14 @@
 	<p class="mushaf-page-surahs">{{ surah_names|join(' · ') }}</p>
 
 	<div class="mushaf-controls">
-		<button id="tajweed-toggle-btn" data-tooltip="Colored mushaf font" class="circular ui basic icon button" onclick="toggleTajweedFont()">
-			<i class="icon tint"></i> Tajweed font
+		<button id="tajweed-toggle-btn" type="button" title="Colored mushaf font" aria-label="Colored mushaf font" aria-pressed="false" data-tooltip="Colored mushaf font" class="circular ui basic icon button" onclick="toggleTajweedFont()">
+			<i class="icon tint" aria-hidden="true"></i>
 		</button>
-		<button id="translation-toggle-btn" class="circular ui basic toggle icon button" onclick="update_translation_visibility(this)">
-			Show Translation
+		<button id="translation-toggle-btn" type="button" title="Show translation" aria-label="Show translation" aria-pressed="true" class="circular ui basic toggle icon button" onclick="update_translation_visibility(this)">
+			<svg class="translate-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
 		</button>
-		<button id="layout-toggle-btn" data-tooltip="Mushaf line layout" class="circular ui basic toggle icon button" onclick="toggleMushafLayout()">
-			<i class="icon align justify"></i> Mushaf layout
+		<button id="layout-toggle-btn" type="button" title="Mushaf line layout" aria-label="Mushaf line layout" aria-pressed="false" data-tooltip="Mushaf line layout" class="circular ui basic toggle icon button" onclick="toggleMushafLayout()">
+			<i class="icon align justify" aria-hidden="true"></i>
 		</button>
 	</div>
 	<p id="qcf-credit" class="qcf-credit" style="display: none;">Colored mushaf font &copy; <a href="https://qurancomplex.gov.sa/" target="_blank">King Fahd Complex</a> &middot; packaged by <a href="https://quran.com" target="_blank">quran.com</a></p>
@@ -67,7 +67,7 @@
 				<td>
 					<div class="mushaf-ayah" data-page="{{ r.qcf_page }}"><span class="mushaf-plain">{{ r.arabic }}</span><span class="mushaf-qcf">{{ r.codev2 }}</span></div>
 					<div class="extra-translation" style="display: none;">
-						<p style="font-family: Open Sans; font-size: .8rem;">{{ r.translation }}</p>
+						<p class="extra-translation-text" style="font-family: Open Sans;">{{ r.translation }}</p>
 					</div>
 				</td>
 			</tr>
@@ -115,7 +115,10 @@
 
 		function show(on) {
 			shown = on;
-			if (btn) btn.classList.toggle('tajweed-on', on);
+			if (btn) {
+				btn.classList.toggle('tajweed-on', on);
+				btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+			}
 			if (credit) credit.style.display = on ? '' : 'none';
 			if (!on) {
 				rows.forEach(function (el) {
@@ -147,7 +150,10 @@
 	{
 		$('.extra-translation').toggle(on);
 		var btn = document.getElementById('translation-toggle-btn');
-		if (btn) btn.classList.toggle('active', on);
+		if (btn) {
+			btn.classList.toggle('active', on);
+			btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+		}
 	}
 
 	function update_translation_visibility(e) {
@@ -161,7 +167,7 @@
 		var stored = null;
 		try { stored = localStorage.getItem(TR_KEY); } catch (e) {}
 		// Translation is on unless the reader turned it off on a mushaf page.
-		if (stored !== '0') applyTranslation(true);
+		applyTranslation(stored !== '0');
 	})();
 
 	// ------------------------------------------------------------------
@@ -205,7 +211,16 @@
 		if (!(avail > 0)) return;
 		var widths = layoutLines.map(layoutTextWidth);
 		var widest = Math.max.apply(null, widths.concat([1]));
-		var scaled = Math.max(10, Math.min(64, base * avail / widest));
+		var scaled = base * avail / widest;
+		// Pages 1–2 have unusually short printed lines (their widest is
+		// ~1340px at 100px, against ~1640px on a normal page), so filling the
+		// column made their text ~20% bigger than the rest of the mushaf. Cap
+		// those two pages at the size a full-width page line gets; every other
+		// page keeps its exact fit.
+		if (layoutPage <= 2) {
+			scaled = Math.min(scaled, base * avail / 1640);
+		}
+		scaled = Math.max(10, Math.min(64, scaled));
 		layoutLines.forEach(function (el, i) {
 			el.style.fontSize = scaled.toFixed(2) + 'px';
 			// Every line is justified to the column edge except where the
@@ -245,7 +260,10 @@
 	function setLayoutMode(on)
 	{
 		layoutOn = !!on;
-		if (layoutBtn) layoutBtn.classList.toggle('active', layoutOn);
+		if (layoutBtn) {
+			layoutBtn.classList.toggle('active', layoutOn);
+			layoutBtn.setAttribute('aria-pressed', layoutOn ? 'true' : 'false');
+		}
 		if (layoutView) {
 			// Stay invisible until the glyph font is painted and fitted, so
 			// the fallback face never flashes PUA boxes.
@@ -275,6 +293,49 @@
 		var stored = null;
 		try { stored = localStorage.getItem(LAYOUT_KEY); } catch (e) {}
 		if (stored === '1') setLayoutMode(true);
+	})();
+
+	// A verse can be split over several printed lines, so hovering one
+	// segment lights up every segment of that same verse. The highlight is
+	// transient: it is dropped on pointer leave or on opening the verse modal,
+	// never stored anywhere.
+	(function () {
+		if (!layoutView) return;
+		var segs = Array.prototype.slice.call(layoutView.querySelectorAll('.mushaf-seg'));
+		var byVerse = Object.create(null);
+		var activeKey = null;
+
+		segs.forEach(function (el) {
+			var key = el.getAttribute('data-surah') + ':' + el.getAttribute('data-verse');
+			(byVerse[key] || (byVerse[key] = [])).push(el);
+		});
+
+		function setActive(key)
+		{
+			if (key === activeKey) return;
+			if (activeKey && byVerse[activeKey]) {
+				byVerse[activeKey].forEach(function (el) { el.classList.remove('mushaf-seg-active'); });
+			}
+			activeKey = key;
+			if (key && byVerse[key]) {
+				byVerse[key].forEach(function (el) { el.classList.add('mushaf-seg-active'); });
+			}
+		}
+
+		function keyOf(target)
+		{
+			var el = target && target.closest ? target.closest('.mushaf-seg') : null;
+			if (!el || !layoutView.contains(el)) return null;
+			return el.getAttribute('data-surah') + ':' + el.getAttribute('data-verse');
+		}
+
+		layoutView.addEventListener('mouseover', function (e) { setActive(keyOf(e.target)); });
+		layoutView.addEventListener('focusin', function (e) { setActive(keyOf(e.target)); });
+		layoutView.addEventListener('mouseleave', function () { setActive(null); });
+		// Tapping a segment opens the modal; clear the highlight so a touch
+		// device (where mouseleave may never fire) does not leave one behind.
+		layoutView.addEventListener('click', function () { setActive(null); });
+		window.addEventListener('blur', function () { setActive(null); });
 	})();
 
 	window.addEventListener('resize', function () {
