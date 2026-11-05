@@ -46,6 +46,13 @@
         margin-top: 8px;
     }
 
+    /* Jumping to a page ignores the surah picker, so the whole-surah row is
+       disabled along with it (set by updateJumpMode). */
+    #whole-surah-row.is-disabled,
+    .home-section-label.is-disabled {
+        opacity: .45;
+    }
+
     /* "or" divider: vertical between columns on tablet+, horizontal when stacked */
     #home-or-v,
     #home-or-h {
@@ -161,7 +168,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		if (!isJumpToPage()) updateVerse();
 	});
 	$('#jumpmode').dropdown('setting', 'onChange', updateJumpMode);
-	updateVerse();
+	updateJumpMode();
 	$('#btnGo').click(function()
 	{
 		var s = $('#surah').find(":selected").attr('value');
@@ -222,6 +229,20 @@ document.addEventListener('DOMContentLoaded', function () {
 	function updateJumpMode()
 	{
 		updateVerse();
+		// A mushaf page isn't tied to a surah, so the surah picker is
+		// meaningless (and misleading) while jumping to a page.
+		var pageMode = isJumpToPage();
+		$('#surah').prop('disabled', pageMode);
+		$('#surah').parent('.ui.dropdown')
+			.toggleClass('disabled', pageMode)
+			.attr('aria-disabled', pageMode ? 'true' : 'false');
+		// The whole-surah reading buttons need a surah too, so they are not
+		// usable while the picker is parked on "page".
+		var whole = $('#whole-surah-row');
+		whole.toggleClass('is-disabled', pageMode)
+			.attr('aria-disabled', pageMode ? 'true' : 'false')
+			.find('button').prop('disabled', pageMode);
+		whole.prev('.home-section-label').toggleClass('is-disabled', pageMode);
 	}
 
 
