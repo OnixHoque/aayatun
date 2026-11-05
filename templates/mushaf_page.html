@@ -62,7 +62,7 @@
 			</tr>
 		{% endif %}
 		{% for r in g.rows %}
-			<tr>
+			<tr class="mushaf-row" data-surah="{{ r.surah }}" data-verse="{{ r.verse }}">
 				<td class="two wide selectable mushaf-verse-no" onclick="showModal({{ r.surah }}, {{ r.verse }})">{{ r.surah }}:{{ r.verse }}</td>
 				<td>
 					<div class="mushaf-ayah" data-page="{{ r.qcf_page }}"><span class="mushaf-plain">{{ r.arabic }}</span><span class="mushaf-qcf">{{ r.codev2 }}</span></div>
@@ -336,6 +336,51 @@
 		// device (where mouseleave may never fire) does not leave one behind.
 		layoutView.addEventListener('click', function () { setActive(null); });
 		window.addEventListener('blur', function () { setActive(null); });
+	})();
+
+	// Arriving from the verse page's "Mushaf" button (/page/<n>?v=<surah>:<verse>):
+	// centre that verse and paint a short-lived highlight in whichever view is
+	// active. Nothing is stored, so the highlight disappears on its own.
+	(function () {
+		var match = /[?&]v=(\d+):(\d+)/.exec(window.location.search);
+		if (!match) return;
+		var rowSel = '.mushaf-row[data-surah="' + match[1] + '"][data-verse="' + match[2] + '"]';
+		var segSel = '.mushaf-seg[data-surah="' + match[1] + '"][data-verse="' + match[2] + '"]';
+		var done = false;
+
+		function clearJump()
+		{
+			document.querySelectorAll('.mushaf-seg-jump, .mushaf-row-jump').forEach(function (n) {
+				n.classList.remove('mushaf-seg-jump');
+				n.classList.remove('mushaf-row-jump');
+			});
+		}
+
+		function paintJump()
+		{
+			if (done) return true;
+			// The layout view stays hidden until its page font is painted and
+			// the lines are fitted; scrolling before then lands in the wrong
+			// place, so wait for the reveal.
+			if (layoutOn && layoutView.style.visibility !== 'visible') return false;
+			var el = layoutOn ? layoutView.querySelector(segSel) : layoutTable.querySelector(rowSel);
+			if (!el || el.getClientRects().length === 0) return false;
+
+			done = true;
+			var targets = (layoutOn ? layoutView : layoutTable).querySelectorAll(layoutOn ? segSel : rowSel);
+			targets.forEach(function (n) {
+				n.classList.add(layoutOn ? 'mushaf-seg-jump' : 'mushaf-row-jump');
+			});
+			el.scrollIntoView({ block: 'center', behavior: 'auto' });
+			window.setTimeout(clearJump, 4000);
+			return true;
+		}
+
+		if (paintJump()) return;
+		var tries = 0;
+		var timer = window.setInterval(function () {
+			if (paintJump() || ++tries > 20) window.clearInterval(timer);
+		}, 150);
 	})();
 
 	window.addEventListener('resize', function () {

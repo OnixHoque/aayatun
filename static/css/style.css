@@ -272,10 +272,11 @@ html.dark-theme #tajweed-toggle-btn.tajweed-on .tint.icon { color: #9CC4FF; }
 	pointer-events: none;
 }
 
-/* Translation text under a verse: same 16px body size as the verse detail
-   page and /translation (no inline em/rem scaling). */
+/* Translation text under a verse: one step down from body so the Arabic
+   stays dominant (Fomantic's root is 14px, so 1rem = 14px, not 5.6/11.2px). */
 .extra-translation-text {
-	line-height: 1.5;
+	font-size: 1rem;
+	line-height: 1.45;
 	margin: .25rem 0 0;
 }
 
@@ -380,13 +381,32 @@ html.dark-theme .mushaf-verse-no { color: rgba(255, 255, 255, .5); }
 	cursor: pointer;
 }
 
-.mushaf-layout .mushaf-seg-active {
-	background: rgba(59, 142, 255, .14);
+/* The glyph line box is tall (line-height 1.75), so a plain background bled
+   into the lines above and below. Paint a centred band over ~55% of the line
+   instead, so it sits on the glyphs with minimal overlap. `-jump` is the
+   transient highlight used when arriving from the verse page. */
+.mushaf-layout .mushaf-seg-active,
+.mushaf-layout .mushaf-seg-jump {
+	background-image: linear-gradient(rgba(59, 142, 255, .16), rgba(59, 142, 255, .16));
+	background-repeat: no-repeat;
+	background-position: center;
+	background-size: 100% 55%;
 	border-radius: 3px;
 }
 
-html.dark-theme .mushaf-layout .mushaf-seg-active {
-	background: rgba(156, 196, 255, .2);
+html.dark-theme .mushaf-layout .mushaf-seg-active,
+html.dark-theme .mushaf-layout .mushaf-seg-jump {
+	background-image: linear-gradient(rgba(156, 196, 255, .22), rgba(156, 196, 255, .22));
+}
+
+/* Table mode target when arriving with ?v=<surah>:<verse>. */
+.mushaf-row-jump td {
+	background-color: rgba(59, 142, 255, .1) !important;
+	transition: background-color .4s ease;
+}
+
+html.dark-theme .mushaf-row-jump td {
+	background-color: rgba(156, 196, 255, .16) !important;
 }
 
 /* Breathing room between the last line of a surah and the next banner. */
