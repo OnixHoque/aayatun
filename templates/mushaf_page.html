@@ -87,7 +87,7 @@
 		{% elif ln.type == 'basmala' %}
 		<div class="mushaf-line-basmala"><span class="mushaf-bismillah">&#xFDFD;</span></div>
 		{% else %}
-		<div class="mushaf-line" data-endblock="{{ 1 if ln.endblock else 0 }}" style="font-family: 'QCF-V4-{{ page_no }}', 'Scheherazade', serif;">{% for seg in ln.segments %}{% if not loop.first %} {% endif %}<span class="mushaf-seg" data-surah="{{ seg.surah }}" data-verse="{{ seg.verse }}" onclick="showModal({{ seg.surah }}, {{ seg.verse }})">{{ seg.glyphs }}</span>{% endfor %}</div>
+		<div class="mushaf-line" data-endblock="{{ 1 if ln.endblock else 0 }}">{% for seg in ln.segments %}{% if not loop.first %} {% endif %}<span class="mushaf-seg" data-surah="{{ seg.surah }}" data-verse="{{ seg.verse }}" onclick="showModal({{ seg.surah }}, {{ seg.verse }})"><span class="mushaf-plain">{{ seg.text }}</span><span class="mushaf-qcf">{{ seg.glyphs }}</span></span>{% endfor %}</div>
 		{% endif %}
 	{% endfor %}
 	<p class="mushaf-layout-credit">Mushaf layout by <a href="https://github.com/zonetecde/mushaf-layout" target="_blank" rel="noopener">zonetecde/mushaf-layout</a> (ISC) &middot; QPC glyphs &copy; <a href="https://qurancomplex.gov.sa/" target="_blank" rel="noopener">King Fahd Complex</a></p>
@@ -101,6 +101,10 @@
 
 {% block scriptcontent %}
 	setValues(pages.COMP_MUSHAF_PAGE, {{ page_no }});
+
+	// Shared between the table's tajweed toggle and the line layout, so both
+	// views always agree on whether the colored font is on.
+	var mushafTajweedOn = false;
 
 	(function () {
 		var btn = document.getElementById('tajweed-toggle-btn');
@@ -119,6 +123,8 @@
 
 		function show(on) {
 			shown = on;
+			mushafTajweedOn = on;
+			syncLayoutTajweed(on);
 			if (btn) {
 				btn.classList.toggle('tajweed-on', on);
 				btn.setAttribute('aria-pressed', on ? 'true' : 'false');
@@ -195,8 +201,16 @@
 	function layoutTextWidth(el)
 	{
 		if (el.getClientRects().length === 0) return 0;
+		// Measure only the visible face; the hidden plain/QCF span must not
+		// stretch the line.
+		var text = el.querySelectorAll(el.classList.contains('ayah-qcf') ? '.mushaf-qcf' : '.mushaf-plain');
 		var range = document.createRange();
-		range.selectNodeContents(el);
+		if (text.length) {
+			range.setStartBefore(text[0]);
+			range.setEndAfter(text[text.length - 1]);
+		} else {
+			range.selectNodeContents(el);
+		}
 		return range.getBoundingClientRect().width;
 	}
 
@@ -251,14 +265,48 @@
 		});
 	}
 
+	function applyLayoutFont(on)
+	{
+		layoutLines.forEach(function (el) {
+			if (on && window.QcfFont) {
+				QcfFont.apply(el, layoutPage);
+				el.classList.add('ayah-qcf');
+			} else {
+				if (window.QcfFont) QcfFont.clear(el);
+				el.classList.remove('ayah-qcf');
+			}
+		});
+	}
+
+	function paintLayoutPlain()
+	{
+		applyLayoutFont(false);
+		fitAndRevealLayout();
+	}
+
 	function paintMushafLayout()
 	{
-		if (window.QcfFont && QcfFont.supports()) {
-			layoutLines.forEach(function (el) { QcfFont.apply(el, layoutPage); });
+		if (!mushafTajweedOn || !window.QcfFont || !QcfFont.supports()) {
+			paintLayoutPlain();
+			return;
 		}
+		applyLayoutFont(true);
 		// Two frames: one for the font/palette, one for the resulting layout,
 		// so the measurement sees the real glyph widths.
 		fitAndRevealLayout();
+	}
+
+	// The shared tajweed toggle calls this for every view. While the layout is
+	// hidden the next setLayoutMode() repaints it, so only react when visible.
+	function syncLayoutTajweed(on)
+	{
+		if (!layoutLines || !layoutOn) return;
+		if (!on || !window.QcfFont || !QcfFont.supports()) {
+			paintLayoutPlain();
+			return;
+		}
+		if (QcfFont.isLoaded(layoutPage)) paintMushafLayout();
+		else QcfFont.load(layoutPage).then(paintMushafLayout, paintLayoutPlain);
 	}
 
 	function setLayoutMode(on)
@@ -275,15 +323,17 @@
 			layoutView.style.display = layoutOn ? 'block' : 'none';
 		}
 		if (layoutTable) layoutTable.style.display = layoutOn ? 'none' : '';
-		if (layoutTajweedBtn) layoutTajweedBtn.style.display = layoutOn ? 'none' : '';
+		// The tajweed button stays available here: turning it off swaps the
+		// lines to plain Uthmani text without leaving the line layout.
+		if (layoutTajweedBtn) layoutTajweedBtn.style.display = '';
 		if (layoutTranslationBtn) layoutTranslationBtn.style.display = layoutOn ? 'none' : '';
 		if (!layoutOn) return;
-		if (window.QcfFont && QcfFont.supports()) {
+		if (mushafTajweedOn && window.QcfFont && QcfFont.supports()) {
 			if (QcfFont.isLoaded(layoutPage)) paintMushafLayout();
-			else QcfFont.load(layoutPage).then(paintMushafLayout, paintMushafLayout);
+			else QcfFont.load(layoutPage).then(paintMushafLayout, paintLayoutPlain);
 		} else {
-			// No colored-font support: keep the fallback face but still fit.
-			fitAndRevealLayout();
+			// Normal font (or no colored-font support): plain lines, still fitted.
+			paintMushafLayout();
 		}
 	}
 

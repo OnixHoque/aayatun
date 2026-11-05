@@ -372,14 +372,29 @@ html.dark-theme .mushaf-verse-no { color: rgba(255, 255, 255, .5); }
 	text-align: justify;
 	text-align-last: justify;
 	direction: rtl;
+	/* Normal-font fallback; QcfFont.apply() overrides this with the page's
+	   QCF family when the colored font is on. */
+	font-family: 'Scheherazade', serif;
 }
 
 /* The scoped `* { font-family: 'Open Sans' }` on reading pages matches spans
-   directly, so verse segments must re-inherit the QCF face from their line. */
+   directly, so verse segments must re-inherit the face from their line. */
 .mushaf-layout .mushaf-seg {
 	font-family: inherit;
 	cursor: pointer;
 }
+
+.mushaf-layout .mushaf-plain,
+.mushaf-layout .mushaf-qcf {
+	font-family: inherit;
+}
+
+/* Same two-span swap as the table: plain Uthmani text by default, the QPC2
+   glyphs once the line carries .ayah-qcf. The line layout (and its fitted
+   size) is kept either way; only the face and the span change. */
+.mushaf-layout .mushaf-qcf { display: none; }
+.mushaf-layout .mushaf-line.ayah-qcf .mushaf-qcf { display: inline; }
+.mushaf-layout .mushaf-line.ayah-qcf .mushaf-plain { display: none; }
 
 /* The glyph line box is tall (line-height 1.75), so a plain background bled
    into the lines above and below. Paint a centred band over ~55% of the line

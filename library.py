@@ -1019,7 +1019,9 @@ def get_mushaf_lines(page):
 
 	Returns a tuple of dicts: {'type': 'header', 'surah', 'name'},
 	{'type': 'basmala'} or {'type': 'text', 'segments': (...)}, where each
-	segment is {'surah', 'verse', 'glyphs'} in mushaf order. Rendered by
+	segment is {'surah', 'verse', 'glyphs', 'text'} in mushaf order. `glyphs`
+	is the QPC2 code for the colored font; `text` is the same fragment in
+	plain Uthmani Arabic for the normal-font fallback. Rendered by
 	templates/mushaf_page.html's layout view.
 	"""
 	if not (1 <= page <= 604):
@@ -1043,8 +1045,8 @@ def get_mushaf_lines(page):
 				'type': 'text',
 				'endblock': endblock,
 				'segments': tuple(
-					{'surah': int(a), 'verse': int(b), 'glyphs': c}
-					for a, b, c in ln[1]
+					{'surah': int(a), 'verse': int(b), 'glyphs': c, 'text': d}
+					for a, b, c, d in ln[1]
 				),
 			})
 	return tuple(out)
