@@ -1,10 +1,11 @@
-const CACHE_NAME = 'aayatun-v30';
+const CACHE_NAME = 'aayatun-v31';
 
 const CORE_ASSETS = [
   '/',
   '/prayer-time',
   '/static/offline.html',
   '/static/js/script.js',
+  '/static/js/recent.js',
   '/static/js/verse-nav.js',
   '/static/js/qcf-font.js',
   '/static/css/style.css',

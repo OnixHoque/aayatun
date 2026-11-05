@@ -2,6 +2,10 @@
 
 {% block title %} {{ details['surah_name'] }} : Aayatun - An Ayah a Day {% endblock %}
 
+{% block head_extra %}
+<meta name="aayatun-read" content="verse|{{ details['surah'] }}:{{ details['verse'] }}|{{ details['surah'] }}:{{ details['verse'] }} &middot; {{ details['surah_name'] }}">
+{% endblock head_extra %}
+
 {% block js %}
 <meta name="aayatun-api-token" content="{{ api_token }}">
 <script src="{{ url_for('static', filename='js/qcf-font.js') }}"></script>

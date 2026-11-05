@@ -2,6 +2,10 @@
 
 {% block title %}Page {{ page_no }} : Aayatun - An Ayah a Day{% endblock %}
 
+{% block head_extra %}
+<meta name="aayatun-read" content="page|{{ page_no }}|Page {{ page_no }} &middot; {{ surah_names|join(', ') }}">
+{% endblock head_extra %}
+
 {% block js %}
 <script defer src="{{ url_for('static', filename='js/qcf-font.js') }}"></script>
 {% endblock js %}

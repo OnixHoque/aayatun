@@ -4,6 +4,10 @@
 <script defer src="{{ url_for('static', filename='js/qcf-font.js') }}"></script>
 {% endblock js %}
 
+{% block head_extra %}
+<meta name="aayatun-read" content="mushaf|{{ surah_no }}|Surah {{ surah_no }} &middot; {{ surah_name }}">
+{% endblock head_extra %}
+
 {% block options %}
 	
 	<div class="mushaf-controls" style="display: flex; justify-content: flex-end; padding: 20px 0 8px; gap: 8px; flex-wrap: wrap;">

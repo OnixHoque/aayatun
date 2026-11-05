@@ -53,6 +53,90 @@
         opacity: .45;
     }
 
+    /* Recently Read: chips rendered from localStorage by recent.js */
+    #recent-reads {
+        margin-top: 18px;
+    }
+
+    #recent-reads[hidden] {
+        display: none !important;
+    }
+
+    #recent-head {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        margin-bottom: 8px;
+    }
+
+    #recent-clear {
+        border: 0;
+        background: none;
+        color: inherit;
+        opacity: .5;
+        cursor: pointer;
+        font-size: 120%;
+        line-height: 1;
+        padding: 0 4px;
+    }
+
+    #recent-clear:hover,
+    #recent-clear:focus-visible {
+        opacity: 1;
+        color: #2185d0;
+    }
+
+    #recent-list {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 6px;
+    }
+
+    .recent-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        max-width: 100%;
+        padding: 4px 10px;
+        border: 1px solid rgba(34, 36, 38, .2);
+        border-radius: 999px;
+        color: inherit;
+        font-size: 85%;
+        line-height: 1.4;
+        text-decoration: none;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+
+    .recent-item:hover,
+    .recent-item:focus-visible {
+        border-color: #2185d0;
+        color: #2185d0;
+    }
+
+    .recent-item i {
+        opacity: .7;
+        flex: 0 0 auto;
+    }
+
+    .recent-label {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    html.dark-theme .recent-item {
+        border-color: rgba(255, 255, 255, .25);
+    }
+
+    html.dark-theme .recent-item:hover,
+    html.dark-theme .recent-item:focus-visible {
+        border-color: #64b5f6;
+        color: #64b5f6;
+    }
+
     /* "or" divider: vertical between columns on tablet+, horizontal when stacked */
     #home-or-v,
     #home-or-h {
@@ -119,6 +203,14 @@
 		</div>
 
 		<button class="ui huge basic fluid button" style="font-family: Open Sans; font-size: 95%; margin-top: 18px;" id='btnSurprise'> Surprise me! </button>
+
+		<div id="recent-reads" hidden>
+			<div id="recent-head">
+				<div class="home-section-label" style="margin: 0;">Recently Read</div>
+				<button type="button" id="recent-clear" title="Clear reading history" aria-label="Clear reading history">&times;</button>
+			</div>
+			<div id="recent-list"></div>
+		</div>
 
 	</div>
 
@@ -245,6 +337,42 @@ document.addEventListener('DOMContentLoaded', function () {
 		whole.prev('.home-section-label').toggleClass('is-disabled', pageMode);
 	}
 
+
+	// Recently Read strip (recent.js records the reading pages). Everything
+	// here comes from localStorage, so build it with textContent only.
+	function renderRecent()
+	{
+		var box = document.getElementById('recent-reads');
+		var list = document.getElementById('recent-list');
+		if (!box || !list || !window.AayatunRecent) return;
+		var items = window.AayatunRecent.list();
+		list.textContent = '';
+		if (!items.length) {
+			box.hidden = true;
+			return;
+		}
+		var icons = { verse: 'bookmark outline', page: 'book', mushaf: 'book open' };
+		items.forEach(function (it) {
+			var a = document.createElement('a');
+			a.className = 'recent-item';
+			a.href = it.url;
+			var icon = document.createElement('i');
+			icon.className = 'icon ' + (icons[it.t] || 'bookmark');
+			var label = document.createElement('span');
+			label.className = 'recent-label';
+			label.textContent = it.label;
+			a.appendChild(icon);
+			a.appendChild(label);
+			list.appendChild(a);
+		});
+		box.hidden = false;
+	}
+
+	renderRecent();
+	$('#recent-clear').click(function () {
+		if (window.AayatunRecent) window.AayatunRecent.clear();
+		renderRecent();
+	});
 
     if('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
