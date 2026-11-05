@@ -47,6 +47,25 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	}
 
+	// The verse page's <audio> elements live inside the iframe, which keeps
+	// playing after the modal is hidden. Pause (and rewind) them on close.
+	function stopFrameAudio()
+	{
+		var frame = document.getElementById('verse_details_modal_content');
+		if (!frame) return;
+		try {
+			var audios = frame.contentDocument.querySelectorAll('audio');
+			for (var i = 0; i < audios.length; i++) {
+				audios[i].pause();
+				try { audios[i].currentTime = 0; } catch (e) {}
+			}
+		} catch (e) {}
+	}
+
+	// Initialise once so every hide path (close icon, ESC, backdrop, or a
+	// programmatic .modal('hide')) goes through stopFrameAudio.
+	$('#verse_details_modal').modal({ onHide: stopFrameAudio });
+
 	function showModal(s, v)
 	{
 		var url = detailTpl.replace("111111", s).replace("222222", v);

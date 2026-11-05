@@ -36,7 +36,7 @@
 
 	<div class="comprehensive-div" style="margin: 0px 10px">
 	<br>
-	<p class="mushaf-page-surahs">{{ surah_names|join(' · ') }}</p>
+	<p class="mushaf-page-surahs">{% for g in groups %}{{ g.name }} {% if g.rows[0].verse == g.rows[-1].verse %}{{ g.rows[0].verse }}{% else %}{{ g.rows[0].verse }}-{{ g.rows[-1].verse }}{% endif %}{% if not loop.last %} &middot; {% endif %}{% endfor %}</p>
 
 	<div class="mushaf-controls">
 		<button id="tajweed-toggle-btn" type="button" title="Colored mushaf font" aria-label="Colored mushaf font" aria-pressed="false" data-tooltip="Colored mushaf font" class="circular ui basic icon button" onclick="toggleTajweedFont()">
