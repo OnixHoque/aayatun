@@ -1013,6 +1013,11 @@ def _mushaf_lines():
 	return _mushaf_lines_mem
 
 
+# Plain layout text ends each verse with its Arabic-Indic number; the normal
+# font view shows it in parentheses (the QCF glyphs carry their own ornate
+# marker). One match per verse, always at the end of a segment.
+_AYAH_END = re.compile(r'([٠-٩]+)$')
+
 @lru_cache(maxsize=16)
 def get_mushaf_lines(page):
 	"""Typed layout lines for one Madani page (1-604).
@@ -1045,7 +1050,8 @@ def get_mushaf_lines(page):
 				'type': 'text',
 				'endblock': endblock,
 				'segments': tuple(
-					{'surah': int(a), 'verse': int(b), 'glyphs': c, 'text': d}
+					{'surah': int(a), 'verse': int(b), 'glyphs': c,
+					 'text': _AYAH_END.sub(r'(\1)', d)}
 					for a, b, c, d in ln[1]
 				),
 			})
