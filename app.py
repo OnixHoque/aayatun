@@ -269,6 +269,7 @@ def mushaf_page(page_no):
 	return render_template('mushaf_page.html', page_no=page_no,
 		groups=data['groups'], surah_names=data['surah_names'],
 		lines=lib.get_mushaf_lines(page_no),
+		overview=lib.get_page_overview(page_no),
 		verse_count=data['count'], prev=data['prev'], nxt=data['next'])
 
 @app.route("/prayer-time")

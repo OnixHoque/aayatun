@@ -353,6 +353,60 @@ html.dark-theme .mushaf-verse-no { color: rgba(255, 255, 255, .5); }
 	font-size: 80%;
 }
 
+/* /page/<n> swipe navigation. touch-action lets the browser keep vertical
+   scrolling (and pinch zoom) while horizontal pointer moves stay available
+   to the page-turn handler. It is set on the body too so a swipe that starts
+   in the header area (outside .mushaf-page) behaves the same way. */
+.mushaf-page,
+body.mushaf-page-body {
+	touch-action: pan-y pinch-zoom;
+	overscroll-behavior-x: none;
+}
+
+.mushaf-page.mushaf-swiping {
+	user-select: none;
+	-webkit-user-select: none;
+}
+
+.mushaf-page.mushaf-swipe-out {
+	transition: transform .18s ease-out, opacity .18s ease-out;
+}
+
+/* Page overview: two short labelled paragraphs inside the collapsed
+   accordion above the mushaf. It borrows the verse page's AI accordion look:
+   that one is a 90% accordion on the normal 14px body text. Here the page
+   sits in a 16px .ui.text.container, so 78.75% lands on the same 12.6px
+   container and base.html's 110%/120% title/content rules give the exact
+   verse-page sizes. It is deliberately borderless: base.html sets inline
+   borders on .accordion in dark mode, so this has to win with !important. */
+#page-overview.ui.accordion {
+	font-size: 78.75%;
+}
+
+#page-overview.ui.accordion,
+#page-overview.ui.accordion .title,
+#page-overview.ui.accordion .content {
+	border: 0 !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+}
+
+.page-overview-section + .page-overview-section {
+	margin-top: .75rem;
+}
+
+.page-overview-label {
+	font-weight: 600;
+	font-size: 90%;
+	opacity: .65;
+	margin: 0 0 .2rem;
+}
+
+.page-overview-text {
+	line-height: 1.5;
+	margin: 0;
+}
+
 /* Mushaf line layout (third reading toggle): the QPC2 page as printed, one
    block per line, no table and no translations. Font family and size are set
    by the page script (family from /font/v4/<page>.woff2, size measured to

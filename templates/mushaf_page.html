@@ -34,7 +34,7 @@
 		}
 	</style>
 
-	<div class="comprehensive-div" style="margin: 0px 10px">
+	<div class="comprehensive-div mushaf-page" style="margin: 0px 10px">
 	<br>
 	<p class="mushaf-page-surahs">{% for g in groups %}{{ g.name }} {% if g.rows[0].verse == g.rows[-1].verse %}{{ g.rows[0].verse }}{% else %}{{ g.rows[0].verse }}-{{ g.rows[-1].verse }}{% endif %}{% if not loop.last %} &middot; {% endif %}{% endfor %}</p>
 
@@ -50,6 +50,26 @@
 		</button>
 	</div>
 	<p id="qcf-credit" class="qcf-credit" style="display: none;">Colored mushaf font &copy; <a href="https://qurancomplex.gov.sa/" target="_blank">King Fahd Complex</a> &middot; packaged by <a href="https://quran.com" target="_blank">quran.com</a></p>
+
+	{% if overview %}
+	<div class="ui fluid styled accordion" id="page-overview" style="text-align: left;">
+		<div class="title">
+			<i class="dropdown icon"></i>
+			<span>Page Overview 🤖</span>
+		</div>
+		<div class="content">
+			{% include 'partials/_ai_notice.html' %}
+			<div class="page-overview-section">
+				<p class="page-overview-label">Why this passage</p>
+				<p class="page-overview-text">{{ overview.context }}</p>
+			</div>
+			<div class="page-overview-section">
+				<p class="page-overview-label">What this page says</p>
+				<p class="page-overview-text">{{ overview.summary }}</p>
+			</div>
+		</div>
+	</div>
+	{% endif %}
 
 	<table class="ui very basic unstackable left aligned table" id="mushaf-page-table">
 	{% for g in groups %}
@@ -101,6 +121,175 @@
 
 {% block scriptcontent %}
 	setValues(pages.COMP_MUSHAF_PAGE, {{ page_no }});
+
+	// The page overview is collapsed by default; the reader opens it on demand.
+	$('#page-overview').accordion();
+
+	// Turn the printed page by swiping left/right. This follows the same
+	// pointer-drag model as the verse carousel (static/js/verse-nav.js):
+	// decide the axis on the first few pixels, capture the pointer once the
+	// gesture is horizontal, prevent text selection, follow the finger, then
+	// commit on distance or velocity. Left is "next", matching the carousel.
+	(function () {
+		var area = document.querySelector('.mushaf-page');
+		if (!area) return;
+		document.body.classList.add('mushaf-page-body');
+
+		var prevUrl = {{ url_for('mushaf_page', page_no=prev)|tojson }};
+		var nextUrl = {{ url_for('mushaf_page', page_no=nxt)|tojson }};
+		var drag = null;
+		var suppressClick = false;
+		var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+		function interactive(target) {
+			if (!target || !target.closest) return true;
+			return !!target.closest('a, button, input, textarea, select, audio, ' +
+				'.ui.modal, .ui.dimmer, .accordion .title');
+		}
+
+		function modalOpen() {
+			return !!document.querySelector('.ui.modal.visible, .ui.dimmer.visible');
+		}
+
+		function clearSelection() {
+			if (window.getSelection && String(window.getSelection()) !== '') {
+				window.getSelection().removeAllRanges();
+			}
+		}
+
+		function onPointerDown(e) {
+			if (drag || modalOpen()) return;
+			if (e.pointerType === 'mouse' && e.button !== 0) return;
+			if (interactive(e.target)) return;
+			drag = {
+				id: e.pointerId,
+				x: e.clientX,
+				y: e.clientY,
+				lastX: e.clientX,
+				lastT: Date.now(),
+				vx: 0,
+				dx: 0,
+				axis: 0   // 0 undecided, 1 horizontal, -1 vertical
+			};
+		}
+
+		function onPointerMove(e) {
+			if (!drag || e.pointerId !== drag.id) return;
+			var dx = e.clientX - drag.x;
+			var dy = e.clientY - drag.y;
+
+			if (!drag.axis) {
+				if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+				if (Math.abs(dx) > Math.abs(dy) * 1.15) {
+					drag.axis = 1;
+					try { area.setPointerCapture(e.pointerId); } catch (err) {}
+					clearSelection();
+					area.classList.add('mushaf-swiping');
+				} else {
+					drag.axis = -1;
+					return;
+				}
+			}
+			if (drag.axis !== 1) return;
+			// Keep the browser from starting a text selection or its own
+			// horizontal gesture while the finger is down.
+			if (e.cancelable) e.preventDefault();
+
+			var now = Date.now();
+			if (now > drag.lastT) {
+				drag.vx = (e.clientX - drag.lastX) / (now - drag.lastT);
+				drag.lastX = e.clientX;
+				drag.lastT = now;
+			}
+
+			var w = area.clientWidth || window.innerWidth;
+			var eff = Math.max(-w * 0.4, Math.min(w * 0.4, dx * 0.5));
+			drag.dx = dx;
+			area.style.transform = 'translateX(' + eff + 'px)';
+			area.style.opacity = String(1 - Math.min(0.35, Math.abs(eff) / w));
+		}
+
+		function settle(animate) {
+			area.classList.remove('mushaf-swiping');
+			area.style.transform = '';
+			area.style.opacity = '';
+			if (!animate) return;
+			area.classList.add('mushaf-swipe-out');
+			window.setTimeout(function () { area.classList.remove('mushaf-swipe-out'); }, 220);
+		}
+
+		// Slide the page out in the direction of travel, then load the target.
+		// dir < 0 moves left (next page), dir > 0 moves right (previous).
+		function turn(url, dir) {
+			suppressClick = true;
+			window.setTimeout(function () { suppressClick = false; }, 700);
+			if (reduced) { window.location.href = url; return; }
+			var w = area.clientWidth || window.innerWidth;
+			area.classList.remove('mushaf-swiping');
+			area.classList.add('mushaf-swipe-out');
+			void area.offsetWidth;
+			area.style.transform = 'translateX(' + (dir < 0 ? -w * 0.5 : w * 0.5) + 'px)';
+			area.style.opacity = '0.2';
+			window.setTimeout(function () { window.location.href = url; }, 160);
+		}
+
+		function onPointerUp(e) {
+			if (!drag || e.pointerId !== drag.id) return;
+			var d = drag;
+			drag = null;
+			if (d.axis !== 1) { settle(false); return; }
+
+			var w = area.clientWidth || window.innerWidth;
+			var far = Math.abs(d.dx) > Math.min(120, w * 0.25);
+			var fast = Math.abs(d.vx) > 0.35 && ((d.vx < 0) === (d.dx < 0));
+			if (!far && !fast) { settle(true); return; }
+
+			turn(d.dx < 0 ? nextUrl : prevUrl, d.dx < 0 ? -1 : 1);
+		}
+
+		function onPointerCancel(e) {
+			if (!drag || e.pointerId !== drag.id) return;
+			drag = null;
+			settle(true);
+		}
+
+		// Start anywhere except the controls/links, so a swipe on the header
+		// background, the overview, the table or the line layout all work.
+		document.addEventListener('pointerdown', onPointerDown);
+		window.addEventListener('pointermove', onPointerMove, { passive: false });
+		window.addEventListener('pointerup', onPointerUp);
+		window.addEventListener('pointercancel', onPointerCancel);
+
+		// Arrow keys turn the page the way the on-screen header arrows read:
+		// left is previous, right is next. Skip modifiers and typing targets,
+		// and let an open verse modal keep its own keys.
+		document.addEventListener('keydown', function (e) {
+			if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+			if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+			if (drag || modalOpen()) return;
+			var t = e.target;
+			if (t && t.closest && t.closest(
+				'input, textarea, select, [contenteditable=""], [contenteditable="true"]')) return;
+			e.preventDefault();
+			if (e.key === 'ArrowLeft') turn(prevUrl, 1);
+			else turn(nextUrl, -1);
+		});
+
+		// A committed swipe would otherwise also fire the click handler on a
+		// verse segment (opening the modal) just before the next page loads.
+		document.addEventListener('click', function (e) {
+			if (!suppressClick) return;
+			suppressClick = false;
+			e.preventDefault();
+			e.stopPropagation();
+		}, true);
+
+		window.addEventListener('pageshow', function () {
+			drag = null;
+			suppressClick = false;
+			settle(false);
+		});
+	})();
 
 	// Shared between the table's tajweed toggle and the line layout, so both
 	// views always agree on whether the colored font is on.

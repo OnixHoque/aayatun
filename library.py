@@ -1018,6 +1018,28 @@ def _mushaf_lines():
 # marker). One match per verse, always at the end of a segment.
 _AYAH_END = re.compile(r'([٠-٩]+)$')
 
+# AI-written orientation for each printed Madani page, generated offline
+# (see AGENTS.md). Static data, so a small query per page view is enough;
+# pages without a row simply hide the overview accordion.
+PAGE_OVERVIEWS_DB = 'db/page_overviews.db'
+
+
+@lru_cache(maxsize=128)
+def get_page_overview(page):
+	if not (1 <= page <= 604) or not os.path.exists(PAGE_OVERVIEWS_DB):
+		return None
+	try:
+		conn = get_db_connection(PAGE_OVERVIEWS_DB)
+		row = conn.execute(
+			'SELECT context, summary FROM page_overviews WHERE page = ?',
+			(page,)).fetchone()
+		conn.close()
+	except sqlite3.Error:
+		return None
+	if not row or not row['context'] or not row['summary']:
+		return None
+	return {'context': row['context'], 'summary': row['summary']}
+
 @lru_cache(maxsize=16)
 def get_mushaf_lines(page):
 	"""Typed layout lines for one Madani page (1-604).

@@ -275,13 +275,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 
+	// Half the time jump to a random printed page, the rest to the start of a
+	// random ruku's verse detail (the historical behaviour).
+	function surpriseTarget()
+	{
+		var base_url = window.location.origin;
+		if (Math.random() < 0.5) {
+			return base_url + '/page/' + (Math.floor(Math.random() * 604) + 1);
+		}
+		return base_url + '/' + {{ rand_surah[0] }} + '/' + {{ rand_surah[1] }};
+	}
+
 	$('#btnSurprise').click(function()
 	{
-		var s = {{ rand_surah[0] }};
-		var v = {{ rand_surah[1] }};
-		// alert("" + {{ rand_surah[0] }} + {{ rand_surah[1] }} + "")
-		var base_url = window.location.origin;
-		window.location.href = base_url + '/' + s + '/' + v;
+		window.location.href = surpriseTarget();
 	})
 
 	function isJumpToPage()
