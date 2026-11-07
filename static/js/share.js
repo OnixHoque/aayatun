@@ -1,40 +1,38 @@
 /*
- * Native sharing for Aayatun's reading views.
+ * Sharing for Aayatun's reading views.
  *
  * One module builds the social-media text for every view (verse, whole surah,
  * printed mushaf page), calls the Web Share API when available, and falls back
- * to copying the formatted text. It also attaches a PNG of what is on screen:
- * the page's content column is captured with html2canvas (loaded on demand),
- * cropped to the visible viewport, and composed on a themed card with
- * "aayatun.com" and the full URL in a small band at the bottom.
+ * to copying the formatted text.
  *
- * Nothing is captured outside the viewport, so the image always matches what
- * the reader is looking at, and it stays small enough for a share sheet.
+ * The verse page, the arabic surah view and the mushaf page also get a PNG
+ * card, drawn on a canvas instead of screenshotted: the reference in
+ * Merriweather at the top, the plain Uthmani Arabic (never the tajweed/QCF
+ * glyphs), the translation on the verse page only, and the site name plus the
+ * full URL in a small band at the bottom. No buttons, legends or credits, and
+ * nothing depends on what happens to be scrolled into view.
  *
- * The image is prepared ahead of the tap: Safari requires navigator.share() to
- * run inside the user gesture, so waiting for html2canvas after the click
- * would lose the activation. It is rebuilt after scrolling stops, on resize
- * and after the surah tables repaginate. When file sharing is unavailable
- * (most desktop browsers) the PNG is saved and the text copied instead.
+ * Drawing is synchronous, so the file can be produced inside the tap: Safari
+ * requires navigator.share() to run within the user gesture, and a canvas
+ * costs a few milliseconds where html2canvas cost a few hundred. Where the
+ * browser cannot attach files, the text is shared (or copied) instead.
+ *
+ * Translation and tafsir views are text-only.
  */
 (function () {
 	'use strict';
 
 	var HASHTAG = '#aayatun';
-	var H2C_CDN = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
-	var SCALE = 2;
-	var BAND = 64;           // CSS px of branding band
-	var PAD = 20;            // CSS px of card padding
-	var CACHE_MAX = 2;
+	var SCALE = 2;            // output pixels per CSS pixel
+	var CARD_W = 420;         // CSS px wide card
+	var PAD = 20;             // CSS px card padding
+	var BAND = 64;            // CSS px of branding band
+	var MIN_BODY = 220;       // keep very short verses from making a strip
 
-	var cache = {};          // key -> Promise<{file, shot}|null>
-	var cacheOrder = [];
-	var ready = {};          // key -> {file, shot}
-	var h2cPromise = null;
-	var verseTimer = null;
-	var scrollTimer = null;
-	var activePayload = null;
-	var allPayloads = [];
+	var TITLE = { font: '700 24px Merriweather, Georgia, serif', size: 24, line: 1.3 };
+	var SUB = { font: "400 13px 'Open Sans', system-ui, sans-serif", size: 13, line: 1.5 };
+	var ARABIC = { font: "700 30px Scheherazade, serif", size: 30, line: 1.75 };
+	var TRANS = { font: "400 15px 'Open Sans', system-ui, sans-serif", size: 15, line: 1.55 };
 
 	var VIEW_LABEL = {
 		arabic: 'Arabic text with translation',
@@ -53,8 +51,7 @@
 	function isDark() {
 		return document.documentElement.classList.contains('dark-theme');
 	}
-	function origin() { return window.location.origin; }
-	function pageUrl(path) { return new URL(path, origin()).href; }
+	function pageUrl(path) { return new URL(path, window.location.origin).href; }
 
 	function verseText(o) {
 		return shortName(o.name) + ' ' + o.surah + ':' + o.verse + '\n\n' +
@@ -74,17 +71,24 @@
 			'\n\nRead on Aayatun: ' + o.url + '\n' + HASHTAG;
 	}
 
+	/* ------------------------------------------------------------- payloads */
+
 	function versePayload(v) {
 		var url = pageUrl('/' + v.surah + '/' + v.verse);
 		return {
 			kind: 'verse',
+			card: 'verse',
 			ref: 'ayah-' + v.surah + '-' + v.verse,
 			title: 'Aayatun — ' + shortName(v.name) + ' ' + v.surah + ':' + v.verse,
 			text: verseText({
 				name: v.name, surah: v.surah, verse: v.verse,
 				translation: v.translation, url: url
 			}),
-			url: url
+			url: url,
+			surah: v.surah, verse: v.verse, name: v.name,
+			// Plain Uthmani text: with tajweed on, the h1 holds QCF codepoints.
+			ayah: v.ayah || '',
+			translation: v.translation || ''
 		};
 	}
 
@@ -102,11 +106,18 @@
 			payload.text = surahText({
 				name: d.name, surah: d.surah, view: d.view, url: payload.url
 			});
+			payload.surah = d.surah;
+			payload.name = d.name;
+			// Only the arabic view has a verse to put on a card.
+			if (d.view === 'arabic') payload.card = 'arabic';
 		} else if (kind === 'page') {
 			payload.title = 'Aayatun — Mushaf page ' + d.page;
 			payload.text = pageText({
 				page: d.page, range: d.range, url: payload.url
 			});
+			payload.page = d.page;
+			payload.range = d.range || '';
+			payload.card = 'page';
 		} else if (kind === 'verse') {
 			payload.title = d.shareTitle || 'Aayatun';
 			payload.text = d.shareText || '';
@@ -117,7 +128,7 @@
 		return payload;
 	}
 
-	/* --------------------------------------------------------------- files */
+	/* ---------------------------------------------------------------- files */
 
 	function canShareFiles() {
 		try {
@@ -132,209 +143,177 @@
 		}
 	}
 
-	function isIOSSafari() {
-		var ua = navigator.userAgent || '';
-		if (/iPad|iPhone|iPod/.test(ua)) return true;
-		return navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
-	}
-
-	function loadHtml2Canvas() {
-		if (window.html2canvas) return Promise.resolve(window.html2canvas);
-		if (h2cPromise) return h2cPromise;
-		h2cPromise = new Promise(function (resolve, reject) {
-			var s = document.createElement('script');
-			s.src = H2C_CDN;
-			s.async = true;
-			s.onload = function () {
-				if (window.html2canvas) resolve(window.html2canvas);
-				else reject(new Error('html2canvas missing'));
-			};
-			s.onerror = function () { reject(new Error('html2canvas failed')); };
-			document.head.appendChild(s);
-		});
-		return h2cPromise;
-	}
-
-	function fontsReady() {
-		if (document.fonts && document.fonts.ready) {
-			return document.fonts.ready.catch(noop);
+	// The card is drawn on a canvas, so the webfonts must already be in the
+	// document's font set or the text silently falls back. With tajweed
+	// persisted ON the plain Arabic is never painted, so Scheherazade may not
+	// have been fetched at all — ask for all three faces once at load.
+	function warmFonts() {
+		if (!document.fonts || !document.fonts.load) return;
+		var faces = [TITLE.font, ARABIC.font, TRANS.font];
+		for (var i = 0; i < faces.length; i++) {
+			try { document.fonts.load(faces[i]).catch(noop); } catch (e) {}
 		}
-		return Promise.resolve();
 	}
 
-	function delay(ms) {
-		return new Promise(function (resolve) { window.setTimeout(resolve, ms); });
+	/* ----------------------------------------------------------- the card */
+
+	// The first verse of the current view: the mushaf table's first row, or
+	// the arabic surah view's first .mushaf-ayah. The plain span is always in
+	// the DOM (even with the coloured font on, and in the line layout).
+	function firstVerseText() {
+		var el = document.querySelector('#mushaf-page-table .mushaf-row .mushaf-plain') ||
+			document.querySelector('.mushaf-ayah .mushaf-plain');
+		return el ? (el.textContent || '').trim() : '';
 	}
 
-	/* --------------------------------------------------------- the snapshot */
+	function cardFor(payload) {
+		if (!payload || !payload.card) return null;
+		var card = { url: payload.url, ref: payload.ref };
 
-	function snapshot() {
-		return {
-			x: window.scrollX,
-			y: window.scrollY,
-			w: window.innerWidth,
-			h: window.innerHeight
-		};
+		if (payload.card === 'verse') {
+			card.title = shortName(payload.name) + ' ' +
+				payload.surah + ':' + payload.verse;
+			card.arabic = payload.ayah;
+			card.translation = payload.translation;
+		} else if (payload.card === 'arabic') {
+			card.title = shortName(payload.name) + ' (' + payload.surah + ')';
+			card.arabic = firstVerseText();
+		} else if (payload.card === 'page') {
+			card.title = 'Madani mushaf page ' + payload.page;
+			card.subtitle = payload.range || '';
+			card.arabic = firstVerseText();
+		} else {
+			return null;
+		}
+
+		if (!card.arabic) return null;
+		return card;
 	}
 
-	// The whole page lives in base.html's .ui.text.container. Capture that
-	// column, cropped to the part the reader can actually see.
-	function pageRoot() {
-		return document.querySelector('.ui.text.container') ||
-			document.querySelector('.comprehensive-div') ||
-			document.body;
-	}
-
-	function capture() {
-		var el = pageRoot();
-		if (!el || el.getClientRects().length === 0) return Promise.resolve(null);
-
-		var r = el.getBoundingClientRect();
-		var top = Math.max(0, r.top);
-		var bottom = Math.min(window.innerHeight, r.bottom);
-		var left = Math.max(0, r.left);
-		var right = Math.min(window.innerWidth, r.right);
-		var width = right - left;
-		var height = bottom - top;
-		if (width < 4 || height < 4) return Promise.resolve(null);
-
-		return loadHtml2Canvas().then(function (h2c) {
-			return h2c(el, {
-				scale: SCALE,
-				backgroundColor: isDark() ? '#1b1c1d' : '#ffffff',
-				useCORS: true,
-				logging: false,
-				x: left - r.left,
-				y: top - r.top,
-				width: width,
-				height: height,
-				windowWidth: window.innerWidth,
-				windowHeight: window.innerHeight,
-				scrollX: 0,
-				scrollY: 0
-			});
-		});
-	}
-
-	/* ------------------------------------------------------------- compose */
-
-	function compose(canvas, payload) {
-		return new Promise(function (resolve) {
-			var pad = PAD * SCALE;
-			var band = BAND * SCALE;
-			var w = canvas.width + pad * 2;
-			var h = canvas.height + pad * 2 + band;
-			var out = document.createElement('canvas');
-			out.width = w;
-			out.height = h;
-			var ctx = out.getContext('2d');
-			var dark = isDark();
-
-			ctx.fillStyle = dark ? '#1b1c1d' : '#ffffff';
-			ctx.fillRect(0, 0, w, h);
-			ctx.drawImage(canvas, pad, pad);
-
-			// Brand band: the site name, then the full page URL under it.
-			ctx.fillStyle = dark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.045)';
-			ctx.fillRect(0, h - band, w, band);
-			ctx.textAlign = 'center';
-			ctx.textBaseline = 'middle';
-
-			ctx.fillStyle = dark ? 'rgba(255,255,255,.86)' : 'rgba(0,0,0,.72)';
-			ctx.font = '600 ' + (14 * SCALE) + "px 'Open Sans', system-ui, sans-serif";
-			ctx.fillText('aayatun.com', w / 2, h - band + band * 0.36);
-
-			var label = String(payload.url || '');
-			var size = 10.5 * SCALE;
-			var maxW = w - pad * 2;
-			ctx.fillStyle = dark ? 'rgba(255,255,255,.58)' : 'rgba(0,0,0,.46)';
-			ctx.font = '400 ' + size + "px 'Open Sans', system-ui, sans-serif";
-			while (label && ctx.measureText(label).width > maxW && size > 8 * SCALE) {
-				size -= SCALE * 0.5;
-				ctx.font = '400 ' + size + "px 'Open Sans', system-ui, sans-serif";
-			}
-			ctx.fillText(label, w / 2, h - band + band * 0.72);
-
-			out.toBlob(function (blob) {
-				if (!blob) { resolve(null); return; }
-				resolve(new File([blob], 'aayatun-' + (payload.ref || 'share') + '.png',
-					{ type: 'image/png' }));
-			}, 'image/png');
-		});
-	}
-
-	/* --------------------------------------------------------------- cache */
-
-	function cacheKey(payload) {
-		return payload.kind + '|' + payload.ref + '|' + (isDark() ? 'd' : 'l');
-	}
-
-	function cachePut(key, promise) {
-		cache[key] = promise;
-		cacheOrder.push(key);
-		while (cacheOrder.length > CACHE_MAX) {
-			var old = cacheOrder.shift();
-			if (old !== key) {
-				delete cache[old];
-				delete ready[old];
+	// Greedy word wrap. Arabic words are space-separated too, and measureText
+	// respects the current ctx.direction, so one helper covers both scripts.
+	function wrap(ctx, text, maxW) {
+		var clean = String(text || '').replace(/\s+/g, ' ').trim();
+		if (!clean) return [];
+		var words = clean.split(' ');
+		var lines = [];
+		var line = '';
+		for (var i = 0; i < words.length; i++) {
+			var next = line ? line + ' ' + words[i] : words[i];
+			if (!line || ctx.measureText(next).width <= maxW) {
+				line = next;
+			} else {
+				lines.push(line);
+				line = words[i];
 			}
 		}
-		promise.then(function (entry) {
-			if (entry && entry.file) ready[key] = entry;
-		});
+		if (line) lines.push(line);
+		return lines;
 	}
 
-	function isStale(key) {
-		var entry = ready[key];
-		if (!entry || !entry.shot) return true;
-		var s = entry.shot;
-		return s.x !== window.scrollX || s.y !== window.scrollY ||
-			s.w !== window.innerWidth || s.h !== window.innerHeight;
+	function linesFor(ctx, text, spec, maxW, rtl) {
+		ctx.direction = rtl ? 'rtl' : 'ltr';
+		ctx.font = spec.font;
+		var lines = wrap(ctx, text, maxW);
+		ctx.direction = 'ltr';
+		return lines;
 	}
 
-	function prepare(payload) {
-		if (!payload) return Promise.resolve(null);
-		var key = cacheKey(payload);
-		if (!cache[key]) {
-			var shot = snapshot();
-			var promise = fontsReady().then(function () {
-				// Let DataTables finish repaginating and the page settle.
-				return delay(350);
-			}).then(function () {
-				shot = snapshot();
-				return capture();
-			}).then(function (canvas) {
-				if (!canvas) return null;
-				return compose(canvas, payload);
-			}).then(function (file) {
-				return file ? { file: file, shot: shot } : null;
-			}).catch(function () {
-				return null;
-			});
-			cachePut(key, promise);
+	function drawCard(card) {
+		var maxW = CARD_W - PAD * 2;
+		var dark = isDark();
+
+		// Measure first (off-screen), then size the real canvas.
+		var meter = document.createElement('canvas').getContext('2d');
+		var titleLines = linesFor(meter, card.title, TITLE, maxW, false);
+		var subLines = card.subtitle
+			? linesFor(meter, card.subtitle, SUB, maxW, false) : [];
+		var arabicLines = linesFor(meter, card.arabic, ARABIC, maxW, true);
+		var transLines = card.translation
+			? linesFor(meter, card.translation, TRANS, maxW, false) : [];
+
+		var titleH = titleLines.length * TITLE.size * TITLE.line;
+		var subH = subLines.length * SUB.size * SUB.line;
+		var arabicH = arabicLines.length * ARABIC.size * ARABIC.line;
+		var transH = transLines.length * TRANS.size * TRANS.line;
+
+		var bodyH = titleH +
+			(subLines.length ? subH + 4 : 0) + 18 +
+			arabicH +
+			(transLines.length ? 20 + transH : 0);
+		var bodyTop = PAD + Math.max(0, (MIN_BODY - bodyH) / 2);
+		var cardH = Math.max(MIN_BODY, bodyH) + PAD * 2 + BAND;
+
+		var out = document.createElement('canvas');
+		out.width = Math.round(CARD_W * SCALE);
+		out.height = Math.round(cardH * SCALE);
+		var ctx = out.getContext('2d');
+		ctx.scale(SCALE, SCALE);
+
+		ctx.fillStyle = dark ? '#1b1c1d' : '#ffffff';
+		ctx.fillRect(0, 0, CARD_W, cardH);
+
+		ctx.textAlign = 'center';
+		ctx.textBaseline = 'middle';
+
+		function block(lines, spec, color, y, rtl) {
+			ctx.font = spec.font;
+			ctx.fillStyle = color;
+			ctx.direction = rtl ? 'rtl' : 'ltr';
+			var lh = spec.size * spec.line;
+			for (var i = 0; i < lines.length; i++) {
+				ctx.fillText(lines[i], CARD_W / 2, y + lh * (i + 0.5));
+			}
+			ctx.direction = 'ltr';
+			return y + lh * lines.length;
 		}
-		return cache[key].then(function (entry) {
-			return entry ? entry.file : null;
-		});
-	}
 
-	// Rebuild an image that no longer matches the viewport (scrolled, resized,
-	// table repaginated). Pending builds are left alone.
-	function refresh(payload) {
-		if (!payload) return;
-		var key = cacheKey(payload);
-		if (ready[key] && isStale(key)) {
-			delete cache[key];
-			delete ready[key];
+		var y = bodyTop;
+		y = block(titleLines, TITLE, dark ? '#9CC4FF' : '#4183C4', y, false);
+		if (subLines.length) {
+			y = block(subLines, SUB,
+				dark ? 'rgba(255,255,255,.5)' : 'rgba(0,0,0,.45)', y + 4, false) + 4;
 		}
-		prepare(payload).catch(noop);
+		y = block(arabicLines, ARABIC,
+			dark ? 'rgba(255,255,255,.92)' : 'rgba(0,0,0,.87)', y + 18, true);
+		if (transLines.length) {
+			block(transLines, TRANS,
+				dark ? 'rgba(255,255,255,.78)' : 'rgba(0,0,0,.72)', y + 20, false);
+		}
+
+		/* Brand band: the site name, then the full page URL under it. */
+		var bandTop = cardH - BAND;
+		ctx.fillStyle = dark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.045)';
+		ctx.fillRect(0, bandTop, CARD_W, BAND);
+
+		ctx.fillStyle = dark ? 'rgba(255,255,255,.86)' : 'rgba(0,0,0,.72)';
+		ctx.font = "600 14px 'Open Sans', system-ui, sans-serif";
+		ctx.fillText('aayatun.com', CARD_W / 2, bandTop + BAND * 0.36);
+
+		var label = String(card.url || '');
+		var size = 10.5;
+		var bandMax = CARD_W - PAD * 2;
+		ctx.fillStyle = dark ? 'rgba(255,255,255,.58)' : 'rgba(0,0,0,.46)';
+		ctx.font = "400 " + size + "px 'Open Sans', system-ui, sans-serif";
+		while (label && ctx.measureText(label).width > bandMax && size > 8) {
+			size -= 0.5;
+			ctx.font = "400 " + size + "px 'Open Sans', system-ui, sans-serif";
+		}
+		ctx.fillText(label, CARD_W / 2, bandTop + BAND * 0.72);
+
+		return out;
 	}
 
-	function scheduleWarm() {
-		if (scrollTimer) window.clearTimeout(scrollTimer);
-		scrollTimer = window.setTimeout(function () {
-			refresh(activePayload);
-		}, 450);
+	// canvas -> File without toBlob, so the whole share stays synchronous and
+	// inside the tap (Safari drops the user activation across an await).
+	function toFile(canvas, payload) {
+		var href = canvas.toDataURL('image/png');
+		var bin = atob(href.slice(href.indexOf(',') + 1));
+		var bytes = new Uint8Array(bin.length);
+		for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+		return new File([bytes],
+			'aayatun-' + (payload.ref || 'share') + '.png',
+			{ type: 'image/png' });
 	}
 
 	/* ------------------------------------------------------------- sharing */
@@ -358,79 +337,50 @@
 		return Promise.resolve();
 	}
 
-	// Desktop browsers usually cannot attach files to the share sheet, so the
-	// PNG is saved next to the copied text instead of being silently dropped.
-	function saveImage(file, payload) {
-		if (!file) return;
+	function textShare(payload, btn) {
+		if (!navigator.share) return copyText(payload.text, btn);
+		var attempt;
 		try {
-			var url = URL.createObjectURL(file);
-			var a = document.createElement('a');
-			a.href = url;
-			a.download = file.name || ('aayatun-' + (payload.ref || 'share') + '.png');
-			document.body.appendChild(a);
-			a.click();
-			document.body.removeChild(a);
-			window.setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
-		} catch (e) {}
-	}
-
-	function fallbackShare(err, payload, btn) {
-		if (err && err.name === 'AbortError') return Promise.resolve();
-		// A failed share gets one text-only attempt, then the clipboard.
-		if (navigator.share) {
-			return navigator.share({ title: payload.title, text: payload.text })
-				.catch(function (err2) {
-					if (err2 && err2.name === 'AbortError') return;
-					return copyText(payload.text, btn);
-				});
+			attempt = navigator.share({ title: payload.title, text: payload.text });
+		} catch (e) {
+			return copyText(payload.text, btn);
 		}
-		return copyText(payload.text, btn);
+		return Promise.resolve(attempt).catch(function (err) {
+			if (err && err.name === 'AbortError') return;
+			return copyText(payload.text, btn);
+		});
 	}
 
-	function shareWithFile(payload, file, btn) {
-		return navigator.share({ title: payload.title, text: payload.text, files: [file] })
-			.catch(function (err) { return fallbackShare(err, payload, btn); });
+	function shareCard(payload, card, btn) {
+		var file = null;
+		if (canShareFiles()) {
+			try {
+				file = toFile(drawCard(card), payload);
+			} catch (e) {
+				file = null;
+			}
+		}
+		if (!file || !navigator.canShare({ files: [file] })) {
+			return textShare(payload, btn);
+		}
+		var attempt;
+		try {
+			attempt = navigator.share({
+				title: payload.title, text: payload.text, files: [file]
+			});
+		} catch (e) {
+			return textShare(payload, btn);
+		}
+		return Promise.resolve(attempt).catch(function (err) {
+			if (err && err.name === 'AbortError') return;
+			return textShare(payload, btn);
+		});
 	}
 
 	function share(payload, btn) {
 		if (!payload) return Promise.resolve();
-		var key = cacheKey(payload);
-		var entry = ready[key];
-		var filesOK = canShareFiles();
-
-		// Fast path: a current image is ready, stay inside the tap (Safari).
-		if (filesOK && entry && !isStale(key) && navigator.canShare({ files: [entry.file] })) {
-			return shareWithFile(payload, entry.file, btn);
-		}
-
-		if (filesOK) {
-			// iOS loses the user activation across an await, so use whatever
-			// was warmed (even if the reader scrolled) instead of text.
-			if (isIOSSafari() && entry && navigator.canShare({ files: [entry.file] })) {
-				prepare(payload).catch(noop);
-				return shareWithFile(payload, entry.file, btn);
-			}
-			if (btn) btn.classList.add('loading');
-			return prepare(payload).then(function (file) {
-				if (btn) btn.classList.remove('loading');
-				if (file && navigator.canShare({ files: [file] })) {
-					return shareWithFile(payload, file, btn);
-				}
-				return fallbackShare(null, payload, btn);
-			}, function () {
-				if (btn) btn.classList.remove('loading');
-				return fallbackShare(null, payload, btn);
-			});
-		}
-
-		// No file sharing: save the PNG and copy the text, so the image is
-		// still produced on every page.
-		return prepare(payload).then(function (file) {
-			saveImage(file, payload);
-			return copyText(payload.text, btn);
-		}, function () {
-			return copyText(payload.text, btn);
-		});
+		var card = cardFor(payload);
+		return card ? shareCard(payload, card, btn) : textShare(payload, btn);
 	}
 
 	function fromButton(btn) {
@@ -438,54 +388,22 @@
 	}
 
 	function shareVerse(v) {
-		var payload = versePayload(v);
-		activePayload = payload;
-		return share(payload, byId('share-btn'));
-	}
-
-	function registerVerse(v) {
-		var payload = versePayload(v);
-		activePayload = payload;
-		// The carousel applies verses quickly; debounce so a fast swipe does
-		// not start several html2canvas runs. Keep older entries in the LRU
-		// instead of wiping them, so a tap right after a swipe has an image.
-		if (verseTimer) window.clearTimeout(verseTimer);
-		verseTimer = window.setTimeout(function () {
-			prepare(payload).catch(noop);
-		}, 350);
+		return share(versePayload(v), byId('share-btn'));
 	}
 
 	/* ---------------------------------------------------------------- init */
 
-	document.addEventListener('DOMContentLoaded', function () {
-		var buttons = document.querySelectorAll('.aayatun-share-btn');
-		for (var i = 0; i < buttons.length; i++) {
-			var payload = payloadFromButton(buttons[i]);
-			if (payload) allPayloads.push(payload);
-		}
-		if (allPayloads.length) activePayload = allPayloads[0];
-		// Warm after the page has painted (DataTables paginates in a timeout).
-		window.setTimeout(function () {
-			refresh(allPayloads[0]);
-			loadHtml2Canvas().catch(noop);
-		}, 900);
-
-		// The image is viewport-sized, so keep it in step with scrolling and
-		// rotation. Debounced: a capture of a long surah table is not cheap.
-		window.addEventListener('scroll', scheduleWarm, { passive: true });
-		window.addEventListener('resize', scheduleWarm);
-		window.addEventListener('orientationchange', scheduleWarm);
-
-		if (window.jQuery) {
-			window.jQuery(document).on('draw.dt', scheduleWarm);
-		}
-	});
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', warmFonts);
+	} else {
+		warmFonts();
+	}
 
 	window.AayatunShare = {
 		fromButton: fromButton,
 		shareVerse: shareVerse,
-		registerVerse: registerVerse,
-		prepare: prepare,
-		payloadFromButton: payloadFromButton
+		payloadFromButton: payloadFromButton,
+		cardFor: cardFor,
+		drawCard: drawCard
 	};
 })();

@@ -596,14 +596,6 @@
 		window.scrollTo(0, 0);
 		syncHeight();
 		if (window.requestAnimationFrame) requestAnimationFrame(syncHeight);
-
-		// Warm the share image for this verse (only where file sharing works).
-		if (window.AayatunShare) {
-			window.AayatunShare.registerVerse({
-				surah: d.surah, verse: d.verse,
-				name: state.surahName, translation: state.translation
-			});
-		}
 	}
 
 	// Make sure the current and neighbouring surahs have payloads, then
@@ -955,6 +947,7 @@
 				surah: state.surah,
 				verse: state.verse,
 				name: state.surahName,
+				ayah: state.ayah,
 				translation: state.translation
 			});
 			return;
@@ -1019,13 +1012,6 @@
 		// Remember the verse first painted from the server response, so a
 		// later refresh with no connection still has its Arabic + translation.
 		offlinePut(state.data);
-
-		if (window.AayatunShare) {
-			window.AayatunShare.registerVerse({
-				surah: state.surah, verse: state.verse,
-				name: state.surahName, translation: state.translation
-			});
-		}
 
 		audioSources = audioUrl(state.surah, state.verse);
 
