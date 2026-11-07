@@ -147,9 +147,6 @@
     </form>
   </div>
 </div>
-<button id="search-btn" style="position: fixed; background: white; box-shadow: all; bottom: 15px; right: 15px; opacity: 0.7; z-index: 3" class="circular ui basic huge icon button" onclick="$('#searchwindow').modal('show');">
-  <i class="icon search"></i>
-</button>
 <div class="ui basic segment" style="padding: 0 !important; margin: 0 !important;">
 
   <div class="ui text container">
@@ -163,6 +160,15 @@
 
 </div>
 {% block end_ %} {% endblock end_ %}
+
+<!-- Floating search button: last in <body> so no content wrapper, flex box
+     or transformed ancestor can trap it, and its own compositing layer keeps
+     iOS from moving it during momentum scrolling. -->
+<button id="search-btn" type="button" aria-label="Search the Quran"
+  style="position: fixed !important; background: white; bottom: calc(15px + env(safe-area-inset-bottom, 0px)); right: 15px; opacity: .7; z-index: 1500; transform: translateZ(0); -webkit-transform: translateZ(0); will-change: transform; touch-action: manipulation"
+  class="circular ui basic huge icon button" onclick="$('#searchwindow').modal('show');">
+  <i class="icon search"></i>
+</button>
 
 
 
