@@ -366,10 +366,14 @@ body.mushaf-page-body {
 .mushaf-page.mushaf-swiping {
 	user-select: none;
 	-webkit-user-select: none;
+	/* Promote the page to its own layer only while a horizontal drag is in
+	   progress, so the per-frame transform does not repaint the long table. */
+	will-change: transform;
+	backface-visibility: hidden;
 }
 
 .mushaf-page.mushaf-swipe-out {
-	transition: transform .18s ease-out, opacity .18s ease-out;
+	transition: transform .12s ease-out, opacity .12s ease-out;
 }
 
 /* Page overview: two short labelled paragraphs inside the collapsed

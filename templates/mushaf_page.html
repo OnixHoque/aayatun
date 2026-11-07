@@ -53,7 +53,7 @@
 			<i class="icon align justify" aria-hidden="true"></i>
 		</button>
 		{{ share_button('page', url_for('mushaf_page', page_no=page_no, _external=True),
-			ref='page-' ~ page_no, targets='#mushaf-page-table|#mushaf-layout',
+			ref='page-' ~ page_no,
 			title='Madani mushaf page ' ~ page_no, page=page_no, range=page_range) }}
 	</div>
 	<p id="qcf-credit" class="qcf-credit" style="display: none;">Colored mushaf font &copy; <a href="https://qurancomplex.gov.sa/" target="_blank">King Fahd Complex</a> &middot; packaged by <a href="https://quran.com" target="_blank">quran.com</a></p>
@@ -146,6 +146,9 @@
 		var nextUrl = {{ url_for('mushaf_page', page_no=nxt)|tojson }};
 		var drag = null;
 		var suppressClick = false;
+		var pageW = 0;
+		var raf = 0;
+		var pendingX = 0;
 		var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 		function interactive(target) {
@@ -168,6 +171,9 @@
 			if (drag || modalOpen()) return;
 			if (e.pointerType === 'mouse' && e.button !== 0) return;
 			if (interactive(e.target)) return;
+			// Reading clientWidth here, once, avoids a forced layout on every
+			// pointermove (the page is a very long table).
+			pageW = area.clientWidth || window.innerWidth;
 			drag = {
 				id: e.pointerId,
 				x: e.clientX,
@@ -209,35 +215,63 @@
 				drag.lastT = now;
 			}
 
-			var w = area.clientWidth || window.innerWidth;
-			var eff = Math.max(-w * 0.4, Math.min(w * 0.4, dx * 0.5));
 			drag.dx = dx;
-			area.style.transform = 'translateX(' + eff + 'px)';
-			area.style.opacity = String(1 - Math.min(0.35, Math.abs(eff) / w));
+			// Follow the finger 1:1. The old 0.5 factor moved the page at half
+			// speed, which was most of the "laggy" feel. Only the last 15% is
+			// damped so the page cannot be dragged away entirely.
+			var limit = pageW * 0.85;
+			var eff = dx;
+			if (Math.abs(eff) > limit) {
+				eff = (eff < 0 ? -1 : 1) * (limit + (Math.abs(dx) - limit) * 0.25);
+			}
+			pendingX = eff;
+			// Coalesce transform writes into one frame; the page is a very
+			// long table and writing on every pointermove can outpace paint.
+			if (!raf) {
+				raf = window.requestAnimationFrame(function () {
+					raf = 0;
+					if (!drag || drag.axis !== 1) return;
+					area.style.transform = 'translate3d(' + pendingX + 'px,0,0)';
+				});
+			}
 		}
 
 		function settle(animate) {
+			if (raf) { window.cancelAnimationFrame(raf); raf = 0; }
 			area.classList.remove('mushaf-swiping');
-			area.style.transform = '';
-			area.style.opacity = '';
-			if (!animate) return;
+			if (!animate) {
+				area.style.transform = '';
+				return;
+			}
+			// Add the transition before clearing the offset so a rejected
+			// swipe eases back instead of snapping.
 			area.classList.add('mushaf-swipe-out');
-			window.setTimeout(function () { area.classList.remove('mushaf-swipe-out'); }, 220);
+			area.style.transform = '';
+			window.setTimeout(function () { area.classList.remove('mushaf-swipe-out'); }, 180);
 		}
 
 		// Slide the page out in the direction of travel, then load the target.
 		// dir < 0 moves left (next page), dir > 0 moves right (previous).
 		function turn(url, dir) {
 			suppressClick = true;
-			window.setTimeout(function () { suppressClick = false; }, 700);
-			if (reduced) { window.location.href = url; return; }
-			var w = area.clientWidth || window.innerWidth;
+			window.setTimeout(function () { suppressClick = false; }, 600);
+			if (reduced) {
+				if (window.showLoading) window.showLoading();
+				window.location.href = url;
+				return;
+			}
+			var w = pageW || area.clientWidth || window.innerWidth;
+			if (raf) { window.cancelAnimationFrame(raf); raf = 0; }
 			area.classList.remove('mushaf-swiping');
 			area.classList.add('mushaf-swipe-out');
 			void area.offsetWidth;
-			area.style.transform = 'translateX(' + (dir < 0 ? -w * 0.5 : w * 0.5) + 'px)';
-			area.style.opacity = '0.2';
-			window.setTimeout(function () { window.location.href = url; }, 160);
+			// Only half a page: the neighbour is prefetched, so the new page
+			// normally paints before the slide finishes and the reader never
+			// sees an empty body.
+			area.style.transform = 'translate3d(' + (dir < 0 ? -w * 0.45 : w * 0.45) + 'px,0,0)';
+			area.style.opacity = '0.35';
+			if (window.showLoading) window.showLoading();
+			window.setTimeout(function () { window.location.href = url; }, 110);
 		}
 
 		function onPointerUp(e) {
@@ -303,6 +337,34 @@
 			suppressClick = false;
 			settle(false);
 		});
+	})();
+
+	// Prefetch the two adjacent pages so a turn does not wait for the server.
+	// /page/<n> is cacheable for five minutes and the service worker stores
+	// it too, so the location.href in turn() becomes a cache hit.
+	(function () {
+		var prevPage = {{ prev }};
+		var nextPage = {{ nxt }};
+		var prevHref = {{ url_for('mushaf_page', page_no=prev)|tojson }};
+		var nextHref = {{ url_for('mushaf_page', page_no=nxt)|tojson }};
+
+		function warm(url) {
+			try { fetch(url, { credentials: 'same-origin' }).catch(function () {}); } catch (e) {}
+		}
+
+		function warmFont(page) {
+			if (!window.QcfFont || !QcfFont.isOn || !QcfFont.isOn()) return;
+			if (QcfFont.isLoaded(page)) return;
+			QcfFont.load(page).catch(function () {});
+		}
+
+		window.setTimeout(function () {
+			if (navigator.onLine === false) return;
+			warm(prevHref);
+			warm(nextHref);
+			warmFont(prevPage);
+			warmFont(nextPage);
+		}, 900);
 	})();
 
 	// Shared between the table's tajweed toggle and the line layout, so both

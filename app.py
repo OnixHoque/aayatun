@@ -274,11 +274,16 @@ def mushaf_page(page_no):
 		parts.append('%s %s' % (label, first) if first == last
 			else '%s %s-%s' % (label, first, last))
 	page_range = '; '.join(parts)
-	return render_template('mushaf_page.html', page_no=page_no,
+	resp = make_response(render_template('mushaf_page.html', page_no=page_no,
 		groups=data['groups'], surah_names=data['surah_names'],
 		lines=lib.get_mushaf_lines(page_no), page_range=page_range,
 		overview=lib.get_page_overview(page_no),
-		verse_count=data['count'], prev=data['prev'], nxt=data['next'])
+		verse_count=data['count'], prev=data['prev'], nxt=data['next']))
+	# The page is static and the swipe handler prefetches its two neighbours,
+	# so a short private cache makes the next/previous turn instant instead of
+	# waiting for another server round trip.
+	resp.headers['Cache-Control'] = 'private, max-age=300'
+	return resp
 
 @app.route("/prayer-time")
 def prayer_time():

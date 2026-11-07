@@ -11,7 +11,7 @@
 {% block options %}
 	<div class="mushaf-controls" style="display: flex; justify-content: flex-end; padding: 20px 0 8px; gap: 8px; flex-wrap: wrap;">
 		{{ share_button('surah', url_for('en_tafsir', surah=surah_no, _external=True),
-			ref='surah-' ~ surah_no ~ '-tafsir-en', targets='#cur_table',
+			ref='surah-' ~ surah_no ~ '-tafsir-en',
 			title='Surah ' ~ surah_name, surah=surah_no, name=surah_name, view='tafsir-en') }}
 	</div>
 {% endblock %}
