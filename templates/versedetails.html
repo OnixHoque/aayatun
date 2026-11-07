@@ -2,6 +2,11 @@
 
 {% block title %} {{ details['surah_name'] }} : Aayatun - An Ayah a Day {% endblock %}
 
+{% block og_type %}article{% endblock %}
+{% block og_title %}{{ details['surah_name'] }} {{ details['surah'] }}:{{ details['verse'] }} — Aayatun{% endblock %}
+{% block og_description %}{{ details['translation']|truncate(180) }}{% endblock %}
+{% block meta_description %}{{ details['translation']|truncate(160) }}{% endblock %}
+
 {% block head_extra %}
 <meta name="aayatun-read" content="verse|{{ details['surah'] }}:{{ details['verse'] }}|{{ details['surah'] }}:{{ details['verse'] }} &middot; {{ details['surah_name'] }}">
 {% endblock head_extra %}

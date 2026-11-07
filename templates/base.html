@@ -9,6 +9,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Aayatun">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <script>
     (function () {
       try {
@@ -44,16 +45,28 @@
   <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.6/dist/semantic.min.css">
   <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename= 'images/favicon.png') }}"/>
-  <link rel="apple-touch-icon" href="{{ url_for('static', filename= 'images/favicon.png') }}">
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename= 'images/apple-touch-icon.png') }}">
 
 
   <script defer src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.6/dist/semantic.min.js"></script>
   <script defer src="{{ url_for('static', filename='js/recent.js') }}"></script>
+  <script defer src="{{ url_for('static', filename='js/share.js') }}"></script>
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;700&family=Merriweather:wght@700&family=Amiri&family=Scheherazade:wght@700&family=Lora&family=Baloo+Da+2&display=swap" rel="stylesheet">
   {% block js %} {% endblock js %}
   {% block head_extra %} {% endblock head_extra %}
   <title>{% block title %} {% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}Read the Quran with translation, tafsir and the Madani mushaf on Aayatun.{% endblock %}">
+  <meta property="og:site_name" content="Aayatun">
+  <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+  <meta property="og:title" content="{% block og_title %}{{ self.title()|trim }}{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}Read the Quran with translation, tafsir and the Madani mushaf on Aayatun.{% endblock %}">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta property="og:image" content="{{ url_for('static', filename='images/icon-512.png', _external=True) }}">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="{{ self.og_title()|trim }}">
+  <meta name="twitter:description" content="{{ self.og_description()|trim }}">
+  <meta name="twitter:image" content="{{ url_for('static', filename='images/icon-512.png', _external=True) }}">
 </head>
 <body onload="hideLoading()" onbeforeunload="showLoading()">
   {% block start %} {% endblock start %}

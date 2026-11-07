@@ -1,6 +1,10 @@
 {% extends 'base.html' %}
+{% from 'partials/_share_macros.html' import share_button %}
 
 {% block title %}Page {{ page_no }} : Aayatun - An Ayah a Day{% endblock %}
+
+{% block og_title %}Madani mushaf page {{ page_no }} — {{ surah_names|join(', ') }}{% endblock %}
+{% block og_description %}{% if overview %}{{ overview.summary|truncate(180) }}{% else %}Page {{ page_no }} of the Madani mushaf, with the Arabic text and translation on Aayatun.{% endif %}{% endblock %}
 
 {% block head_extra %}
 <meta name="aayatun-read" content="page|{{ page_no }}|Page {{ page_no }} &middot; {{ surah_names|join(', ') }}">
@@ -48,6 +52,9 @@
 		<button id="layout-toggle-btn" type="button" title="Mushaf line layout" aria-label="Mushaf line layout" aria-pressed="false" data-tooltip="Mushaf line layout" class="circular ui basic toggle icon button" onclick="toggleMushafLayout()">
 			<i class="icon align justify" aria-hidden="true"></i>
 		</button>
+		{{ share_button('page', url_for('mushaf_page', page_no=page_no, _external=True),
+			ref='page-' ~ page_no, targets='#mushaf-page-table|#mushaf-layout',
+			title='Madani mushaf page ' ~ page_no, page=page_no, range=page_range) }}
 	</div>
 	<p id="qcf-credit" class="qcf-credit" style="display: none;">Colored mushaf font &copy; <a href="https://qurancomplex.gov.sa/" target="_blank">King Fahd Complex</a> &middot; packaged by <a href="https://quran.com" target="_blank">quran.com</a></p>
 

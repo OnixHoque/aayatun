@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aayatun-v36';
+const CACHE_NAME = 'aayatun-v37';
 
 const CORE_ASSETS = [
   '/',
@@ -6,11 +6,13 @@ const CORE_ASSETS = [
   '/static/offline.html',
   '/static/js/script.js',
   '/static/js/recent.js',
+  '/static/js/share.js',
   '/static/js/verse-nav.js',
   '/static/js/qcf-font.js',
   '/static/css/style.css',
   '/static/manifest.json',
   '/static/images/favicon.png',
+  '/static/images/apple-touch-icon.png',
   '/static/images/icon-192.png',
   '/static/images/icon-512.png',
 ];

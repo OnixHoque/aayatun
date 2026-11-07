@@ -400,12 +400,29 @@ document.addEventListener('DOMContentLoaded', function () {
 <div class="ui text container" style="font-family: 'Open Sans'; display: flex; flex: 0 0 auto; flex-direction: column-reverse;">
 		<p style="text-align: center; color: gray; opacity: 90%; padding-top: 2%; font-size: 70%;">Aayatun v1.8 | <a href="#" id="change-theme">Dark Theme</a> | <a href="{{ url_for('prayer_time') }}">Prayer Time</a> </p>
 		<div id="install-banner" class="ui mini message" style="display: none; color: gray">
-		    <i class="close icon"></i>
-		    <div class="header">
+		    <i class="close icon" id="install-close" role="button" aria-label="Dismiss" tabindex="0"></i>
+		    <div class="header" id="install-header">
 		    App Available
 		  </div>
-		    <p>Aayatun is better on App. <a id="install-btn"href="#">Install Now</a></p>
+		    <p><span id="install-text">Aayatun is better on App.</span> <a id="install-btn" href="#">Install Now</a></p>
 	    </div>
+		<div id="ios-install-modal" class="ui small modal">
+			<div class="header">Install Aayatun on iPhone</div>
+			<div class="content">
+				<p>Safari cannot install apps by itself. Add Aayatun to your Home Screen so it opens full screen in one tap:</p>
+				<ol class="ui list" style="padding-left: 1.2em;">
+					<li style="margin-bottom: 10px;">Tap the <strong>Share</strong> button
+						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -3px" aria-label="Share icon" role="img"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+						in Safari's toolbar.</li>
+					<li style="margin-bottom: 10px;">Scroll down and choose <strong>Add to Home Screen</strong>.</li>
+					<li>Tap <strong>Add</strong>, then open Aayatun from your Home Screen.</li>
+				</ol>
+				<p style="font-size: 85%; opacity: .75; margin-top: 12px;">If the Share menu has no Add to Home Screen option, open this page in Safari first.</p>
+			</div>
+			<div class="actions">
+				<button type="button" class="ui button" onclick="$('#ios-install-modal').modal('hide')">Got it</button>
+			</div>
+		</div>
 		<div id="suggestion" class="ui mini message" style="display: none; color: gray">
 			<i class="close icon"></i>
 		  <div class="header">
@@ -515,33 +532,82 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	}
 
-	let deferredPrompt;
-    const addBanner = document.querySelector('#install-banner');
-    const addBtn = document.querySelector('#install-btn');
-    addBanner.style.display = 'none';
+	/* ---------------------------------------------------------- PWA install */
+	// Android/desktop: Chromium fires beforeinstallprompt, so keep that event
+	// and let the banner's button open the real install prompt. iOS never
+	// fires it, so the banner explains Share -> Add to Home Screen instead and
+	// "How?" opens the step-by-step modal. Safari cannot install silently.
+	const IOS_DISMISS_KEY = 'aayatun_ios_install_dismissed_v1';
+	const installBanner = document.querySelector('#install-banner');
+	const installBtn = document.querySelector('#install-btn');
+	const installHeader = document.querySelector('#install-header');
+	const installText = document.querySelector('#install-text');
+	const ua = navigator.userAgent || '';
+	const isIOS = /iPad|iPhone|iPod/.test(ua) ||
+		(navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+	const isStandalone =
+		window.matchMedia('(display-mode: standalone)').matches ||
+		window.matchMedia('(display-mode: fullscreen)').matches ||
+		navigator.standalone === true;
+	// In-app browsers (WhatsApp, Instagram, ...) have no Add to Home Screen.
+	const inAppBrowser = /FBAN|FBAV|FB_IAB|Instagram|Line\/|WhatsApp|Twitter|MicroMessenger|Snapchat|musical_ly|TikTok|GSA\//i.test(ua);
+	let deferredPrompt = null;
 
-    window.addEventListener('beforeinstallprompt', (e) => {
-      // Prevent Chrome 67 and earlier from automatically showing the prompt
-      e.preventDefault();
-      // Stash the event so it can be triggered later.
-      deferredPrompt = e;
-      // Update UI to notify the user they can add to home screen
-      addBanner.style.display = 'block';
+	function iosInstallDismissed() {
+		try { return localStorage.getItem(IOS_DISMISS_KEY) === '1'; } catch (e) { return false; }
+	}
+	function dismissIOSInstall() {
+		try { localStorage.setItem(IOS_DISMISS_KEY, '1'); } catch (e) {}
+		installBanner.style.display = 'none';
+	}
 
-      addBtn.addEventListener('click', (e) => {
-        // hide our user interface that shows our A2HS button
-        addBanner.style.display = 'none';
-        // Show the prompt
-        deferredPrompt.prompt();
-        // Wait for the user to respond to the prompt
-        deferredPrompt.userChoice.then((choiceResult) => {
-            if (choiceResult.outcome === 'accepted') {
-              console.log('User accepted the A2HS prompt');
-            } else {
-              console.log('User dismissed the A2HS prompt');
-            }
-            deferredPrompt = null;
-          });
-      });
-    });
+	installBtn.addEventListener('click', (e) => {
+		e.preventDefault();
+		if (deferredPrompt) {
+			installBanner.style.display = 'none';
+			deferredPrompt.prompt();
+			deferredPrompt.userChoice.then((choiceResult) => {
+				if (choiceResult.outcome === 'accepted') {
+					console.log('User accepted the A2HS prompt');
+				} else {
+					console.log('User dismissed the A2HS prompt');
+				}
+				deferredPrompt = null;
+			});
+			return;
+		}
+		if (window.jQuery) {
+			$('#ios-install-modal').modal('show');
+		}
+	});
+
+	const installClose = document.querySelector('#install-close');
+	if (installClose) {
+		installClose.addEventListener('click', () => { if (isIOS) dismissIOSInstall(); });
+	}
+
+	window.addEventListener('beforeinstallprompt', (e) => {
+		// Prevent Chrome 67 and earlier from showing its own mini-infobar.
+		e.preventDefault();
+		deferredPrompt = e;
+		if (isStandalone) return;
+		installHeader.textContent = 'App Available';
+		installText.textContent = 'Aayatun is better on App.';
+		installBtn.textContent = 'Install Now';
+		installBanner.style.display = 'block';
+	});
+
+	window.addEventListener('appinstalled', () => {
+		deferredPrompt = null;
+		installBanner.style.display = 'none';
+		dismissIOSInstall();
+	});
+
+	// iOS: no install event exists, so show the instructions instead.
+	if (isIOS && !isStandalone && !inAppBrowser) {
+		installHeader.textContent = 'Install Aayatun';
+		installText.textContent = 'Tap Share, then Add to Home Screen to keep Aayatun one tap away.';
+		installBtn.textContent = 'How?';
+		if (!iosInstallDismissed()) installBanner.style.display = 'block';
+	}
 {% endblock %}

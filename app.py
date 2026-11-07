@@ -266,9 +266,17 @@ def mushaf_page(page_no):
 	if not (1 <= page_no <= 604):
 		abort(404)
 	data = lib.get_mushaf_page(page_no)
+	# Share text: "Al-Baqarah 2:253-256" (one part per surah on the page).
+	parts = []
+	for g in data['groups']:
+		first, last = g['rows'][0]['verse'], g['rows'][-1]['verse']
+		label = g['name'].split(' (')[0]
+		parts.append('%s %s' % (label, first) if first == last
+			else '%s %s-%s' % (label, first, last))
+	page_range = '; '.join(parts)
 	return render_template('mushaf_page.html', page_no=page_no,
 		groups=data['groups'], surah_names=data['surah_names'],
-		lines=lib.get_mushaf_lines(page_no),
+		lines=lib.get_mushaf_lines(page_no), page_range=page_range,
 		overview=lib.get_page_overview(page_no),
 		verse_count=data['count'], prev=data['prev'], nxt=data['next'])
 

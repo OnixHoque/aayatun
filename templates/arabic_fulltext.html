@@ -1,4 +1,8 @@
 {% extends 'comprehensive.html' %}
+{% from 'partials/_share_macros.html' import share_button %}
+
+{% block og_title %}Surah {{ surah_name }} ({{ surah_no }}) — Arabic with translation{% endblock %}
+{% block og_description %}Read Surah {{ surah_name }} in Arabic with verse-by-verse English translation on Aayatun.{% endblock %}
 
 {% block js %}
 <script defer src="{{ url_for('static', filename='js/qcf-font.js') }}"></script>
@@ -17,6 +21,9 @@
 		<button id="translation-toggle-btn" type="button" title="Show translation" aria-label="Show translation" aria-pressed="true" class="circular active ui basic toggle icon button" onclick="update_translation_visibility(this)">
 			<svg class="translate-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
 		</button>
+		{{ share_button('surah', url_for('arabic_fulltext', surah=surah_no, _external=True),
+			ref='surah-' ~ surah_no ~ '-arabic', targets='#cur_table',
+			title='Surah ' ~ surah_name, surah=surah_no, name=surah_name, view='arabic') }}
 	</div>
 	<p id="qcf-credit" class="qcf-credit" style="display: none;">Colored mushaf font &copy; <a href="https://qurancomplex.gov.sa/" target="_blank">King Fahd Complex</a> &middot; packaged by <a href="https://quran.com" target="_blank">quran.com</a></p>
 {% endblock %}

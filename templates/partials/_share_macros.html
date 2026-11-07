@@ -1,0 +1,19 @@
+{# Icon-only share button for the reading views. The text is built in
+   static/js/share.js so the same wording is used everywhere. #}
+{% macro share_button(kind, url, ref='', targets='', title='', surah='', name='', view='', page='', range='') -%}
+<button type="button" class="circular ui basic icon button aayatun-share-btn"
+    title="Share" aria-label="Share" data-tooltip="Share"
+    data-share-kind="{{ kind }}"
+    data-share-url="{{ url }}"
+    data-share-ref="{{ ref }}"
+    data-share-target="{{ targets }}"
+    {% if title %}data-share-title="{{ title }}"{% endif %}
+    data-surah="{{ surah }}"
+    data-name="{{ name }}"
+    data-view="{{ view }}"
+    data-page="{{ page }}"
+    data-range="{{ range }}"
+    onclick="if (window.AayatunShare) { AayatunShare.fromButton(this); } else { window.prompt('Copy this link:', this.dataset.shareUrl); }">
+  <i class="icon share alternate" aria-hidden="true"></i>
+</button>
+{%- endmacro %}

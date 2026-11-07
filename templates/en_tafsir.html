@@ -1,8 +1,20 @@
 {% extends 'comprehensive.html' %}
+{% from 'partials/_share_macros.html' import share_button %}
+
+{% block og_title %}Surah {{ surah_name }} ({{ surah_no }}) — Tafsir Ibn Kathir{% endblock %}
+{% block og_description %}Read Ibn Kathir's English tafsir of Surah {{ surah_name }} verse by verse on Aayatun.{% endblock %}
 
 {% block url1 %} {{ url_for('en_tafsir', surah=prev) }} {% endblock %}
 {% block url2 %} {{ url_for('en_tafsir', surah=nxt) }} {% endblock %}
 {% block font_config %} font-family: Lora; font-size: 100%; text-align: left; {% endblock %}
+
+{% block options %}
+	<div class="mushaf-controls" style="display: flex; justify-content: flex-end; padding: 20px 0 8px; gap: 8px; flex-wrap: wrap;">
+		{{ share_button('surah', url_for('en_tafsir', surah=surah_no, _external=True),
+			ref='surah-' ~ surah_no ~ '-tafsir-en', targets='#cur_table',
+			title='Surah ' ~ surah_name, surah=surah_no, name=surah_name, view='tafsir-en') }}
+	</div>
+{% endblock %}
 
 {% block scriptcontent %}
 	setValues(pages.COMP_TAFSIR_EN, {{surah_no}});

@@ -596,6 +596,14 @@
 		window.scrollTo(0, 0);
 		syncHeight();
 		if (window.requestAnimationFrame) requestAnimationFrame(syncHeight);
+
+		// Warm the share image for this verse (only where file sharing works).
+		if (window.AayatunShare) {
+			window.AayatunShare.registerVerse({
+				surah: d.surah, verse: d.verse,
+				name: state.surahName, translation: state.translation
+			});
+		}
 	}
 
 	// Make sure the current and neighbouring surahs have payloads, then
@@ -942,14 +950,26 @@
 	/* ---------------------------------------------------------------- share */
 
 	function shareVerse() {
+		if (window.AayatunShare) {
+			window.AayatunShare.shareVerse({
+				surah: state.surah,
+				verse: state.verse,
+				name: state.surahName,
+				translation: state.translation
+			});
+			return;
+		}
+		// share.js failed to load: keep a plain native/clipboard path.
 		var url = new URL('/' + state.surah + '/' + state.verse, window.location.origin).href;
-		var text = state.ayah + '\n\n' + state.translation;
-		var title = state.surahName + ' ' + state.surah + ':' + state.verse;
+		var name = String(state.surahName || '').replace(/\s*\([^)]*\)\s*$/, '');
+		var text = name + ' ' + state.surah + ':' + state.verse + '\n\n' +
+			state.translation + '\n\nRead on Aayatun: ' + url + '\n#aayatun';
+		var title = name + ' ' + state.surah + ':' + state.verse;
 
 		if (navigator.share) {
-			navigator.share({ title: title, text: text, url: url }).catch(function () {});
+			navigator.share({ title: title, text: text }).catch(function () {});
 		} else if (navigator.clipboard) {
-			navigator.clipboard.writeText(url).then(function () {
+			navigator.clipboard.writeText(text).then(function () {
 				var b = byId('share-btn');
 				if (!b) return;
 				var old = b.innerHTML;
@@ -999,6 +1019,13 @@
 		// Remember the verse first painted from the server response, so a
 		// later refresh with no connection still has its Arabic + translation.
 		offlinePut(state.data);
+
+		if (window.AayatunShare) {
+			window.AayatunShare.registerVerse({
+				surah: state.surah, verse: state.verse,
+				name: state.surahName, translation: state.translation
+			});
+		}
 
 		audioSources = audioUrl(state.surah, state.verse);
 
