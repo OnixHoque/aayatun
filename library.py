@@ -1002,6 +1002,27 @@ _mushaf_lines_mem = None
 _mushaf_lines_lock = threading.Lock()
 
 
+def _mushaf_fix_banners(pages):
+	"""Move a next-surah banner to the page that surah actually starts on.
+
+	The source layout puts the surah name as the LAST line of the page before
+	the one its verses begin on (e.g. Abasa on page 584, whose basmala and
+	80:1 are the top of 585). Read as-is that leaves a dangling banner under
+	the previous page's last verse, so move it above the next page's basmala,
+	which is also what the table view shows. Done on load, not in the JSON,
+	so a regenerated file is corrected too.
+	"""
+	for n in range(1, 604):
+		cur = pages.get(str(n))
+		nxt = pages.get(str(n + 1))
+		if not cur or not nxt or cur[-1][0] != 'h':
+			continue
+		surah = int(cur[-1][1])
+		first = next((seg[0] for ln in nxt if ln[0] == 'x' for seg in ln[1]), None)
+		if first is not None and int(first) == surah:
+			nxt.insert(0, cur.pop())
+
+
 def _mushaf_lines():
 	global _mushaf_lines_mem
 	if _mushaf_lines_mem is not None:
@@ -1009,7 +1030,9 @@ def _mushaf_lines():
 	with _mushaf_lines_lock:
 		if _mushaf_lines_mem is None:
 			with open(MUSHAF_LINES_JSON, encoding='utf-8') as f:
-				_mushaf_lines_mem = json.load(f)['pages']
+				pages = json.load(f)['pages']
+			_mushaf_fix_banners(pages)
+			_mushaf_lines_mem = pages
 	return _mushaf_lines_mem
 
 
