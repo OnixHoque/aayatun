@@ -232,9 +232,13 @@ def qcf_font(page):
 @app.route('/translation/<int:surah>', strict_slashes=False)
 def translation(surah):
 	a, b = lib.get_full_tranlation(surah)
+	_, arabic = lib.get_full_arabic(surah)
 	prev_ = surah - 1 if surah != 1 else 114
 	next_ = surah + 1 if surah != 114 else 1
-	return render_template('translation.html', surah_name=a, surah_no=surah, verses=b, prev=prev_, nxt=next_)
+	# The share card needs both scripts; the page itself only shows Lora.
+	share_card = [[surah, v, ar, tr] for (v, ar), (_, tr) in zip(arabic, b)][:5]
+	return render_template('translation.html', surah_name=a, surah_no=surah, verses=b,
+		share_card=share_card, prev=prev_, nxt=next_)
 
 @app.route('/tafsir/bn/<int:surah>', strict_slashes=False)
 def bn_tafsir(surah):
@@ -256,8 +260,10 @@ def arabic_fulltext(surah):
 	c, d = lib.get_full_tranlation(surah)
 	prev_ = surah - 1 if surah != 1 else 114
 	next_ = surah + 1 if surah != 114 else 1
+	share_card = [[surah, v, ar, tr] for (v, ar), (_, tr) in zip(b, d)][:5]
 	return render_template('arabic_fulltext.html', surah_name=a, surah_no=surah, verses=b,
-		translation=list(d), qcf=lib.get_surah_qcf(surah), prev=prev_, nxt=next_, mushaf='1')
+		translation=list(d), qcf=lib.get_surah_qcf(surah), share_card=share_card,
+		prev=prev_, nxt=next_, mushaf='1')
 
 @app.route('/page/<int:page_no>', strict_slashes=False)
 def mushaf_page(page_no):
@@ -274,10 +280,13 @@ def mushaf_page(page_no):
 		parts.append('%s %s' % (label, first) if first == last
 			else '%s %s-%s' % (label, first, last))
 	page_range = '; '.join(parts)
+	# First five verses on the page for the share card (Arabic + translation).
+	share_card = [[r['surah'], r['verse'], r['arabic'], r['translation']]
+		for g in data['groups'] for r in g['rows']][:5]
 	resp = make_response(render_template('mushaf_page.html', page_no=page_no,
 		groups=data['groups'], surah_names=data['surah_names'],
 		lines=lib.get_mushaf_lines(page_no), page_range=page_range,
-		overview=lib.get_page_overview(page_no),
+		overview=lib.get_page_overview(page_no), share_card=share_card,
 		verse_count=data['count'], prev=data['prev'], nxt=data['next']))
 	# The page is static and the swipe handler prefetches its two neighbours,
 	# so a short private cache makes the next/previous turn instant instead of

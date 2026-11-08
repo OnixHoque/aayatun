@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aayatun-v39';
+const CACHE_NAME = 'aayatun-v40';
 
 const CORE_ASSETS = [
   '/',
