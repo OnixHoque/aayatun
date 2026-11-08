@@ -131,6 +131,7 @@
 		// carry no Arabic.
 		var verses = parseVerses(d.shareCard);
 		if (verses) payload.verses = verses;
+		if (d.shareMore === '1') payload.more = true;
 		if (kind === 'surah') {
 			payload.title = 'Aayatun — Surah ' + shortName(d.name);
 			payload.text = surahText({
@@ -221,11 +222,13 @@
 			card.title = shortName(payload.name) + ' (' + payload.surah + ')';
 			card.subtitle = VIEW_LABEL[payload.card] || '';
 			card.verses = payload.verses;
+			card.more = !!payload.more;
 			if (!card.verses) card.arabic = firstVerseText();
 		} else if (payload.card === 'page') {
 			card.title = 'Mushaf page ' + payload.page;
 			card.subtitle = payload.range || '';
 			card.verses = payload.verses;
+			card.more = !!payload.more;
 			if (!card.verses) card.arabic = firstVerseText();
 		} else {
 			return null;
@@ -280,53 +283,74 @@
 	}
 
 	// Multi-verse body: all the Arabic verses as one flowing paragraph with
-	// the medallion after each, then all the translations grouped underneath
-	// (each ending with the same medallion). Measured at one size pair so the
-	// fit pass can shrink both faces until the body fits.
-	function measureBody(ctx, verses, aSize, tSize, maxW) {
+	// the medallion after each, then all the translations as a second
+	// paragraph underneath, with the same medallions inline. A trailing
+	// ellipsis on both paragraphs says the view has more verses than fit.
+	// Measured at one size pair so the fit pass can shrink both faces.
+	function measureBody(ctx, verses, aSize, tSize, maxW, more) {
 		var arabicText = '';
 		for (var i = 0; i < verses.length; i++) {
 			var part = String(verses[i][2] || '').trim() + ' ' +
 				verseMarker(verses[i][1]);
 			arabicText += arabicText ? ' ' + part : part;
 		}
+		if (more) arabicText += ' …';
 		var arabic = linesFor(ctx, arabicText, M_ARABIC, aSize, maxW, true);
 
-		var trans = [];
-		var transH = 0;
 		var markerSize = Math.max(12, tSize * 1.5);
-		var markerGap = Math.max(2, tSize * 0.4);
-		for (var j = 0; j < verses.length; j++) {
-			var text = String(verses[j][3] || '').trim();
-			if (!text) continue;
-			var lines = linesFor(ctx, text, M_TRANS, tSize, maxW, false);
-			ctx.font = fontFor(M_ARABIC, markerSize);
-			var marker = verseMarker(verses[j][1]);
-			var markerW = ctx.measureText(marker).width;
-			var tail = markerGap + markerW;
-			// The trailing medallion must not push the last line past the
-			// edge: peel words onto a new line until the pair fits.
-			ctx.font = fontFor(M_TRANS, tSize);
-			while (lines.length &&
-				ctx.measureText(lines[lines.length - 1]).width + tail > maxW) {
-				var last = lines[lines.length - 1];
-				var cut = last.lastIndexOf(' ');
-				if (cut <= 0) break;
-				lines[lines.length - 1] = last.slice(0, cut);
-				lines.push(last.slice(cut + 1));
+		var tokens = [];
+		ctx.font = fontFor(M_TRANS, tSize);
+		var spaceW = ctx.measureText(' ').width;
+		function textTokens(text) {
+			var words = String(text || '').replace(/\s+/g, ' ').trim().split(' ');
+			var out = [];
+			for (var w = 0; w < words.length; w++) {
+				if (!words[w]) continue;
+				out.push({ marker: false, text: words[w],
+					width: ctx.measureText(words[w]).width });
 			}
-			if (trans.length) transH += 8;
-			transH += lines.length * tSize * M_TRANS.line;
-			trans.push({
-				lines: lines, marker: marker, markerW: markerW,
-				markerSize: markerSize, markerGap: markerGap
-			});
+			return out;
+		}
+		for (var j = 0; j < verses.length; j++) {
+			ctx.font = fontFor(M_TRANS, tSize);
+			var words = textTokens(verses[j][3]);
+			for (var k = 0; k < words.length; k++) tokens.push(words[k]);
+			var marker = verseMarker(verses[j][1]);
+			ctx.font = fontFor(M_ARABIC, markerSize);
+			tokens.push({ marker: true, text: marker,
+				width: ctx.measureText(marker).width, size: markerSize });
+		}
+		if (more) {
+			ctx.font = fontFor(M_TRANS, tSize);
+			tokens.push({ marker: false, text: '…',
+				width: ctx.measureText('…').width });
 		}
 
+		// Greedy wrap over words and medallions. A medallion never starts a
+		// line: it may overhang the last line by its own width instead.
+		var lines = [];
+		var cur = [];
+		var curW = 0;
+		for (var t = 0; t < tokens.length; t++) {
+			var tok = tokens[t];
+			var add = cur.length ? spaceW + tok.width : tok.width;
+			if (cur.length && curW + add > maxW && !tok.marker) {
+				lines.push({ tokens: cur, width: curW });
+				cur = [];
+				curW = 0;
+				add = tok.width;
+			}
+			cur.push(tok);
+			curW += add;
+		}
+		if (cur.length) lines.push({ tokens: cur, width: curW });
+
 		var arabicH = arabic.length * aSize * M_ARABIC.line;
+		var transH = lines.length * tSize * M_TRANS.line;
 		return {
-			arabic: arabic, trans: trans,
-			height: arabicH + (trans.length ? 22 + transH : 0)
+			arabic: arabic, trans: lines, spaceW: spaceW,
+			markerSize: markerSize,
+			height: arabicH + (lines.length ? 22 + transH : 0)
 		};
 	}
 
@@ -349,7 +373,7 @@
 
 		if (verses) {
 			for (var pass = 0; pass < 40; pass++) {
-				fitted = measureBody(meter, verses, aSize, tSize, maxW);
+				fitted = measureBody(meter, verses, aSize, tSize, maxW, card.more);
 				if (titleH + subH + 18 + fitted.height <= MAX_BODY ||
 					(aSize <= M_MIN_ARABIC + 0.01 && tSize <= M_MIN_TRANS + 0.01)) {
 					break;
@@ -399,22 +423,6 @@
 		var trColor = dark ? 'rgba(255,255,255,.78)' : 'rgba(0,0,0,.72)';
 		var subColor = dark ? 'rgba(255,255,255,.5)' : 'rgba(0,0,0,.45)';
 
-		// Centre a translation's last line together with its medallion, which
-		// must be drawn in Scheherazade (Open Sans has no end-of-ayah glyph).
-		function drawMarkedLine(text, tr, ly) {
-			ctx.font = fontFor(M_TRANS, tSize);
-			var textW = ctx.measureText(text).width;
-			var total = textW + tr.markerGap + tr.markerW;
-			var left = (CARD_W - total) / 2;
-			ctx.textAlign = 'left';
-			ctx.fillStyle = trColor;
-			ctx.direction = 'ltr';
-			ctx.fillText(text, left, ly);
-			ctx.font = fontFor(M_ARABIC, tr.markerSize);
-			ctx.fillText(tr.marker, left + textW + tr.markerGap, ly);
-			ctx.textAlign = 'center';
-		}
-
 		var y = bodyTop;
 		y = block(titleLines, TITLE, TITLE.size,
 			dark ? '#9CC4FF' : '#4183C4', y, false);
@@ -426,24 +434,25 @@
 			y = block(fitted.arabic, M_ARABIC, aSize, arColor, y, true);
 			if (fitted.trans.length) {
 				y += 22;
-				for (var t = 0; t < fitted.trans.length; t++) {
-					var tr = fitted.trans[t];
-					if (t) y += 8;
-					var lh = tSize * M_TRANS.line;
-					for (var k = 0; k < tr.lines.length; k++) {
-						var ly = y + lh * (k + 0.5);
-						if (k === tr.lines.length - 1) {
-							drawMarkedLine(tr.lines[k], tr, ly);
-						} else {
-							ctx.font = fontFor(M_TRANS, tSize);
-							ctx.fillStyle = trColor;
-							ctx.direction = 'ltr';
-							ctx.textAlign = 'center';
-							ctx.fillText(tr.lines[k], CARD_W / 2, ly);
-						}
+				var lh = tSize * M_TRANS.line;
+				ctx.direction = 'ltr';
+				for (var k = 0; k < fitted.trans.length; k++) {
+					var line = fitted.trans[k];
+					var ly = y + lh * (k + 0.5);
+					var x = (CARD_W - line.width) / 2;
+					ctx.textAlign = 'left';
+					for (var n = 0; n < line.tokens.length; n++) {
+						var tok = line.tokens[n];
+						if (n) x += fitted.spaceW;
+						ctx.font = fontFor(tok.marker ? M_ARABIC : M_TRANS,
+							tok.marker ? tok.size : tSize);
+						ctx.fillStyle = trColor;
+						ctx.fillText(tok.text, x, ly);
+						x += tok.width;
 					}
-					y += lh * tr.lines.length;
+					ctx.textAlign = 'center';
 				}
+				y += lh * fitted.trans.length;
 			}
 		} else {
 			y = block(arabicLines, ARABIC, ARABIC.size, arColor, y, true);

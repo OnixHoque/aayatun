@@ -5,7 +5,7 @@
     the image: the first five verses of the view (or the whole surah when it is
     shorter). Rendered as JSON in a single-quoted attribute, which Flask's
     tojson escapes safely. #}
-{% macro share_button(kind, url, ref='', title='', surah='', name='', view='', page='', range='', card=None) -%}
+{% macro share_button(kind, url, ref='', title='', surah='', name='', view='', page='', range='', card=None, more=False) -%}
 <button type="button" class="circular ui basic icon button aayatun-share-btn"
     title="Share" aria-label="Share" data-tooltip="Share"
     data-share-kind="{{ kind }}"
@@ -18,6 +18,7 @@
     data-page="{{ page }}"
     data-range="{{ range }}"
     {% if card %}data-share-card='{{ card|tojson }}'{% endif %}
+    data-share-more="{{ '1' if more else '' }}"
     onclick="if (window.AayatunShare) { AayatunShare.fromButton(this); } else { window.prompt('Copy this link:', this.dataset.shareUrl); }">
   <i class="icon share alternate" aria-hidden="true"></i>
 </button>

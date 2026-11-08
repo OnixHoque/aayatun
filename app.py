@@ -238,7 +238,7 @@ def translation(surah):
 	# The share card needs both scripts; the page itself only shows Lora.
 	share_card = [[surah, v, ar, tr] for (v, ar), (_, tr) in zip(arabic, b)][:5]
 	return render_template('translation.html', surah_name=a, surah_no=surah, verses=b,
-		share_card=share_card, prev=prev_, nxt=next_)
+		share_card=share_card, share_more=len(b) > 5, prev=prev_, nxt=next_)
 
 @app.route('/tafsir/bn/<int:surah>', strict_slashes=False)
 def bn_tafsir(surah):
@@ -263,7 +263,7 @@ def arabic_fulltext(surah):
 	share_card = [[surah, v, ar, tr] for (v, ar), (_, tr) in zip(b, d)][:5]
 	return render_template('arabic_fulltext.html', surah_name=a, surah_no=surah, verses=b,
 		translation=list(d), qcf=lib.get_surah_qcf(surah), share_card=share_card,
-		prev=prev_, nxt=next_, mushaf='1')
+		share_more=len(b) > 5, prev=prev_, nxt=next_, mushaf='1')
 
 @app.route('/page/<int:page_no>', strict_slashes=False)
 def mushaf_page(page_no):
@@ -287,6 +287,7 @@ def mushaf_page(page_no):
 		groups=data['groups'], surah_names=data['surah_names'],
 		lines=lib.get_mushaf_lines(page_no), page_range=page_range,
 		overview=lib.get_page_overview(page_no), share_card=share_card,
+		share_more=data['count'] > 5,
 		verse_count=data['count'], prev=data['prev'], nxt=data['next']))
 	# The page is static and the swipe handler prefetches its two neighbours,
 	# so a short private cache makes the next/previous turn instant instead of

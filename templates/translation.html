@@ -13,7 +13,7 @@
 		{{ share_button('surah', url_for('translation', surah=surah_no, _external=True),
 			ref='surah-' ~ surah_no ~ '-translation',
 			title='Surah ' ~ surah_name, surah=surah_no, name=surah_name, view='translation',
-			card=share_card) }}
+			card=share_card, more=share_more) }}
 	</div>
 {% endblock %}
 
