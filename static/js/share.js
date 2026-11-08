@@ -10,10 +10,12 @@
  * reference in Merriweather at the top, then the plain Uthmani Arabic (never
  * the tajweed/QCF glyphs) with its translation in smaller text underneath.
  * The verse page shows the one verse; the whole-surah and page views show the
- * first five verses (or the whole surah when it is shorter), shrinking both
- * faces until the body fits the card. The site name and the full URL sit in a
- * small band at the bottom. No buttons, legends or credits, and nothing
- * depends on what happens to be scrolled into view.
+ * first five verses (or the whole surah when it is shorter) as one Arabic
+ * paragraph with an end-of-ayah medallion after each verse, then all their
+ * translations grouped underneath with the same medallions. Both faces shrink
+ * until the body fits the card. The site name and the full URL sit in a small
+ * band at the bottom. No buttons, legends or credits, and nothing depends on
+ * what happens to be scrolled into view.
  *
  * Drawing is synchronous, so the file can be produced inside the tap: Safari
  * requires navigator.share() to run within the user gesture, and a canvas
@@ -243,7 +245,11 @@
 		var line = '';
 		for (var i = 0; i < words.length; i++) {
 			var next = line ? line + ' ' + words[i] : words[i];
-			if (!line || ctx.measureText(next).width <= maxW) {
+			// An end-of-ayah medallion must never start a line: keep it on
+			// the verse's last line even if it spills a few pixels into the
+			// card padding (the extra width is at most one medallion).
+			if (!line || ctx.measureText(next).width <= maxW ||
+				words[i].charAt(0) === '\u06DD') {
 				line = next;
 			} else {
 				lines.push(line);
@@ -262,25 +268,66 @@
 		return lines;
 	}
 
-	// Interleaved multi-verse body: each verse's Arabic paragraph, then its
-	// translation in smaller text underneath. Measured at one size pair so the
+	var ARABIC_DIGITS = '٠١٢٣٤٥٦٧٨٩';
+
+	// U+06DD is the ornate end-of-ayah medallion; the digits after it are
+	// drawn inside it by Scheherazade, which is the "dot" the card uses to
+	// pair each Arabic verse with its translation.
+	function verseMarker(verse) {
+		return '\u06DD' + String(verse).replace(/[0-9]/g, function (d) {
+			return ARABIC_DIGITS.charAt(+d);
+		});
+	}
+
+	// Multi-verse body: all the Arabic verses as one flowing paragraph with
+	// the medallion after each, then all the translations grouped underneath
+	// (each ending with the same medallion). Measured at one size pair so the
 	// fit pass can shrink both faces until the body fits.
-	function measureVerses(ctx, verses, aSize, tSize, maxW) {
-		var blocks = [];
-		var height = 0;
+	function measureBody(ctx, verses, aSize, tSize, maxW) {
+		var arabicText = '';
 		for (var i = 0; i < verses.length; i++) {
-			var v = verses[i];
-			var arabic = linesFor(ctx, v[2], M_ARABIC, aSize, maxW, true);
-			var translation = v[3]
-				? linesFor(ctx, v[3], M_TRANS, tSize, maxW, false) : [];
-			var h = arabic.length * aSize * M_ARABIC.line;
-			if (translation.length) {
-				h += 6 + translation.length * tSize * M_TRANS.line;
-			}
-			height += i ? 16 + h : h;
-			blocks.push({ arabic: arabic, translation: translation });
+			var part = String(verses[i][2] || '').trim() + ' ' +
+				verseMarker(verses[i][1]);
+			arabicText += arabicText ? ' ' + part : part;
 		}
-		return { blocks: blocks, height: height };
+		var arabic = linesFor(ctx, arabicText, M_ARABIC, aSize, maxW, true);
+
+		var trans = [];
+		var transH = 0;
+		var markerSize = Math.max(12, tSize * 1.5);
+		var markerGap = Math.max(2, tSize * 0.4);
+		for (var j = 0; j < verses.length; j++) {
+			var text = String(verses[j][3] || '').trim();
+			if (!text) continue;
+			var lines = linesFor(ctx, text, M_TRANS, tSize, maxW, false);
+			ctx.font = fontFor(M_ARABIC, markerSize);
+			var marker = verseMarker(verses[j][1]);
+			var markerW = ctx.measureText(marker).width;
+			var tail = markerGap + markerW;
+			// The trailing medallion must not push the last line past the
+			// edge: peel words onto a new line until the pair fits.
+			ctx.font = fontFor(M_TRANS, tSize);
+			while (lines.length &&
+				ctx.measureText(lines[lines.length - 1]).width + tail > maxW) {
+				var last = lines[lines.length - 1];
+				var cut = last.lastIndexOf(' ');
+				if (cut <= 0) break;
+				lines[lines.length - 1] = last.slice(0, cut);
+				lines.push(last.slice(cut + 1));
+			}
+			if (trans.length) transH += 8;
+			transH += lines.length * tSize * M_TRANS.line;
+			trans.push({
+				lines: lines, marker: marker, markerW: markerW,
+				markerSize: markerSize, markerGap: markerGap
+			});
+		}
+
+		var arabicH = arabic.length * aSize * M_ARABIC.line;
+		return {
+			arabic: arabic, trans: trans,
+			height: arabicH + (trans.length ? 22 + transH : 0)
+		};
 	}
 
 	function drawCard(card) {
@@ -302,7 +349,7 @@
 
 		if (verses) {
 			for (var pass = 0; pass < 40; pass++) {
-				fitted = measureVerses(meter, verses, aSize, tSize, maxW);
+				fitted = measureBody(meter, verses, aSize, tSize, maxW);
 				if (titleH + subH + 18 + fitted.height <= MAX_BODY ||
 					(aSize <= M_MIN_ARABIC + 0.01 && tSize <= M_MIN_TRANS + 0.01)) {
 					break;
@@ -352,6 +399,22 @@
 		var trColor = dark ? 'rgba(255,255,255,.78)' : 'rgba(0,0,0,.72)';
 		var subColor = dark ? 'rgba(255,255,255,.5)' : 'rgba(0,0,0,.45)';
 
+		// Centre a translation's last line together with its medallion, which
+		// must be drawn in Scheherazade (Open Sans has no end-of-ayah glyph).
+		function drawMarkedLine(text, tr, ly) {
+			ctx.font = fontFor(M_TRANS, tSize);
+			var textW = ctx.measureText(text).width;
+			var total = textW + tr.markerGap + tr.markerW;
+			var left = (CARD_W - total) / 2;
+			ctx.textAlign = 'left';
+			ctx.fillStyle = trColor;
+			ctx.direction = 'ltr';
+			ctx.fillText(text, left, ly);
+			ctx.font = fontFor(M_ARABIC, tr.markerSize);
+			ctx.fillText(tr.marker, left + textW + tr.markerGap, ly);
+			ctx.textAlign = 'center';
+		}
+
 		var y = bodyTop;
 		y = block(titleLines, TITLE, TITLE.size,
 			dark ? '#9CC4FF' : '#4183C4', y, false);
@@ -360,12 +423,26 @@
 		}
 		y += 18;
 		if (verses) {
-			for (var v = 0; v < fitted.blocks.length; v++) {
-				var b = fitted.blocks[v];
-				if (v) y += 16;
-				y = block(b.arabic, M_ARABIC, aSize, arColor, y, true);
-				if (b.translation.length) {
-					y = block(b.translation, M_TRANS, tSize, trColor, y + 6, false);
+			y = block(fitted.arabic, M_ARABIC, aSize, arColor, y, true);
+			if (fitted.trans.length) {
+				y += 22;
+				for (var t = 0; t < fitted.trans.length; t++) {
+					var tr = fitted.trans[t];
+					if (t) y += 8;
+					var lh = tSize * M_TRANS.line;
+					for (var k = 0; k < tr.lines.length; k++) {
+						var ly = y + lh * (k + 0.5);
+						if (k === tr.lines.length - 1) {
+							drawMarkedLine(tr.lines[k], tr, ly);
+						} else {
+							ctx.font = fontFor(M_TRANS, tSize);
+							ctx.fillStyle = trColor;
+							ctx.direction = 'ltr';
+							ctx.textAlign = 'center';
+							ctx.fillText(tr.lines[k], CARD_W / 2, ly);
+						}
+					}
+					y += lh * tr.lines.length;
 				}
 			}
 		} else {
