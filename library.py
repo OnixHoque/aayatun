@@ -1106,6 +1106,43 @@ def get_mushaf_lines(page):
 def _surah_verse_count(surah):
 	return int(quran_stat()['Verses'].loc[int(surah)])
 
+@lru_cache(maxsize=1)
+def surah_starts():
+	"""Flat 0-based index of every surah's first verse (114 entries)."""
+	x = quran_stat()
+	starts = []
+	total = 0
+	for s in range(1, 115):
+		starts.append(total)
+		total += int(x['Verses'].loc[s])
+	return tuple(starts)
+
+def verse_index(surah, verse):
+	"""0-based position of a verse in mushaf order (0 = 1:1, 6235 = 114:6)."""
+	if not (1 <= surah <= 114):
+		abort(404)
+	if not (1 <= verse <= _surah_verse_count(surah)):
+		abort(404)
+	return surah_starts()[surah - 1] + verse - 1
+
+@lru_cache(maxsize=1)
+def get_page_bounds():
+	"""Flat verse index of the first verse of each of the 604 mushaf pages.
+
+	Page membership in db/qcf_verses.json is monotonic and contiguous over
+	the canonical verse order, so 604 offsets are enough for the reading map
+	to place every verse without shipping a 6,236-entry table. An unexpected
+	layout returns () and the map drops its page layer."""
+	_qcf_load_cache()
+	bounds = []
+	total = 0
+	for page in range(1, 605):
+		bounds.append(total)
+		total += len(qcf_page_index.get(page) or ())
+	if total != 6236:
+		return ()
+	return tuple(bounds)
+
 # The text of every verse of a surah, for the swipe carousel: the client asks
 # once and then moves between verses without any further round trip. Kept
 # compact (arrays, no repeated keys) since Al-Baqarah alone is ~200 KB.

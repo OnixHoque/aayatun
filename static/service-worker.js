@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aayatun-v42';
+const CACHE_NAME = 'aayatun-v43';
 
 const CORE_ASSETS = [
   '/',
@@ -7,6 +7,7 @@ const CORE_ASSETS = [
   '/static/js/script.js',
   '/static/js/recent.js',
   '/static/js/share.js',
+  '/static/js/reading-map.js',
   '/static/js/verse-nav.js',
   '/static/js/qcf-font.js',
   '/static/css/style.css',

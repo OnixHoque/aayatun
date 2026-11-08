@@ -1,19 +1,32 @@
 /*
- * Recently Read: a small localStorage history of the reading views.
+ * Recently Read + the reading map.
  *
- * One entry per reading page (verse detail, mushaf page, full-arabic surah),
- * at most five, newest first. Runs of the same kind collapse to their newest
+ * Recently Read is a small localStorage history of the reading views: one
+ * entry per reading page (verse detail, mushaf page, full-arabic surah), at
+ * most five, newest first. Runs of the same kind collapse to their newest
  * entry, so paging 42 -> 43 -> 44 leaves only "Page 44" in the list.
  *
+ * Separately, every visit is folded into a bitset map for the exploration
+ * graph: a deep bit per verse (its detail page was opened) and a light bit
+ * per printed mushaf page. 6,236 + 604 bits is ~1.1 KB, so it is written on
+ * every read without the list's five-entry cap losing detail. The map is
+ * append-only; only the "clear history" confirmation removes it.
+ *
  * Labels come from a server-rendered <meta name="aayatun-read"> in each
- * template ("type|key|label"), which avoids guessing from the document title.
- * The verse page is skipped inside the shared modal iframe: opening a modal
- * does not replace what the reader was reading on the page behind it.
+ * template ("type|key|label"), and the flat mushaf position from
+ * <meta name="aayatun-read-index">, which avoids guessing from the title.
+ * Inside the shared modal iframe the map still records the verse (it really
+ * is open), but the chips keep the page behind the modal, as before.
  */
 (function () {
 	var KEY = 'aayatun_recent_reads_v1';
+	var MAP_KEY = 'aayatun_read_map_v1';
 	var MAX = 5;
 	var TYPES = { verse: 1, page: 1, mushaf: 1 };
+
+	// Canonical mushaf order: 0 = 1:1, 6235 = 114:6.
+	var VERSE_BITS = 6236;
+	var PAGE_BITS = 604;
 
 	function valid(entry)
 	{
@@ -48,16 +61,114 @@
 		if (parts.length < 3 || !TYPES[parts[0]]) return null;
 		return {
 			t: parts[0],
+			key: parts[1],
 			url: window.location.pathname.replace(/\/+$/, '') || '/',
 			label: parts.slice(2).join('|')
 		};
 	}
 
+	function currentIndex()
+	{
+		var el = document.querySelector('meta[name="aayatun-read-index"]');
+		if (!el) return -1;
+		var i = parseInt(el.getAttribute('content'), 10);
+		return (i >= 0 && i < VERSE_BITS) ? i : -1;
+	}
+
+	/* ------------------------------------------------------------ the map */
+
+	function toB64(bytes)
+	{
+		var s = '';
+		for (var i = 0; i < bytes.length; i += 0x8000) {
+			s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+		}
+		try { return btoa(s); } catch (e) { return ''; }
+	}
+
+	function fromB64(text, length)
+	{
+		var out = new Uint8Array(length);
+		try {
+			var raw = atob(text || '');
+			var n = Math.min(raw.length, length);
+			for (var i = 0; i < n; i++) out[i] = raw.charCodeAt(i);
+		} catch (e) {}
+		return out;
+	}
+
+	function blank()
+	{
+		return {
+			v: new Uint8Array(Math.ceil(VERSE_BITS / 8)),
+			p: new Uint8Array(Math.ceil(PAGE_BITS / 8)),
+			last: -1
+		};
+	}
+
+	function map()
+	{
+		var out = blank();
+		try {
+			var raw = JSON.parse(localStorage.getItem(MAP_KEY) || 'null');
+			if (!raw || typeof raw !== 'object') return out;
+			out.v = fromB64(raw.v, out.v.length);
+			out.p = fromB64(raw.p, out.p.length);
+			if (typeof raw.last === 'number' && raw.last >= 0 && raw.last < VERSE_BITS)
+				out.last = raw.last;
+		} catch (e) {}
+		return out;
+	}
+
+	function save(m)
+	{
+		try {
+			localStorage.setItem(MAP_KEY, JSON.stringify({
+				v: toB64(m.v),
+				p: toB64(m.p),
+				last: m.last
+			}));
+		} catch (e) {}
+	}
+
+	function setBit(bits, i)
+	{
+		if (i >= 0 && i < bits.length * 8) bits[i >> 3] |= (1 << (i & 7));
+	}
+
+	function markVerse(index)
+	{
+		if (!(index >= 0) || index >= VERSE_BITS) return;
+		var m = map();
+		setBit(m.v, index);
+		m.last = index;
+		save(m);
+	}
+
+	function markPage(page, index)
+	{
+		var p = parseInt(page, 10);
+		if (!(p >= 1) || p > PAGE_BITS) return;
+		var m = map();
+		setBit(m.p, p - 1);
+		if (index >= 0 && index < VERSE_BITS) m.last = index;
+		save(m);
+	}
+
+	/* ----------------------------------------------------------- recording */
+
 	function record()
 	{
-		if (window.self !== window.top) return;
 		var entry = currentEntry();
 		if (!entry) return;
+		var index = currentIndex();
+
+		if (entry.t === 'verse') markVerse(index);
+		else if (entry.t === 'page') markPage(entry.key, index);
+
+		// Verses opened in the shared modal count on the map, but they must
+		// not replace what the reader was reading on the page behind it.
+		if (window.self !== window.top) return;
 
 		// Re-reading an entry moves it to the front instead of duplicating it.
 		var items = list().filter(function (it) { return it.url !== entry.url; });
@@ -71,8 +182,14 @@
 
 	window.AayatunRecent = {
 		list: list,
+		map: map,
 		clear: function () {
 			try { localStorage.removeItem(KEY); } catch (e) {}
+		},
+		// The confirmed clear button wipes the chips and the exploration map.
+		clearAll: function () {
+			try { localStorage.removeItem(KEY); } catch (e) {}
+			try { localStorage.removeItem(MAP_KEY); } catch (e) {}
 		}
 	};
 

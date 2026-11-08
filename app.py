@@ -126,12 +126,14 @@ def sw():
 @app.route('/')
 def index():
 	i, j = random.choice(RUKU_LIST)
-	return render_template('index.html', surahs=getVerseMaps(), rand_surah=(i, j))
+	return render_template('index.html', surahs=getVerseMaps(), rand_surah=(i, j),
+		page_bounds=lib.get_page_bounds())
 
 @app.route('/<int:surah>/', strict_slashes=False)
 def details2(surah):
 	return private_page(make_response(render_template('versedetails.html',
-		details=lib.get_verse_details(surah, 1), api_token=api_token())))
+		details=lib.get_verse_details(surah, 1), read_index=lib.verse_index(surah, 1),
+		api_token=api_token())))
 
 @app.route('/search/', strict_slashes=False, methods = ['POST'])
 def search():
@@ -173,7 +175,8 @@ def details(surah, verse):
 	# Only the core payload: the accordion sections are fetched when opened,
 	# which keeps this page at a few KB instead of the whole tafsir/morphology.
 	return private_page(make_response(render_template('versedetails.html',
-		details=lib.get_verse_core(surah, verse), api_token=api_token())))
+		details=lib.get_verse_core(surah, verse), read_index=lib.verse_index(surah, verse),
+		api_token=api_token())))
 
 # Lightweight payload used by next/prev navigation. Only the parts that change
 # on screen are sent; accordion sections are fetched on demand.
@@ -283,11 +286,15 @@ def mushaf_page(page_no):
 	# First five verses on the page for the share card (Arabic + translation).
 	share_card = [[r['surah'], r['verse'], r['arabic'], r['translation']]
 		for g in data['groups'] for r in g['rows']][:5]
+	# The reading map records the page as seen and moves the "next unread"
+	# cursor past its last verse.
+	last_row = data['groups'][-1]['rows'][-1]
+	read_index = lib.verse_index(last_row['surah'], last_row['verse'])
 	resp = make_response(render_template('mushaf_page.html', page_no=page_no,
 		groups=data['groups'], surah_names=data['surah_names'],
 		lines=lib.get_mushaf_lines(page_no), page_range=page_range,
 		overview=lib.get_page_overview(page_no), share_card=share_card,
-		share_more=data['count'] > 5,
+		share_more=data['count'] > 5, read_index=read_index,
 		verse_count=data['count'], prev=data['prev'], nxt=data['next']))
 	# The page is static and the swipe handler prefetches its two neighbours,
 	# so a short private cache makes the next/previous turn instant instead of

@@ -2,6 +2,11 @@
 
 {% block title %} Aayatun - An Ayah a Day {% endblock %}
 
+{% block js %}
+<script>window.AAYATUN_PAGE_BOUNDS = {{ page_bounds|tojson }};</script>
+<script defer src="{{ url_for('static', filename='js/reading-map.js') }}"></script>
+{% endblock %}
+
 {% block start %}
 <div style="min-height: 100vh; min-height: 100dvh; box-sizing: border-box; display: flex; flex-direction: column;">{% endblock start %}
 
@@ -70,7 +75,14 @@
         margin-bottom: 8px;
     }
 
-    #recent-clear {
+    #recent-head-actions {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+    }
+
+    #recent-clear,
+    #recent-map {
         border: 0;
         background: none;
         color: inherit;
@@ -82,7 +94,9 @@
     }
 
     #recent-clear:hover,
-    #recent-clear:focus-visible {
+    #recent-clear:focus-visible,
+    #recent-map:hover,
+    #recent-map:focus-visible {
         opacity: 1;
         color: #2185d0;
     }
@@ -136,6 +150,124 @@
         border-color: #64b5f6;
         color: #64b5f6;
     }
+
+    /* Reading map: one square per verse, GitHub-contribution style. */
+    #reading-map-modal {
+        width: min(92vw, 900px) !important;
+    }
+
+    .reading-map-summary {
+        font-size: 85%;
+        opacity: .75;
+        margin-bottom: 8px;
+    }
+
+    .reading-map-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        font-size: 80%;
+        opacity: .8;
+        margin-bottom: 12px;
+    }
+
+    .reading-map-legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .rg-swatch {
+        width: 10px;
+        height: 10px;
+        border-radius: 2px;
+        background: #fff;
+        box-shadow: inset 0 0 0 1px rgba(27, 31, 36, .15);
+    }
+
+    .rg-swatch.deep { background: #216e39; box-shadow: none; }
+    .rg-swatch.light { background: #9be9a8; box-shadow: none; }
+
+    .reading-map-scroll {
+        position: relative;
+        max-height: min(56vh, 520px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding: 4px;
+        border: 1px solid rgba(34, 36, 38, .12);
+        border-radius: 4px;
+        background: #fafafa;
+    }
+
+    .reading-map-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, 7px);
+        grid-auto-rows: 7px;
+        gap: 2px;
+        align-content: start;
+    }
+
+    .rg-cell {
+        width: 7px;
+        height: 7px;
+        border-radius: 2px;
+        background: #fff;
+        box-shadow: inset 0 0 0 1px rgba(27, 31, 36, .14);
+    }
+
+    .rg-cell.is-light { background: #9be9a8; box-shadow: none; }
+    .rg-cell.is-deep { background: #216e39; box-shadow: none; }
+
+    .rg-cell:hover { outline: 1px solid #2185d0; }
+
+    .rg-cell.is-last {
+        outline: 2px solid #2185d0;
+        outline-offset: 1px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .rg-break {
+        width: 7px;
+        height: 7px;
+    }
+
+    .reading-map-readout {
+        min-height: 1.6em;
+        margin-top: 10px;
+        font-size: 85%;
+    }
+
+    #reading-map-hint { opacity: .55; }
+
+    #reading-map-open {
+        font-weight: 600;
+    }
+
+    .reading-map-next {
+        margin-top: 6px;
+        font-size: 90%;
+    }
+
+    html.dark-theme .reading-map-scroll {
+        background: #161b22;
+        border-color: rgba(255, 255, 255, .12);
+    }
+
+    html.dark-theme .rg-cell,
+    html.dark-theme .rg-swatch {
+        background: #161b22;
+        box-shadow: inset 0 0 0 1px #30363d;
+    }
+
+    html.dark-theme .rg-cell.is-light,
+    html.dark-theme .rg-swatch.light { background: #0e4429; box-shadow: none; }
+
+    html.dark-theme .rg-cell.is-deep,
+    html.dark-theme .rg-swatch.deep { background: #39d353; box-shadow: none; }
+
+    html.dark-theme .rg-cell:hover { outline-color: #64b5f6; }
+    html.dark-theme .rg-cell.is-last { outline-color: #64b5f6; }
 
     /* "or" divider: vertical between columns on tablet+, horizontal when stacked */
     #home-or-v,
@@ -207,7 +339,10 @@
 		<div id="recent-reads" hidden>
 			<div id="recent-head">
 				<div class="home-section-label" style="margin: 0;">Recently Read</div>
-				<button type="button" id="recent-clear" title="Clear reading history" aria-label="Clear reading history">&times;</button>
+				<div id="recent-head-actions">
+					<button type="button" id="recent-map" title="Reading map" aria-label="Open reading map"><i class="icon world" aria-hidden="true"></i></button>
+					<button type="button" id="recent-clear" title="Clear all reading history" aria-label="Clear all reading history">&times;</button>
+				</div>
 			</div>
 			<div id="recent-list"></div>
 		</div>
@@ -354,7 +489,14 @@ document.addEventListener('DOMContentLoaded', function () {
 		if (!box || !list || !window.AayatunRecent) return;
 		var items = window.AayatunRecent.list();
 		list.textContent = '';
-		if (!items.length) {
+		// The map can hold visits that the five chips do not (a verse opened
+		// in the shared modal), so the globe stays reachable even then.
+		var hasMap = false;
+		if (window.AayatunRecent.map) {
+			var m = window.AayatunRecent.map();
+			hasMap = m.last >= 0 || m.v.some(Boolean) || m.p.some(Boolean);
+		}
+		if (!items.length && !hasMap) {
 			box.hidden = true;
 			return;
 		}
@@ -376,8 +518,28 @@ document.addEventListener('DOMContentLoaded', function () {
 	}
 
 	renderRecent();
+
+	// A verse opened in the shared modal is an iframe of this origin, so its
+	// storage write reaches this page as a storage event (the same event
+	// covers other tabs). Re-render to keep the strip in step.
+	window.addEventListener('storage', function (evt) {
+		if (!evt.key || evt.key === 'aayatun_recent_reads_v1' ||
+				evt.key === 'aayatun_read_map_v1') {
+			renderRecent();
+		}
+	});
+
+	// Clearing now wipes the chips and the exploration map together, so it
+	// asks first instead of deleting silently.
 	$('#recent-clear').click(function () {
-		if (window.AayatunRecent) window.AayatunRecent.clear();
+		$('#clear-history-modal').modal('show');
+	});
+	$('#clear-history-cancel').click(function () {
+		$('#clear-history-modal').modal('hide');
+	});
+	$('#clear-history-confirm').click(function () {
+		if (window.AayatunRecent) window.AayatunRecent.clearAll();
+		$('#clear-history-modal').modal('hide');
 		renderRecent();
 	});
 
@@ -421,6 +583,35 @@ document.addEventListener('DOMContentLoaded', function () {
 			</div>
 			<div class="actions">
 				<button type="button" class="ui button" onclick="$('#ios-install-modal').modal('hide')">Got it</button>
+			</div>
+		</div>
+		<div id="reading-map-modal" class="ui modal">
+			<div class="header">Quran exploration</div>
+			<div class="content">
+				<div id="reading-map-summary" class="reading-map-summary"></div>
+				<div class="reading-map-legend">
+					<span><i class="rg-swatch deep"></i>Verse studied</span>
+					<span><i class="rg-swatch light"></i>Page visited</span>
+					<span><i class="rg-swatch"></i>Not yet</span>
+				</div>
+				<div id="reading-map-scroll" class="reading-map-scroll">
+					<div id="reading-map-grid" class="reading-map-grid" role="img" aria-label="Reading map"></div>
+				</div>
+				<div class="reading-map-readout">
+					<span id="reading-map-hint">Hover or tap a square to see the verse.</span>
+					<a id="reading-map-open" href="#" hidden></a>
+				</div>
+				<div id="reading-map-next" class="reading-map-next"></div>
+			</div>
+		</div>
+		<div id="clear-history-modal" class="ui mini modal">
+			<div class="header">Clear reading history?</div>
+			<div class="content">
+				<p>This removes your Recently Read list and every square on the exploration map. It cannot be undone.</p>
+			</div>
+			<div class="actions">
+				<button type="button" id="clear-history-cancel" class="ui button">Cancel</button>
+				<button type="button" id="clear-history-confirm" class="ui red button">Clear history</button>
 			</div>
 		</div>
 		<div id="suggestion" class="ui mini message" style="display: none; color: gray">
