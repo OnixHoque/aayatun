@@ -333,10 +333,17 @@
 		});
 	}
 
+	function refresh()
+	{
+		selected = -1;
+		paint();
+	}
+
 	window.AayatunReadingMap = {
 		states: mapStates,
 		shareData: shareData,
-		share: shareMap
+		share: shareMap,
+		refresh: refresh
 	};
 
 	globe.addEventListener('click', function (evt) {

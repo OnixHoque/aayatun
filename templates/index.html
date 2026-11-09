@@ -75,32 +75,6 @@
         margin-bottom: 8px;
     }
 
-    #recent-head-actions {
-        display: flex;
-        align-items: center;
-        gap: 2px;
-    }
-
-    #recent-clear,
-    #recent-map {
-        border: 0;
-        background: none;
-        color: inherit;
-        opacity: .5;
-        cursor: pointer;
-        font-size: 120%;
-        line-height: 1;
-        padding: 0 4px;
-    }
-
-    #recent-clear:hover,
-    #recent-clear:focus-visible,
-    #recent-map:hover,
-    #recent-map:focus-visible {
-        opacity: 1;
-        color: #2185d0;
-    }
-
     #recent-list {
         display: flex;
         flex-wrap: wrap;
@@ -227,9 +201,19 @@
     }
 
     .reading-map-stat {
-        flex-direction: row;
+        display: flex;
+        flex: 1 1 130px;
         align-items: center;
         gap: 10px;
+        min-width: 0;
+    }
+
+    .reading-map-stats {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px 18px;
     }
 
     .reading-map-card-share {
@@ -264,15 +248,55 @@
         background: #1678c2;
     }
 
+    #reading-map-modal > .close.icon {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        margin: 0;
+        color: inherit;
+        opacity: .6;
+        cursor: pointer;
+        z-index: 2;
+    }
+
+    #reading-map-modal > .close.icon:hover,
+    #reading-map-modal > .close.icon:focus-visible {
+        opacity: 1;
+    }
+
+    #reading-map-modal > .actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    #reading-map-clear {
+        margin-right: auto;
+    }
+
+    #reading-map-modal > .actions .button {
+        border-radius: 6px;
+        font-family: inherit;
+        font-size: 80%;
+    }
+
     @media (min-width: 560px) {
         .reading-map-cards {
             grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .reading-map-card-lead {
+            grid-column: 1 / -1;
         }
     }
 
     @media (min-width: 900px) {
         .reading-map-cards {
-            grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.15fr);
+            grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.45fr) minmax(0, 0.9fr);
+        }
+
+        .reading-map-card-lead {
+            grid-column: auto;
         }
     }
 
@@ -434,6 +458,21 @@
         background: #8cc8ff;
     }
 
+    html.dark-theme #reading-map-modal > .actions {
+        background: transparent;
+        border-top-color: rgba(255, 255, 255, .12);
+    }
+
+    html.dark-theme #reading-map-modal > .actions .ui.basic.button {
+        color: rgba(255, 255, 255, .87) !important;
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, .16) inset !important;
+    }
+
+    html.dark-theme #reading-map-clear.ui.basic.red.button {
+        color: #ff8a8a !important;
+        box-shadow: 0 0 0 1px rgba(255, 120, 120, .4) inset !important;
+    }
+
     html.dark-theme .reading-map-ring .ring-track {
         stroke: rgba(255, 255, 255, .16);
     }
@@ -507,14 +546,11 @@
 		</div>
 
 		<button class="ui huge basic fluid button" style="font-family: Open Sans; font-size: 95%; margin-top: 18px;" id='btnSurprise'> Surprise me! </button>
+		<button class="ui huge basic fluid button" style="font-family: Open Sans; font-size: 95%; margin-top: 10px;" id="recent-map" aria-label="Open Quran exploration map"><i class="icon world" aria-hidden="true"></i> Quran exploration map</button>
 
 		<div id="recent-reads" hidden>
 			<div id="recent-head">
 				<div class="home-section-label" style="margin: 0;">Recently Read</div>
-				<div id="recent-head-actions">
-					<button type="button" id="recent-map" title="Quran exploration map" aria-label="Open Quran exploration map"><i class="icon world" aria-hidden="true"></i></button>
-					<button type="button" id="recent-clear" title="Clear all reading history" aria-label="Clear all reading history">&times;</button>
-				</div>
 			</div>
 			<div id="recent-list"></div>
 		</div>
@@ -544,6 +580,9 @@ document.addEventListener('DOMContentLoaded', function () {
 	$('.ui.dropdown').dropdown({
 		fullTextSearch: true
 	});
+
+	// The clear confirmation stacks over the map instead of replacing it.
+	$('#reading-map-modal, #clear-history-modal').modal({ allowMultiple: true });
 
 	let target_location = [	"{{ url_for('arabic_fulltext', surah=-1) }}",
 	"{{ url_for('translation', surah=-1) }}",
@@ -661,14 +700,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		if (!box || !list || !window.AayatunRecent) return;
 		var items = window.AayatunRecent.list();
 		list.textContent = '';
-		// The map can hold visits that the five chips do not (a verse opened
-		// in the shared modal), so the globe stays reachable even then.
-		var hasMap = false;
-		if (window.AayatunRecent.map) {
-			var m = window.AayatunRecent.map();
-			hasMap = m.last >= 0 || m.v.some(Boolean) || m.p.some(Boolean);
-		}
-		if (!items.length && !hasMap) {
+		if (!items.length) {
 			box.hidden = true;
 			return;
 		}
@@ -701,10 +733,19 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	});
 
-	// Clearing now wipes the chips and the exploration map together, so it
-	// asks first instead of deleting silently.
-	$('#recent-clear').click(function () {
+	// Clearing lives inside the map modal and wipes the chips and the map
+	// together, so it asks first instead of deleting silently.
+	$('#reading-map-clear').click(function () {
 		$('#clear-history-modal').modal('show');
+	});
+	$('#reading-map-close').click(function () {
+		$('#reading-map-modal').modal('hide');
+	});
+	$('#reading-map-modal > .close.icon').on('keydown', function (evt) {
+		if (evt.key === 'Enter' || evt.key === ' ') {
+			evt.preventDefault();
+			$('#reading-map-modal').modal('hide');
+		}
 	});
 	$('#clear-history-cancel').click(function () {
 		$('#clear-history-modal').modal('hide');
@@ -713,6 +754,8 @@ document.addEventListener('DOMContentLoaded', function () {
 		if (window.AayatunRecent) window.AayatunRecent.clearAll();
 		$('#clear-history-modal').modal('hide');
 		renderRecent();
+		if (window.AayatunReadingMap && window.AayatunReadingMap.refresh)
+			window.AayatunReadingMap.refresh();
 	});
 
     if('serviceWorker' in navigator) {
@@ -758,6 +801,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			</div>
 		</div>
 		<div id="reading-map-modal" class="ui modal">
+			<i class="close icon" aria-label="Close" role="button" tabindex="0"></i>
 			<div class="header">Quran exploration map</div>
 			<div class="content">
 				<div class="reading-map-cards">
@@ -770,25 +814,27 @@ document.addEventListener('DOMContentLoaded', function () {
 						<div id="reading-map-next" class="reading-map-next"></div>
 						<p class="reading-map-help">Each square is one verse in mushaf order, from Al-Fatihah to An-Nas. Tap any square to open that verse; the legend below explains the colours.</p>
 					</div>
-					<div class="reading-map-card reading-map-stat">
-						<div class="reading-map-ring-wrap">
-							<svg class="reading-map-ring" viewBox="0 0 48 48" role="progressbar" aria-label="Pages visited" aria-valuemin="0" aria-valuemax="604" aria-valuenow="0">
-								<circle class="ring-track" cx="24" cy="24" r="20"></circle>
-								<circle id="reading-map-pages-ring" class="reading-map-ring-fill is-pages" cx="24" cy="24" r="20"></circle>
-							</svg>
-							<span id="reading-map-pages-pct" class="reading-map-ring-pct">0%</span>
+					<div class="reading-map-card reading-map-stats">
+						<div class="reading-map-stat">
+							<div class="reading-map-ring-wrap">
+								<svg class="reading-map-ring" viewBox="0 0 48 48" role="progressbar" aria-label="Pages visited" aria-valuemin="0" aria-valuemax="604" aria-valuenow="0">
+									<circle class="ring-track" cx="24" cy="24" r="20"></circle>
+									<circle id="reading-map-pages-ring" class="reading-map-ring-fill is-pages" cx="24" cy="24" r="20"></circle>
+								</svg>
+								<span id="reading-map-pages-pct" class="reading-map-ring-pct">0%</span>
+							</div>
+							<div class="reading-map-ring-label">Pages visited<small id="reading-map-pages-note">0 of 604</small></div>
 						</div>
-						<div class="reading-map-ring-label">Pages visited<small id="reading-map-pages-note">0 of 604</small></div>
-					</div>
-					<div class="reading-map-card reading-map-stat">
-						<div class="reading-map-ring-wrap">
-							<svg class="reading-map-ring" viewBox="0 0 48 48" role="progressbar" aria-label="Verses studied" aria-valuemin="0" aria-valuemax="6236" aria-valuenow="0">
-								<circle class="ring-track" cx="24" cy="24" r="20"></circle>
-								<circle id="reading-map-verses-ring" class="reading-map-ring-fill is-verses" cx="24" cy="24" r="20"></circle>
-							</svg>
-							<span id="reading-map-verses-pct" class="reading-map-ring-pct">0%</span>
+						<div class="reading-map-stat">
+							<div class="reading-map-ring-wrap">
+								<svg class="reading-map-ring" viewBox="0 0 48 48" role="progressbar" aria-label="Verses studied" aria-valuemin="0" aria-valuemax="6236" aria-valuenow="0">
+									<circle class="ring-track" cx="24" cy="24" r="20"></circle>
+									<circle id="reading-map-verses-ring" class="reading-map-ring-fill is-verses" cx="24" cy="24" r="20"></circle>
+								</svg>
+								<span id="reading-map-verses-pct" class="reading-map-ring-pct">0%</span>
+							</div>
+							<div class="reading-map-ring-label">Verses studied<small id="reading-map-verses-note">0 of 6,236</small></div>
 						</div>
-						<div class="reading-map-ring-label">Verses studied<small id="reading-map-verses-note">0 of 6,236</small></div>
 					</div>
 					<div class="reading-map-card reading-map-card-share">
 						<div>
@@ -806,6 +852,10 @@ document.addEventListener('DOMContentLoaded', function () {
 				<div id="reading-map-scroll" class="reading-map-scroll">
 					<div id="reading-map-grid" class="reading-map-grid" role="img" aria-label="Quran exploration map"></div>
 				</div>
+			</div>
+			<div class="actions">
+				<button type="button" id="reading-map-clear" class="ui basic red button">Clear history</button>
+				<button type="button" id="reading-map-close" class="ui basic button">Close</button>
 			</div>
 		</div>
 		<div id="clear-history-modal" class="ui mini modal">
