@@ -17,6 +17,10 @@
  * band at the bottom. No buttons, legends or credits, and nothing depends on
  * what happens to be scrolled into view.
  *
+ * The index's Quran exploration map gets a tall portrait card: the full
+ * 6,236-square grid with surah gaps, two circular progress rings (pages
+ * visited, verses studied), a legend, and the same brand band.
+ *
  * Drawing is synchronous, so the file can be produced inside the tap: Safari
  * requires navigator.share() to run within the user gesture, and a canvas
  * costs a few milliseconds where html2canvas cost a few hundred. Where the
@@ -53,6 +57,15 @@
 		'tafsir-bn': 'Bangla tafsir (Abu Bakr Zakaria)'
 	};
 
+	// Quran exploration map card: one 5 px square per verse plus a one-square
+	// gap at each surah start, 60 columns wide. That lands at 420 x ~887 CSS
+	// px, the tall portrait shape that reads well in a chat.
+	var MAP_COLS = 60;
+	var MAP_CELL = 5;
+	var MAP_GAP = 1;
+	var MAP_VERSES = 6236;
+	var MAP_PAGES = 604;
+
 	var TINY_PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 
 	function byId(id) { return document.getElementById(id); }
@@ -67,6 +80,26 @@
 		return document.documentElement.classList.contains('dark-theme');
 	}
 	function pageUrl(path) { return new URL(path, window.location.origin).href; }
+
+	// Rounded rectangle path; canvas roundRect is not in older Safari.
+	function roundedRect(ctx, x, y, w, h, r) {
+		r = Math.min(r, h / 2, w / 2);
+		ctx.beginPath();
+		ctx.moveTo(x + r, y);
+		ctx.arcTo(x + w, y, x + w, y + h, r);
+		ctx.arcTo(x + w, y + h, x, y + h, r);
+		ctx.arcTo(x, y + h, x, y, r);
+		ctx.arcTo(x, y, x + w, y, r);
+		ctx.closePath();
+	}
+
+	function pctLabel(p) {
+		if (!p) return '0%';
+		if (p >= 99.95) return '100%';
+		if (p < 1) return p.toFixed(2) + '%';
+		if (p < 10) return p.toFixed(1) + '%';
+		return Math.round(p) + '%';
+	}
 
 	function verseText(o) {
 		return shortName(o.name) + ' ' + o.surah + ':' + o.verse + '\n\n' +
@@ -230,6 +263,13 @@
 			card.verses = payload.verses;
 			card.more = !!payload.more;
 			if (!card.verses) card.arabic = firstVerseText();
+		} else if (payload.card === 'map') {
+			card.kind = 'map';
+			card.states = payload.states;
+			card.deep = payload.deep || 0;
+			card.pages = payload.pages || 0;
+			card.starts = payload.starts || [];
+			return card;
 		} else {
 			return null;
 		}
@@ -354,7 +394,145 @@
 		};
 	}
 
+	function drawMapCard(card) {
+		var dark = isDark();
+		var states = card.states && card.states.length === MAP_VERSES
+			? card.states : new Uint8Array(MAP_VERSES);
+		var starts = card.starts || [];
+		var startSet = {};
+		for (var s = 1; s < starts.length; s++) startSet[starts[s]] = true;
+
+		var items = MAP_VERSES + (starts.length ? starts.length - 1 : 0);
+		var rows = Math.ceil(items / MAP_COLS);
+		var gridW = MAP_COLS * MAP_CELL + (MAP_COLS - 1) * MAP_GAP;
+		var gridH = rows * MAP_CELL + (rows - 1) * MAP_GAP;
+
+		var titleY = PAD + 24;
+		var ringsY = titleY + 54;
+		var mapTop = ringsY + 60;
+		var mapBottom = mapTop + gridH;
+		var cardH = mapBottom + 30 + BAND;
+
+		var out = document.createElement('canvas');
+		out.width = Math.round(CARD_W * SCALE);
+		out.height = Math.round(cardH * SCALE);
+		var ctx = out.getContext('2d');
+		ctx.scale(SCALE, SCALE);
+		ctx.textBaseline = 'middle';
+
+		ctx.fillStyle = dark ? '#1b1c1d' : '#ffffff';
+		ctx.fillRect(0, 0, CARD_W, cardH);
+
+		var titleColor = dark ? '#9CC4FF' : '#4183C4';
+		var muted = dark ? 'rgba(255,255,255,.62)' : 'rgba(0,0,0,.56)';
+		var track = dark ? 'rgba(255,255,255,.13)' : 'rgba(0,0,0,.07)';
+		var none = dark ? '#2a2f36' : '#e6e9ec';
+		var light = dark ? '#1f6f3f' : '#9be9a8';
+		var deep = dark ? '#39d353' : '#216e39';
+
+		ctx.textAlign = 'center';
+		ctx.fillStyle = titleColor;
+		ctx.font = fontFor(TITLE, TITLE.size);
+		ctx.fillText('Quran exploration map', CARD_W / 2, titleY);
+
+		var pagesPct = (card.pages / MAP_PAGES) * 100;
+		var versesPct = (card.deep / MAP_VERSES) * 100;
+
+		function ringStat(cx, pct, color, label, note) {
+			var r = 20;
+			ctx.lineWidth = 5;
+			ctx.lineCap = 'butt';
+			ctx.beginPath();
+			ctx.arc(cx, ringsY, r, 0, Math.PI * 2);
+			ctx.strokeStyle = track;
+			ctx.stroke();
+			if (pct > 0) {
+				ctx.beginPath();
+				ctx.arc(cx, ringsY, r, -Math.PI / 2,
+					-Math.PI / 2 + Math.PI * 2 * Math.min(1, pct / 100));
+				ctx.lineCap = 'round';
+				ctx.strokeStyle = color;
+				ctx.stroke();
+			}
+			ctx.lineCap = 'butt';
+			ctx.textAlign = 'center';
+			ctx.fillStyle = muted;
+			ctx.font = "600 10px 'Open Sans', system-ui, sans-serif";
+			ctx.fillText(pctLabel(pct), cx, ringsY + 0.5);
+			ctx.font = "600 10.5px 'Open Sans', system-ui, sans-serif";
+			ctx.fillText(label, cx, ringsY + 34);
+			ctx.fillStyle = dark ? 'rgba(255,255,255,.46)' : 'rgba(0,0,0,.44)';
+			ctx.font = "400 9.5px 'Open Sans', system-ui, sans-serif";
+			ctx.fillText(note, cx, ringsY + 47);
+		}
+
+		ringStat(150, pagesPct, dark ? '#2ea043' : '#9be9a8',
+			'Pages visited', card.pages + ' / 604');
+		ringStat(270, versesPct, deep,
+			'Verses studied', card.deep.toLocaleString() + ' / 6,236');
+
+		var x0 = (CARD_W - gridW) / 2;
+		var slot = 0;
+		for (var v = 0; v < MAP_VERSES; v++) {
+			if (v && startSet[v]) slot++;
+			var col = slot % MAP_COLS;
+			var row = (slot - col) / MAP_COLS;
+			ctx.fillStyle = states[v] === 2 ? deep : states[v] === 1 ? light : none;
+			ctx.fillRect(x0 + col * (MAP_CELL + MAP_GAP),
+				mapTop + row * (MAP_CELL + MAP_GAP), MAP_CELL, MAP_CELL);
+			slot++;
+		}
+
+		var legendY = mapBottom + 15;
+		var legend = [
+			['Verse studied', deep],
+			['Page visited', light],
+			['Not yet', none]
+		];
+		ctx.font = "400 10.5px 'Open Sans', system-ui, sans-serif";
+		var widths = [];
+		var totalW = 0;
+		for (var l = 0; l < legend.length; l++) {
+			widths[l] = ctx.measureText(legend[l][0]).width + 11;
+			totalW += widths[l] + (l ? 16 : 0);
+		}
+		var lx = (CARD_W - totalW) / 2;
+		for (var m = 0; m < legend.length; m++) {
+			roundedRect(ctx, lx, legendY - 3.5, 7, 7, 1.5);
+			ctx.fillStyle = legend[m][1];
+			ctx.fill();
+			ctx.textAlign = 'left';
+			ctx.fillStyle = muted;
+			ctx.fillText(legend[m][0], lx + 11, legendY);
+			lx += widths[m] + 16;
+		}
+
+		/* Brand band: the site name, then the full URL under it. */
+		var bandTop = cardH - BAND;
+		ctx.fillStyle = dark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.045)';
+		ctx.fillRect(0, bandTop, CARD_W, BAND);
+
+		ctx.textAlign = 'center';
+		ctx.fillStyle = dark ? 'rgba(255,255,255,.86)' : 'rgba(0,0,0,.72)';
+		ctx.font = "600 14px 'Open Sans', system-ui, sans-serif";
+		ctx.fillText('aayatun.com', CARD_W / 2, bandTop + BAND * 0.36);
+
+		var label = String(card.url || '');
+		var size = 10.5;
+		var bandMax = CARD_W - PAD * 2;
+		ctx.fillStyle = dark ? 'rgba(255,255,255,.58)' : 'rgba(0,0,0,.46)';
+		ctx.font = "400 " + size + "px 'Open Sans', system-ui, sans-serif";
+		while (label && ctx.measureText(label).width > bandMax && size > 8) {
+			size -= 0.5;
+			ctx.font = "400 " + size + "px 'Open Sans', system-ui, sans-serif";
+		}
+		ctx.fillText(label, CARD_W / 2, bandTop + BAND * 0.72);
+
+		return out;
+	}
+
 	function drawCard(card) {
+		if (card.kind === 'map') return drawMapCard(card);
 		var maxW = CARD_W - PAD * 2;
 		var dark = isDark();
 
@@ -571,6 +749,28 @@
 		return share(versePayload(v), byId('share-btn'));
 	}
 
+	// The map card carries the visit bitsets from recent.js, so the drawing
+	// is just a paint pass: no DOM, no screenshot, and the same Web Share /
+	// clipboard fallback as the reading views.
+	function shareMap(o, btn) {
+		var url = pageUrl('/');
+		var payload = {
+			kind: 'map',
+			card: 'map',
+			ref: 'quran-exploration-map',
+			title: 'Aayatun — Quran exploration map',
+			text: 'Quran exploration map on Aayatun\n\n' +
+				o.deep.toLocaleString() + ' of 6,236 verses studied · ' +
+				o.pages + ' of 604 pages visited.\n\n' + url + '\n' + HASHTAG,
+			url: url,
+			deep: o.deep,
+			pages: o.pages,
+			states: o.states,
+			starts: o.starts
+		};
+		return share(payload, btn || byId('reading-map-share'));
+	}
+
 	/* ---------------------------------------------------------------- init */
 
 	if (document.readyState === 'loading') {
@@ -582,6 +782,7 @@
 	window.AayatunShare = {
 		fromButton: fromButton,
 		shareVerse: shareVerse,
+		shareMap: shareMap,
 		payloadFromButton: payloadFromButton,
 		cardFor: cardFor,
 		drawCard: drawCard

@@ -1,5 +1,5 @@
 /*
- * Reading map: a GitHub-contribution-style grid of all 6,236 verses.
+ * Quran exploration map: a GitHub-contribution-style grid of all 6,236 verses.
  *
  * One square per verse in canonical mushaf order. The map data comes from
  * recent.js (localStorage bitsets), so it needs no network: a verse is deep
@@ -59,11 +59,21 @@
 	var openLink = document.getElementById('reading-map-open');
 	var nextBox = document.getElementById('reading-map-next');
 	var globe = document.getElementById('recent-map');
+	var shareBtn = document.getElementById('reading-map-share');
+	var pagesRing = document.getElementById('reading-map-pages-ring');
+	var pagesPctEl = document.getElementById('reading-map-pages-pct');
+	var pagesNote = document.getElementById('reading-map-pages-note');
+	var versesRing = document.getElementById('reading-map-verses-ring');
+	var versesPctEl = document.getElementById('reading-map-verses-pct');
+	var versesNote = document.getElementById('reading-map-verses-note');
 
 	if (!grid || !globe || surahs.length !== 114) return;
 
 	var built = false;
 	var currentMap = null;
+	// Clicking a square selects it: the readout and border stay on that verse
+	// until another square is clicked. Hovering only previews its label.
+	var selected = -1;
 
 	function hasBit(bits, i)
 	{
@@ -110,6 +120,32 @@
 		built = true;
 	}
 
+	var stats = { deep: 0, pages: 0 };
+
+	function percent(n, total)
+	{
+		return total ? (n / total) * 100 : 0;
+	}
+
+	function pctLabel(p)
+	{
+		if (!p) return '0%';
+		if (p >= 99.95) return '100%';
+		if (p < 1) return p.toFixed(2) + '%';
+		if (p < 10) return p.toFixed(1) + '%';
+		return Math.round(p) + '%';
+	}
+
+	// The rings use r=20 (viewBox 48), so the dash length is the circumference.
+	var RING_C = 2 * Math.PI * 20;
+
+	function setRing(el, pct)
+	{
+		if (!el) return;
+		var p = Math.min(100, Math.max(0, pct));
+		el.style.strokeDashoffset = (RING_C * (1 - p / 100)).toFixed(2);
+	}
+
 	function paint()
 	{
 		currentMap = (window.AayatunRecent && window.AayatunRecent.map)
@@ -125,7 +161,7 @@
 			if (state === 'deep') deep++;
 			cell.className = 'rg-cell' +
 				(state === 'deep' ? ' is-deep' : state === 'light' ? ' is-light' : '') +
-				(currentMap && currentMap.last === i ? ' is-last' : '');
+				(i === selected ? ' is-selected' : '');
 		}
 
 		var pages = 0;
@@ -137,10 +173,26 @@
 
 		summary.textContent = deep.toLocaleString() + ' of 6,236 verses studied · ' +
 			pages + ' of 604 pages visited';
-		grid.setAttribute('aria-label', 'Reading map: ' + deep +
+		grid.setAttribute('aria-label', 'Quran exploration map: ' + deep +
 			' of 6,236 verses studied, ' + pages + ' of 604 pages visited.');
+		stats.deep = deep;
+		stats.pages = pages;
+
+		var pagesPct = percent(pages, PAGE_COUNT);
+		var versesPct = percent(deep, VERSE_COUNT);
+		setRing(pagesRing, pagesPct);
+		setRing(versesRing, versesPct);
+		if (pagesPctEl) pagesPctEl.textContent = pctLabel(pagesPct);
+		if (versesPctEl) versesPctEl.textContent = pctLabel(versesPct);
+		if (pagesNote) pagesNote.textContent = pages + ' of 604';
+		if (versesNote) versesNote.textContent = deep.toLocaleString() + ' of 6,236';
+		if (pagesRing && pagesRing.ownerSVGElement)
+			pagesRing.ownerSVGElement.setAttribute('aria-valuenow', pages);
+		if (versesRing && versesRing.ownerSVGElement)
+			versesRing.ownerSVGElement.setAttribute('aria-valuenow', deep);
 
 		suggest(currentMap);
+		renderReadout(selected);
 	}
 
 	// The grid has no layout while the modal is hidden, so centre the last
@@ -191,9 +243,14 @@
 		}
 	}
 
-	function showCell(i)
+	function renderReadout(i)
 	{
 		if (!openLink || !hint) return;
+		if (!(i >= 0) || i >= VERSE_COUNT) {
+			openLink.hidden = true;
+			hint.hidden = false;
+			return;
+		}
 		var loc = locate(i);
 		var state = stateOf(currentMap, i);
 		openLink.textContent = loc.s.name + ' ' + loc.s.no + ':' + loc.verse +
@@ -204,17 +261,86 @@
 		hint.hidden = true;
 	}
 
-	function onCell(evt)
+	function cellOf(evt)
 	{
 		var node = evt.target;
 		while (node && node !== grid && !(node.getAttribute && node.getAttribute('data-i'))) {
 			node = node.parentNode;
 		}
-		if (node && node !== grid) showCell(+node.getAttribute('data-i'));
+		return (node && node !== grid) ? node : null;
 	}
 
-	grid.addEventListener('pointerover', onCell);
-	grid.addEventListener('click', onCell);
+	function hoverCell(evt)
+	{
+		// Touch has no hover: a tap goes straight to the click selection.
+		if (evt.pointerType && evt.pointerType !== 'mouse') return;
+		var node = cellOf(evt);
+		renderReadout(node ? +node.getAttribute('data-i') : selected);
+	}
+
+	function selectCell(evt)
+	{
+		var node = cellOf(evt);
+		if (!node) return;
+		var i = +node.getAttribute('data-i');
+		if (selected >= 0) {
+			var prev = grid.querySelector('.rg-cell.is-selected');
+			if (prev) prev.classList.remove('is-selected');
+		}
+		selected = i;
+		node.classList.add('is-selected');
+		renderReadout(i);
+	}
+
+	function leaveGrid(evt)
+	{
+		if (evt.pointerType && evt.pointerType !== 'mouse') return;
+		renderReadout(selected);
+	}
+
+	grid.addEventListener('pointermove', hoverCell);
+	grid.addEventListener('click', selectCell);
+	grid.addEventListener('pointerleave', leaveGrid);
+
+	// 0 = not yet, 1 = seen on a visited page, 2 = verse page opened. The
+	// share card draws from this array so it never re-derives the bitsets.
+	function mapStates()
+	{
+		var out = new Uint8Array(VERSE_COUNT);
+		for (var i = 0; i < VERSE_COUNT; i++) {
+			var state = stateOf(currentMap, i);
+			out[i] = state === 'deep' ? 2 : state === 'light' ? 1 : 0;
+		}
+		return out;
+	}
+
+	function shareData()
+	{
+		return {
+			deep: stats.deep, pages: stats.pages,
+			states: mapStates(), starts: surahStart
+		};
+	}
+
+	function shareMap()
+	{
+		if (window.AayatunShare && window.AayatunShare.shareMap) {
+			window.AayatunShare.shareMap(shareData(), shareBtn);
+		}
+	}
+
+	if (shareBtn) {
+		shareBtn.addEventListener('click', function (evt) {
+			evt.preventDefault();
+			shareMap();
+		});
+	}
+
+	window.AayatunReadingMap = {
+		states: mapStates,
+		shareData: shareData,
+		share: shareMap
+	};
 
 	globe.addEventListener('click', function (evt) {
 		evt.preventDefault();

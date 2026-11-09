@@ -596,6 +596,15 @@
 		window.scrollTo(0, 0);
 		syncHeight();
 		if (window.requestAnimationFrame) requestAnimationFrame(syncHeight);
+
+		// recent.js records the Quran exploration map through this event: a
+		// swipe never reloads the page, so the meta tags still point at the
+		// verse we arrived on.
+		try {
+			document.dispatchEvent(new CustomEvent('aayatun:verse', {
+				detail: { surah: d.surah, verse: d.verse, name: state.surahName }
+			}));
+		} catch (e) {}
 	}
 
 	// Make sure the current and neighbouring surahs have payloads, then

@@ -151,15 +151,108 @@
         color: #64b5f6;
     }
 
-    /* Reading map: one square per verse, GitHub-contribution style. */
+    /* Quran exploration map: one square per verse, GitHub-contribution style. */
     #reading-map-modal {
         width: min(92vw, 900px) !important;
     }
 
+    .reading-map-toolbar {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
     .reading-map-summary {
+        flex: 1;
         font-size: 85%;
         opacity: .75;
-        margin-bottom: 8px;
+        margin-bottom: 10px;
+    }
+
+    #reading-map-share {
+        border: 0;
+        background: none;
+        color: inherit;
+        opacity: .55;
+        cursor: pointer;
+        font-size: 120%;
+        line-height: 1;
+        padding: 0 2px;
+    }
+
+    #reading-map-share:hover,
+    #reading-map-share:focus-visible {
+        opacity: 1;
+        color: #2185d0;
+    }
+
+    .reading-map-rings {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px 26px;
+        margin-bottom: 14px;
+    }
+
+    .reading-map-ring-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .reading-map-ring-wrap {
+        position: relative;
+        flex: none;
+        width: 48px;
+        height: 48px;
+    }
+
+    .reading-map-ring {
+        display: block;
+        width: 48px;
+        height: 48px;
+        transform: rotate(-90deg);
+    }
+
+    .reading-map-ring circle {
+        fill: none;
+        stroke-width: 5;
+    }
+
+    .reading-map-ring .ring-track {
+        stroke: rgba(34, 36, 38, .14);
+    }
+
+    .reading-map-ring-fill {
+        stroke-linecap: round;
+        stroke-dasharray: 125.66;
+        stroke-dashoffset: 125.66;
+        transition: stroke-dashoffset .3s ease;
+    }
+
+    #reading-map-pages-ring { stroke: #9be9a8; }
+    #reading-map-verses-ring { stroke: #216e39; }
+
+    .reading-map-ring-pct {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 72%;
+        font-weight: 600;
+    }
+
+    .reading-map-ring-label {
+        font-size: 80%;
+        line-height: 1.35;
+        opacity: .8;
+    }
+
+    .reading-map-ring-label small {
+        display: block;
+        font-size: 92%;
+        opacity: .85;
     }
 
     .reading-map-legend {
@@ -196,7 +289,7 @@
         padding: 4px;
         border: 1px solid rgba(34, 36, 38, .12);
         border-radius: 4px;
-        background: #fafafa;
+        background: #e8ecf0;
     }
 
     .reading-map-grid {
@@ -218,9 +311,7 @@
     .rg-cell.is-light { background: #9be9a8; box-shadow: none; }
     .rg-cell.is-deep { background: #216e39; box-shadow: none; }
 
-    .rg-cell:hover { outline: 1px solid #2185d0; }
-
-    .rg-cell.is-last {
+    .rg-cell.is-selected {
         outline: 2px solid #2185d0;
         outline-offset: 1px;
         position: relative;
@@ -250,13 +341,13 @@
     }
 
     html.dark-theme .reading-map-scroll {
-        background: #161b22;
+        background: #0d1117;
         border-color: rgba(255, 255, 255, .12);
     }
 
     html.dark-theme .rg-cell,
     html.dark-theme .rg-swatch {
-        background: #161b22;
+        background: #21262d;
         box-shadow: inset 0 0 0 1px #30363d;
     }
 
@@ -266,8 +357,19 @@
     html.dark-theme .rg-cell.is-deep,
     html.dark-theme .rg-swatch.deep { background: #39d353; box-shadow: none; }
 
-    html.dark-theme .rg-cell:hover { outline-color: #64b5f6; }
-    html.dark-theme .rg-cell.is-last { outline-color: #64b5f6; }
+    html.dark-theme .rg-cell.is-selected { outline-color: #64b5f6; }
+
+    html.dark-theme #reading-map-share:hover,
+    html.dark-theme #reading-map-share:focus-visible {
+        color: #64b5f6;
+    }
+
+    html.dark-theme .reading-map-ring .ring-track {
+        stroke: rgba(255, 255, 255, .16);
+    }
+
+    html.dark-theme #reading-map-pages-ring { stroke: #2ea043; }
+    html.dark-theme #reading-map-verses-ring { stroke: #39d353; }
 
     /* "or" divider: vertical between columns on tablet+, horizontal when stacked */
     #home-or-v,
@@ -340,7 +442,7 @@
 			<div id="recent-head">
 				<div class="home-section-label" style="margin: 0;">Recently Read</div>
 				<div id="recent-head-actions">
-					<button type="button" id="recent-map" title="Reading map" aria-label="Open reading map"><i class="icon world" aria-hidden="true"></i></button>
+					<button type="button" id="recent-map" title="Quran exploration map" aria-label="Open Quran exploration map"><i class="icon world" aria-hidden="true"></i></button>
 					<button type="button" id="recent-clear" title="Clear all reading history" aria-label="Clear all reading history">&times;</button>
 				</div>
 			</div>
@@ -586,16 +688,41 @@ document.addEventListener('DOMContentLoaded', function () {
 			</div>
 		</div>
 		<div id="reading-map-modal" class="ui modal">
-			<div class="header">Quran exploration</div>
+			<div class="header">Quran exploration map</div>
 			<div class="content">
-				<div id="reading-map-summary" class="reading-map-summary"></div>
+				<div class="reading-map-toolbar">
+					<div id="reading-map-summary" class="reading-map-summary"></div>
+					<button type="button" id="reading-map-share" title="Share map" aria-label="Share Quran exploration map"><i class="icon share alternate" aria-hidden="true"></i></button>
+				</div>
+				<div class="reading-map-rings">
+					<div class="reading-map-ring-item">
+						<div class="reading-map-ring-wrap">
+							<svg class="reading-map-ring" viewBox="0 0 48 48" role="progressbar" aria-label="Pages visited" aria-valuemin="0" aria-valuemax="604" aria-valuenow="0">
+								<circle class="ring-track" cx="24" cy="24" r="20"></circle>
+								<circle id="reading-map-pages-ring" class="reading-map-ring-fill is-pages" cx="24" cy="24" r="20"></circle>
+							</svg>
+							<span id="reading-map-pages-pct" class="reading-map-ring-pct">0%</span>
+						</div>
+						<div class="reading-map-ring-label">Pages visited<small id="reading-map-pages-note">0 of 604</small></div>
+					</div>
+					<div class="reading-map-ring-item">
+						<div class="reading-map-ring-wrap">
+							<svg class="reading-map-ring" viewBox="0 0 48 48" role="progressbar" aria-label="Verses studied" aria-valuemin="0" aria-valuemax="6236" aria-valuenow="0">
+								<circle class="ring-track" cx="24" cy="24" r="20"></circle>
+								<circle id="reading-map-verses-ring" class="reading-map-ring-fill is-verses" cx="24" cy="24" r="20"></circle>
+							</svg>
+							<span id="reading-map-verses-pct" class="reading-map-ring-pct">0%</span>
+						</div>
+						<div class="reading-map-ring-label">Verses studied<small id="reading-map-verses-note">0 of 6,236</small></div>
+					</div>
+				</div>
 				<div class="reading-map-legend">
 					<span><i class="rg-swatch deep"></i>Verse studied</span>
 					<span><i class="rg-swatch light"></i>Page visited</span>
 					<span><i class="rg-swatch"></i>Not yet</span>
 				</div>
 				<div id="reading-map-scroll" class="reading-map-scroll">
-					<div id="reading-map-grid" class="reading-map-grid" role="img" aria-label="Reading map"></div>
+					<div id="reading-map-grid" class="reading-map-grid" role="img" aria-label="Quran exploration map"></div>
 				</div>
 				<div class="reading-map-readout">
 					<span id="reading-map-hint">Hover or tap a square to see the verse.</span>

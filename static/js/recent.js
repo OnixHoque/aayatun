@@ -1,5 +1,5 @@
 /*
- * Recently Read + the reading map.
+ * Recently Read + the Quran exploration map.
  *
  * Recently Read is a small localStorage history of the reading views: one
  * entry per reading page (verse detail, mushaf page, full-arabic surah), at
@@ -155,6 +155,38 @@
 		save(m);
 	}
 
+	// A swipe inside verse-nav.js never reloads the page, so the meta tags
+	// still describe the verse we landed on. It emits aayatun:verse with the
+	// current position and this maps it through the 114 surah offsets.
+	function trackVerse(surah, verse, name)
+	{
+		var starts = window.AAYATUN_SURAH_STARTS;
+		if (!Array.isArray(starts) || starts.length !== 114) return;
+		surah = parseInt(surah, 10);
+		verse = parseInt(verse, 10);
+		if (!(surah >= 1 && surah <= 114) || !(verse >= 1)) return;
+		var index = starts[surah - 1] + verse - 1;
+		if (!(index >= 0) || index >= VERSE_BITS) return;
+		markVerse(index);
+
+		// The chips keep the page behind an open modal; swiping inside the
+		// modal still colours the map.
+		if (window.self !== window.top) return;
+
+		var entry = {
+			t: 'verse',
+			key: surah + ':' + verse,
+			url: '/' + surah + '/' + verse,
+			label: surah + ':' + verse + (name ? ' · ' + name : '')
+		};
+		// The new position replaces the verse entry that opened the page.
+		var items = list().filter(function (it) { return it.url !== entry.url; });
+		if (items.length && items[0].t === 'verse') items.shift();
+		entry.ts = Date.now();
+		items.unshift(entry);
+		write(items.slice(0, MAX));
+	}
+
 	/* ----------------------------------------------------------- recording */
 
 	function record()
@@ -192,6 +224,11 @@
 			try { localStorage.removeItem(MAP_KEY); } catch (e) {}
 		}
 	};
+
+	document.addEventListener('aayatun:verse', function (evt) {
+		var d = evt.detail || {};
+		if (d.surah && d.verse) trackVerse(d.surah, d.verse, d.name);
+	});
 
 	if (document.readyState === 'loading') {
 		document.addEventListener('DOMContentLoaded', record);
