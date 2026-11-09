@@ -158,33 +158,39 @@
 
     .reading-map-toolbar {
         display: flex;
-        align-items: flex-start;
+        flex-wrap: wrap;
+        align-items: baseline;
         justify-content: space-between;
-        gap: 10px;
+        gap: 8px 16px;
+        margin-bottom: 12px;
     }
 
-    .reading-map-summary {
-        flex: 1;
-        font-size: 85%;
-        opacity: .75;
-        margin-bottom: 10px;
+    .reading-map-next {
+        flex: 1 1 220px;
+        font-size: 90%;
     }
 
-    #reading-map-share {
+    .reading-map-share {
+        flex: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
         border: 0;
         background: none;
-        color: inherit;
-        opacity: .55;
+        color: #2185d0;
         cursor: pointer;
-        font-size: 120%;
-        line-height: 1;
-        padding: 0 2px;
+        font-family: inherit;
+        font-size: 80%;
+        font-weight: 600;
+        line-height: 1.2;
+        padding: 2px 0;
     }
 
-    #reading-map-share:hover,
-    #reading-map-share:focus-visible {
-        opacity: 1;
-        color: #2185d0;
+    .reading-map-share .icon { margin: 0; }
+
+    .reading-map-share:hover,
+    .reading-map-share:focus-visible {
+        text-decoration: underline;
     }
 
     .reading-map-rings {
@@ -335,11 +341,6 @@
         font-weight: 600;
     }
 
-    .reading-map-next {
-        margin-top: 6px;
-        font-size: 90%;
-    }
-
     html.dark-theme .reading-map-scroll {
         background: #0d1117;
         border-color: rgba(255, 255, 255, .12);
@@ -359,10 +360,7 @@
 
     html.dark-theme .rg-cell.is-selected { outline-color: #64b5f6; }
 
-    html.dark-theme #reading-map-share:hover,
-    html.dark-theme #reading-map-share:focus-visible {
-        color: #64b5f6;
-    }
+    html.dark-theme .reading-map-share { color: #64b5f6; }
 
     html.dark-theme .reading-map-ring .ring-track {
         stroke: rgba(255, 255, 255, .16);
@@ -691,8 +689,8 @@ document.addEventListener('DOMContentLoaded', function () {
 			<div class="header">Quran exploration map</div>
 			<div class="content">
 				<div class="reading-map-toolbar">
-					<div id="reading-map-summary" class="reading-map-summary"></div>
-					<button type="button" id="reading-map-share" title="Share map" aria-label="Share Quran exploration map"><i class="icon share alternate" aria-hidden="true"></i></button>
+					<div id="reading-map-next" class="reading-map-next"></div>
+					<button type="button" id="reading-map-share" class="reading-map-share" title="Share the map with your friends" aria-label="Share the Quran exploration map with your friends"><span>Share with your friends!</span><i class="icon share alternate" aria-hidden="true"></i></button>
 				</div>
 				<div class="reading-map-rings">
 					<div class="reading-map-ring-item">
@@ -728,7 +726,6 @@ document.addEventListener('DOMContentLoaded', function () {
 					<span id="reading-map-hint">Hover or tap a square to see the verse.</span>
 					<a id="reading-map-open" href="#" hidden></a>
 				</div>
-				<div id="reading-map-next" class="reading-map-next"></div>
 			</div>
 		</div>
 		<div id="clear-history-modal" class="ui mini modal">

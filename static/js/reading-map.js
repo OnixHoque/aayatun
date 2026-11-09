@@ -54,7 +54,6 @@
 
 	var grid = document.getElementById('reading-map-grid');
 	var scroll = document.getElementById('reading-map-scroll');
-	var summary = document.getElementById('reading-map-summary');
 	var hint = document.getElementById('reading-map-hint');
 	var openLink = document.getElementById('reading-map-open');
 	var nextBox = document.getElementById('reading-map-next');
@@ -171,8 +170,6 @@
 			}
 		}
 
-		summary.textContent = deep.toLocaleString() + ' of 6,236 verses studied · ' +
-			pages + ' of 604 pages visited';
 		grid.setAttribute('aria-label', 'Quran exploration map: ' + deep +
 			' of 6,236 verses studied, ' + pages + ' of 604 pages visited.');
 		stats.deep = deep;
@@ -231,8 +228,8 @@
 
 		var loc = locate(idx);
 		var label = loc.s.name + ' ' + loc.s.no + ':' + loc.verse;
-		var prefix = kind === 'none' ? 'Next unread: '
-			: kind === 'light' ? 'Next to study: ' : 'All verses opened — revisit ';
+		var prefix = kind === 'none' ? 'Suggested next unread: '
+			: kind === 'light' ? 'Suggested next to study: ' : 'All verses opened — revisit ';
 		var a = document.createElement('a');
 		a.href = '/' + loc.s.no + '/' + loc.verse;
 		a.textContent = label;

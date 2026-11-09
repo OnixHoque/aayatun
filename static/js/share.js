@@ -678,6 +678,14 @@
 
 	function flash(btn) {
 		if (!btn) return;
+		// Swap only the icon so a labelled button keeps its text.
+		var icon = btn.querySelector('.icon');
+		if (icon) {
+			var was = icon.className;
+			icon.className = 'icon check';
+			window.setTimeout(function () { icon.className = was; }, 1200);
+			return;
+		}
 		var old = btn.innerHTML;
 		btn.innerHTML = '<i class="icon check" aria-hidden="true"></i>';
 		window.setTimeout(function () { btn.innerHTML = old; }, 1200);
