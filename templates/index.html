@@ -58,6 +58,29 @@
         opacity: .45;
     }
 
+    /* The two home actions share one row; the labels stay readable down to
+       the narrowest phone width. */
+    .home-actions-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 18px;
+    }
+
+    .home-actions-row .ui.button {
+        margin: 0;
+        min-width: 0;
+        padding: 16px 10px;
+        font-family: 'Open Sans';
+        font-size: 90%;
+        line-height: 1.25;
+        white-space: normal;
+    }
+
+    .home-actions-row .ui.button .icon {
+        margin-right: 4px;
+    }
+
     /* Recently Read: chips rendered from localStorage by recent.js */
     #recent-reads {
         margin-top: 18px;
@@ -267,11 +290,28 @@
     #reading-map-modal > .actions {
         display: flex;
         align-items: center;
+        justify-content: flex-end;
         gap: 8px;
     }
 
+    /* Clear history sits with the legend, above the grid, so it is part of
+       the map itself rather than a footer afterthought. */
     #reading-map-clear {
-        margin-right: auto;
+        margin-left: auto;
+        border: 0;
+        background: none;
+        padding: 2px 0;
+        color: #c0392b;
+        font-family: inherit;
+        font-size: 95%;
+        line-height: 1.2;
+        text-decoration: underline;
+        cursor: pointer;
+    }
+
+    #reading-map-clear:hover,
+    #reading-map-clear:focus-visible {
+        color: #e74c3c;
     }
 
     #reading-map-modal > .actions .button {
@@ -358,6 +398,7 @@
     .reading-map-legend {
         display: flex;
         flex-wrap: wrap;
+        align-items: center;
         gap: 14px;
         font-size: 80%;
         opacity: .8;
@@ -468,9 +509,13 @@
         box-shadow: 0 0 0 1px rgba(255, 255, 255, .16) inset !important;
     }
 
-    html.dark-theme #reading-map-clear.ui.basic.red.button {
-        color: #ff8a8a !important;
-        box-shadow: 0 0 0 1px rgba(255, 120, 120, .4) inset !important;
+    html.dark-theme #reading-map-clear {
+        color: #ff8a8a;
+    }
+
+    html.dark-theme #reading-map-clear:hover,
+    html.dark-theme #reading-map-clear:focus-visible {
+        color: #ffb3b3;
     }
 
     html.dark-theme .reading-map-ring .ring-track {
@@ -545,8 +590,10 @@
 			</div>
 		</div>
 
-		<button class="ui huge basic fluid button" style="font-family: Open Sans; font-size: 95%; margin-top: 18px;" id='btnSurprise'> Surprise me! </button>
-		<button class="ui huge basic fluid button" style="font-family: Open Sans; font-size: 95%; margin-top: 10px;" id="recent-map" aria-label="Open Quran exploration map"><i class="icon world" aria-hidden="true"></i> Quran exploration map</button>
+		<div class="home-actions-row">
+			<button class="ui huge basic fluid button" id='btnSurprise'> Surprise me! </button>
+			<button class="ui huge basic fluid button" id="recent-map" aria-label="Open Quran exploration map"><i class="icon world" aria-hidden="true"></i> Quran exploration map</button>
+		</div>
 
 		<div id="recent-reads" hidden>
 			<div id="recent-head">
@@ -848,13 +895,13 @@ document.addEventListener('DOMContentLoaded', function () {
 					<span><i class="rg-swatch deep"></i>Verse studied</span>
 					<span><i class="rg-swatch light"></i>Page visited</span>
 					<span><i class="rg-swatch"></i>Not yet</span>
+					<button type="button" id="reading-map-clear">Clear history</button>
 				</div>
 				<div id="reading-map-scroll" class="reading-map-scroll">
 					<div id="reading-map-grid" class="reading-map-grid" role="img" aria-label="Quran exploration map"></div>
 				</div>
 			</div>
 			<div class="actions">
-				<button type="button" id="reading-map-clear" class="ui basic red button">Clear history</button>
 				<button type="button" id="reading-map-close" class="ui basic button">Close</button>
 			</div>
 		</div>
