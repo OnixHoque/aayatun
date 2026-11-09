@@ -40,13 +40,13 @@
 
 	var TITLE = { weight: 700, family: 'Merriweather, Georgia, serif', size: 24, line: 1.3 };
 	var SUB = { weight: 400, family: "'Open Sans', system-ui, sans-serif", size: 13, line: 1.5 };
-	var ARABIC = { weight: 700, family: 'Scheherazade, serif', size: 30, line: 1.75 };
+	var ARABIC = { weight: 700, family: 'Scheherazade, serif', size: 33, line: 1.75 };
 	var TRANS = { weight: 400, family: "'Open Sans', system-ui, sans-serif", size: 15, line: 1.55 };
 	// Multi-verse cards carry five verses, so they start a little smaller and
 	// shrink (down to the minimums) until the body fits MAX_BODY.
-	var M_ARABIC = { weight: 700, family: 'Scheherazade, serif', size: 26, line: 1.7 };
+	var M_ARABIC = { weight: 700, family: 'Scheherazade, serif', size: 28, line: 1.7 };
 	var M_TRANS = { weight: 400, family: "'Open Sans', system-ui, sans-serif", size: 13, line: 1.5 };
-	var M_MIN_ARABIC = 17;
+	var M_MIN_ARABIC = 18;
 	var M_MIN_TRANS = 9.5;
 	var MAX_BODY = 1200;      // CSS px of text before the fit pass shrinks it
 
@@ -57,10 +57,12 @@
 		'tafsir-bn': 'Bangla tafsir (Abu Bakr Zakaria)'
 	};
 
-	// Quran exploration map card: one 5 px square per verse plus a one-square
-	// gap at each surah start, 60 columns wide. That lands at 420 x ~887 CSS
-	// px, the tall portrait shape that reads well in a chat.
-	var MAP_COLS = 60;
+	// Quran exploration map card: one 5 px square per verse, no surah gaps
+	// and 70 columns, so the grid is a clean uniform block. The card is a
+	// little wider than the reading cards (460 x ~790 CSS px) to give the
+	// two progress rings room without crowding the grid.
+	var MAP_W = 460;
+	var MAP_COLS = 70;
 	var MAP_CELL = 5;
 	var MAP_GAP = 1;
 	var MAP_VERSES = 6236;
@@ -80,18 +82,6 @@
 		return document.documentElement.classList.contains('dark-theme');
 	}
 	function pageUrl(path) { return new URL(path, window.location.origin).href; }
-
-	// Rounded rectangle path; canvas roundRect is not in older Safari.
-	function roundedRect(ctx, x, y, w, h, r) {
-		r = Math.min(r, h / 2, w / 2);
-		ctx.beginPath();
-		ctx.moveTo(x + r, y);
-		ctx.arcTo(x + w, y, x + w, y + h, r);
-		ctx.arcTo(x + w, y + h, x, y + h, r);
-		ctx.arcTo(x, y + h, x, y, r);
-		ctx.arcTo(x, y, x + w, y, r);
-		ctx.closePath();
-	}
 
 	function pctLabel(p) {
 		if (!p) return '0%';
@@ -256,7 +246,10 @@
 			card.subtitle = VIEW_LABEL[payload.card] || '';
 			card.verses = payload.verses;
 			card.more = !!payload.more;
-			if (!card.verses) card.arabic = firstVerseText();
+			// The translation view is a translation card: its Arabic paragraph
+			// would double the card and say nothing the English does not.
+			card.skipArabic = payload.card === 'translation';
+			if (!card.verses && !card.skipArabic) card.arabic = firstVerseText();
 		} else if (payload.card === 'page') {
 			card.title = 'Mushaf page ' + payload.page;
 			card.subtitle = payload.range || '';
@@ -326,16 +319,29 @@
 	// the medallion after each, then all the translations as a second
 	// paragraph underneath, with the same medallions inline. A trailing
 	// ellipsis on both paragraphs says the view has more verses than fit.
-	// Measured at one size pair so the fit pass can shrink both faces.
-	function measureBody(ctx, verses, aSize, tSize, maxW, more) {
-		var arabicText = '';
-		for (var i = 0; i < verses.length; i++) {
-			var part = String(verses[i][2] || '').trim() + ' ' +
-				verseMarker(verses[i][1]);
-			arabicText += arabicText ? ' ' + part : part;
+	// Translation cards pass skipArabic: only the translation paragraph (and
+	// its medallions) is measured and drawn. Measured at one size pair so the
+	// fit pass can shrink both faces.
+	function measureBody(ctx, verses, aSize, tSize, maxW, more, skipArabic) {
+		var arabic = [];
+		if (!skipArabic) {
+			var arabicText = '';
+			for (var i = 0; i < verses.length; i++) {
+				var part = String(verses[i][2] || '').trim() + ' ' +
+					verseMarker(verses[i][1]);
+				arabicText += arabicText ? ' ' + part : part;
+			}
+			if (more) arabicText += ' …';
+			arabic = linesFor(ctx, arabicText, M_ARABIC, aSize, maxW, true);
+			// Keep the truncation mark on the final line instead of letting it
+			// sit alone on a new one; the small overhang is the same allowance
+			// the medallion gets.
+			if (more && arabic.length > 1 &&
+				arabic[arabic.length - 1] === '…') {
+				arabic[arabic.length - 2] += ' …';
+				arabic.pop();
+			}
 		}
-		if (more) arabicText += ' …';
-		var arabic = linesFor(ctx, arabicText, M_ARABIC, aSize, maxW, true);
 
 		var markerSize = Math.max(12, tSize * 1.5);
 		var tokens = [];
@@ -374,7 +380,8 @@
 		for (var t = 0; t < tokens.length; t++) {
 			var tok = tokens[t];
 			var add = cur.length ? spaceW + tok.width : tok.width;
-			if (cur.length && curW + add > maxW && !tok.marker) {
+			if (cur.length && curW + add > maxW &&
+				!tok.marker && tok.text !== '…') {
 				lines.push({ tokens: cur, width: curW });
 				cur = [];
 				curW = 0;
@@ -385,12 +392,13 @@
 		}
 		if (cur.length) lines.push({ tokens: cur, width: curW });
 
-		var arabicH = arabic.length * aSize * M_ARABIC.line;
+		var arabicH = skipArabic ? 0 : arabic.length * aSize * M_ARABIC.line;
 		var transH = lines.length * tSize * M_TRANS.line;
 		return {
 			arabic: arabic, trans: lines, spaceW: spaceW,
-			markerSize: markerSize,
-			height: arabicH + (lines.length ? 22 + transH : 0)
+			markerSize: markerSize, skipArabic: !!skipArabic,
+			height: arabicH +
+				(lines.length ? (skipArabic ? 0 : 22) + transH : 0)
 		};
 	}
 
@@ -398,33 +406,29 @@
 		var dark = isDark();
 		var states = card.states && card.states.length === MAP_VERSES
 			? card.states : new Uint8Array(MAP_VERSES);
-		var starts = card.starts || [];
-		var startSet = {};
-		for (var s = 1; s < starts.length; s++) startSet[starts[s]] = true;
 
-		var items = MAP_VERSES + (starts.length ? starts.length - 1 : 0);
-		var rows = Math.ceil(items / MAP_COLS);
+		var rows = Math.ceil(MAP_VERSES / MAP_COLS);
 		var gridW = MAP_COLS * MAP_CELL + (MAP_COLS - 1) * MAP_GAP;
 		var gridH = rows * MAP_CELL + (rows - 1) * MAP_GAP;
 
 		var titleY = PAD + 24;
-		var ringsY = titleY + 54;
-		var mapTop = ringsY + 60;
+		var ringsY = titleY + 60;
+		var mapTop = ringsY + 58;
 		var mapBottom = mapTop + gridH;
-		var cardH = mapBottom + 30 + BAND;
+		var cardH = mapBottom + 24 + BAND;
 
 		var out = document.createElement('canvas');
-		out.width = Math.round(CARD_W * SCALE);
+		out.width = Math.round(MAP_W * SCALE);
 		out.height = Math.round(cardH * SCALE);
 		var ctx = out.getContext('2d');
 		ctx.scale(SCALE, SCALE);
 		ctx.textBaseline = 'middle';
 
 		ctx.fillStyle = dark ? '#1b1c1d' : '#ffffff';
-		ctx.fillRect(0, 0, CARD_W, cardH);
+		ctx.fillRect(0, 0, MAP_W, cardH);
 
 		var titleColor = dark ? '#9CC4FF' : '#4183C4';
-		var muted = dark ? 'rgba(255,255,255,.62)' : 'rgba(0,0,0,.56)';
+		var muted = dark ? 'rgba(255,255,255,.56)' : 'rgba(0,0,0,.5)';
 		var track = dark ? 'rgba(255,255,255,.13)' : 'rgba(0,0,0,.07)';
 		var none = dark ? '#2a2f36' : '#e6e9ec';
 		var light = dark ? '#1f6f3f' : '#9be9a8';
@@ -433,14 +437,17 @@
 		ctx.textAlign = 'center';
 		ctx.fillStyle = titleColor;
 		ctx.font = fontFor(TITLE, TITLE.size);
-		ctx.fillText('Quran exploration map', CARD_W / 2, titleY);
+		ctx.fillText('Quran exploration map', MAP_W / 2, titleY);
 
 		var pagesPct = (card.pages / MAP_PAGES) * 100;
 		var versesPct = (card.deep / MAP_VERSES) * 100;
 
+		// The rings are the card's headline: r=34 with a 9 px stroke, and the
+		// label/count sit beside each one so the stats row stays short and the
+		// grid gets the height.
 		function ringStat(cx, pct, color, label, note) {
-			var r = 20;
-			ctx.lineWidth = 5;
+			var r = 34;
+			ctx.lineWidth = 9;
 			ctx.lineCap = 'butt';
 			ctx.beginPath();
 			ctx.arc(cx, ringsY, r, 0, Math.PI * 2);
@@ -456,77 +463,57 @@
 			}
 			ctx.lineCap = 'butt';
 			ctx.textAlign = 'center';
+			ctx.fillStyle = dark ? 'rgba(255,255,255,.9)' : 'rgba(0,0,0,.8)';
+			ctx.font = "700 15px 'Open Sans', system-ui, sans-serif";
+			ctx.fillText(pctLabel(pct), cx, ringsY + 1);
+
+			ctx.textAlign = 'left';
+			ctx.fillStyle = dark ? 'rgba(255,255,255,.88)' : 'rgba(0,0,0,.78)';
+			ctx.font = "600 13px 'Open Sans', system-ui, sans-serif";
+			ctx.fillText(label, cx + 48, ringsY - 9);
 			ctx.fillStyle = muted;
-			ctx.font = "600 10px 'Open Sans', system-ui, sans-serif";
-			ctx.fillText(pctLabel(pct), cx, ringsY + 0.5);
-			ctx.font = "600 10.5px 'Open Sans', system-ui, sans-serif";
-			ctx.fillText(label, cx, ringsY + 34);
-			ctx.fillStyle = dark ? 'rgba(255,255,255,.46)' : 'rgba(0,0,0,.44)';
-			ctx.font = "400 9.5px 'Open Sans', system-ui, sans-serif";
-			ctx.fillText(note, cx, ringsY + 47);
+			ctx.font = "400 11px 'Open Sans', system-ui, sans-serif";
+			ctx.fillText(note, cx + 48, ringsY + 11);
 		}
 
-		ringStat(150, pagesPct, dark ? '#2ea043' : '#9be9a8',
-			'Pages visited', card.pages + ' / 604');
-		ringStat(270, versesPct, deep,
-			'Verses studied', card.deep.toLocaleString() + ' / 6,236');
+		var blockW = 180;
+		var blockGap = 26;
+		var blockX = (MAP_W - blockW * 2 - blockGap) / 2;
+		ringStat(blockX + 38.5, pagesPct,
+			dark ? '#2ea043' : '#9be9a8',
+			'Pages visited', card.pages + ' of 604');
+		ringStat(blockX + blockW + blockGap + 38.5, versesPct, deep,
+			'Verses studied', card.deep.toLocaleString() + ' of 6,236');
 
-		var x0 = (CARD_W - gridW) / 2;
-		var slot = 0;
+		var x0 = (MAP_W - gridW) / 2;
 		for (var v = 0; v < MAP_VERSES; v++) {
-			if (v && startSet[v]) slot++;
-			var col = slot % MAP_COLS;
-			var row = (slot - col) / MAP_COLS;
+			var col = v % MAP_COLS;
+			var row = (v - col) / MAP_COLS;
 			ctx.fillStyle = states[v] === 2 ? deep : states[v] === 1 ? light : none;
 			ctx.fillRect(x0 + col * (MAP_CELL + MAP_GAP),
 				mapTop + row * (MAP_CELL + MAP_GAP), MAP_CELL, MAP_CELL);
-			slot++;
-		}
-
-		var legendY = mapBottom + 15;
-		var legend = [
-			['Verse studied', deep],
-			['Page visited', light],
-			['Not yet', none]
-		];
-		ctx.font = "400 10.5px 'Open Sans', system-ui, sans-serif";
-		var widths = [];
-		var totalW = 0;
-		for (var l = 0; l < legend.length; l++) {
-			widths[l] = ctx.measureText(legend[l][0]).width + 11;
-			totalW += widths[l] + (l ? 16 : 0);
-		}
-		var lx = (CARD_W - totalW) / 2;
-		for (var m = 0; m < legend.length; m++) {
-			roundedRect(ctx, lx, legendY - 3.5, 7, 7, 1.5);
-			ctx.fillStyle = legend[m][1];
-			ctx.fill();
-			ctx.textAlign = 'left';
-			ctx.fillStyle = muted;
-			ctx.fillText(legend[m][0], lx + 11, legendY);
-			lx += widths[m] + 16;
 		}
 
 		/* Brand band: the site name, then the full URL under it. */
 		var bandTop = cardH - BAND;
 		ctx.fillStyle = dark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.045)';
-		ctx.fillRect(0, bandTop, CARD_W, BAND);
+		ctx.fillRect(0, bandTop, MAP_W, BAND);
 
 		ctx.textAlign = 'center';
 		ctx.fillStyle = dark ? 'rgba(255,255,255,.86)' : 'rgba(0,0,0,.72)';
 		ctx.font = "600 14px 'Open Sans', system-ui, sans-serif";
-		ctx.fillText('aayatun.com', CARD_W / 2, bandTop + BAND * 0.36);
+		ctx.fillText('aayatun.com', MAP_W / 2, bandTop + BAND * 0.36);
 
 		var label = String(card.url || '');
 		var size = 10.5;
-		var bandMax = CARD_W - PAD * 2;
+		var bandMax = MAP_W - PAD * 2;
 		ctx.fillStyle = dark ? 'rgba(255,255,255,.58)' : 'rgba(0,0,0,.46)';
 		ctx.font = "400 " + size + "px 'Open Sans', system-ui, sans-serif";
 		while (label && ctx.measureText(label).width > bandMax && size > 8) {
 			size -= 0.5;
 			ctx.font = "400 " + size + "px 'Open Sans', system-ui, sans-serif";
 		}
-		ctx.fillText(label, CARD_W / 2, bandTop + BAND * 0.72);
+		ctx.fillText(label, MAP_W / 2, bandTop + BAND * 0.72);
 
 		return out;
 	}
@@ -551,7 +538,8 @@
 
 		if (verses) {
 			for (var pass = 0; pass < 40; pass++) {
-				fitted = measureBody(meter, verses, aSize, tSize, maxW, card.more);
+				fitted = measureBody(meter, verses, aSize, tSize, maxW,
+					card.more, card.skipArabic);
 				if (titleH + subH + 18 + fitted.height <= MAX_BODY ||
 					(aSize <= M_MIN_ARABIC + 0.01 && tSize <= M_MIN_TRANS + 0.01)) {
 					break;
@@ -609,9 +597,11 @@
 		}
 		y += 18;
 		if (verses) {
-			y = block(fitted.arabic, M_ARABIC, aSize, arColor, y, true);
+			if (!fitted.skipArabic) {
+				y = block(fitted.arabic, M_ARABIC, aSize, arColor, y, true);
+			}
 			if (fitted.trans.length) {
-				y += 22;
+				if (!fitted.skipArabic) y += 22;
 				var lh = tSize * M_TRANS.line;
 				ctx.direction = 'ltr';
 				for (var k = 0; k < fitted.trans.length; k++) {
