@@ -156,18 +156,92 @@
         width: min(92vw, 900px) !important;
     }
 
-    .reading-map-toolbar {
+    .reading-map-cards {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+
+    .reading-map-card {
         display: flex;
-        flex-wrap: wrap;
-        align-items: baseline;
-        justify-content: space-between;
-        gap: 8px 16px;
-        margin-bottom: 12px;
+        flex-direction: column;
+        gap: 5px;
+        min-width: 0;
+        padding: 11px 13px;
+        border: 1px solid rgba(34, 36, 38, .12);
+        border-radius: 8px;
+        background: #fff;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, .035);
+    }
+
+    .reading-map-card-lead {
+        grid-column: 1 / -1;
+    }
+
+    .reading-map-card-label {
+        font-size: 68%;
+        font-weight: 600;
+        letter-spacing: .05em;
+        text-transform: uppercase;
+        opacity: .5;
+    }
+
+    .reading-map-card-title {
+        font-size: 88%;
+        font-weight: 600;
+        line-height: 1.3;
+    }
+
+    .reading-map-card-text {
+        margin: 0;
+        font-size: 76%;
+        line-height: 1.4;
+        opacity: .65;
+    }
+
+    .reading-map-readout {
+        min-height: 1.5em;
+        font-size: 90%;
+        line-height: 1.4;
+    }
+
+    #reading-map-hint {
+        opacity: .55;
+    }
+
+    #reading-map-open {
+        font-weight: 600;
     }
 
     .reading-map-next {
-        flex: 1 1 220px;
-        font-size: 90%;
+        font-size: 84%;
+        line-height: 1.4;
+    }
+
+    .reading-map-next a {
+        font-weight: 600;
+    }
+
+    .reading-map-help {
+        margin: 1px 0 0;
+        font-size: 74%;
+        line-height: 1.45;
+        opacity: .6;
+    }
+
+    .reading-map-stat {
+        flex-direction: row;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .reading-map-card-share {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px 16px;
     }
 
     .reading-map-share {
@@ -176,34 +250,34 @@
         align-items: center;
         gap: 6px;
         border: 0;
-        background: none;
-        color: #2185d0;
+        border-radius: 6px;
+        background: #2185d0;
+        color: #fff;
         cursor: pointer;
         font-family: inherit;
-        font-size: 80%;
+        font-size: 78%;
         font-weight: 600;
         line-height: 1.2;
-        padding: 2px 0;
+        padding: 7px 12px;
     }
 
     .reading-map-share .icon { margin: 0; }
 
     .reading-map-share:hover,
     .reading-map-share:focus-visible {
-        text-decoration: underline;
+        background: #1678c2;
     }
 
-    .reading-map-rings {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px 26px;
-        margin-bottom: 14px;
+    @media (max-width: 639px) {
+        .reading-map-card-share {
+            grid-column: 1 / -1;
+        }
     }
 
-    .reading-map-ring-item {
-        display: flex;
-        align-items: center;
-        gap: 10px;
+    @media (min-width: 640px) {
+        .reading-map-cards {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
     }
 
     .reading-map-ring-wrap {
@@ -329,18 +403,6 @@
         height: 7px;
     }
 
-    .reading-map-readout {
-        min-height: 1.6em;
-        margin-top: 10px;
-        font-size: 85%;
-    }
-
-    #reading-map-hint { opacity: .55; }
-
-    #reading-map-open {
-        font-weight: 600;
-    }
-
     html.dark-theme .reading-map-scroll {
         background: #0d1117;
         border-color: rgba(255, 255, 255, .12);
@@ -360,7 +422,21 @@
 
     html.dark-theme .rg-cell.is-selected { outline-color: #64b5f6; }
 
-    html.dark-theme .reading-map-share { color: #64b5f6; }
+    html.dark-theme .reading-map-card {
+        background: #21262d;
+        border-color: rgba(255, 255, 255, .1);
+        box-shadow: none;
+    }
+
+    html.dark-theme .reading-map-share {
+        background: #64b5f6;
+        color: #0d1117;
+    }
+
+    html.dark-theme .reading-map-share:hover,
+    html.dark-theme .reading-map-share:focus-visible {
+        background: #8cc8ff;
+    }
 
     html.dark-theme .reading-map-ring .ring-track {
         stroke: rgba(255, 255, 255, .16);
@@ -688,12 +764,17 @@ document.addEventListener('DOMContentLoaded', function () {
 		<div id="reading-map-modal" class="ui modal">
 			<div class="header">Quran exploration map</div>
 			<div class="content">
-				<div class="reading-map-toolbar">
-					<div id="reading-map-next" class="reading-map-next"></div>
-					<button type="button" id="reading-map-share" class="reading-map-share" title="Share the map with your friends" aria-label="Share the Quran exploration map with your friends"><span>Share with your friends!</span><i class="icon share alternate" aria-hidden="true"></i></button>
-				</div>
-				<div class="reading-map-rings">
-					<div class="reading-map-ring-item">
+				<div class="reading-map-cards">
+					<div class="reading-map-card reading-map-card-lead">
+						<div class="reading-map-card-label">Selected verse</div>
+						<div class="reading-map-readout">
+							<span id="reading-map-hint">Hover or tap a square to see the verse.</span>
+							<a id="reading-map-open" href="#" hidden></a>
+						</div>
+						<div id="reading-map-next" class="reading-map-next"></div>
+						<p class="reading-map-help">Each square is one verse in mushaf order, from Al-Fatihah to An-Nas. Tap any square to open that verse; the legend below explains the colours.</p>
+					</div>
+					<div class="reading-map-card reading-map-stat">
 						<div class="reading-map-ring-wrap">
 							<svg class="reading-map-ring" viewBox="0 0 48 48" role="progressbar" aria-label="Pages visited" aria-valuemin="0" aria-valuemax="604" aria-valuenow="0">
 								<circle class="ring-track" cx="24" cy="24" r="20"></circle>
@@ -703,7 +784,7 @@ document.addEventListener('DOMContentLoaded', function () {
 						</div>
 						<div class="reading-map-ring-label">Pages visited<small id="reading-map-pages-note">0 of 604</small></div>
 					</div>
-					<div class="reading-map-ring-item">
+					<div class="reading-map-card reading-map-stat">
 						<div class="reading-map-ring-wrap">
 							<svg class="reading-map-ring" viewBox="0 0 48 48" role="progressbar" aria-label="Verses studied" aria-valuemin="0" aria-valuemax="6236" aria-valuenow="0">
 								<circle class="ring-track" cx="24" cy="24" r="20"></circle>
@@ -713,6 +794,13 @@ document.addEventListener('DOMContentLoaded', function () {
 						</div>
 						<div class="reading-map-ring-label">Verses studied<small id="reading-map-verses-note">0 of 6,236</small></div>
 					</div>
+					<div class="reading-map-card reading-map-card-share">
+						<div>
+							<div class="reading-map-card-title">Share with your friends!</div>
+							<p class="reading-map-card-text">Send them a picture of your map.</p>
+						</div>
+						<button type="button" id="reading-map-share" class="reading-map-share" title="Share the map with your friends" aria-label="Share the Quran exploration map with your friends"><i class="icon share alternate" aria-hidden="true"></i><span>Share map</span></button>
+					</div>
 				</div>
 				<div class="reading-map-legend">
 					<span><i class="rg-swatch deep"></i>Verse studied</span>
@@ -721,10 +809,6 @@ document.addEventListener('DOMContentLoaded', function () {
 				</div>
 				<div id="reading-map-scroll" class="reading-map-scroll">
 					<div id="reading-map-grid" class="reading-map-grid" role="img" aria-label="Quran exploration map"></div>
-				</div>
-				<div class="reading-map-readout">
-					<span id="reading-map-hint">Hover or tap a square to see the verse.</span>
-					<a id="reading-map-open" href="#" hidden></a>
 				</div>
 			</div>
 		</div>
