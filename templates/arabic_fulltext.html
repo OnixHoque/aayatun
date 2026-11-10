@@ -6,6 +6,7 @@
 
 {% block js %}
 <script defer src="{{ url_for('static', filename='js/qcf-font.js') }}"></script>
+<script defer src="{{ url_for('static', filename='js/mushaf-zoom.js') }}"></script>
 {% endblock js %}
 
 {% block head_extra %}
@@ -15,6 +16,7 @@
 {% block options %}
 	
 	<div class="mushaf-controls" style="display: flex; justify-content: flex-end; padding: 20px 0 8px; gap: 8px; flex-wrap: wrap;">
+		{% include 'partials/_mushaf_zoom.html' %}
 		<button id="tajweed-toggle-btn" type="button" title="Colored mushaf font" aria-label="Colored mushaf font" aria-pressed="false" data-tooltip="Colored mushaf font" class="circular ui basic icon button" onclick="toggleTajweedFont()">
 			<i class="icon tint" aria-hidden="true"></i>
 		</button>

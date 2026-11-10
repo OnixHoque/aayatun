@@ -13,6 +13,7 @@
 
 {% block js %}
 <script defer src="{{ url_for('static', filename='js/qcf-font.js') }}"></script>
+<script defer src="{{ url_for('static', filename='js/mushaf-zoom.js') }}"></script>
 {% endblock js %}
 
 {% block menu %}
@@ -44,6 +45,7 @@
 	<p class="mushaf-page-surahs">{% for g in groups %}{{ g.name }} {% if g.rows[0].verse == g.rows[-1].verse %}{{ g.rows[0].verse }}{% else %}{{ g.rows[0].verse }}-{{ g.rows[-1].verse }}{% endif %}{% if not loop.last %} &middot; {% endif %}{% endfor %}</p>
 
 	<div class="mushaf-controls">
+		{% include 'partials/_mushaf_zoom.html' %}
 		<button id="tajweed-toggle-btn" type="button" title="Colored mushaf font" aria-label="Colored mushaf font" aria-pressed="false" data-tooltip="Colored mushaf font" class="circular ui basic icon button" onclick="toggleTajweedFont()">
 			<i class="icon tint" aria-hidden="true"></i>
 		</button>
@@ -484,9 +486,17 @@
 	function fitMushafLayout()
 	{
 		if (!layoutOn || !layoutLines.length) return;
+		var zoom = window.MushafZoom ? MushafZoom.factor() : 1;
 		var base = 100;
+		// The measuring pass runs at 100px in the printed column; the old
+		// oversized layout is clipped while it lasts.
+		if (layoutView) layoutView.style.overflowX = 'hidden';
 		layoutLines.forEach(function (el) {
 			el.style.fontSize = base + 'px';
+			el.style.width = '';
+			// The measuring pass needs the printed line unbroken, even when the
+			// previous pass zoomed and allowed wrapping.
+			el.style.whiteSpace = '';
 			el.style.textAlign = 'right';
 			el.style.textAlignLast = 'auto';
 		});
@@ -505,21 +515,26 @@
 		if (layoutPage <= 2) {
 			scaled = Math.min(scaled, base * avail / 1640);
 		}
-		scaled = Math.max(10, Math.min(64, scaled));
+		scaled = Math.max(10, Math.min(64, scaled)) * zoom;
+		var zoomed = zoom > 1;
 		layoutLines.forEach(function (el, i) {
 			el.style.fontSize = scaled.toFixed(2) + 'px';
+			// Zoom stays inside the column: a printed line that no longer fits
+			// at the larger size wraps onto the next visual line instead of
+			// running off the screen. At 100 % the fitted lines still fit
+			// exactly, so `nowrap` keeps a rounding pixel from breaking them.
+			el.style.whiteSpace = zoomed ? 'normal' : '';
 			// Every line is justified to the column edge except where the
 			// printed page itself leaves it short: the last line of a surah
 			// and the last line of the page (unless it already fills it).
 			var endsBlock = el.getAttribute('data-endblock') === '1';
-			if (!endsBlock || widths[i] >= widest * 0.94) {
-				el.style.textAlign = 'justify';
-				el.style.textAlignLast = 'justify';
-			} else {
-				el.style.textAlign = 'right';
-				el.style.textAlignLast = 'auto';
-			}
+			var justify = !endsBlock || widths[i] >= widest * 0.94;
+			el.style.textAlign = justify ? 'justify' : 'right';
+			// When a printed line wraps, only its last fragment may stay short;
+			// justifying it would smear the few words across the column.
+			el.style.textAlignLast = zoomed ? 'right' : (justify ? 'justify' : 'auto');
 		});
+		if (layoutView) layoutView.style.overflowX = '';
 	}
 
 	function fitAndRevealLayout()
@@ -615,6 +630,13 @@
 		try { stored = localStorage.getItem(LAYOUT_KEY); } catch (e) {}
 		if (stored === '1') setLayoutMode(true);
 	})();
+
+	// Zooming the table also refits the printed lines, which are sized in px.
+	if (window.MushafZoom) {
+		MushafZoom.onChange(function () {
+			if (layoutOn) fitMushafLayout();
+		});
+	}
 
 	// A verse can be split over several printed lines, so hovering one
 	// segment lights up every segment of that same verse. The highlight is

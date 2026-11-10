@@ -272,6 +272,42 @@ html.dark-theme #tajweed-toggle-btn.tajweed-on .tint.icon { color: #9CC4FF; }
 	pointer-events: none;
 }
 
+/* Zoom stepper: two circular buttons around the current level, followed by a
+   hairline rule that sets the reading controls apart from the font toggles.
+   `--mushaf-zoom` is written by static/js/mushaf-zoom.js and multiplies the
+   Arabic sizes below, so the HTML text and the QCF glyph face zoom together. */
+.mushaf-zoom {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+}
+
+.mushaf-zoom .ui.button {
+	margin: 0;
+}
+
+.mushaf-zoom-level {
+	min-width: 46px;
+	font-size: 85%;
+	line-height: 1;
+	text-align: center;
+	font-variant-numeric: tabular-nums;
+	opacity: .72;
+	user-select: none;
+	-webkit-user-select: none;
+}
+
+.mushaf-zoom-sep {
+	width: 1px;
+	height: 24px;
+	align-self: center;
+	background: rgba(34, 36, 38, .18);
+}
+
+html.dark-theme .mushaf-zoom-sep {
+	background: rgba(255, 255, 255, .2);
+}
+
 /* Translation text under a verse: one step down from body so the Arabic
    stays dominant (Fomantic's root is 14px, so 1rem = 14px, not 5.6/11.2px). */
 .extra-translation-text {
@@ -282,7 +318,7 @@ html.dark-theme #tajweed-toggle-btn.tajweed-on .tint.icon { color: #9CC4FF; }
 
 .mushaf-ayah {
 	font-family: 'Scheherazade', serif;
-	font-size: 225%;
+	font-size: calc(225% * var(--mushaf-zoom, 1));
 	/* Match the verse-detail h1 leading (Fomantic's 1.2857em) so a wrapped
 	   verse is as tight here as it is on /<surah>/<verse>. */
 	line-height: 1.2857;
@@ -299,7 +335,7 @@ html.dark-theme #tajweed-toggle-btn.tajweed-on .tint.icon { color: #9CC4FF; }
 .mushaf-ayah .mushaf-qcf { font-family: inherit; }
 
 .mushaf-ayah.ayah-qcf {
-	font-size: 165%;
+	font-size: calc(165% * var(--mushaf-zoom, 1));
 	line-height: 2.1;
 }
 
@@ -420,7 +456,9 @@ body.mushaf-page-body {
 	direction: rtl;
 	padding: 4px 2px 0;
 	/* The fit pass measures lines at 100px before scaling them down; hide
-	   that oversized first layout instead of flashing a scrollbar. */
+	   that oversized first layout instead of flashing a scrollbar. Zoomed
+	   lines wrap inside the column (the page script switches them to
+	   white-space: normal), so nothing overflows sideways. */
 	overflow: hidden;
 }
 

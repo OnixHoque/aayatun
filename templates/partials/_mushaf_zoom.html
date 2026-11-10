@@ -1,0 +1,13 @@
+<!-- Zoom stepper shared by the two mushaf reading views (/page/<n> and
+     /mushaf/<surah>). The level is set by static/js/mushaf-zoom.js, which
+     scales .mushaf-ayah through --mushaf-zoom and remembers the step. -->
+<div class="mushaf-zoom" role="group" aria-label="Zoom">
+	<button id="zoom-out-btn" type="button" title="Zoom out" aria-label="Zoom out" class="circular ui basic icon button">
+		<i class="icon minus" aria-hidden="true"></i>
+	</button>
+	<span id="zoom-level" class="mushaf-zoom-level" aria-live="polite" title="Zoom level">100%</span>
+	<button id="zoom-in-btn" type="button" title="Zoom in" aria-label="Zoom in" class="circular ui basic icon button">
+		<i class="icon plus" aria-hidden="true"></i>
+	</button>
+</div>
+<div class="mushaf-zoom-sep" aria-hidden="true"></div>
