@@ -57,14 +57,14 @@
 		'tafsir-bn': 'Bangla tafsir (Abu Bakr Zakaria)'
 	};
 
-	// Quran exploration map card: the map is a rectangle that spans the card
-	// (84 x 75 cells at 5 CSS px), rendered as one bitmap rather than one
-	// rect per verse, so it always fits the canvas exactly. 6,236 verses are
-	// subsampled into those 6,300 cells: a cell takes the strongest state of
-	// the verses that land in it, deep green beating light green.
+	// Quran exploration map card: the map is a 10:5 rectangle that spans the
+	// card (84 x 42 cells at 5 CSS px), rendered as one bitmap rather than
+	// one rect per verse, so it always fits the canvas exactly. 6,236 verses
+	// are subsampled into those 3,528 cells: a cell takes the strongest state
+	// of the verses that land in it, deep green beating light green.
 	var MAP_W = 460;
 	var MAP_COLS = 84;
-	var MAP_ROWS = 75;
+	var MAP_ROWS = 42;
 	var MAP_CELL = 5;
 	var MAP_VERSES = 6236;
 	var MAP_PAGES = 604;
@@ -809,14 +809,26 @@
 	// The map card carries the visit bitsets from recent.js, so the drawing
 	// is just a paint pass: no DOM, no screenshot, and the same Web Share /
 	// clipboard fallback as the reading views.
+	// The message reads like the reader's own note, dated the day it is
+	// shared, rather than like a product announcement.
+	function todayLabel() {
+		try {
+			return new Date().toLocaleDateString(undefined, {
+				day: 'numeric', month: 'long', year: 'numeric'
+			});
+		} catch (e) {
+			return new Date().toDateString();
+		}
+	}
+
 	function mapPayload(o) {
 		var url = pageUrl('/');
 		return {
 			kind: 'map',
 			card: 'map',
 			ref: 'quran-exploration-map',
-			title: 'Aayatun — Quran exploration map',
-			text: 'Quran exploration map on Aayatun\n\n' +
+			title: 'My Quran exploration — Aayatun',
+			text: 'My Quran exploration so far, as of ' + todayLabel() + '\n\n' +
 				o.deep.toLocaleString() + ' of 6,236 verses studied · ' +
 				o.pages + ' of 604 pages visited.\n\n' + url + '\n' + HASHTAG,
 			url: url,

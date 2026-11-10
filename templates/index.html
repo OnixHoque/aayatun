@@ -417,58 +417,72 @@
     .rg-swatch.deep { background: #216e39; box-shadow: none; }
     .rg-swatch.light { background: #9be9a8; box-shadow: none; }
 
-    /* Below the map's natural width the grid keeps its squares and the map
-       pans sideways instead of reflowing into an endless column. */
+    /* The map scrolls one way only, like GitHub's contribution grid: every
+       row is visible and the verses advance column by column to the right.
+       The height is set from the space left in the viewport when it opens,
+       and the native scrollbar is hidden in favour of the thumb below. */
     .reading-map-scroll {
         position: relative;
-        max-height: min(56vh, 520px);
-        overflow: auto;
-        overscroll-behavior: contain;
+        height: 260px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        overscroll-behavior-x: contain;
         touch-action: pan-x pan-y;
         -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
         padding: 4px;
         border: 1px solid rgba(34, 36, 38, .12);
         border-radius: 4px;
         background: #e8ecf0;
     }
 
-    .reading-map-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, 7px);
-        grid-auto-rows: 7px;
-        gap: 2px;
-        align-content: start;
-    }
-
-    /* On a phone the fluid grid would reflow to ~38 columns and run far
-       down the modal. Keep one fixed 60-column map instead and let it pan
-       left/right inside .reading-map-scroll. */
-    @media (max-width: 560px) {
-        .reading-map-grid {
-            grid-template-columns: repeat(60, 7px);
-            width: max-content;
-        }
-    }
-
-    /* When the map is wider than the popup, this slider above it scrolls the
-       grid left and right, so the pan is discoverable with a mouse as well
-       as with a touch swipe. It hides itself whenever the map fits. */
-    .reading-map-x-wrap {
-        margin: 0 0 8px;
-    }
-
-    .reading-map-x-wrap[hidden] {
+    .reading-map-scroll::-webkit-scrollbar {
         display: none;
     }
 
-    .reading-map-x {
-        display: block;
-        width: 100%;
-        height: 20px;
-        margin: 0;
-        accent-color: #2185d0;
+    /* Column-major: the row count is set by the viewport, the number of
+       columns follows from it, so the grid is always wider than the box. */
+    .reading-map-grid {
+        display: grid;
+        grid-template-rows: repeat(var(--map-rows, 28), 7px);
+        grid-auto-flow: column;
+        grid-auto-columns: 7px;
+        gap: 2px;
+        align-content: start;
+        width: max-content;
+    }
+
+    /* A real scrollbar instead of a native one (phones hide theirs), so the
+       pan stays visible and draggable everywhere. */
+    .reading-map-scrollbar {
+        position: relative;
+        height: 12px;
+        margin: 8px 2px 0;
+        border-radius: 6px;
+        background: rgba(34, 36, 38, .09);
         cursor: pointer;
-        touch-action: pan-x;
+        touch-action: none;
+        outline-offset: 2px;
+    }
+
+    .reading-map-scrollbar[hidden] {
+        display: none;
+    }
+
+    .reading-map-scrollbar-thumb {
+        position: absolute;
+        top: 2px;
+        left: 0;
+        height: 8px;
+        width: 40px;
+        border-radius: 4px;
+        background: rgba(34, 36, 38, .34);
+        will-change: transform;
+    }
+
+    .reading-map-scrollbar:hover .reading-map-scrollbar-thumb,
+    .reading-map-scrollbar:focus-visible .reading-map-scrollbar-thumb {
+        background: rgba(34, 36, 38, .5);
     }
 
     .rg-cell {
@@ -489,18 +503,22 @@
         z-index: 1;
     }
 
-    .rg-break {
-        width: 7px;
-        height: 7px;
-    }
-
     html.dark-theme .reading-map-scroll {
         background: #0d1117;
         border-color: rgba(255, 255, 255, .12);
     }
 
-    html.dark-theme .reading-map-x {
-        accent-color: #64b5f6;
+    html.dark-theme .reading-map-scrollbar {
+        background: rgba(255, 255, 255, .1);
+    }
+
+    html.dark-theme .reading-map-scrollbar-thumb {
+        background: rgba(255, 255, 255, .32);
+    }
+
+    html.dark-theme .reading-map-scrollbar:hover .reading-map-scrollbar-thumb,
+    html.dark-theme .reading-map-scrollbar:focus-visible .reading-map-scrollbar-thumb {
+        background: rgba(255, 255, 255, .5);
     }
 
     html.dark-theme .rg-cell,
@@ -918,8 +936,8 @@ document.addEventListener('DOMContentLoaded', function () {
 					<span><i class="rg-swatch"></i>Not yet</span>
 					<button type="button" id="reading-map-clear">Clear history</button>
 				</div>
-				<div id="reading-map-x-wrap" class="reading-map-x-wrap" hidden>
-					<input type="range" id="reading-map-x" class="reading-map-x" min="0" max="0" step="1" value="0" aria-label="Scroll the map left and right">
+				<div id="reading-map-x" class="reading-map-scrollbar" role="scrollbar" aria-controls="reading-map-scroll" aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Scroll the map left and right" tabindex="0" hidden>
+					<div class="reading-map-scrollbar-thumb"></div>
 				</div>
 				<div id="reading-map-scroll" class="reading-map-scroll">
 					<div id="reading-map-grid" class="reading-map-grid" role="img" aria-label="Quran exploration map"></div>

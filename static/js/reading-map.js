@@ -40,9 +40,6 @@
 		surahStart.push(total);
 		total += surahs[s].count;
 	}
-	var starts = {};
-	for (var k = 0; k < surahStart.length; k++) starts[surahStart[k]] = 1;
-
 	// verse index -> 0-based page
 	var pageOf = new Uint16Array(VERSE_COUNT);
 	if (hasPageMap) {
@@ -54,8 +51,8 @@
 
 	var grid = document.getElementById('reading-map-grid');
 	var scroll = document.getElementById('reading-map-scroll');
-	var xWrap = document.getElementById('reading-map-x-wrap');
-	var xSlider = document.getElementById('reading-map-x');
+	var xBar = document.getElementById('reading-map-x');
+	var xThumb = xBar ? xBar.querySelector('.reading-map-scrollbar-thumb') : null;
 	var hint = document.getElementById('reading-map-hint');
 	var openLink = document.getElementById('reading-map-open');
 	var nextBox = document.getElementById('reading-map-next');
@@ -103,15 +100,13 @@
 		return 'none';
 	}
 
+	// Column-major order, like GitHub's contribution grid: each column holds
+	// the verses for one column of rows, so scrolling right walks the mushaf
+	// forward and every row stays visible at once.
 	function build()
 	{
 		var frag = document.createDocumentFragment();
 		for (var i = 0; i < VERSE_COUNT; i++) {
-			if (i && starts[i]) {
-				var brk = document.createElement('span');
-				brk.className = 'rg-break';
-				frag.appendChild(brk);
-			}
 			var cell = document.createElement('span');
 			cell.className = 'rg-cell';
 			cell.setAttribute('data-i', i);
@@ -194,22 +189,45 @@
 		renderReadout(selected);
 	}
 
-	// The map pans sideways whenever the fixed mobile grid is wider than the
-	// popup. This slider mirrors that position: it hides while the grid fits,
-	// and both the slider and a direct swipe keep the other in step.
+	// One way only: the map takes whatever height is left in the viewport,
+	// and the resulting number of rows fixes how many columns 6,236 verses
+	// need. The columns then run off to the right and only the width scrolls.
+	var PITCH = 9;        // 7 px cell + 2 px gap
+	var mapRows = 0;
+
+	function layoutMap()
+	{
+		if (!grid || !scroll) return;
+		var top = scroll.getBoundingClientRect().top;
+		var avail = window.innerHeight - top - 26;
+		avail = Math.max(126,
+			Math.min(avail, Math.round(window.innerHeight * 0.7)));
+		var rows = Math.max(12, Math.floor((avail + 2) / PITCH));
+		if (rows === mapRows) return;
+		mapRows = rows;
+		grid.style.setProperty('--map-rows', String(rows));
+		scroll.style.height = (rows * PITCH + 8) + 'px';
+	}
+
+	// The scrollbar mirrors the map position and is its only visible scroll
+	// affordance: the native one is hidden because phones never show it.
 	function syncX()
 	{
-		if (!scroll || !xSlider || !xWrap) return;
+		if (!scroll || !xBar || !xThumb) return;
 		var max = Math.max(0, scroll.scrollWidth - scroll.clientWidth);
 		if (max <= 1) {
-			xWrap.hidden = true;
-			xSlider.max = '0';
-			xSlider.value = '0';
+			xBar.hidden = true;
 			return;
 		}
-		xWrap.hidden = false;
-		xSlider.max = String(Math.round(max));
-		xSlider.value = String(Math.round(Math.min(max, scroll.scrollLeft)));
+		xBar.hidden = false;
+		var track = xBar.clientWidth;
+		var w = Math.max(40,
+			Math.round(track * scroll.clientWidth / scroll.scrollWidth));
+		xThumb.style.width = w + 'px';
+		xThumb.style.transform = 'translateX(' +
+			Math.round(Math.max(1, track - w) * (scroll.scrollLeft / max)) + 'px)';
+		xBar.setAttribute('aria-valuenow',
+			String(Math.round((scroll.scrollLeft / max) * 100)));
 	}
 
 	// The grid has no layout while the modal is hidden, so centre the last
@@ -219,22 +237,73 @@
 		if (!currentMap || currentMap.last < 0 || !scroll) return;
 		var last = grid.querySelector('[data-i="' + currentMap.last + '"]');
 		if (last) {
-			scroll.scrollTop = Math.max(0,
-				last.offsetTop - scroll.clientHeight / 2 + last.offsetHeight / 2);
 			scroll.scrollLeft = Math.max(0,
 				last.offsetLeft - scroll.clientWidth / 2 + last.offsetWidth / 2);
 		}
 	}
 
-	if (xSlider && scroll) {
-		xSlider.addEventListener('input', function () {
-			scroll.scrollLeft = +xSlider.value;
+	if (xBar && xThumb && scroll) {
+		// Drag the thumb, or click the track to jump there.
+		var dragging = false;
+		var dragX = 0;
+		var dragLeft = 0;
+
+		function barJump(evt)
+		{
+			var rect = xBar.getBoundingClientRect();
+			var span = Math.max(1, rect.width - xThumb.offsetWidth);
+			var max = Math.max(0, scroll.scrollWidth - scroll.clientWidth);
+			scroll.scrollLeft = Math.max(0, Math.min(max,
+				(evt.clientX - rect.left - xThumb.offsetWidth / 2) / span * max));
+			syncX();
+		}
+
+		xBar.addEventListener('pointerdown', function (evt) {
+			if (evt.button !== undefined && evt.button !== 0) return;
+			if (evt.target !== xThumb) {
+				barJump(evt);
+				return;
+			}
+			dragging = true;
+			dragX = evt.clientX;
+			dragLeft = scroll.scrollLeft;
+			xBar.setPointerCapture(evt.pointerId);
+			evt.preventDefault();
 		});
-		scroll.addEventListener('scroll', function () {
-			if (xWrap && xWrap.hidden) return;
-			xSlider.value = String(Math.round(scroll.scrollLeft));
-		}, { passive: true });
-		window.addEventListener('resize', syncX);
+
+		xBar.addEventListener('pointermove', function (evt) {
+			if (!dragging) return;
+			var span = Math.max(1, xBar.clientWidth - xThumb.offsetWidth);
+			var max = scroll.scrollWidth - scroll.clientWidth;
+			scroll.scrollLeft = dragLeft + (evt.clientX - dragX) * (max / span);
+		});
+
+		function endDrag(evt)
+		{
+			dragging = false;
+			if (xBar.hasPointerCapture && xBar.hasPointerCapture(evt.pointerId)) {
+				xBar.releasePointerCapture(evt.pointerId);
+			}
+		}
+		xBar.addEventListener('pointerup', endDrag);
+		xBar.addEventListener('pointercancel', endDrag);
+
+		xBar.addEventListener('keydown', function (evt) {
+			var max = Math.max(0, scroll.scrollWidth - scroll.clientWidth);
+			var step = Math.max(80, scroll.clientWidth * 0.8);
+			if (evt.key === 'ArrowRight') scroll.scrollLeft += step;
+			else if (evt.key === 'ArrowLeft') scroll.scrollLeft -= step;
+			else if (evt.key === 'Home') scroll.scrollLeft = 0;
+			else if (evt.key === 'End') scroll.scrollLeft = max;
+			else return;
+			evt.preventDefault();
+		});
+
+		scroll.addEventListener('scroll', syncX, { passive: true });
+		window.addEventListener('resize', function () {
+			layoutMap();
+			syncX();
+		});
 	}
 
 	// Walk forward from the last read verse (wrapping), preferring the first
@@ -405,10 +474,17 @@
 			window.jQuery('#reading-map-modal').modal('show');
 			window.requestAnimationFrame(function () {
 				window.requestAnimationFrame(function () {
+					layoutMap();
 					scrollToLast();
 					syncX();
 				});
 			});
+			// The open animation moves (and scales) the modal, so the row
+			// count is measured again once it has settled.
+			window.setTimeout(function () {
+				layoutMap();
+				syncX();
+			}, 400);
 			// Let the modal finish opening before the card is drawn.
 			window.setTimeout(warmShare, 450);
 		}
