@@ -17,9 +17,9 @@
  * band at the bottom. No buttons, legends or credits, and nothing depends on
  * what happens to be scrolled into view.
  *
- * The index's Quran exploration map gets a tall portrait card: the full
- * 6,236-square grid with surah gaps, two circular progress rings (pages
- * visited, verses studied), a legend, and the same brand band.
+ * The index's Quran exploration map gets its own card: two large circular
+ * progress rings (pages visited, verses studied) over the map itself, drawn
+ * as one rectangular bitmap that spans the card, and the same brand band.
  *
  * Drawing is synchronous, so the file can be produced inside the tap: Safari
  * requires navigator.share() to run within the user gesture, and a canvas
@@ -57,14 +57,15 @@
 		'tafsir-bn': 'Bangla tafsir (Abu Bakr Zakaria)'
 	};
 
-	// Quran exploration map card: one 5 px square per verse, no surah gaps
-	// and 70 columns, so the grid is a clean uniform block. The card is a
-	// little wider than the reading cards (460 x ~790 CSS px) to give the
-	// two progress rings room without crowding the grid.
+	// Quran exploration map card: the map is a rectangle that spans the card
+	// (84 x 75 cells at 5 CSS px), rendered as one bitmap rather than one
+	// rect per verse, so it always fits the canvas exactly. 6,236 verses are
+	// subsampled into those 6,300 cells: a cell takes the strongest state of
+	// the verses that land in it, deep green beating light green.
 	var MAP_W = 460;
-	var MAP_COLS = 70;
+	var MAP_COLS = 84;
+	var MAP_ROWS = 75;
 	var MAP_CELL = 5;
-	var MAP_GAP = 1;
 	var MAP_VERSES = 6236;
 	var MAP_PAGES = 604;
 
@@ -185,17 +186,24 @@
 
 	/* ---------------------------------------------------------------- files */
 
+	var canShareProbe = null;
+
 	function canShareFiles() {
+		if (canShareProbe !== null) return canShareProbe;
 		try {
-			if (!navigator.canShare || !window.File || !window.Blob) return false;
-			var bytes = atob(TINY_PNG);
-			var arr = new Uint8Array(bytes.length);
-			for (var i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
-			var probe = new File([arr], 'probe.png', { type: 'image/png' });
-			return navigator.canShare({ files: [probe] });
+			if (!navigator.canShare || !window.File || !window.Blob) {
+				canShareProbe = false;
+			} else {
+				var bytes = atob(TINY_PNG);
+				var arr = new Uint8Array(bytes.length);
+				for (var i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+				var probe = new File([arr], 'probe.png', { type: 'image/png' });
+				canShareProbe = navigator.canShare({ files: [probe] });
+			}
 		} catch (e) {
-			return false;
+			canShareProbe = false;
 		}
+		return canShareProbe;
 	}
 
 	// The card is drawn on a canvas, so the webfonts must already be in the
@@ -407,15 +415,14 @@
 		var states = card.states && card.states.length === MAP_VERSES
 			? card.states : new Uint8Array(MAP_VERSES);
 
-		var rows = Math.ceil(MAP_VERSES / MAP_COLS);
-		var gridW = MAP_COLS * MAP_CELL + (MAP_COLS - 1) * MAP_GAP;
-		var gridH = rows * MAP_CELL + (rows - 1) * MAP_GAP;
+		var cells = MAP_COLS * MAP_ROWS;
+		var mapW = MAP_COLS * MAP_CELL;
+		var mapH = MAP_ROWS * MAP_CELL;
 
-		var titleY = PAD + 24;
-		var ringsY = titleY + 60;
-		var mapTop = ringsY + 58;
-		var mapBottom = mapTop + gridH;
-		var cardH = mapBottom + 24 + BAND;
+		var titleY = PAD + 22;
+		var ringsY = titleY + 80;
+		var mapTop = ringsY + 42 + 26;
+		var cardH = mapTop + mapH + 24 + BAND;
 
 		var out = document.createElement('canvas');
 		out.width = Math.round(MAP_W * SCALE);
@@ -430,9 +437,11 @@
 		var titleColor = dark ? '#9CC4FF' : '#4183C4';
 		var muted = dark ? 'rgba(255,255,255,.56)' : 'rgba(0,0,0,.5)';
 		var track = dark ? 'rgba(255,255,255,.13)' : 'rgba(0,0,0,.07)';
-		var none = dark ? '#2a2f36' : '#e6e9ec';
-		var light = dark ? '#1f6f3f' : '#9be9a8';
-		var deep = dark ? '#39d353' : '#216e39';
+		var none = dark ? [42, 47, 54] : [230, 233, 236];
+		var light = dark ? [31, 111, 63] : [155, 233, 168];
+		var deep = dark ? [57, 211, 83] : [33, 110, 57];
+		var ringLight = dark ? '#2ea043' : '#9be9a8';
+		var ringDeep = dark ? '#39d353' : '#216e39';
 
 		ctx.textAlign = 'center';
 		ctx.fillStyle = titleColor;
@@ -442,12 +451,12 @@
 		var pagesPct = (card.pages / MAP_PAGES) * 100;
 		var versesPct = (card.deep / MAP_VERSES) * 100;
 
-		// The rings are the card's headline: r=34 with a 9 px stroke, and the
-		// label/count sit beside each one so the stats row stays short and the
-		// grid gets the height.
+		// The rings are the card's headline: r=42 with an 11 px stroke, and
+		// the label/count sit beside each one so the stats row stays short
+		// and the map gets the rest of the height.
 		function ringStat(cx, pct, color, label, note) {
-			var r = 34;
-			ctx.lineWidth = 9;
+			var r = 42;
+			ctx.lineWidth = 11;
 			ctx.lineCap = 'butt';
 			ctx.beginPath();
 			ctx.arc(cx, ringsY, r, 0, Math.PI * 2);
@@ -463,36 +472,77 @@
 			}
 			ctx.lineCap = 'butt';
 			ctx.textAlign = 'center';
-			ctx.fillStyle = dark ? 'rgba(255,255,255,.9)' : 'rgba(0,0,0,.8)';
-			ctx.font = "700 15px 'Open Sans', system-ui, sans-serif";
+			ctx.fillStyle = dark ? 'rgba(255,255,255,.92)' : 'rgba(0,0,0,.82)';
+			ctx.font = "700 19px 'Open Sans', system-ui, sans-serif";
 			ctx.fillText(pctLabel(pct), cx, ringsY + 1);
 
 			ctx.textAlign = 'left';
-			ctx.fillStyle = dark ? 'rgba(255,255,255,.88)' : 'rgba(0,0,0,.78)';
-			ctx.font = "600 13px 'Open Sans', system-ui, sans-serif";
-			ctx.fillText(label, cx + 48, ringsY - 9);
+			ctx.fillStyle = dark ? 'rgba(255,255,255,.9)' : 'rgba(0,0,0,.8)';
+			ctx.font = "600 14px 'Open Sans', system-ui, sans-serif";
+			ctx.fillText(label, cx + 52, ringsY - 10);
 			ctx.fillStyle = muted;
-			ctx.font = "400 11px 'Open Sans', system-ui, sans-serif";
-			ctx.fillText(note, cx + 48, ringsY + 11);
+			ctx.font = "400 11.5px 'Open Sans', system-ui, sans-serif";
+			ctx.fillText(note, cx + 52, ringsY + 11);
 		}
 
-		var blockW = 180;
-		var blockGap = 26;
+		var blockW = 190;
+		var blockGap = 30;
 		var blockX = (MAP_W - blockW * 2 - blockGap) / 2;
-		ringStat(blockX + 38.5, pagesPct,
-			dark ? '#2ea043' : '#9be9a8',
+		ringStat(blockX + 42, pagesPct, ringLight,
 			'Pages visited', card.pages + ' of 604');
-		ringStat(blockX + blockW + blockGap + 38.5, versesPct, deep,
+		ringStat(blockX + blockW + blockGap + 42, versesPct, ringDeep,
 			'Verses studied', card.deep.toLocaleString() + ' of 6,236');
 
-		var x0 = (MAP_W - gridW) / 2;
-		for (var v = 0; v < MAP_VERSES; v++) {
-			var col = v % MAP_COLS;
-			var row = (v - col) / MAP_COLS;
-			ctx.fillStyle = states[v] === 2 ? deep : states[v] === 1 ? light : none;
-			ctx.fillRect(x0 + col * (MAP_CELL + MAP_GAP),
-				mapTop + row * (MAP_CELL + MAP_GAP), MAP_CELL, MAP_CELL);
+		// Subsampling: every verse lands in a cell, and a cell takes the
+		// strongest state found there (deep beats light). One bitmap pixel
+		// per card pixel, with a 1 px gap left inside each cell, so the map
+		// is a field of dots the way the in-app grid is, not a solid sheet.
+		var RES = MAP_CELL;
+		var bmp = document.createElement('canvas');
+		bmp.width = MAP_COLS * RES;
+		bmp.height = MAP_ROWS * RES;
+		var bctx = bmp.getContext('2d');
+		var img = bctx.createImageData(bmp.width, bmp.height);
+		var px = img.data;
+		var cardBg = dark ? [27, 28, 29] : [255, 255, 255];
+
+		for (var b = 0; b < img.data.length; b += 4) {
+			px[b] = cardBg[0];
+			px[b + 1] = cardBg[1];
+			px[b + 2] = cardBg[2];
+			px[b + 3] = 255;
 		}
+
+		var cellState = new Uint8Array(cells);
+		for (var v = 0; v < MAP_VERSES; v++) {
+			var state = states[v];
+			if (!state) continue;
+			var cell = Math.floor(v * cells / MAP_VERSES);
+			if (state > cellState[cell]) cellState[cell] = state;
+		}
+		var dot = RES - 1;
+		for (var c = 0; c < cells; c++) {
+			var rgb = cellState[c] === 2 ? deep
+				: cellState[c] === 1 ? light : none;
+			var col = c % MAP_COLS;
+			var row = (c - col) / MAP_COLS;
+			var x = col * RES;
+			var y = row * RES;
+			for (var dy = 0; dy < dot; dy++) {
+				var o = ((y + dy) * bmp.width + x) * 4;
+				for (var dx = 0; dx < dot; dx++) {
+					px[o] = rgb[0];
+					px[o + 1] = rgb[1];
+					px[o + 2] = rgb[2];
+					o += 4;
+				}
+			}
+		}
+		bctx.putImageData(img, 0, 0);
+
+		ctx.imageSmoothingEnabled = false;
+		ctx.drawImage(bmp, (MAP_W - mapW) / 2, mapTop, mapW, mapH);
+		ctx.imageSmoothingEnabled = true;
 
 		/* Brand band: the site name, then the full URL under it. */
 		var bandTop = cardH - BAND;
@@ -668,17 +718,18 @@
 
 	function flash(btn) {
 		if (!btn) return;
-		// Swap only the icon so a labelled button keeps its text.
+		// Swap the icon, and the label when the button carries one, so a copy
+		// that has no share sheet to show still ends in visible feedback.
 		var icon = btn.querySelector('.icon');
-		if (icon) {
-			var was = icon.className;
-			icon.className = 'icon check';
-			window.setTimeout(function () { icon.className = was; }, 1200);
-			return;
-		}
-		var old = btn.innerHTML;
-		btn.innerHTML = '<i class="icon check" aria-hidden="true"></i>';
-		window.setTimeout(function () { btn.innerHTML = old; }, 1200);
+		var label = btn.querySelector('span');
+		var wasIcon = icon ? icon.className : '';
+		var wasLabel = label ? label.textContent : '';
+		if (icon) icon.className = 'icon check';
+		if (label) label.textContent = 'Copied';
+		window.setTimeout(function () {
+			if (icon) icon.className = wasIcon;
+			if (label) label.textContent = wasLabel;
+		}, 1400);
 	}
 
 	function copyText(text, btn) {
@@ -707,16 +758,24 @@
 		});
 	}
 
-	function shareCard(payload, card, btn) {
-		var file = null;
-		if (canShareFiles()) {
-			try {
-				file = toFile(drawCard(card), payload);
-			} catch (e) {
-				file = null;
+	// `file` is prebuilt when a caller already drew and encoded the card (the
+	// map does, while its modal opens); undefined means draw it now.
+	function shareCard(payload, card, btn, file) {
+		if (file === undefined) {
+			file = null;
+			if (canShareFiles()) {
+				try {
+					file = toFile(drawCard(card), payload);
+				} catch (e) {
+					file = null;
+				}
 			}
 		}
-		if (!file || !navigator.canShare({ files: [file] })) {
+		return file ? shareFile(payload, file, btn) : textShare(payload, btn);
+	}
+
+	function shareFile(payload, file, btn) {
+		if (!navigator.canShare({ files: [file] })) {
 			return textShare(payload, btn);
 		}
 		var attempt;
@@ -750,9 +809,9 @@
 	// The map card carries the visit bitsets from recent.js, so the drawing
 	// is just a paint pass: no DOM, no screenshot, and the same Web Share /
 	// clipboard fallback as the reading views.
-	function shareMap(o, btn) {
+	function mapPayload(o) {
 		var url = pageUrl('/');
-		var payload = {
+		return {
 			kind: 'map',
 			card: 'map',
 			ref: 'quran-exploration-map',
@@ -766,7 +825,42 @@
 			states: o.states,
 			starts: o.starts
 		};
-		return share(payload, btn || byId('reading-map-share'));
+	}
+
+	// The map card is the largest one (920 x ~1578 px) and encoding it takes
+	// long enough to be felt as a lag between the tap and the share sheet, so
+	// it is drawn and encoded once while the modal opens and the tap only
+	// hands the finished file over. The signature covers the counts and the
+	// bitset positions, so opening a verse or clearing history rebuilds it.
+	var mapShare = { key: '', payload: null, file: null };
+
+	function mapKey(o) {
+		return (o.hash || 0) + ':' + (o.deep || 0) + ':' + (o.pages || 0);
+	}
+
+	function warmMapShare(o) {
+		if (!o) return;
+		var key = mapKey(o);
+		if (mapShare.key === key) return;
+		var payload = mapPayload(o);
+		var file = null;
+		if (canShareFiles()) {
+			try {
+				file = toFile(drawCard(cardFor(payload)), payload);
+			} catch (e) {
+				file = null;
+			}
+		}
+		mapShare = { key: key, payload: payload, file: file };
+	}
+
+	function shareMap(o, btn) {
+		var key = mapKey(o);
+		if (mapShare.key !== key) warmMapShare(o);
+		var cached = mapShare.key === key;
+		var payload = cached ? mapShare.payload : mapPayload(o);
+		return shareCard(payload, cached ? null : cardFor(payload),
+			btn || byId('reading-map-share'), cached ? mapShare.file : undefined);
 	}
 
 	/* ---------------------------------------------------------------- init */
@@ -781,6 +875,7 @@
 		fromButton: fromButton,
 		shareVerse: shareVerse,
 		shareMap: shareMap,
+		warmMapShare: warmMapShare,
 		payloadFromButton: payloadFromButton,
 		cardFor: cardFor,
 		drawCard: drawCard

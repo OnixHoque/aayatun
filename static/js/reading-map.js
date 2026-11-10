@@ -54,6 +54,8 @@
 
 	var grid = document.getElementById('reading-map-grid');
 	var scroll = document.getElementById('reading-map-scroll');
+	var xWrap = document.getElementById('reading-map-x-wrap');
+	var xSlider = document.getElementById('reading-map-x');
 	var hint = document.getElementById('reading-map-hint');
 	var openLink = document.getElementById('reading-map-open');
 	var nextBox = document.getElementById('reading-map-next');
@@ -192,6 +194,24 @@
 		renderReadout(selected);
 	}
 
+	// The map pans sideways whenever the fixed mobile grid is wider than the
+	// popup. This slider mirrors that position: it hides while the grid fits,
+	// and both the slider and a direct swipe keep the other in step.
+	function syncX()
+	{
+		if (!scroll || !xSlider || !xWrap) return;
+		var max = Math.max(0, scroll.scrollWidth - scroll.clientWidth);
+		if (max <= 1) {
+			xWrap.hidden = true;
+			xSlider.max = '0';
+			xSlider.value = '0';
+			return;
+		}
+		xWrap.hidden = false;
+		xSlider.max = String(Math.round(max));
+		xSlider.value = String(Math.round(Math.min(max, scroll.scrollLeft)));
+	}
+
 	// The grid has no layout while the modal is hidden, so centre the last
 	// read verse only after the modal is visible.
 	function scrollToLast()
@@ -201,7 +221,20 @@
 		if (last) {
 			scroll.scrollTop = Math.max(0,
 				last.offsetTop - scroll.clientHeight / 2 + last.offsetHeight / 2);
+			scroll.scrollLeft = Math.max(0,
+				last.offsetLeft - scroll.clientWidth / 2 + last.offsetWidth / 2);
 		}
+	}
+
+	if (xSlider && scroll) {
+		xSlider.addEventListener('input', function () {
+			scroll.scrollLeft = +xSlider.value;
+		});
+		scroll.addEventListener('scroll', function () {
+			if (xWrap && xWrap.hidden) return;
+			xSlider.value = String(Math.round(scroll.scrollLeft));
+		}, { passive: true });
+		window.addEventListener('resize', syncX);
 	}
 
 	// Walk forward from the last read verse (wrapping), preferring the first
@@ -301,13 +334,21 @@
 
 	// 0 = not yet, 1 = seen on a visited page, 2 = verse page opened. The
 	// share card draws from this array so it never re-derives the bitsets.
+	// stateHash signs the positions too, so the cached share card is thrown
+	// away when a different verse is read rather than only when a count moves.
+	var stateHash = 0;
+
 	function mapStates()
 	{
 		var out = new Uint8Array(VERSE_COUNT);
+		var hash = 0;
 		for (var i = 0; i < VERSE_COUNT; i++) {
 			var state = stateOf(currentMap, i);
-			out[i] = state === 'deep' ? 2 : state === 'light' ? 1 : 0;
+			var n = state === 'deep' ? 2 : state === 'light' ? 1 : 0;
+			out[i] = n;
+			hash = (hash * 31 + n * (i + 1)) | 0;
 		}
+		stateHash = hash;
 		return out;
 	}
 
@@ -315,8 +356,17 @@
 	{
 		return {
 			deep: stats.deep, pages: stats.pages,
-			states: mapStates(), starts: surahStart
+			states: mapStates(), hash: stateHash, starts: surahStart
 		};
+	}
+
+	// Draw and encode the share card off the tap path: the tap itself only
+	// has to open the share sheet.
+	function warmShare()
+	{
+		if (window.AayatunShare && window.AayatunShare.warmMapShare) {
+			window.AayatunShare.warmMapShare(shareData());
+		}
 	}
 
 	function shareMap()
@@ -337,6 +387,7 @@
 	{
 		selected = -1;
 		paint();
+		window.setTimeout(warmShare, 400);
 	}
 
 	window.AayatunReadingMap = {
@@ -353,8 +404,13 @@
 		if (window.jQuery) {
 			window.jQuery('#reading-map-modal').modal('show');
 			window.requestAnimationFrame(function () {
-				window.requestAnimationFrame(scrollToLast);
+				window.requestAnimationFrame(function () {
+					scrollToLast();
+					syncX();
+				});
 			});
+			// Let the modal finish opening before the card is drawn.
+			window.setTimeout(warmShare, 450);
 		}
 	});
 })();

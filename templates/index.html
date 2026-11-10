@@ -81,6 +81,14 @@
         margin-right: 4px;
     }
 
+    /* Narrow phones cannot hold both labels on one line, so the pair stacks
+       full width instead of stretching into two wrapped rows. */
+    @media (max-width: 560px) {
+        .home-actions-row {
+            grid-template-columns: 1fr;
+        }
+    }
+
     /* Recently Read: chips rendered from localStorage by recent.js */
     #recent-reads {
         margin-top: 18px;
@@ -287,13 +295,6 @@
         opacity: 1;
     }
 
-    #reading-map-modal > .actions {
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        gap: 8px;
-    }
-
     /* Clear history sits with the legend, above the grid, so it is part of
        the map itself rather than a footer afterthought. */
     #reading-map-clear {
@@ -312,12 +313,6 @@
     #reading-map-clear:hover,
     #reading-map-clear:focus-visible {
         color: #e74c3c;
-    }
-
-    #reading-map-modal > .actions .button {
-        border-radius: 6px;
-        font-family: inherit;
-        font-size: 80%;
     }
 
     @media (min-width: 560px) {
@@ -422,11 +417,15 @@
     .rg-swatch.deep { background: #216e39; box-shadow: none; }
     .rg-swatch.light { background: #9be9a8; box-shadow: none; }
 
+    /* Below the map's natural width the grid keeps its squares and the map
+       pans sideways instead of reflowing into an endless column. */
     .reading-map-scroll {
         position: relative;
         max-height: min(56vh, 520px);
-        overflow-y: auto;
+        overflow: auto;
         overscroll-behavior: contain;
+        touch-action: pan-x pan-y;
+        -webkit-overflow-scrolling: touch;
         padding: 4px;
         border: 1px solid rgba(34, 36, 38, .12);
         border-radius: 4px;
@@ -439,6 +438,37 @@
         grid-auto-rows: 7px;
         gap: 2px;
         align-content: start;
+    }
+
+    /* On a phone the fluid grid would reflow to ~38 columns and run far
+       down the modal. Keep one fixed 60-column map instead and let it pan
+       left/right inside .reading-map-scroll. */
+    @media (max-width: 560px) {
+        .reading-map-grid {
+            grid-template-columns: repeat(60, 7px);
+            width: max-content;
+        }
+    }
+
+    /* When the map is wider than the popup, this slider above it scrolls the
+       grid left and right, so the pan is discoverable with a mouse as well
+       as with a touch swipe. It hides itself whenever the map fits. */
+    .reading-map-x-wrap {
+        margin: 0 0 8px;
+    }
+
+    .reading-map-x-wrap[hidden] {
+        display: none;
+    }
+
+    .reading-map-x {
+        display: block;
+        width: 100%;
+        height: 20px;
+        margin: 0;
+        accent-color: #2185d0;
+        cursor: pointer;
+        touch-action: pan-x;
     }
 
     .rg-cell {
@@ -469,6 +499,10 @@
         border-color: rgba(255, 255, 255, .12);
     }
 
+    html.dark-theme .reading-map-x {
+        accent-color: #64b5f6;
+    }
+
     html.dark-theme .rg-cell,
     html.dark-theme .rg-swatch {
         background: #21262d;
@@ -497,16 +531,6 @@
     html.dark-theme .reading-map-share:hover,
     html.dark-theme .reading-map-share:focus-visible {
         background: #8cc8ff;
-    }
-
-    html.dark-theme #reading-map-modal > .actions {
-        background: transparent;
-        border-top-color: rgba(255, 255, 255, .12);
-    }
-
-    html.dark-theme #reading-map-modal > .actions .ui.basic.button {
-        color: rgba(255, 255, 255, .87) !important;
-        box-shadow: 0 0 0 1px rgba(255, 255, 255, .16) inset !important;
     }
 
     html.dark-theme #reading-map-clear {
@@ -785,9 +809,6 @@ document.addEventListener('DOMContentLoaded', function () {
 	$('#reading-map-clear').click(function () {
 		$('#clear-history-modal').modal('show');
 	});
-	$('#reading-map-close').click(function () {
-		$('#reading-map-modal').modal('hide');
-	});
 	$('#reading-map-modal > .close.icon').on('keydown', function (evt) {
 		if (evt.key === 'Enter' || evt.key === ' ') {
 			evt.preventDefault();
@@ -897,12 +918,12 @@ document.addEventListener('DOMContentLoaded', function () {
 					<span><i class="rg-swatch"></i>Not yet</span>
 					<button type="button" id="reading-map-clear">Clear history</button>
 				</div>
+				<div id="reading-map-x-wrap" class="reading-map-x-wrap" hidden>
+					<input type="range" id="reading-map-x" class="reading-map-x" min="0" max="0" step="1" value="0" aria-label="Scroll the map left and right">
+				</div>
 				<div id="reading-map-scroll" class="reading-map-scroll">
 					<div id="reading-map-grid" class="reading-map-grid" role="img" aria-label="Quran exploration map"></div>
 				</div>
-			</div>
-			<div class="actions">
-				<button type="button" id="reading-map-close" class="ui basic button">Close</button>
 			</div>
 		</div>
 		<div id="clear-history-modal" class="ui mini modal">
