@@ -376,7 +376,7 @@ html.dark-theme .mushaf-zoom-sep {
 	padding-top: 2%;
 }
 
-html.dark-theme .mushaf-verse-no { color: rgba(255, 255, 255, .5); }
+html.dark-theme .ui.table td.mushaf-verse-no { color: rgba(255, 255, 255, .5); }
 
 .qcf-credit {
 	font-size: 72%;
