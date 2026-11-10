@@ -17,9 +17,10 @@
  * band at the bottom. No buttons, legends or credits, and nothing depends on
  * what happens to be scrolled into view.
  *
- * The index's Quran exploration map gets its own card: two large circular
- * progress rings (pages visited, verses studied) over the map itself, drawn
- * as one rectangular bitmap that spans the card, and the same brand band.
+ * The index's Quran exploration map gets its own card, a 9:16 poster: the
+ * reader's own dated line, two large circular progress rings (pages visited,
+ * verses studied), the map as one rectangular bitmap that spans the card, a
+ * GitHub-style key, the counts and the brand band.
  *
  * Drawing is synchronous, so the file can be produced inside the tap: Safari
  * requires navigator.share() to run within the user gesture, and a canvas
@@ -57,12 +58,14 @@
 		'tafsir-bn': 'Bangla tafsir (Abu Bakr Zakaria)'
 	};
 
-	// Quran exploration map card: the map is a 10:5 rectangle that spans the
-	// card (84 x 42 cells at 5 CSS px), rendered as one bitmap rather than
-	// one rect per verse, so it always fits the canvas exactly. 6,236 verses
-	// are subsampled into those 3,528 cells: a cell takes the strongest state
-	// of the verses that land in it, deep green beating light green.
+	// Quran exploration map card: a story-sized 9:16 poster (460 x 818 CSS
+	// px). The map is a 10:5 rectangle that spans the card (84 x 42 cells at
+	// 5 CSS px), rendered as one bitmap rather than one rect per verse, so it
+	// always fits the canvas exactly. 6,236 verses are subsampled into those
+	// 3,528 cells: a cell takes the strongest state of the verses that land
+	// in it, deepest green beating light green.
 	var MAP_W = 460;
+	var MAP_CARD_H = 818;
 	var MAP_COLS = 84;
 	var MAP_ROWS = 42;
 	var MAP_CELL = 5;
@@ -270,6 +273,7 @@
 			card.deep = payload.deep || 0;
 			card.pages = payload.pages || 0;
 			card.starts = payload.starts || [];
+			card.message = mapMessage();
 			return card;
 		} else {
 			return null;
@@ -419,10 +423,16 @@
 		var mapW = MAP_COLS * MAP_CELL;
 		var mapH = MAP_ROWS * MAP_CELL;
 
-		var titleY = PAD + 22;
-		var ringsY = titleY + 80;
-		var mapTop = ringsY + 42 + 26;
-		var cardH = mapTop + mapH + 24 + BAND;
+		// A story-sized poster: the reader's own line, the two rings, the
+		// map, its key, the counts and the tag, all inside one 9:16 frame.
+		var cardH = MAP_CARD_H;
+		var titleY = 84;
+		var msgY = 122;
+		var ringsY = 250;
+		var mapTop = 362;
+		var legendY = 610;
+		var countsY = 652;
+		var tagY = 692;
 
 		var out = document.createElement('canvas');
 		out.width = Math.round(MAP_W * SCALE);
@@ -438,8 +448,11 @@
 		var muted = dark ? 'rgba(255,255,255,.56)' : 'rgba(0,0,0,.5)';
 		var track = dark ? 'rgba(255,255,255,.13)' : 'rgba(0,0,0,.07)';
 		var none = dark ? [42, 47, 54] : [230, 233, 236];
-		var light = dark ? [31, 111, 63] : [155, 233, 168];
-		var deep = dark ? [57, 211, 83] : [33, 110, 57];
+		var light = dark ? [14, 68, 41] : [155, 233, 168];
+		var deep1 = dark ? [0, 109, 50] : [64, 196, 99];
+		var deep2 = dark ? [38, 166, 65] : [48, 161, 78];
+		var deep3 = dark ? [57, 211, 83] : [33, 110, 57];
+		var shades = [none, light, deep1, deep2, deep3];
 		var ringLight = dark ? '#2ea043' : '#9be9a8';
 		var ringDeep = dark ? '#39d353' : '#216e39';
 
@@ -447,6 +460,13 @@
 		ctx.fillStyle = titleColor;
 		ctx.font = fontFor(TITLE, TITLE.size);
 		ctx.fillText('Quran exploration map', MAP_W / 2, titleY);
+
+		ctx.fillStyle = dark ? 'rgba(255,255,255,.74)' : 'rgba(0,0,0,.64)';
+		ctx.font = "400 15px 'Open Sans', system-ui, sans-serif";
+		var msgLines = wrap(ctx, card.message || mapMessage(), MAP_W - PAD * 2);
+		for (var m = 0; m < msgLines.length; m++) {
+			ctx.fillText(msgLines[m], MAP_W / 2, msgY + m * 21);
+		}
 
 		var pagesPct = (card.pages / MAP_PAGES) * 100;
 		var versesPct = (card.deep / MAP_VERSES) * 100;
@@ -522,10 +542,10 @@
 		}
 		var dot = RES - 1;
 		for (var c = 0; c < cells; c++) {
-			var rgb = cellState[c] === 2 ? deep
-				: cellState[c] === 1 ? light : none;
-			var col = c % MAP_COLS;
-			var row = (c - col) / MAP_COLS;
+			var rgb = shades[cellState[c]];
+			// Column-major, so the card reads across exactly like the popup.
+			var row = c % MAP_ROWS;
+			var col = (c - row) / MAP_ROWS;
 			var x = col * RES;
 			var y = row * RES;
 			for (var dy = 0; dy < dot; dy++) {
@@ -543,6 +563,51 @@
 		ctx.imageSmoothingEnabled = false;
 		ctx.drawImage(bmp, (MAP_W - mapW) / 2, mapTop, mapW, mapH);
 		ctx.imageSmoothingEnabled = true;
+
+		// The key lives on the card the way GitHub's does: the two categories
+		// spelled out, then the three deeper shades as a Less..More scale.
+		var sw = 10, g1 = 4, g2 = 14, g3 = 3;
+		ctx.font = "400 12px 'Open Sans', system-ui, sans-serif";
+		var wNot = ctx.measureText('Not yet').width;
+		var wPage = ctx.measureText('Page visited').width;
+		var wLess = ctx.measureText('Less').width;
+		var wMore = ctx.measureText('More').width;
+		var legendW = sw + g1 + wNot + g2 + sw + g1 + wPage + g2 + wLess +
+			g1 + sw + g3 + sw + g3 + sw + g1 + wMore;
+		var lx = (MAP_W - legendW) / 2;
+		ctx.textAlign = 'left';
+
+		function legendSwatch(rgb) {
+			ctx.fillStyle = 'rgb(' + rgb.join(',') + ')';
+			ctx.fillRect(lx, legendY - sw / 2, sw, sw);
+			lx += sw;
+		}
+		function legendWord(text) {
+			lx += g1;
+			ctx.fillStyle = dark ? 'rgba(255,255,255,.68)' : 'rgba(0,0,0,.6)';
+			ctx.fillText(text, lx, legendY + 1);
+			lx += ctx.measureText(text).width;
+		}
+
+		legendSwatch(shades[0]); legendWord('Not yet');
+		lx += g2;
+		legendSwatch(shades[1]); legendWord('Page visited');
+		lx += g2;
+		legendWord('Less');
+		lx += g3; legendSwatch(shades[2]);
+		lx += g3; legendSwatch(shades[3]);
+		lx += g3; legendSwatch(shades[4]);
+		legendWord('More');
+
+		ctx.textAlign = 'center';
+		ctx.fillStyle = dark ? 'rgba(255,255,255,.6)' : 'rgba(0,0,0,.55)';
+		ctx.font = "400 13px 'Open Sans', system-ui, sans-serif";
+		ctx.fillText(card.deep.toLocaleString() + ' of 6,236 verses studied · ' +
+			card.pages + ' of 604 pages visited.', MAP_W / 2, countsY);
+
+		ctx.fillStyle = muted;
+		ctx.font = "400 12px 'Open Sans', system-ui, sans-serif";
+		ctx.fillText('#aayatun', MAP_W / 2, tagY);
 
 		/* Brand band: the site name, then the full URL under it. */
 		var bandTop = cardH - BAND;
@@ -821,6 +886,10 @@
 		}
 	}
 
+	function mapMessage() {
+		return 'My Quran exploration so far, as of ' + todayLabel();
+	}
+
 	function mapPayload(o) {
 		var url = pageUrl('/');
 		return {
@@ -828,7 +897,7 @@
 			card: 'map',
 			ref: 'quran-exploration-map',
 			title: 'My Quran exploration — Aayatun',
-			text: 'My Quran exploration so far, as of ' + todayLabel() + '\n\n' +
+			text: mapMessage() + '\n\n' +
 				o.deep.toLocaleString() + ' of 6,236 verses studied · ' +
 				o.pages + ' of 604 pages visited.\n\n' + url + '\n' + HASHTAG,
 			url: url,
@@ -839,7 +908,7 @@
 		};
 	}
 
-	// The map card is the largest one (920 x ~1578 px) and encoding it takes
+	// The map card is the largest one (920 x 1636 px) and encoding it takes
 	// long enough to be felt as a lag between the tap and the share sheet, so
 	// it is drawn and encoded once while the modal opens and the tap only
 	// hands the finished file over. The signature covers the counts and the

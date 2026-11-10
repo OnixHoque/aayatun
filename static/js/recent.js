@@ -6,11 +6,12 @@
  * most five, newest first. Runs of the same kind collapse to their newest
  * entry, so paging 42 -> 43 -> 44 leaves only "Page 44" in the list.
  *
- * Separately, every visit is folded into a bitset map for the exploration
- * graph: a deep bit per verse (its detail page was opened) and a light bit
- * per printed mushaf page. 6,236 + 604 bits is ~1.1 KB, so it is written on
- * every read without the list's five-entry cap losing detail. The map is
- * append-only; only the "clear history" confirmation removes it.
+ * Separately, every visit is folded into the exploration map: two bits per
+ * verse record how often its detail page was opened (1, 2 or 3+ times), and
+ * one bit per printed mushaf page records the pages seen. That is ~1.7 KB,
+ * so it is written on every read without the list's five-entry cap losing
+ * detail. The map is append-only; only the "clear history" confirmation
+ * removes it.
  *
  * Labels come from a server-rendered <meta name="aayatun-read"> in each
  * template ("type|key|label"), and the flat mushaf position from
@@ -20,7 +21,8 @@
  */
 (function () {
 	var KEY = 'aayatun_recent_reads_v1';
-	var MAP_KEY = 'aayatun_read_map_v1';
+	var MAP_KEY = 'aayatun_read_map_v2';
+	var OLD_MAP_KEY = 'aayatun_read_map_v1';
 	var MAX = 5;
 	var TYPES = { verse: 1, page: 1, mushaf: 1 };
 
@@ -100,10 +102,32 @@
 	function blank()
 	{
 		return {
-			v: new Uint8Array(Math.ceil(VERSE_BITS / 8)),
+			level: new Uint8Array(VERSE_BITS),
 			p: new Uint8Array(Math.ceil(PAGE_BITS / 8)),
 			last: -1
 		};
+	}
+
+	// Verse visits are two bits each: 0 = never opened, 1 = opened once,
+	// 2 = twice, 3 = three or more times. The map uses those as the three
+	// shades of deep green, so a verse read again gets darker.
+	function unpackLevels(text)
+	{
+		var out = new Uint8Array(VERSE_BITS);
+		var bytes = fromB64(text, Math.ceil(VERSE_BITS / 4));
+		for (var i = 0; i < VERSE_BITS; i++) {
+			out[i] = (bytes[i >> 2] >> ((i & 3) * 2)) & 3;
+		}
+		return out;
+	}
+
+	function packLevels(level)
+	{
+		var bytes = new Uint8Array(Math.ceil(VERSE_BITS / 4));
+		for (var i = 0; i < VERSE_BITS; i++) {
+			if (level[i]) bytes[i >> 2] |= (level[i] & 3) << ((i & 3) * 2);
+		}
+		return bytes;
 	}
 
 	function map()
@@ -111,11 +135,26 @@
 		var out = blank();
 		try {
 			var raw = JSON.parse(localStorage.getItem(MAP_KEY) || 'null');
-			if (!raw || typeof raw !== 'object') return out;
-			out.v = fromB64(raw.v, out.v.length);
-			out.p = fromB64(raw.p, out.p.length);
-			if (typeof raw.last === 'number' && raw.last >= 0 && raw.last < VERSE_BITS)
-				out.last = raw.last;
+			if (raw && typeof raw === 'object') {
+				out.level = unpackLevels(raw.l);
+				out.p = fromB64(raw.p, out.p.length);
+				if (typeof raw.last === 'number' && raw.last >= 0 && raw.last < VERSE_BITS)
+					out.last = raw.last;
+				return out;
+			}
+
+			// v1 kept one bit per verse; carry those visits over as one open.
+			var old = JSON.parse(localStorage.getItem(OLD_MAP_KEY) || 'null');
+			if (old && typeof old === 'object') {
+				var bits = fromB64(old.v, Math.ceil(VERSE_BITS / 8));
+				for (var i = 0; i < VERSE_BITS; i++) {
+					if (bits[i >> 3] & (1 << (i & 7))) out.level[i] = 1;
+				}
+				out.p = fromB64(old.p, out.p.length);
+				if (typeof old.last === 'number' && old.last >= 0 && old.last < VERSE_BITS)
+					out.last = old.last;
+				save(out);
+			}
 		} catch (e) {}
 		return out;
 	}
@@ -124,7 +163,7 @@
 	{
 		try {
 			localStorage.setItem(MAP_KEY, JSON.stringify({
-				v: toB64(m.v),
+				l: toB64(packLevels(m.level)),
 				p: toB64(m.p),
 				last: m.last
 			}));
@@ -140,7 +179,7 @@
 	{
 		if (!(index >= 0) || index >= VERSE_BITS) return;
 		var m = map();
-		setBit(m.v, index);
+		if (m.level[index] < 3) m.level[index]++;
 		m.last = index;
 		save(m);
 	}
@@ -222,6 +261,7 @@
 		clearAll: function () {
 			try { localStorage.removeItem(KEY); } catch (e) {}
 			try { localStorage.removeItem(MAP_KEY); } catch (e) {}
+			try { localStorage.removeItem(OLD_MAP_KEY); } catch (e) {}
 		}
 	};
 

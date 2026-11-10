@@ -295,8 +295,9 @@
         opacity: 1;
     }
 
-    /* Clear history sits with the legend, above the grid, so it is part of
-       the map itself rather than a footer afterthought. */
+    /* Clear history sits at the right end of the legend row inside the map
+       frame, the way GitHub puts its "Learn how we count contributions" link
+       at the far end of the key. */
     #reading-map-clear {
         margin-left: auto;
         border: 0;
@@ -394,10 +395,11 @@
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 14px;
+        gap: 6px 14px;
         font-size: 80%;
         opacity: .8;
-        margin-bottom: 12px;
+        margin: 0;
+        padding: 8px 4px 3px;
     }
 
     .reading-map-legend span {
@@ -414,8 +416,26 @@
         box-shadow: inset 0 0 0 1px rgba(27, 31, 36, .15);
     }
 
-    .rg-swatch.deep { background: #216e39; box-shadow: none; }
+    .rg-swatch.deep-1 { background: #40c463; box-shadow: none; }
+    .rg-swatch.deep-2 { background: #30a14e; box-shadow: none; }
+    .rg-swatch.deep-3 { background: #216e39; box-shadow: none; }
     .rg-swatch.light { background: #9be9a8; box-shadow: none; }
+
+    .reading-map-legend .rg-scale {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+    }
+
+    /* The frame is the card GitHub draws around its contribution grid: the
+       grid sits on the tinted panel and the legend is part of the frame,
+       under the boxes, so the key never floats away from the map. */
+    .reading-map-frame {
+        border: 1px solid rgba(34, 36, 38, .12);
+        border-radius: 4px;
+        background: #fff;
+        padding: 6px 6px 2px;
+    }
 
     /* The map scrolls one way only, like GitHub's contribution grid: every
        row is visible and the verses advance column by column to the right.
@@ -431,8 +451,7 @@
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
         padding: 4px;
-        border: 1px solid rgba(34, 36, 38, .12);
-        border-radius: 4px;
+        border-radius: 3px;
         background: #e8ecf0;
     }
 
@@ -440,16 +459,42 @@
         display: none;
     }
 
+    /* Sparse page ticks above the columns, the way GitHub labels months:
+       "Page 100" sits over the column where that printed mushaf page
+       begins, and labels too close to the previous one are dropped. */
+    .reading-map-axis {
+        position: relative;
+        height: 14px;
+        margin-bottom: 4px;
+        overflow: hidden;
+        pointer-events: none;
+    }
+
+    .reading-map-axis span {
+        position: absolute;
+        top: 0;
+        font-size: 9px;
+        line-height: 14px;
+        color: rgba(27, 31, 36, .45);
+        white-space: nowrap;
+    }
+
     /* Column-major: the row count is set by the viewport, the number of
        columns follows from it, so the grid is always wider than the box. */
     .reading-map-grid {
         display: grid;
-        grid-template-rows: repeat(var(--map-rows, 28), 7px);
+        grid-template-rows: repeat(var(--map-rows, 28), 10px);
         grid-auto-flow: column;
-        grid-auto-columns: 7px;
-        gap: 2px;
+        grid-auto-columns: 10px;
+        gap: 3px;
         align-content: start;
         width: max-content;
+    }
+
+    /* A blank cell at each surah start, so the blocks read apart. */
+    .rg-break {
+        width: 10px;
+        height: 10px;
     }
 
     /* A real scrollbar instead of a native one (phones hide theirs), so the
@@ -486,15 +531,17 @@
     }
 
     .rg-cell {
-        width: 7px;
-        height: 7px;
+        width: 10px;
+        height: 10px;
         border-radius: 2px;
         background: #fff;
         box-shadow: inset 0 0 0 1px rgba(27, 31, 36, .14);
     }
 
     .rg-cell.is-light { background: #9be9a8; box-shadow: none; }
-    .rg-cell.is-deep { background: #216e39; box-shadow: none; }
+    .rg-cell.is-deep-1 { background: #40c463; box-shadow: none; }
+    .rg-cell.is-deep-2 { background: #30a14e; box-shadow: none; }
+    .rg-cell.is-deep-3 { background: #216e39; box-shadow: none; }
 
     .rg-cell.is-selected {
         outline: 2px solid #2185d0;
@@ -503,9 +550,17 @@
         z-index: 1;
     }
 
+    html.dark-theme .reading-map-frame {
+        background: #1b1c1d;
+        border-color: rgba(255, 255, 255, .12);
+    }
+
     html.dark-theme .reading-map-scroll {
         background: #0d1117;
-        border-color: rgba(255, 255, 255, .12);
+    }
+
+    html.dark-theme .reading-map-axis span {
+        color: rgba(255, 255, 255, .4);
     }
 
     html.dark-theme .reading-map-scrollbar {
@@ -530,8 +585,14 @@
     html.dark-theme .rg-cell.is-light,
     html.dark-theme .rg-swatch.light { background: #0e4429; box-shadow: none; }
 
-    html.dark-theme .rg-cell.is-deep,
-    html.dark-theme .rg-swatch.deep { background: #39d353; box-shadow: none; }
+    html.dark-theme .rg-cell.is-deep-1,
+    html.dark-theme .rg-swatch.deep-1 { background: #006d32; box-shadow: none; }
+
+    html.dark-theme .rg-cell.is-deep-2,
+    html.dark-theme .rg-swatch.deep-2 { background: #26a641; box-shadow: none; }
+
+    html.dark-theme .rg-cell.is-deep-3,
+    html.dark-theme .rg-swatch.deep-3 { background: #39d353; box-shadow: none; }
 
     html.dark-theme .rg-cell.is-selected { outline-color: #64b5f6; }
 
@@ -671,7 +732,15 @@ document.addEventListener('DOMContentLoaded', function () {
 	});
 
 	// The clear confirmation stacks over the map instead of replacing it.
-	$('#reading-map-modal, #clear-history-modal').modal({ allowMultiple: true });
+	// The floating search button sits above the dimmer, so on phones it would
+	// cover the bottom-right of the map (Clear history lives there); hide it
+	// while the map is open.
+	$('#clear-history-modal').modal({ allowMultiple: true });
+	$('#reading-map-modal').modal({
+		allowMultiple: true,
+		onShow: function () { $('#search-btn').hide(); },
+		onHide: function () { $('#search-btn').show(); }
+	});
 
 	let target_location = [	"{{ url_for('arabic_fulltext', surah=-1) }}",
 	"{{ url_for('translation', surah=-1) }}",
@@ -930,17 +999,20 @@ document.addEventListener('DOMContentLoaded', function () {
 						<button type="button" id="reading-map-share" class="reading-map-share" title="Share the map with your friends" aria-label="Share the Quran exploration map with your friends"><i class="icon share alternate" aria-hidden="true"></i><span>Share map</span></button>
 					</div>
 				</div>
-				<div class="reading-map-legend">
-					<span><i class="rg-swatch deep"></i>Verse studied</span>
-					<span><i class="rg-swatch light"></i>Page visited</span>
-					<span><i class="rg-swatch"></i>Not yet</span>
-					<button type="button" id="reading-map-clear">Clear history</button>
+				<div class="reading-map-frame">
+					<div id="reading-map-scroll" class="reading-map-scroll">
+						<div id="reading-map-axis" class="reading-map-axis" aria-hidden="true"></div>
+						<div id="reading-map-grid" class="reading-map-grid" role="img" aria-label="Quran exploration map"></div>
+					</div>
+					<div class="reading-map-legend">
+						<span><i class="rg-swatch"></i>Not yet</span>
+						<span><i class="rg-swatch light"></i>Page visited</span>
+						<span class="rg-scale" title="Opened once, twice, 3+ times"><span>Less</span><i class="rg-swatch deep-1"></i><i class="rg-swatch deep-2"></i><i class="rg-swatch deep-3"></i><span>More</span></span>
+						<button type="button" id="reading-map-clear">Clear history</button>
+					</div>
 				</div>
 				<div id="reading-map-x" class="reading-map-scrollbar" role="scrollbar" aria-controls="reading-map-scroll" aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Scroll the map left and right" tabindex="0" hidden>
 					<div class="reading-map-scrollbar-thumb"></div>
-				</div>
-				<div id="reading-map-scroll" class="reading-map-scroll">
-					<div id="reading-map-grid" class="reading-map-grid" role="img" aria-label="Quran exploration map"></div>
 				</div>
 			</div>
 		</div>

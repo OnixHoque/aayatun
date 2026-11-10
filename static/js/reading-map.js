@@ -40,6 +40,21 @@
 		surahStart.push(total);
 		total += surahs[s].count;
 	}
+	// First verse of each surah, so the map can leave a blank square there.
+	var starts = {};
+	for (var k = 0; k < surahStart.length; k++) starts[surahStart[k]] = 1;
+
+	// A blank square is inserted before each surah, so a verse's cell index is
+	// its own index plus every break at or before it.
+	var breakBefore = new Uint16Array(VERSE_COUNT);
+	(function () {
+		var running = 0;
+		for (var b = 0; b < VERSE_COUNT; b++) {
+			if (b && starts[b]) running++;
+			breakBefore[b] = running;
+		}
+	})();
+
 	// verse index -> 0-based page
 	var pageOf = new Uint16Array(VERSE_COUNT);
 	if (hasPageMap) {
@@ -51,6 +66,7 @@
 
 	var grid = document.getElementById('reading-map-grid');
 	var scroll = document.getElementById('reading-map-scroll');
+	var axis = document.getElementById('reading-map-axis');
 	var xBar = document.getElementById('reading-map-x');
 	var xThumb = xBar ? xBar.querySelector('.reading-map-scrollbar-thumb') : null;
 	var hint = document.getElementById('reading-map-hint');
@@ -92,21 +108,32 @@
 		return { s: surahs[lo], verse: i - surahStart[lo] + 1 };
 	}
 
+	// 0 not yet, 1 seen on a visited page, 2/3/4 opened 1x/2x/3+x. The share
+	// card draws from the same numbers, so both views shade identically.
 	function stateOf(m, i)
 	{
-		if (!m) return 'none';
-		if (hasBit(m.v, i)) return 'deep';
-		if (hasPageMap && hasBit(m.p, pageOf[i])) return 'light';
-		return 'none';
+		if (!m) return 0;
+		var level = m.level[i];
+		if (level) return level + 1;
+		if (hasPageMap && hasBit(m.p, pageOf[i])) return 1;
+		return 0;
 	}
+
+	var STATE_CLASS = ['', 'light', 'deep-1', 'deep-2', 'deep-3'];
 
 	// Column-major order, like GitHub's contribution grid: each column holds
 	// the verses for one column of rows, so scrolling right walks the mushaf
-	// forward and every row stays visible at once.
+	// forward and every row stays visible at once. A blank square before each
+	// surah keeps the blocks apart, the way the row-major grid did.
 	function build()
 	{
 		var frag = document.createDocumentFragment();
 		for (var i = 0; i < VERSE_COUNT; i++) {
+			if (i && starts[i]) {
+				var brk = document.createElement('span');
+				brk.className = 'rg-break';
+				frag.appendChild(brk);
+			}
 			var cell = document.createElement('span');
 			cell.className = 'rg-cell';
 			cell.setAttribute('data-i', i);
@@ -154,9 +181,9 @@
 			if (raw === null) continue;
 			var i = +raw;
 			var state = stateOf(currentMap, i);
-			if (state === 'deep') deep++;
+			if (state > 1) deep++;
 			cell.className = 'rg-cell' +
-				(state === 'deep' ? ' is-deep' : state === 'light' ? ' is-light' : '') +
+				(state ? ' is-' + STATE_CLASS[state] : '') +
 				(i === selected ? ' is-selected' : '');
 		}
 
@@ -192,21 +219,64 @@
 	// One way only: the map takes whatever height is left in the viewport,
 	// and the resulting number of rows fixes how many columns 6,236 verses
 	// need. The columns then run off to the right and only the width scrolls.
-	var PITCH = 9;        // 7 px cell + 2 px gap
+	var PITCH = 13;       // 10 px cell + 3 px gap
 	var mapRows = 0;
 
 	function layoutMap()
 	{
 		if (!grid || !scroll) return;
 		var top = scroll.getBoundingClientRect().top;
-		var avail = window.innerHeight - top - 26;
+		// Leave room for the page ticks, the legend inside the frame and the
+		// scrollbar under it, so the whole map block fits without scrolling.
+		var avail = window.innerHeight - top - 76;
 		avail = Math.max(126,
 			Math.min(avail, Math.round(window.innerHeight * 0.7)));
-		var rows = Math.max(12, Math.floor((avail + 2) / PITCH));
-		if (rows === mapRows) return;
-		mapRows = rows;
-		grid.style.setProperty('--map-rows', String(rows));
-		scroll.style.height = (rows * PITCH + 8) + 'px';
+		var rows = Math.max(12, Math.floor((avail + 3) / PITCH));
+		if (rows !== mapRows) {
+			mapRows = rows;
+			grid.style.setProperty('--map-rows', String(rows));
+			scroll.style.height = (rows * PITCH + 26) + 'px';
+		}
+		renderAxis();
+	}
+
+	// Sparse page ticks over the columns: one label where each 50th printed
+	// page begins, plus the first, dropped when it would crowd the previous
+	// one. They live in the scroller, so they pan with the verses.
+	function renderAxis()
+	{
+		if (!axis || !mapRows || !hasPageMap || !built) return;
+		var cells = grid.childElementCount;
+		if (!cells) return;
+		var width = Math.ceil(cells / mapRows) * PITCH - 3;
+		axis.style.width = width + 'px';
+
+		while (axis.firstChild) axis.removeChild(axis.firstChild);
+		var lastX = -1000;
+		var last = null;
+		for (var page = 0; page < PAGE_COUNT; page++) {
+			var no = page + 1;
+			if (no !== 1 && no % 50 !== 0) continue;
+			var verse = bounds[page];
+			if (!(verse >= 0) || verse >= VERSE_COUNT) continue;
+			var x = Math.floor((verse + breakBefore[verse]) / mapRows) * PITCH;
+			if (x - lastX < 90) continue;
+			var tick = document.createElement('span');
+			tick.style.left = x + 'px';
+			tick.textContent = 'Page ' + no;
+			axis.appendChild(tick);
+			// The final label may not fit inside the strip; pull it back so it
+			// stays whole instead of being clipped by the edge.
+			var over = x + tick.offsetWidth - width;
+			if (over > 0 && x - over - lastX >= 90) {
+				tick.style.left = (x - over) + 'px';
+			}
+			lastX = tick.offsetLeft;
+			last = tick;
+		}
+		if (last && last.offsetLeft + last.offsetWidth > width) {
+			axis.removeChild(last);
+		}
 	}
 
 	// The scrollbar mirrors the map position and is its only visible scroll
@@ -230,17 +300,8 @@
 			String(Math.round((scroll.scrollLeft / max) * 100)));
 	}
 
-	// The grid has no layout while the modal is hidden, so centre the last
-	// read verse only after the modal is visible.
-	function scrollToLast()
-	{
-		if (!currentMap || currentMap.last < 0 || !scroll) return;
-		var last = grid.querySelector('[data-i="' + currentMap.last + '"]');
-		if (last) {
-			scroll.scrollLeft = Math.max(0,
-				last.offsetLeft - scroll.clientWidth / 2 + last.offsetWidth / 2);
-		}
-	}
+	// The map always opens at its start (Al-Fatihah at the top left), so the
+	// scrollbar thumb begins at the left edge and the map reads forwards.
 
 	if (xBar && xThumb && scroll) {
 		// Drag the thumb, or click the track to jump there.
@@ -307,23 +368,30 @@
 	}
 
 	// Walk forward from the last read verse (wrapping), preferring the first
-	// white verse; when every verse is coloured, fall back to light, then deep.
+	// white verse; when every verse is coloured, fall back to page-only, then
+	// to any opened verse.
 	function suggest(m)
 	{
 		var start = m && m.last >= 0 ? m.last : -1;
-		function nearest(state)
+		function nearest(match)
 		{
 			for (var n = 1; n <= VERSE_COUNT; n++) {
 				var i = (start + n) % VERSE_COUNT;
-				if (stateOf(m, i) === state) return i;
+				if (match(stateOf(m, i))) return i;
 			}
 			return -1;
 		}
 
-		var idx = nearest('none');
+		var idx = nearest(function (st) { return st === 0; });
 		var kind = 'none';
-		if (idx < 0) { idx = nearest('light'); kind = 'light'; }
-		if (idx < 0) { idx = nearest('deep'); kind = 'deep'; }
+		if (idx < 0) {
+			idx = nearest(function (st) { return st === 1; });
+			kind = 'light';
+		}
+		if (idx < 0) {
+			idx = nearest(function (st) { return st > 1; });
+			kind = 'deep';
+		}
 
 		nextBox.textContent = '';
 		if (idx < 0) return;
@@ -353,8 +421,11 @@
 		var loc = locate(i);
 		var state = stateOf(currentMap, i);
 		openLink.textContent = loc.s.name + ' ' + loc.s.no + ':' + loc.verse +
-			(state === 'deep' ? ' — studied'
-				: state === 'light' ? ' — seen on page' : ' — not yet');
+			(state === 0 ? ' — not yet'
+				: state === 1 ? ' — seen on page'
+				: state === 2 ? ' — opened once'
+				: state === 3 ? ' — opened twice'
+				: ' — opened 3+ times');
 		openLink.href = '/' + loc.s.no + '/' + loc.verse;
 		openLink.hidden = false;
 		hint.hidden = true;
@@ -401,8 +472,8 @@
 	grid.addEventListener('click', selectCell);
 	grid.addEventListener('pointerleave', leaveGrid);
 
-	// 0 = not yet, 1 = seen on a visited page, 2 = verse page opened. The
-	// share card draws from this array so it never re-derives the bitsets.
+	// 0 = not yet, 1 = seen on a visited page, 2..4 = verse opened 1x/2x/3+x.
+	// The share card draws from this array so it never re-derives the bitsets.
 	// stateHash signs the positions too, so the cached share card is thrown
 	// away when a different verse is read rather than only when a count moves.
 	var stateHash = 0;
@@ -413,9 +484,8 @@
 		var hash = 0;
 		for (var i = 0; i < VERSE_COUNT; i++) {
 			var state = stateOf(currentMap, i);
-			var n = state === 'deep' ? 2 : state === 'light' ? 1 : 0;
-			out[i] = n;
-			hash = (hash * 31 + n * (i + 1)) | 0;
+			out[i] = state;
+			hash = (hash * 31 + state * (i + 1)) | 0;
 		}
 		stateHash = hash;
 		return out;
@@ -475,7 +545,7 @@
 			window.requestAnimationFrame(function () {
 				window.requestAnimationFrame(function () {
 					layoutMap();
-					scrollToLast();
+					scroll.scrollLeft = 0;
 					syncX();
 				});
 			});
