@@ -364,7 +364,9 @@ html.dark-theme .mushaf-zoom-sep {
 	padding: .3rem 0 .1rem;
 }
 
-.mushaf-verse-no {
+/* Fomantic's `.ui.table td` rule outranks a bare class selector, so the
+   verse number kept inheriting the table's left alignment. */
+.ui.table td.mushaf-verse-no {
 	cursor: pointer;
 	color: rgba(0, 0, 0, .55);
 	font-family: Lora;
