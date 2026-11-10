@@ -449,6 +449,10 @@ body.mushaf-page-body {
 	margin: 0;
 }
 
+/* Hide the table from the first paint when the line layout is the default
+   (the head script in mushaf_page.html sets this before the body exists). */
+html.mushaf-layout-pending #mushaf-page-table { display: none; }
+
 /* Mushaf line layout (third reading toggle): the QPC2 page as printed, one
    block per line, no table and no translations. Font family and size are set
    by the page script (family from /font/v4/<page>.woff2, size measured to

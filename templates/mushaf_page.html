@@ -9,6 +9,23 @@
 {% block head_extra %}
 <meta name="aayatun-read" content="page|{{ page_no }}|Page {{ page_no }} &middot; {{ surah_names|join(', ') }}">
 <meta name="aayatun-read-index" content="{{ read_index }}">
+<script>
+	// The printed line layout is now the default, so hide the table before
+	// first paint instead of showing it until DOMContentLoaded fits the lines.
+	// An explicit "off" choice (stored as '0') keeps the table visible.
+	(function () {
+		try {
+			if (localStorage.getItem('aayatun_mushaf_layout_v1') !== '0') {
+				document.documentElement.classList.add('mushaf-layout-pending');
+			}
+		} catch (e) {}
+		// Safety net: if a script fails before setLayoutMode() runs (or the
+		// CDN scripts stall), never leave the reader with a blank mushaf.
+		window.setTimeout(function () {
+			document.documentElement.classList.remove('mushaf-layout-pending');
+		}, 8000);
+	})();
+</script>
 {% endblock head_extra %}
 
 {% block js %}
@@ -357,7 +374,7 @@
 		}
 
 		function warmFont(page) {
-			if (!window.QcfFont || !QcfFont.isOn || !QcfFont.isOn()) return;
+			if (!window.QcfFont || !mushafTajweedOn) return;
 			if (QcfFont.isLoaded(page)) return;
 			QcfFont.load(page).catch(function () {});
 		}
@@ -417,10 +434,10 @@
 			show(on);
 		};
 
-		// Defaults: colored font off, translation on. An explicit choice made
-		// on any page (verse page, fulltext, here) wins and is remembered.
+		// Defaults: colored font on for mushaf pages; an explicit choice made
+		// on any page (verse page, fulltext, here) still wins and is remembered.
 		var stored = window.QcfFont ? QcfFont.get() : false;
-		show(stored === null ? false : stored);
+		show(stored === null ? true : stored);
 	})();
 
 	var TR_KEY = 'aayatun_mushaf_translation_v1';
@@ -594,6 +611,9 @@
 	function setLayoutMode(on)
 	{
 		layoutOn = !!on;
+		// The early head script hides the table before first paint when the
+		// line layout is the default; from here the normal branches own it.
+		document.documentElement.classList.remove('mushaf-layout-pending');
 		if (layoutBtn) {
 			layoutBtn.classList.toggle('active', layoutOn);
 			layoutBtn.setAttribute('aria-pressed', layoutOn ? 'true' : 'false');
@@ -628,7 +648,8 @@
 	(function () {
 		var stored = null;
 		try { stored = localStorage.getItem(LAYOUT_KEY); } catch (e) {}
-		if (stored === '1') setLayoutMode(true);
+		// The printed line layout is the default; only an explicit "off" wins.
+		if (stored !== '0') setLayoutMode(true);
 	})();
 
 	// Zooming the table also refits the printed lines, which are sized in px.
