@@ -187,7 +187,7 @@
   .forecast-day .condition { min-height: 2.5em; font-size: .82rem; opacity: .8; }
   .forecast-day .temperatures { display: flex; flex-direction: column; gap: .1rem; white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 700; }
   .forecast-day .low { opacity: .65; }
-  .clock { font-family: var(--font-clock); font-size: .88em; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; white-space: nowrap; text-shadow: 0 .025em .09em rgba(0, 0, 0, .18); }
+  .clock { font-family: var(--font-clock); font-size: .88em; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; white-space: nowrap; text-shadow: 0 .025em .09em var(--clock-shadow, rgba(0, 0, 0, .18)); }
   .dates { display: flex; flex-direction: column; margin: .1em 0 0; font-size: .64em; font-weight: 500; line-height: 1.2; white-space: nowrap; }
   #d-hijri::after { content: " AH"; }
   .d-short { display: none; }
@@ -272,7 +272,8 @@
   .bar button:hover, .bar button:focus-visible { opacity: 1; }
   .bar button svg { width: clamp(.9rem, .75em, 1.35rem); height: clamp(.9rem, .75em, 1.35rem); }
   /* While the settings panel is open the row floats over the scrolling form, so it needs a solid backing */
-  .app.editing .bar, .app.editing .bar button { background: var(--bg); }
+  .app.editing .bar { background: var(--bg); }
+  .app.editing .bar button { background: transparent; }
 
   /* Adhan stop button: only while the adhan plays. Stays filled so it is easy to find, in the same 2rem slot. */
   #stop { width: 1.7rem; height: 1.7rem; margin: .15rem; opacity: 1; background: var(--fg); color: var(--bg); }
@@ -670,6 +671,17 @@
   @media (max-width: 34rem) {
     .opts-grid { grid-template-columns: 1fr 1fr; }
   }
+  /* The hourly timeline uses the same translucent tiles as the seven-day forecast. */
+  .forecast-section-title { margin: .9rem 0 .5rem; font-size: .95rem; font-weight: 700; letter-spacing: .015em; }
+  .forecast-hours { display: flex; gap: .5rem; margin: 0; padding: 0 0 .45rem; list-style: none; overflow-x: auto; overscroll-behavior-inline: contain; scrollbar-width: thin; scroll-snap-type: x proximity; }
+  .forecast-hour { flex: 0 0 5.5rem; display: flex; flex-direction: column; align-items: center; gap: .35rem; padding: .7rem .35rem; border: 1px solid var(--glass-edge); border-radius: .85rem; background: linear-gradient(145deg, var(--glass-a), var(--glass-b)); box-shadow: inset 0 1px 0 var(--glass-shine); -webkit-backdrop-filter: blur(16px) saturate(150%); backdrop-filter: blur(16px) saturate(150%); text-align: center; scroll-snap-align: start; }
+  .forecast-hour.current { border-color: var(--line-strong); background: linear-gradient(145deg, var(--control-tint), var(--glass-a)); }
+  .hour-time { font-size: .82rem; font-weight: 700; white-space: nowrap; }
+  .hour-icon { font-size: 1.65rem; line-height: 1.3; }
+  .hour-temp { font-family: var(--font-clock); font-size: 1.1rem; font-weight: 700; }
+  .hour-rain { font-size: .72rem; opacity: .8; white-space: nowrap; }
+  .forecast-hours-empty { margin: .2rem 0; font-size: .85rem; opacity: .75; }
+
   /* Quran player: a small popup opened from the play icon next to the forecast icon. */
   .forecast-button svg { display: block; width: 1.12em; height: 1.12em; }
   #quran-button.on { opacity: 1; background: var(--line); }
@@ -701,9 +713,485 @@
   .q-presets button { flex: none; min-height: 2rem; padding: .15rem .8rem; border-radius: 999px; font-size: .85rem; white-space: nowrap; }
   .quran-dialog .credit { text-align: center; }
 
+  /* ---------- Glass tiles ----------
+     Frosted-glass look for the prayer cards, the sunrise/sunset/midnight pills, the forecast
+     days and the popups. Glass needs something to blur, so a fixed line-pattern layer
+     sits behind the page. Everything is wrapped in @supports, so a browser without
+     backdrop-filter keeps the earlier flat cards. -webkit- prefixes are for iPhone Safari/PWA. */
+  :root {
+    --glass-a: rgba(255, 255, 255, .15);      /* top-left of a tile */
+    --glass-b: rgba(255, 255, 255, .05);      /* bottom-right of a tile */
+    --glass-edge: rgba(255, 255, 255, .24);   /* hairline border */
+    --glass-shine: rgba(255, 255, 255, .34);  /* top inner highlight */
+    --glass-shadow: rgba(0, 0, 0, .22);
+    --lines-opacity: .22;                     /* strength of the background line pattern */
+  }
+  body[data-waqt="morning"], body[data-waqt="dhuhr"], body[data-waqt="asr"] {
+    --glass-a: rgba(255, 255, 255, .50);
+    --glass-b: rgba(255, 255, 255, .20);
+    --glass-edge: rgba(255, 255, 255, .70);
+    --glass-shine: rgba(255, 255, 255, .85);
+    --glass-shadow: rgba(40, 30, 10, .16);
+    --lines-opacity: .5;
+  }
+
+  @supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+    /* Light gray line work: an eight-pointed star lattice (SVG tile), drawn very thin. */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      opacity: var(--lines-opacity);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80' fill='none' stroke='%23b4bcc8' stroke-width='.8' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M70 40 18.79 61.21 40 10 61.21 61.21 10 40 61.21 18.79 40 70 18.79 18.79Z'/%3E%3Cpath d='M52 40 48.49 48.49 40 52 31.51 48.49 28 40 31.51 31.51 40 28 48.49 31.51Z'/%3E%3Cpath d='M0 40H10M70 40H80M40 0V10M40 70V80'/%3E%3Cpath d='M14 0 0 14M66 0 80 14M0 66 14 80M66 80 80 66'/%3E%3Cpath d='M18.79 18.79 9.9 9.9M61.21 18.79 70.1 9.9M18.79 61.21 9.9 70.1M61.21 61.21 70.1 70.1'/%3E%3Ccircle cx='40' cy='40' r='4'/%3E%3C/svg%3E");
+      background-size: 80px 80px;
+      background-position: center top;
+    }
+
+    #list .row, #list .pill, .pills .pill, .forecast-day {
+      background: linear-gradient(145deg, var(--glass-a), var(--glass-b));
+      border: 1px solid var(--glass-edge);
+      box-shadow: inset 0 1px 0 var(--glass-shine), 0 8px 22px var(--glass-shadow);
+      -webkit-backdrop-filter: blur(10px) saturate(160%);
+      backdrop-filter: blur(10px) saturate(160%);
+    }
+    .pill { border: 1px solid var(--glass-edge); }
+
+    /* The active prayer stays the strongest tile: a tinted glass with the inverted text. */
+    #list .row.active {
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), 0 10px 28px var(--glass-shadow);
+    }
+    @supports (color: color-mix(in srgb, white 8%, transparent)) {
+      #list .row.active {
+        background: linear-gradient(145deg, color-mix(in srgb, var(--fg) 90%, transparent), color-mix(in srgb, var(--fg) 78%, transparent));
+        border-color: color-mix(in srgb, var(--fg) 55%, white);
+      }
+      /* Popups: slightly see-through so the page glows behind them. */
+      .forecast-dialog {
+        background: color-mix(in srgb, var(--bg) 82%, transparent);
+        -webkit-backdrop-filter: blur(24px) saturate(150%);
+        backdrop-filter: blur(24px) saturate(150%);
+      }
+      .forecast-dialog::backdrop { -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+    }
+  }
+
+  /* People who ask the system for less transparency get the plain flat cards back. */
+  @media (prefers-reduced-transparency: reduce) {
+    body::before { display: none; }
+    #list .row, #list .pill, .pills .pill, .forecast-day, .forecast-dialog {
+      -webkit-backdrop-filter: none !important;
+      backdrop-filter: none !important;
+      background: var(--field) !important;
+      box-shadow: none !important;
+    }
+    #list .row.active { background: var(--fg) !important; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; }
   }
+
+
+  /* ---------- Atmospheric glass redesign ----------
+     Layered, time-of-day aurora lighting and a restrained architectural lattice.
+     CSS-only, so the display remains lightweight and works offline. */
+  :root {
+    --sky-1: #142947;
+    --sky-2: #0b1931;
+    --sky-3: #283a60;
+    --glow-1: rgba(80, 164, 209, .25);
+    --glow-2: rgba(142, 110, 204, .22);
+    --glow-3: rgba(76, 157, 154, .13);
+    --glass-a: rgba(255, 255, 255, .16);
+    --glass-b: rgba(255, 255, 255, .045);
+    --glass-edge: rgba(255, 255, 255, .29);
+    --glass-shine: rgba(255, 255, 255, .40);
+    --glass-shadow: rgba(0, 10, 28, .20);
+    --control-tint: rgba(255, 255, 255, .11);
+    --control-hover: rgba(255, 255, 255, .20);
+    --pattern-opacity: .21;
+      --clock-shadow: rgba(0, 0, 0, .18);
+  }
+  body[data-waqt="fajr"] {
+    --sky-1: #303a72; --sky-2: #121c3c; --sky-3: #50436c;
+    --glow-1: rgba(245, 153, 147, .28); --glow-2: rgba(146, 138, 240, .3);
+    --glow-3: rgba(116, 182, 231, .17);
+  }
+  body[data-waqt="morning"] {
+    --sky-1: #f6dfa5; --sky-2: #e8c98d; --sky-3: #f8e9c8;
+    --glow-1: rgba(255, 255, 255, .65); --glow-2: rgba(251, 159, 83, .29);
+    --glow-3: rgba(255, 238, 165, .42);
+  }
+  body[data-waqt="dhuhr"] {
+    --sky-1: #d8eaf0; --sky-2: #b5d4e0; --sky-3: #e9f3f6;
+    --glow-1: rgba(255, 255, 255, .72); --glow-2: rgba(95, 170, 198, .20);
+    --glow-3: rgba(233, 255, 255, .35);
+  }
+  body[data-waqt="asr"] {
+    --sky-1: #efb56c; --sky-2: #cf834a; --sky-3: #f8d393;
+    --glow-1: rgba(255, 232, 166, .52); --glow-2: rgba(173, 75, 66, .23);
+    --glow-3: rgba(255, 255, 222, .35);
+    --clock-shadow: transparent;
+  }
+  body[data-waqt="maghrib"] {
+    --sky-1: #713d70; --sky-2: #351e4d; --sky-3: #a55773;
+    --glow-1: rgba(250, 155, 125, .34); --glow-2: rgba(167, 117, 228, .29);
+    --glow-3: rgba(254, 191, 141, .16);
+  }
+  body[data-waqt="isha"] {
+    --sky-1: #142947; --sky-2: #0b1931; --sky-3: #283a60;
+    --glow-1: rgba(80, 164, 209, .25); --glow-2: rgba(142, 110, 204, .22);
+    --glow-3: rgba(76, 157, 154, .13);
+  }
+  body[data-waqt="morning"], body[data-waqt="dhuhr"], body[data-waqt="asr"] {
+    --glass-a: rgba(255, 255, 255, .54);
+    --glass-b: rgba(255, 255, 255, .18);
+    --glass-edge: rgba(255, 255, 255, .73);
+    --glass-shine: rgba(255, 255, 255, .92);
+    --glass-shadow: rgba(74, 54, 37, .12);
+    --control-tint: rgba(255, 255, 255, .36);
+    --control-hover: rgba(255, 255, 255, .56);
+    --pattern-opacity: .26;
+  }
+  body {
+    min-height: 100dvh;
+    background-color: var(--sky-2);
+    background-image:
+      radial-gradient(ellipse 64% 65% at 9% 13%, var(--glow-1), transparent 72%),
+      radial-gradient(ellipse 58% 70% at 91% 79%, var(--glow-2), transparent 76%),
+      radial-gradient(ellipse 53% 52% at 68% 5%, var(--glow-3), transparent 74%),
+      linear-gradient(145deg, var(--sky-1) 0%, var(--sky-2) 55%, var(--sky-3) 100%);
+    background-attachment: fixed;
+    transition: background-color 1.2s ease, color 1.2s ease;
+    isolation: isolate;
+  }
+  /* An almost-watermark-quality Islamic star grid, behind every translucent tile. */
+  body::before {
+    content: "";
+    pointer-events: none;
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    opacity: var(--pattern-opacity);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120' fill='none' stroke='%23ffffff' stroke-opacity='.55' stroke-width='.65'%3E%3Cpath d='M60 5 78 42 115 60 78 78 60 115 42 78 5 60 42 42Z'/%3E%3Cpath d='M60 23 86 34 97 60 86 86 60 97 34 86 23 60 34 34Z'/%3E%3Cpath d='M60 5V23M60 97V115M5 60H23M97 60H115M0 0 34 34M86 86 120 120M120 0 86 34M34 86 0 120'/%3E%3Cpath d='M60 36 84 60 60 84 36 60Z'/%3E%3Ccircle cx='60' cy='60' r='3'/%3E%3C/svg%3E");
+    background-size: 120px 120px;
+    background-position: center center;
+  }
+  body::after {
+    content: "";
+    pointer-events: none;
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background: radial-gradient(ellipse 75% 53% at 50% 46%, transparent 35%, rgba(4, 9, 24, .11) 100%);
+  }
+  .app { z-index: 1; }
+
+  /* Shared glass surface: tiles, form fields and auxiliary panels belong to one system. */
+  #list .row, .pills .pill, .forecast-day,
+  input:not([type="checkbox"]):not([type="range"]), select,
+  .q-trans, .forecast-dialog {
+    background: linear-gradient(135deg, var(--glass-a), var(--glass-b));
+    border: 1px solid var(--glass-edge);
+    box-shadow: inset 0 1px 0 var(--glass-shine), 0 10px 28px var(--glass-shadow);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+    backdrop-filter: blur(18px) saturate(150%);
+  }
+  #list .row, .pills .pill, .forecast-day { border-radius: 1rem; }
+  #list .row { transition: background .3s ease, border-color .3s ease, box-shadow .3s ease, transform .3s ease; }
+  #list .row.active {
+    background: linear-gradient(135deg, var(--fg), color-mix(in srgb, var(--fg) 78%, transparent));
+    color: var(--bg);
+    border-color: var(--glass-shine);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.55), 0 12px 30px var(--glass-shadow);
+  }
+  input:not([type="checkbox"]):not([type="range"]), select {
+    min-width: 0;
+    border-radius: .8rem;
+    padding: .68rem .9rem;
+    color: var(--fg);
+    outline: none;
+    caret-color: var(--fg);
+    background: linear-gradient(135deg, var(--control-tint), var(--glass-b));
+    transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
+  }
+  input::placeholder { color: var(--fg); opacity: .58; }
+  input:not([type="checkbox"]):not([type="range"]):focus,
+  select:focus {
+    border-color: var(--fg);
+    box-shadow: 0 0 0 3px var(--control-tint), inset 0 1px 0 var(--glass-shine);
+  }
+  select option { background: var(--bg); color: var(--fg); }
+  button:not(.forecast-button):not(.forecast-close):not(.bar button) {
+    background: linear-gradient(145deg, color-mix(in srgb, var(--fg) 93%, white 7%), color-mix(in srgb, var(--fg) 78%, transparent));
+    color: var(--bg);
+    border: 1px solid var(--glass-edge);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.32), 0 7px 18px var(--glass-shadow);
+    transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+  }
+  button.secondary:not(.bar button), .q-presets button.secondary {
+    background: linear-gradient(140deg, var(--control-tint), var(--glass-b));
+    color: var(--fg);
+    border: 1px solid var(--glass-edge);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    backdrop-filter: blur(14px) saturate(140%);
+  }
+  button:not(.bar button):not(.forecast-button):not(.forecast-close):hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: inset 0 1px 0 var(--glass-shine), 0 10px 22px var(--glass-shadow);
+  }
+  button:not(.bar button):not(.forecast-button):not(.forecast-close):active:not(:disabled) { transform: translateY(0); }
+  .forecast-dialog {
+    background: linear-gradient(145deg, color-mix(in srgb, var(--sky-1) 84%, transparent), color-mix(in srgb, var(--sky-2) 91%, transparent));
+    border-color: var(--glass-edge);
+    -webkit-backdrop-filter: blur(30px) saturate(160%);
+    backdrop-filter: blur(30px) saturate(160%);
+    box-shadow: 0 22px 75px rgba(0,0,0,.3), inset 0 1px 0 var(--glass-shine);
+  }
+  .forecast-day, .q-trans { box-shadow: inset 0 1px 0 var(--glass-shine); }
+  .forecast-dialog::backdrop { background: rgba(3, 10, 24, .52); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
+  .opts { border-top: 1px solid var(--glass-edge); padding-top: .5rem; }
+  .opts summary { border-radius: .5rem; }
+  .check input { accent-color: var(--fg); }
+  .forecast-button, .forecast-close { color: inherit; }
+  .forecast-button:hover, .forecast-close:hover { background: var(--control-hover); }
+
+  /* Deliberately no backing, blur, or hover fill on the back arrow. */
+  .bar, .app.editing .bar { background: transparent !important; box-shadow: none; }
+  .bar button, .app.editing .bar button,
+  #back, #back:hover, #back:focus-visible, #back:active {
+    background: transparent !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+  /* The stop button retains its important filled affordance. */
+  .bar #stop, .app.editing .bar #stop { background: var(--fg) !important; color: var(--bg); }
+
+  @media (prefers-reduced-transparency: reduce) {
+    body::before, body::after { display: none; }
+    #list .row, .pills .pill, .forecast-day, .forecast-dialog,
+    input:not([type="checkbox"]):not([type="range"]), select, .q-trans,
+    button.secondary:not(.bar button) {
+      -webkit-backdrop-filter: none !important;
+      backdrop-filter: none !important;
+      background: var(--field) !important;
+      box-shadow: none !important;
+    }
+    #list .row.active { background: var(--fg) !important; }
+  }
+
+
+  /* ---------- Refined optical-glass tiles (v2) ----------
+     Quiet multi-layer reflections, delicate edge lighting and diffuse shadows.
+     The optical details are decorative; content and tap targets stay untouched. */
+  :root {
+    --tile-surface: rgba(255,255,255,.105);
+    --tile-active-surface: rgba(235,244,255,.24);
+    --tile-surface-strong: rgba(255,255,255,.19);
+    --tile-rim: rgba(255,255,255,.30);
+    --tile-inner-rim: rgba(255,255,255,.08);
+    --tile-highlight: rgba(255,255,255,.28);
+    --tile-bottom-rim: rgba(255,255,255,.075);
+    --tile-cast: rgba(2,12,29,.20);
+  }
+  body[data-waqt="morning"], body[data-waqt="dhuhr"], body[data-waqt="asr"] {
+    --tile-surface: rgba(255,255,255,.115);
+    --tile-active-surface: rgba(255,255,255,.27);
+    --tile-surface-strong: rgba(255,255,255,.42);
+    --tile-rim: rgba(255,255,255,.78);
+    --tile-inner-rim: rgba(255,255,255,.18);
+    --tile-highlight: rgba(255,255,255,.62);
+    --tile-bottom-rim: rgba(255,255,255,.30);
+    --tile-cast: rgba(55,38,22,.035);
+  }
+  #list .row, .pills .pill, .forecast-day, .forecast-hour {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    border: 1px solid var(--tile-rim);
+    border-radius: 1.05rem;
+    box-shadow:
+      inset 0 1px 0 var(--glass-shine),
+      inset 1px 0 0 rgba(255,255,255,.09),
+      inset 0 -1px 0 var(--tile-bottom-rim),
+      0 5px 12px rgba(0,0,0,.045),
+      0 14px 32px var(--tile-cast);
+    -webkit-backdrop-filter: blur(8px) saturate(120%);
+    backdrop-filter: blur(8px) saturate(120%);
+    transition: background .3s ease, border-color .3s ease, box-shadow .3s ease, transform .3s ease;
+  }
+  /* Upper prayer tiles and lower solar tiles: uniform frosted glass, no directional gradient. */
+  #list .row, .pills .pill {
+    background: var(--tile-surface);
+    box-shadow:
+      inset 0 1px 0 var(--tile-highlight),
+      inset 1px 0 0 var(--tile-inner-rim),
+      inset 0 -1px 0 var(--tile-bottom-rim),
+      0 5px 12px rgba(0,0,0,.045),
+      0 14px 32px var(--tile-cast);
+  }
+  /* Keep a very subtle edge gleam so the glass still reads softly. */
+  #list .row::before, .pills .pill::before {
+    content: "";
+    position: absolute;
+    left: 10%; right: 10%; top: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.22) 35%, rgba(255,255,255,.42) 50%, rgba(255,255,255,.18) 68%, transparent);
+    opacity: .6;
+    pointer-events: none;
+  }
+  /* Forecast cards can keep their richer glass gradient. */
+  .forecast-day, .forecast-hour {
+    background:
+      radial-gradient(ellipse 85% 65% at 8% -10%, var(--tile-highlight), transparent 80%),
+      linear-gradient(158deg, color-mix(in srgb, var(--tile-surface-strong) 72%, transparent) 0%, color-mix(in srgb, var(--tile-surface) 78%, transparent) 43%, color-mix(in srgb, var(--tile-surface) 28%, transparent) 100%);
+  }
+  .forecast-day::before, .forecast-hour::before {
+    content: "";
+    position: absolute;
+    left: 9%; right: 9%; top: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.66) 30%, rgba(255,255,255,.87) 50%, rgba(255,255,255,.30) 80%, transparent);
+    opacity: .75;
+    pointer-events: none;
+  }
+  /* Active tile: stronger frosted glass, still without a directional gradient. */
+  #list .row.active {
+    background: var(--tile-active-surface);
+    color: var(--fg);
+    border-color: var(--tile-highlight);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.65),
+      inset 1px 0 0 rgba(255,255,255,.22),
+      inset 0 -1px 0 rgba(255,255,255,.18),
+      0 9px 24px var(--tile-cast),
+      0 0 20px rgba(255,255,255,.08);
+  }
+  .forecast-hour.current {
+    border-color: color-mix(in srgb, var(--fg) 56%, var(--tile-rim));
+    background:
+      radial-gradient(ellipse 90% 65% at 15% 0%, var(--tile-reflection), transparent 83%),
+      linear-gradient(155deg, var(--control-hover), var(--tile-mid) 60%, var(--tile-bottom));
+    box-shadow: inset 0 1px 0 var(--glass-shine), 0 0 0 1px var(--control-tint), 0 12px 25px var(--tile-cast);
+  }
+  /* Keep the smaller weather cards light, with a subtle shared elevation. */
+  .forecast-day, .forecast-hour {
+    box-shadow: inset 0 1px 0 var(--glass-shine), inset 0 -1px 0 var(--tile-bottom-rim), 0 8px 20px var(--tile-cast);
+  }
+  .forecast-hour.current {
+    box-shadow: inset 0 1px 0 var(--glass-shine), 0 0 0 1px var(--control-tint), 0 12px 25px var(--tile-cast);
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    #list .row, .pills .pill, .forecast-day, .forecast-hour {
+      background: var(--field) !important;
+      -webkit-backdrop-filter: none !important;
+      backdrop-filter: none !important;
+      box-shadow: none !important;
+    }
+    #list .row.active { background: var(--fg) !important; }
+    #list .row::before, .pills .pill::before, .forecast-day::before, .forecast-hour::before { display: none; }
+  }
+
+
+  /* One soft light-orange outer halo for every adhan-enabled prayer tile. */
+  #list .row {
+    --adhan-halo: rgba(255, 186, 111, .36);
+    --adhan-rim: rgba(255, 195, 133, .62);
+  }
+  #list .row.adhan-enabled {
+    border-color: var(--adhan-rim);
+    box-shadow:
+      inset 0 1px 0 var(--glass-shine),
+      0 5px 12px rgba(0,0,0,.045),
+      0 12px 28px var(--tile-cast),
+      0 0 13px 2px var(--adhan-halo),
+      0 0 29px 5px color-mix(in srgb, var(--adhan-halo) 62%, transparent);
+  }
+  #list .row.adhan-enabled.active {
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.65),
+      0 9px 24px var(--tile-cast),
+      0 0 13px 2px var(--adhan-halo),
+      0 0 29px 5px color-mix(in srgb, var(--adhan-halo) 62%, transparent);
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    #list .row.adhan-enabled {
+      box-shadow: 0 0 13px 2px var(--adhan-halo), 0 0 25px 4px var(--adhan-halo) !important;
+    }
+  }
+
+  /* Waqt-aware geometric background: keep the exact lattice, but contrast it
+     against both bright daytime skies and dark evening skies. */
+  :root { --pattern-ink: #dce9ff; --pattern-opacity: .20; }
+  body[data-waqt="fajr"]    { --pattern-ink: #f2e5ff; --pattern-opacity: .19; }
+  body[data-waqt="morning"] { --pattern-ink: #70512d; --pattern-opacity: .16; }
+  body[data-waqt="dhuhr"]   { --pattern-ink: #2e627a; --pattern-opacity: .16; }
+  body[data-waqt="asr"]     { --pattern-ink: #703b28; --pattern-opacity: .17; }
+  body[data-waqt="maghrib"] { --pattern-ink: #f2cfeb; --pattern-opacity: .21; }
+  body[data-waqt="isha"]    { --pattern-ink: #dce9ff; --pattern-opacity: .20; }
+  body::before {
+    background-image: none;
+    background-color: var(--pattern-ink);
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120' fill='none' stroke='white' stroke-width='.65'%3E%3Cpath d='M60 5 78 42 115 60 78 78 60 115 42 78 5 60 42 42Z'/%3E%3Cpath d='M60 23 86 34 97 60 86 86 60 97 34 86 23 60 34 34Z'/%3E%3Cpath d='M60 5V23M60 97V115M5 60H23M97 60H115M0 0 34 34M86 86 120 120M120 0 86 34M34 86 0 120'/%3E%3Cpath d='M60 36 84 60 60 84 36 60Z'/%3E%3Ccircle cx='60' cy='60' r='3'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120' fill='none' stroke='white' stroke-width='.65'%3E%3Cpath d='M60 5 78 42 115 60 78 78 60 115 42 78 5 60 42 42Z'/%3E%3Cpath d='M60 23 86 34 97 60 86 86 60 97 34 86 23 60 34 34Z'/%3E%3Cpath d='M60 5V23M60 97V115M5 60H23M97 60H115M0 0 34 34M86 86 120 120M120 0 86 34M34 86 0 120'/%3E%3Cpath d='M60 36 84 60 60 84 36 60Z'/%3E%3Ccircle cx='60' cy='60' r='3'/%3E%3C/svg%3E");
+    -webkit-mask-size: 120px 120px;
+    mask-size: 120px 120px;
+    -webkit-mask-position: center center;
+    mask-position: center center;
+    transition: background-color 1.2s ease, opacity 1.2s ease;
+  }
+  /* Uniform, theme-colored weather glyphs avoid emoji's opaque white tiles
+     (especially the fog emoji on the Isha background). */
+  .home-wx-icon, .forecast-wx-icon { display: inline-flex; align-items: center; justify-content: center; flex: none; vertical-align: -.18em; }
+  .home-wx-icon { width: 1.15em; height: 1.15em; }
+  .forecast-wx-icon.day-icon { width: 2rem; height: 2rem; }
+  .forecast-wx-icon.hour-icon { width: 1.8rem; height: 1.8rem; }
+  .home-wx-icon svg, .forecast-wx-icon svg { display: block; width: 100%; height: 100%; overflow: visible; stroke: currentColor; }
+
+
+  /* Daylight glass: translucent, neutral alpha blending (no multiply/dark tint). */
+  body[data-waqt="morning"] #list .row,
+  body[data-waqt="dhuhr"] #list .row,
+  body[data-waqt="asr"] #list .row,
+  body[data-waqt="morning"] .pills .pill,
+  body[data-waqt="dhuhr"] .pills .pill,
+  body[data-waqt="asr"] .pills .pill {
+    background: var(--tile-surface);
+    -webkit-backdrop-filter: blur(7px) saturate(110%);
+    backdrop-filter: blur(7px) saturate(110%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.42), 0 5px 20px rgba(70,41,16,.035);
+  }
+  body[data-waqt="morning"] #list .row.active,
+  body[data-waqt="dhuhr"] #list .row.active,
+  body[data-waqt="asr"] #list .row.active {
+    background: var(--tile-active-surface);
+    color: var(--fg);
+    border-color: var(--tile-rim);
+  }
+  /* The orange Adhan halo remains an OUTER light source without dark cast. */
+  body[data-waqt="morning"] #list .row.adhan-enabled,
+  body[data-waqt="dhuhr"] #list .row.adhan-enabled,
+  body[data-waqt="asr"] #list .row.adhan-enabled {
+    border-color: var(--adhan-rim);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.45),
+                0 0 13px 2px var(--adhan-halo),
+                0 0 29px 5px rgba(255,186,111,.22);
+  }
+  /* Avoid brown-looking pseudo glow around the large clock in the orange Asr sky. */
+  body[data-waqt="asr"] .clock { text-shadow: none; filter: none; }
+  body[data-waqt="asr"]::after { background: none; }
+  @media (prefers-reduced-transparency: reduce) {
+    body[data-waqt="morning"] #list .row,
+    body[data-waqt="dhuhr"] #list .row,
+    body[data-waqt="asr"] #list .row,
+    body[data-waqt="morning"] .pills .pill,
+    body[data-waqt="dhuhr"] .pills .pill,
+    body[data-waqt="asr"] .pills .pill { background: var(--field) !important; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  }
+
 </style>
 </head>
 <body data-waqt="isha">
@@ -840,6 +1328,10 @@
 <dialog id="forecast-dialog" class="forecast-dialog" aria-labelledby="forecast-title">
   <div class="forecast-heading"><h2 id="forecast-title">7-day forecast</h2><button type="button" id="forecast-close" class="forecast-close" aria-label="Close forecast">×</button></div>
   <p id="forecast-place" class="forecast-place"></p>
+  <h3 class="forecast-section-title">Hourly</h3>
+  <ol id="forecast-hours" class="forecast-hours" aria-label="Hourly weather forecast for today"></ol>
+  <p id="forecast-hours-empty" class="forecast-hours-empty" hidden>Hourly forecast is unavailable.</p>
+  <h3 class="forecast-section-title">Weekly</h3>
   <ol id="forecast-days" class="forecast-days"></ol>
 </dialog>
 
@@ -1267,6 +1759,7 @@
   const rows = PRAYERS.map((p) => {
     const li = document.createElement('li');
     li.className = 'row';
+    li.dataset.prayer = p.id;
     li.innerHTML = `
       <label class="adhan" title="Play adhan at ${p.name}">
         <input type="checkbox" aria-label="Play adhan for ${p.name}">
@@ -1276,9 +1769,11 @@
       <span class="time"></span>`;
     const box = li.querySelector('.adhan input');
     box.checked = !!(prefs.adhan && prefs.adhan[p.id]);
+    li.classList.toggle('adhan-enabled', box.checked);
     box.addEventListener('change', () => {
       prefs.adhan = prefs.adhan || {};
       prefs.adhan[p.id] = box.checked;
+      li.classList.toggle('adhan-enabled', box.checked);
       savePrefs();
       if (box.checked) primeAudio();      // this tap is what lets the browser play sound later
       updateNote();
@@ -1528,12 +2023,18 @@
       const data = await fetchAll(loc);
       if (id !== loadId) return;
       if (loc.gps) $('#query').value = loc.name;
-      prefs.loc = loc;
-      prefs.query = $('#query').value.trim();
-      savePrefs();
+      // A network-based guess is only a starting point: it is shown but never saved as the person's place.
+      if (!loc.approx) {
+        prefs.loc = loc;
+        prefs.query = $('#query').value.trim();
+        savePrefs();
+      }
       commit({ ...data, loc });
       if (close) setEditing(false);
       cacheMonth(loc, data.tz).catch(() => {});     // background, for offline use later
+      if (loc.approx && opts && opts.ipNote) {
+        flashNote('Approximate location from your network. Open Settings to set your exact place.');
+      }
     } catch (e) {
       if (id !== loadId) return;
       // A real network failure (not "place not found" / blocked location): show
@@ -1576,6 +2077,28 @@
       const here = await reversePlace(lat, lng);
       return { lat, lng, name: here.name, cc: here.cc, gps: true };
     }, { ...opts, msg: 'Finding your location…' });
+  }
+
+  // Rough position from the network address (IP geolocation). Only a first-run fallback: it is
+  // city-level at best, can be far off on mobile data, and shows the VPN's location behind one.
+  async function ipLookup() {
+    const fail = () => userError('Couldn’t guess your location. Type a city or zip code, or tap Use my location.');
+    let j;
+    try {
+      const r = await fetch('https://ipwho.is/?fields=success,latitude,longitude,city,region,country_code');
+      if (!r.ok) throw new Error('ip http ' + r.status);
+      j = await r.json();
+    } catch (e) { throw fail(); }
+    if (!j || j.success === false || !isFinite(j.latitude) || !isFinite(j.longitude)) throw fail();
+    const name = [j.city, j.region].filter(Boolean).join(', ') || 'Your area';
+    return {
+      lat: +(+j.latitude).toFixed(2), lng: +(+j.longitude).toFixed(2),   // ~1 km is plenty, and it shares less
+      name: '≈ ' + name, cc: String(j.country_code || '').toLowerCase(), approx: true,
+    };
+  }
+
+  function loadFromIp() {
+    return loadWith(ipLookup, { close: true, msg: 'Finding your approximate location…', ipNote: true });
   }
 
   // Same place, new calculation settings
@@ -1774,6 +2297,23 @@
     return /-US$/i.test(navigator.language || '') ? 'fahrenheit' : 'celsius';
   }
 
+  // Small monochrome SVG icons on the home screen and in forecast cards.
+  function homeWxIcon(code, day) {
+    const cloud = '<path d="M7.3 18H18a4 4 0 0 0 .1-8 6 6 0 0 0-11.6 1.6A3.25 3.25 0 0 0 7.3 18Z"/>';
+    const sun = '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/>';
+    const moon = '<path d="M20.4 15.3A8.5 8.5 0 0 1 8.7 3.6 8.5 8.5 0 1 0 20.4 15.3Z"/>';
+    let content;
+    if (code === 0 || code === 1) content = day ? sun : moon;
+    else if (code === 45 || code === 48) content = cloud + '<path d="M3 21h18M5 23h14"/>';
+    else if (code >= 95) content = cloud + '<path d="m13 18-3 4h4l-2 2"/>';
+    else if (code >= 71 && code <= 77 || code === 85 || code === 86) content = cloud + '<path d="M8 21v2m6-2v2m5-2v2"/>';
+    else if (code >= 51 && code <= 67 || code >= 80 && code <= 82) content = cloud + '<path d="m8 20-1 2m6-2-1 2m6-2-1 2"/>';
+    else if (code === 2) content = cloud + '<path d="M6 4V2m-3 8H1m8-6 1.4-1.4"/>';
+    else if (code === 3) content = cloud;
+    else content = '<path d="M14 14V5a3 3 0 0 0-6 0v9a5 5 0 1 0 6 0Z"/>';
+    return '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + content + '</svg>';
+  }
+
   function renderWeather() {
     const el = $('#weather-text');
     el.replaceChildren();
@@ -1782,7 +2322,12 @@
     const deg = wx.unit === 'fahrenheit' ? '°F' : '°C';
     const look = wxLook(wx.code, wx.day);
     const main = document.createElement('span');
-    main.textContent = `${look[0]} ${Math.round(wx.t)}${deg}${look[1] ? ' · ' + look[1] : ''}`;
+    const icon = document.createElement('span');
+    icon.className = 'home-wx-icon';
+    icon.setAttribute('aria-hidden', 'true');
+    icon.innerHTML = homeWxIcon(wx.code, wx.day);
+    main.appendChild(icon);
+    main.appendChild(document.createTextNode(` ${Math.round(wx.t)}${deg}${look[1] ? ' · ' + look[1] : ''}`));
     el.appendChild(main);
     if (isFinite(wx.hi) && isFinite(wx.lo)) {
       const range = document.createElement('span');
@@ -1809,8 +2354,8 @@
       date.className = 'day-date';
       date.textContent = i === 0 ? 'Today' : dayFormat.format(new Date(y, m - 1, d));
       const icon = document.createElement('span');
-      icon.className = 'day-icon';
-      icon.textContent = look[0];
+      icon.className = 'forecast-wx-icon day-icon';
+      icon.innerHTML = homeWxIcon(day.code, true);
       icon.setAttribute('aria-hidden', 'true');
       const condition = document.createElement('span');
       condition.className = 'condition';
@@ -1825,6 +2370,39 @@
       item.append(date, icon, condition, temps);
       list.appendChild(item);
     });
+
+    const hoursList = $('#forecast-hours');
+    const unavailable = $('#forecast-hours-empty');
+    hoursList.replaceChildren();
+    const hours = wx.hours || [];
+    unavailable.hidden = hours.length !== 0;
+    hoursList.hidden = hours.length === 0;
+    hours.forEach((hour) => {
+      const item = document.createElement('li');
+      item.className = 'forecast-hour' + (hour.current ? ' current' : '');
+      const time = document.createElement('span');
+      time.className = 'hour-time';
+      const h = Number(hour.time.slice(11, 13));
+      time.textContent = hour.current ? 'Now' : `${h % 12 || 12} ${h < 12 ? 'AM' : 'PM'}`;
+      const icon = document.createElement('span');
+      icon.className = 'forecast-wx-icon hour-icon';
+      icon.innerHTML = homeWxIcon(hour.code, hour.day);
+      icon.setAttribute('aria-hidden', 'true');
+      const temp = document.createElement('span');
+      temp.className = 'hour-temp';
+      temp.textContent = `${Math.round(hour.t)}°`;
+      const rain = document.createElement('span');
+      rain.className = 'hour-rain';
+      rain.textContent = Number.isFinite(hour.rain) ? `💧 ${Math.round(hour.rain)}%` : ' ';
+      item.setAttribute('aria-label', `${time.textContent}, ${Math.round(hour.t)}${deg}, ${wxLook(hour.code, hour.day)[1]}${Number.isFinite(hour.rain) ? `, ${Math.round(hour.rain)}% chance of precipitation` : ''}`);
+      item.append(time, icon, temp, rain);
+      hoursList.appendChild(item);
+    });
+    const currentHour = hoursList.querySelector('.current');
+    if (currentHour && !hoursList.dataset.scrolled) {
+      currentHour.scrollIntoView({ block: 'nearest', inline: 'start', behavior: 'instant' });
+      hoursList.dataset.scrolled = '1';
+    }
   }
 
   async function loadWeather() {
@@ -1833,7 +2411,7 @@
     const request = ++wxRequest;
     try {
       const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}`
-        + '&current=temperature_2m,weather_code,is_day&daily=temperature_2m_max,temperature_2m_min,weather_code'
+        + '&current=temperature_2m,weather_code,is_day&daily=temperature_2m_max,temperature_2m_min,weather_code&hourly=temperature_2m,weather_code,is_day,precipitation_probability'
         + `&temperature_unit=${unit}&timezone=auto&forecast_days=7`;
       const r = await fetch(url);
       if (!r.ok) throw new Error('weather http ' + r.status);
@@ -1842,9 +2420,19 @@
       const days = j.daily.time.map((date, i) => ({
         date, code: j.daily.weather_code[i], hi: j.daily.temperature_2m_max[i], lo: j.daily.temperature_2m_min[i],
       }));
+      // Open-Meteo returns local wall-clock times because timezone=auto.
+      const today = j.current.time.slice(0, 10);
+      const currentHour = j.current.time.slice(0, 13);
+      const hourly = j.hourly || {};
+      const hours = (hourly.time || []).flatMap((time, i) => time.startsWith(today + 'T') ? [{
+        time, t: hourly.temperature_2m[i], code: hourly.weather_code[i],
+        day: hourly.is_day[i] === 1, rain: hourly.precipitation_probability[i],
+        current: time.slice(0, 13) === currentHour,
+      }] : []);
+      $('#forecast-hours').removeAttribute('data-scrolled');
       wx = {
         t: j.current.temperature_2m, code: j.current.weather_code, day: j.current.is_day === 1,
-        hi: days[0].hi, lo: days[0].lo, unit, days,
+        hi: days[0].hi, lo: days[0].lo, unit, days, hours,
       };
       wxAt = Date.now();
     } catch (e) {
@@ -2270,6 +2858,7 @@
   // Auto-load the last place used in this browser (saved coordinates, so no new lookup is needed)
   if (prefs.loc && isFinite(prefs.loc.lat) && isFinite(prefs.loc.lng)) loadWith(() => Promise.resolve(prefs.loc), { close: true });
   else if (prefs.query) loadFromForm({ close: true });
+  else if (navigator.onLine !== false) loadFromIp();      // first run: start from a network-based guess
 })();
 </script>
 <script>
