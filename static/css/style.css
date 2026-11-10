@@ -425,6 +425,13 @@ body.mushaf-page-body {
 	font-size: 78.75%;
 }
 
+/* base.html applies `padding: 20px 10px` to every accordion content as an
+   inline style, so the side padding needs !important to take effect. */
+#page-overview.ui.accordion .content {
+	padding-left: 20px !important;
+	padding-right: 20px !important;
+}
+
 #page-overview.ui.accordion,
 #page-overview.ui.accordion .title,
 #page-overview.ui.accordion .content {

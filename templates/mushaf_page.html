@@ -61,6 +61,26 @@
 	<br>
 	<p class="mushaf-page-surahs">{% for g in groups %}{{ g.name }} {% if g.rows[0].verse == g.rows[-1].verse %}{{ g.rows[0].verse }}{% else %}{{ g.rows[0].verse }}-{{ g.rows[-1].verse }}{% endif %}{% if not loop.last %} &middot; {% endif %}{% endfor %}</p>
 
+	{% if overview %}
+	<div class="ui fluid styled accordion" id="page-overview" style="text-align: left;">
+		<div class="title">
+			<i class="dropdown icon"></i>
+			<span>Page Overview 🤖</span>
+		</div>
+		<div class="content">
+			{% include 'partials/_ai_notice.html' %}
+			<div class="page-overview-section">
+				<p class="page-overview-label">Context</p>
+				<p class="page-overview-text">{{ overview.context }}</p>
+			</div>
+			<div class="page-overview-section">
+				<p class="page-overview-label">Summary</p>
+				<p class="page-overview-text">{{ overview.summary }}</p>
+			</div>
+		</div>
+	</div>
+	{% endif %}
+
 	<div class="mushaf-controls">
 		{% include 'partials/_mushaf_zoom.html' %}
 		<button id="tajweed-toggle-btn" type="button" title="Colored mushaf font" aria-label="Colored mushaf font" aria-pressed="false" data-tooltip="Colored mushaf font" class="circular ui basic icon button" onclick="toggleTajweedFont()">
@@ -78,26 +98,6 @@
 			card=share_card, more=share_more) }}
 	</div>
 	<p id="qcf-credit" class="qcf-credit" style="display: none;">Colored mushaf font &copy; <a href="https://qurancomplex.gov.sa/" target="_blank">King Fahd Complex</a> &middot; packaged by <a href="https://quran.com" target="_blank">quran.com</a></p>
-
-	{% if overview %}
-	<div class="ui fluid styled accordion" id="page-overview" style="text-align: left;">
-		<div class="title">
-			<i class="dropdown icon"></i>
-			<span>Page Overview 🤖</span>
-		</div>
-		<div class="content">
-			{% include 'partials/_ai_notice.html' %}
-			<div class="page-overview-section">
-				<p class="page-overview-label">Page Context</p>
-				<p class="page-overview-text">{{ overview.context }}</p>
-			</div>
-			<div class="page-overview-section">
-				<p class="page-overview-label">Page Summary</p>
-				<p class="page-overview-text">{{ overview.summary }}</p>
-			</div>
-		</div>
-	</div>
-	{% endif %}
 
 	<table class="ui very basic unstackable left aligned table" id="mushaf-page-table">
 	{% for g in groups %}
