@@ -1351,6 +1351,17 @@
     .quran-dialog #q-play { background: var(--fg) !important; color: var(--bg) !important; }
   }
 
+  /* Hourly chart: no rectangular box when touching or dragging across it. The chart is focusable
+     for arrow-key use, and the browser's focus outline was drawing a box around the whole graph.
+     The moving dot and line already show what's selected. */
+  .forecast-trend svg,
+  .forecast-trend svg:focus,
+  .forecast-trend svg:focus-visible {
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .forecast-trend svg * { outline: none; -webkit-tap-highlight-color: transparent; }
+
   /* Hover: the app-wide filled-button rule adds a dark drop shadow and a 1px lift on hover, and
      its selector outranks the popup/settings overrides, so those buttons looked darker than the
      round icon buttons (which it excludes). Cancel both here; the lighter hover fill stays. */

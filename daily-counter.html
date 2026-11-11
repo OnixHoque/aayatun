@@ -322,6 +322,12 @@ dialog[open] { animation: dlg-in .16s ease-out; }
 .toast span { min-width: 0; overflow-wrap: anywhere; }
 .toast-undo { flex: none; min-height: 32px; padding: 4px 14px; border: 0; border-radius: 999px; background: rgba(15,27,51,.1); color: #0f1b33; font-weight: 700; }
 .toast-undo:focus-visible { outline-color: #0f1b33; }
+
+/* No focus rectangles for mouse, touch or dialog focus-restore (e.g. the pencil after renaming).
+   The ring appears only after a keyboard Tab/arrow key, tracked by the .kbd class below. */
+html:not(.kbd) :focus,
+html:not(.kbd) :focus-visible { outline: none !important; }
+button, .tile, input, [tabindex] { -webkit-tap-highlight-color: transparent; }
 </style>
 </head>
 <body>
@@ -580,6 +586,11 @@ setInterval(()=>{if(dayKey()!==lastDay){render();if($('statsDialog').open)fillSt
 <script>
 (() => {
   'use strict';
+  // Show keyboard focus rings only for keyboard users; any pointer use hides them again.
+  const rootEl = document.documentElement;
+  addEventListener('keydown', (e) => { if (e.key === 'Tab' || e.key.startsWith('Arrow')) rootEl.classList.add('kbd'); }, true);
+  ['pointerdown', 'touchstart', 'mousedown'].forEach((ev) => addEventListener(ev, () => rootEl.classList.remove('kbd'), true));
+
   // App-like: no text selection, drag-selecting or long-press menu anywhere except typing fields.
   const isField = (t) => { const el = t && t.nodeType === 3 ? t.parentElement : t; return !!(el && el.closest && el.closest('input, textarea')); };
   ['selectstart', 'dragstart', 'contextmenu'].forEach((ev) =>
