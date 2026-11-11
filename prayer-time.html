@@ -1126,33 +1126,6 @@
   }
 
 
-  /* One soft light-orange outer halo for every adhan-enabled prayer tile. */
-  #list .row {
-    --adhan-halo: rgba(255, 186, 111, .36);
-    --adhan-rim: rgba(255, 195, 133, .62);
-  }
-  #list .row.adhan-enabled {
-    border-color: var(--adhan-rim);
-    box-shadow:
-      inset 0 1px 0 var(--glass-shine),
-      0 5px 12px rgba(0,0,0,.045),
-      0 12px 28px var(--tile-cast),
-      0 0 13px 2px var(--adhan-halo),
-      0 0 29px 5px color-mix(in srgb, var(--adhan-halo) 62%, transparent);
-  }
-  #list .row.adhan-enabled.active {
-    box-shadow:
-      inset 0 1px 0 rgba(255,255,255,.65),
-      0 9px 24px var(--tile-cast),
-      0 0 13px 2px var(--adhan-halo),
-      0 0 29px 5px color-mix(in srgb, var(--adhan-halo) 62%, transparent);
-  }
-  @media (prefers-reduced-transparency: reduce) {
-    #list .row.adhan-enabled {
-      box-shadow: 0 0 13px 2px var(--adhan-halo), 0 0 25px 4px var(--adhan-halo) !important;
-    }
-  }
-
   /* Waqt-aware geometric background: keep the exact lattice, but contrast it
      against both bright daytime skies and dark evening skies. */
   :root { --pattern-ink: #dce9ff; --pattern-opacity: .20; }
@@ -1200,15 +1173,6 @@
     background: var(--tile-active-surface);
     color: var(--fg);
     border-color: var(--tile-rim);
-  }
-  /* The orange Adhan halo remains an OUTER light source without dark cast. */
-  body[data-waqt="morning"] #list .row.adhan-enabled,
-  body[data-waqt="dhuhr"] #list .row.adhan-enabled,
-  body[data-waqt="asr"] #list .row.adhan-enabled {
-    border-color: var(--adhan-rim);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.45),
-                0 0 13px 2px var(--adhan-halo),
-                0 0 29px 5px rgba(255,186,111,.22);
   }
   /* Avoid brown-looking pseudo glow around the large clock in the orange Asr sky. */
   body[data-waqt="asr"] .clock { text-shadow: none; filter: none; }
@@ -1258,22 +1222,43 @@
     border: 1px solid rgba(255,255,255,.68);
     box-shadow: none;
   }
-  /* The adhan halo is separate from the border: enabled, inactive tiles stay borderless. */
-  #list .row.adhan-enabled,
-  body[data-waqt="morning"] #list .row.adhan-enabled,
-  body[data-waqt="dhuhr"] #list .row.adhan-enabled,
-  body[data-waqt="asr"] #list .row.adhan-enabled {
-    border-color: transparent;
-    box-shadow: 0 0 13px 2px var(--adhan-halo),
-                0 0 29px 5px rgba(255,186,111,.22);
+  /* Adhan on: a quiet step up from normal glass, always dimmer than the active tile.
+     No glow and no border; a short underline is a second cue that doesn't rely on color. */
+  :root { --adhan-surface: rgba(255,255,255,.18); }
+  body[data-waqt="morning"], body[data-waqt="dhuhr"], body[data-waqt="asr"] {
+    --adhan-surface: rgba(255,255,255,.22);
   }
-  #list .row.adhan-enabled.active,
-  body[data-waqt="morning"] #list .row.adhan-enabled.active,
-  body[data-waqt="dhuhr"] #list .row.adhan-enabled.active,
-  body[data-waqt="asr"] #list .row.adhan-enabled.active {
+  body[data-waqt] #list .row.adhan-enabled {
+    background: var(--adhan-surface);
+    border-color: transparent;
+    box-shadow: none;
+  }
+  body[data-waqt] #list .row.adhan-enabled.active {
+    background: var(--tile-active-surface);
     border-color: rgba(255,255,255,.68);
-    box-shadow: 0 0 13px 2px var(--adhan-halo),
-                0 0 29px 5px rgba(255,186,111,.22);
+    box-shadow: none;
+  }
+  #list .row.adhan-enabled::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: .32rem;
+    width: 1.6rem;
+    height: 2px;
+    border-radius: 2px;
+    transform: translateX(-50%);
+    background: currentColor;
+    opacity: .38;
+    pointer-events: none;
+  }
+  #list .row.adhan-enabled.active::after { opacity: .55; }
+  /* Reserve room under the text on every tile (not only adhan ones) so the underline never
+     touches the time on tall tiles, and tiles don't shift when adhan is toggled. */
+  body[data-waqt] #list .row { padding-bottom: .95rem; }
+  #list .row.adhan-enabled::after { bottom: .42rem; }
+  @media (orientation: landscape) and (max-height: 440px) {
+    body[data-waqt] #list .row { padding-bottom: .7rem; }
+    #list .row.adhan-enabled::after { bottom: .27rem; }
   }
   @media (prefers-reduced-transparency: reduce) {
     #list .row, .pills .pill, .forecast-day { background: var(--field) !important; }
@@ -1365,6 +1350,57 @@
     .quran-dialog select { background: var(--field) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
     .quran-dialog #q-play { background: var(--fg) !important; color: var(--bg) !important; }
   }
+
+  /* Hover: the app-wide filled-button rule adds a dark drop shadow and a 1px lift on hover, and
+     its selector outranks the popup/settings overrides, so those buttons looked darker than the
+     round icon buttons (which it excludes). Cancel both here; the lighter hover fill stays. */
+  :is(.quran-dialog, .forecast-dialog, .details-dialog, .lookup, .opts)
+    button:not(.bar button):not(.forecast-button):not(.forecast-close):hover:not(:disabled) {
+    box-shadow: none;
+    transform: none;
+  }
+
+  /* Recitation popup: one consistent focus ring for every control.
+     Before: the solid Play button's ring used currentColor (= the dark background, so it vanished),
+     the preset chips' rings were clipped by their scroll strip, and the Surah/Verse fields lost
+     their focus style to the flat-glass overrides. Mouse and touch taps show no ring at all. */
+  :is(.quran-dialog, .details-dialog) :is(button, a, input, select, summary):focus:not(:focus-visible) { outline: none; }
+  :is(.quran-dialog, .details-dialog) :is(button, a, input:not([type="range"]), select):focus-visible {
+    outline: 2px solid var(--fg);
+    outline-offset: 2px;
+  }
+  .quran-dialog #q-play:focus-visible { outline-offset: 3px; }          /* ring clears the solid fill */
+  .quran-dialog input:not([type="range"]):focus-visible,
+  .quran-dialog select:focus-visible { border-color: transparent; box-shadow: none; }
+  .quran-dialog .q-slider:focus-visible {
+    outline: 2px solid var(--fg);
+    outline-offset: 0;
+    border-radius: 999px;
+  }
+  /* Room around the chips so their rings aren't cut off by the scrolling strip */
+  .quran-dialog .q-presets { padding: 4px 4px .45rem; margin: calc(.6rem - 4px) -4px 0; }
+
+  /* App-like behavior: no text selection, callouts, tap flash or image dragging.
+     Typing fields stay selectable so the settings inputs still work. */
+  html, body {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  input, textarea, select, [contenteditable] {
+    -webkit-user-select: text;
+    user-select: text;
+    -webkit-touch-callout: default;
+  }
+  button, label, summary, a, svg, img {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  img, svg, a { -webkit-user-drag: none; user-drag: none; }
+  ::selection { background: transparent; }
+  input::selection, textarea::selection { background: var(--line-strong); }
 </style>
 </head>
 <body data-waqt="isha">
@@ -3135,6 +3171,12 @@
 
   // If the lock was dropped or refused (battery saver, page load without a tap), quietly try again now and then
   setInterval(() => { if (wakeSupported && prefs.keepAwake && !document.hidden) requestWake(); }, 30000);
+
+  // App-like: block text selection, drag-selecting and the long-press menu everywhere except typing fields
+  const isField = (t) => { const el = t && t.nodeType === 3 ? t.parentElement : t; return !!(el && el.closest && el.closest('input, textarea, select')); };
+  document.addEventListener('selectstart', (e) => { if (!isField(e.target)) e.preventDefault(); });
+  document.addEventListener('dragstart', (e) => { if (!isField(e.target)) e.preventDefault(); });
+  document.addEventListener('contextmenu', (e) => { if (!isField(e.target)) e.preventDefault(); });
 
   updateNote();
   updateWakeStatus();
