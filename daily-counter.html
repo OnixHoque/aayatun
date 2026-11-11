@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1b33">
+<title>Daily Counter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600;700&family=Open+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {color-scheme:dark;--bg:#0f1b33;--fg:#e7eef9;--muted:#aebdd4;--edge:rgba(228,240,255,.18);--shine:rgba(255,255,255,.27);--accent:#b5e0df;--glass:rgba(255,255,255,.075);--font:'Open Sans',system-ui,-apple-system,sans-serif;--digits:'Fira Sans',var(--font)}
+*{box-sizing:border-box}html{min-height:100%}body{margin:0;min-height:100vh;color:var(--fg);font-family:var(--font);background:radial-gradient(ellipse 85% 65% at 90% 0%,rgba(101,117,174,.34),transparent 75%),radial-gradient(ellipse 68% 62% at 0% 86%,rgba(38,110,128,.23),transparent 75%),linear-gradient(140deg,#111f39 0%,#15223b 49%,#10172c 100%);background-attachment:fixed}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.14;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100' fill='none' stroke='%23cdd9ed' stroke-width='.65'%3E%3Cpath d='M50 4L63.4 36.6 96 50 63.4 63.4 50 96 36.6 63.4 4 50 36.6 36.6Z'/%3E%3Cpath d='M50 21 58.5 41.5 79 50 58.5 58.5 50 79 41.5 58.5 21 50 41.5 41.5Z'/%3E%3Cpath d='M0 0 21 21M100 0 79 21M0 100 21 79M100 100 79 79'/%3E%3C/svg%3E");background-size:100px 100px}
+button,input,select,textarea{font-family:var(--font);font-size:inherit}button{cursor:pointer;-webkit-tap-highlight-color:transparent}button:focus-visible,input:focus-visible{outline:2px solid #d5f5f3;outline-offset:3px}button:disabled{opacity:.35;cursor:not-allowed}
+.shell{position:relative;max-width:940px;margin:auto;padding:clamp(22px,4vw,44px) clamp(18px,4.5vw,40px) 65px}.top{display:flex;gap:20px;align-items:center;justify-content:space-between}.eyebrow{margin:0 0 5px;text-transform:uppercase;letter-spacing:.22em;color:var(--muted);font-size:.7rem;font-weight:700}.top h1{margin:0;font-size:clamp(1.75rem,4vw,2.55rem);font-weight:700;letter-spacing:-.045em}.date{color:var(--muted);font-size:.93rem;margin:9px 0 0}.add{display:flex;align-items:center;gap:9px;border:1px solid rgba(212,247,246,.4);border-radius:999px;background:linear-gradient(135deg,rgba(190,239,239,.19),rgba(190,239,239,.075));color:#e5ffff;padding:12px 18px;font-weight:700;white-space:nowrap;box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 8px 22px rgba(0,0,0,.12);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}.add:hover{background:rgba(190,239,239,.23)}.plus-icon{font-size:1.4rem;font-weight:400;line-height:1}
+.intro{margin:30px 0 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}.intro h2{margin:0;font-size:1rem;font-weight:600}.intro span{font-size:.78rem;color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.tile,.dialog-card{background:linear-gradient(145deg,rgba(255,255,255,.115),rgba(255,255,255,.045) 70%);border:1px solid var(--edge);border-radius:23px;box-shadow:inset 0 1px 0 var(--shine),inset 1px 0 0 rgba(255,255,255,.05),0 16px 38px rgba(3,10,26,.19);backdrop-filter:blur(22px) saturate(135%);-webkit-backdrop-filter:blur(22px) saturate(135%)}.tile{position:relative;padding:22px;min-height:255px;display:flex;flex-direction:column;overflow:hidden}.tile::after{content:"";position:absolute;top:0;left:15%;right:15%;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.36),transparent);pointer-events:none}.tile-head{display:flex;justify-content:space-between;align-items:center;gap:8px}.tile h3{font-size:1.12rem;margin:0;font-weight:650;min-width:0;overflow-wrap:anywhere;letter-spacing:-.015em}.icon-btn{flex:none;display:grid;place-items:center;width:36px;height:36px;background:transparent;border:1px solid transparent;border-radius:50%;color:var(--muted);font-size:1.2rem}.icon-btn:hover{border-color:var(--edge);background:rgba(255,255,255,.07);color:var(--fg)}.count{font:600 clamp(3.2rem,7vw,4.6rem)/1 var(--digits);font-variant-numeric:tabular-nums;letter-spacing:-.045em;text-align:center;margin:auto 0 6px}.count-label{text-align:center;margin:0 0 19px;color:var(--muted);font-size:.78rem}.tile-actions{display:grid;grid-template-columns:52px 1fr 52px;gap:10px}.round-btn,.increment{height:49px;border:1px solid var(--edge);border-radius:14px;color:var(--fg);background:rgba(255,255,255,.08);box-shadow:inset 0 1px 0 rgba(255,255,255,.13)}.round-btn{font-size:1.5rem}.increment{font-weight:700;background:linear-gradient(135deg,rgba(170,225,225,.25),rgba(170,225,225,.11));border-color:rgba(198,238,238,.35);color:#efffff}.round-btn:hover,.increment:hover{background:rgba(200,240,240,.2)}.increment:active,.round-btn:active{transform:scale(.975)}.empty{grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--muted);border:1px dashed var(--edge);border-radius:23px;background:rgba(255,255,255,.025)}.empty strong{display:block;color:var(--fg);font-size:1.1rem;margin-bottom:8px}.empty p{margin:0;font-size:.9rem}
+.note{color:rgba(213,225,243,.58);margin:24px 0 0;text-align:center;font-size:.77rem}
+dialog{border:0;background:transparent;color:inherit;padding:14px;width:min(100%,550px);max-height:min(94dvh,840px);overflow:visible}dialog::backdrop{background:rgba(4,10,23,.68);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}dialog[open]{display:block}.dialog-card{padding:clamp(18px,4vw,27px);max-height:calc(94dvh - 28px);overflow:auto;background:linear-gradient(145deg,rgba(47,64,94,.95),rgba(21,34,57,.97));box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 22px 85px rgba(0,0,0,.48)}.modal-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:22px}.modal-heading h2{margin:2px 0 0;font-size:1.4rem;letter-spacing:-.025em}.modal-heading p{margin:0;color:var(--muted);font-size:.8rem}.x{font-size:1.7rem;line-height:1}.field-label{display:block;font-size:.86rem;color:var(--muted);margin:0 0 9px}input[type=text]{width:100%;background:rgba(255,255,255,.07);border:1px solid rgba(230,243,255,.25);border-radius:14px;color:var(--fg);padding:14px 15px;min-height:49px}input::placeholder{color:rgba(213,225,243,.45)}.dialog-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}.btn{min-height:44px;border:1px solid var(--edge);border-radius:12px;padding:10px 18px;font-weight:650;background:rgba(255,255,255,.075);color:var(--fg)}.btn.primary{background:rgba(176,229,228,.21);border-color:rgba(200,244,241,.39)}.btn.danger{color:#ffd8d8;border-color:rgba(255,174,174,.3)}.btn:hover{background:rgba(255,255,255,.15)}.stats-overview{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:2px 0 22px}.stat{padding:14px 8px;background:rgba(255,255,255,.065);border:1px solid rgba(255,255,255,.1);border-radius:14px;text-align:center}.stat b{display:block;font:600 1.6rem var(--digits);font-variant-numeric:tabular-nums}.stat span{display:block;font-size:.71rem;color:var(--muted);margin-top:3px}.section-title{font-weight:700;font-size:.85rem;margin:17px 0 12px}.chart{height:145px;display:grid;grid-template-columns:repeat(14,minmax(0,1fr));align-items:end;gap:5px;padding:12px 6px 0;border-bottom:1px solid rgba(255,255,255,.19)}.bar-col{height:100%;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:5px}.bar-value{font:500 .63rem var(--digits);color:var(--muted);white-space:nowrap}.chart-bar{width:100%;max-width:23px;min-height:3px;border-radius:6px 6px 2px 2px;background:linear-gradient(to top,rgba(129,199,202,.46),rgba(196,241,238,.86));box-shadow:inset 0 1px 0 rgba(255,255,255,.35)}.bar-col.today .chart-bar{background:linear-gradient(to top,#97cccc,#dcfafa)}.chart-labels{display:flex;justify-content:space-between;color:var(--muted);font-size:.72rem;margin:7px 3px 23px}.history{max-height:240px;overflow:auto;padding-right:4px}.history-row{display:flex;align-items:center;justify-content:space-between;padding:10px 3px;border-bottom:1px solid rgba(255,255,255,.09);font-size:.85rem}.history-row b{font-family:var(--digits);font-size:1rem}.stats-footer{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:18px}.stats-footer .dialog-actions{margin:0}.subtle-btn{border:0;background:transparent;color:var(--muted);padding:8px 0;font-size:.79rem;text-decoration:underline;text-underline-offset:3px}.subtle-btn:hover{color:var(--fg)}
+/* Distraction-free counter focus */
+.tile{cursor:pointer;transition:border-color .2s ease,box-shadow .2s ease,transform .2s ease}
+.tile:hover{border-color:rgba(205,240,243,.36);box-shadow:inset 0 1px 0 var(--shine),0 19px 45px rgba(3,10,26,.28)}
+.tile:focus-visible{outline:2px solid #d5f5f3;outline-offset:4px}
+.tile:active{transform:scale(.997)}
+.focus-dialog{width:min(100%,570px)}
+.focus-card{min-height:min(76dvh,600px);display:flex;flex-direction:column;overflow:hidden}
+.focus-heading{margin-bottom:10px}.focus-heading h2{overflow-wrap:anywhere}
+.focus-center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px 0 24px}
+.focus-date{font-size:.82rem;color:var(--muted);margin:0 0 24px}
+.focus-tap{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;width:clamp(190px,65vw,270px);height:clamp(190px,65vw,270px);border-radius:50%;border:1px solid rgba(210,252,250,.4);color:var(--fg);background:radial-gradient(circle at 35% 18%,rgba(238,255,255,.23),transparent 60%),linear-gradient(155deg,rgba(173,228,229,.20),rgba(115,181,191,.09));box-shadow:inset 0 2px 2px rgba(255,255,255,.20),inset 0 -12px 30px rgba(0,0,0,.09),0 14px 42px rgba(0,0,0,.21);touch-action:manipulation;transition:transform .12s ease,background .15s ease}
+.focus-tap:hover{background:radial-gradient(circle at 35% 18%,rgba(238,255,255,.28),transparent 60%),linear-gradient(155deg,rgba(173,228,229,.26),rgba(115,181,191,.12))}
+.focus-tap:active{transform:scale(.96)}
+/* Keep repeated taps from selecting the count or instruction text. */
+.focus-tap, .focus-tap *, .tile .count, .tile-actions button { -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+.focus-count{font:600 clamp(3.5rem,12vw,5.8rem)/1.1 var(--digits);font-variant-numeric:tabular-nums;letter-spacing:-.05em;max-width:95%;overflow-wrap:anywhere}
+.focus-instruction{color:#c3eded;font-size:.8rem;font-weight:600;letter-spacing:.035em;margin-top:8px}
+.focus-bottom{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid rgba(255,255,255,.11);padding-top:18px}
+.focus-bottom .btn{min-width:110px}
+@media(max-width:620px){.grid{grid-template-columns:1fr;gap:13px}.tile{min-height:235px}.shell{padding-top:26px}.intro{margin-top:27px}.add{padding:11px 13px;font-size:.85rem}.top h1{font-size:1.75rem}.count{font-size:4.1rem}}@media(min-width:621px) and (max-width:740px){.tile{padding:17px}.tile-actions{grid-template-columns:43px 1fr 43px}}@media(prefers-reduced-transparency:reduce){.tile,.dialog-card{backdrop-filter:none;-webkit-backdrop-filter:none;background:#263550}}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+/* Counter management and tactile drag handles */
+.tile-head-actions{display:flex;align-items:center;gap:2px;flex:none}
+.tile-head-actions .icon-btn{width:34px;height:34px}
+.tile-head-actions svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.drag-handle{cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.drag-handle:active{cursor:grabbing}
+.tile.dragging{opacity:.66;border-color:rgba(194,241,238,.65);box-shadow:inset 0 1px 0 var(--shine),0 14px 35px rgba(0,0,0,.3)}
+/* Dragged tile becomes a soft placeholder; the lifted glass card follows the finger. */
+.grid.is-reordering{user-select:none;-webkit-user-select:none}
+.tile.drag-placeholder{opacity:.23;border:1px dashed rgba(202,243,241,.7);background:rgba(186,230,230,.045);box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);transition:none}
+.tile.drag-placeholder>*{opacity:0;pointer-events:none}
+.tile.drag-placeholder::after{visibility:hidden}
+.tile.drag-preview{position:fixed;top:0;left:0;z-index:10000;margin:0;pointer-events:none;cursor:grabbing;opacity:.96;overflow:hidden;transform-origin:top left;box-shadow:inset 0 1px 0 rgba(255,255,255,.43),0 28px 70px rgba(0,0,0,.42),0 0 0 1px rgba(206,251,248,.4);border-color:rgba(213,252,251,.55);background:linear-gradient(145deg,rgba(95,123,153,.96),rgba(43,65,91,.96));backdrop-filter:blur(25px);-webkit-backdrop-filter:blur(25px)}
+.tile.drag-preview::after{opacity:1}
+.tile.drag-preview .drag-handle{cursor:grabbing}
+.grid.is-reordering .tile:not(.drag-placeholder){transition:none}
+.grid.is-reordering .tile:active{transform:none}
+@media(prefers-reduced-motion:reduce){.tile.drag-preview{transition:none!important}}
+</style>
+</head>
+<body>
+<main class="shell">
+  <header class="top"><div><p class="eyebrow">A little progress, every day</p><h1>Daily Counter</h1><p class="date" id="todayLabel"></p></div><button class="add" id="addBtn" type="button"><span class="plus-icon" aria-hidden="true">+</span> New counter</button></header>
+  <div class="intro"><h2>Your counters</h2><span id="counterSummary"></span></div>
+  <section class="grid" id="counterGrid" aria-label="Counters"></section>
+  <p class="note">Your counts are saved on this device. Each day starts at zero; previous days remain in History.</p>
+</main>
+<dialog id="focusDialog" class="focus-dialog" aria-labelledby="focusTitle"><div class="dialog-card focus-card"><div class="modal-heading focus-heading"><div><h2 id="focusTitle"></h2></div><button type="button" class="icon-btn x" data-close="focusDialog" aria-label="Close focus mode">×</button></div><div class="focus-center"><p class="focus-date" id="focusDate"></p><button type="button" id="focusTap" class="focus-tap" aria-label="Add one to today's count"><span class="focus-count" id="focusCount">0</span></button></div><div class="focus-bottom"><button type="button" id="focusMinus" class="btn" aria-label="Subtract one">−1</button><button type="button" id="focusStats" class="btn" aria-label="View counter history">Statistics</button></div></div></dialog>
+<dialog id="newDialog" aria-labelledby="newTitle"><div class="dialog-card"><div class="modal-heading"><div><p>CREATE</p><h2 id="newTitle">New counter</h2></div><button type="button" class="icon-btn x" data-close="newDialog" aria-label="Close">×</button></div><form id="newForm"><label class="field-label" for="counterName">Counter name</label><input id="counterName" type="text" maxlength="65" placeholder="e.g. Dhikr, Water, Reading" required autocomplete="off"><div class="dialog-actions"><button type="button" class="btn" data-close="newDialog">Cancel</button><button class="btn primary" type="submit">Create counter</button></div></form></div></dialog>
+<dialog id="statsDialog" aria-labelledby="statsTitle"><div class="dialog-card"><div class="modal-heading"><div><p>DAILY HISTORY</p><h2 id="statsTitle"></h2></div><button type="button" class="icon-btn x" data-close="statsDialog" aria-label="Close">×</button></div><div class="stats-overview"><div class="stat"><b id="statToday">0</b><span>Today</span></div><div class="stat"><b id="statSeven">0</b><span>Last 7 days</span></div><div class="stat"><b id="statAll">0</b><span>All time</span></div></div><p class="section-title">Last 14 days</p><div class="chart" id="statsChart" role="img" aria-label="Bar chart of counts for the last 14 days"></div><div class="chart-labels"><span id="chartStart"></span><span>Today</span></div><p class="section-title">Recent days</p><div class="history" id="historyList"></div><div class="stats-footer"><button type="button" class="subtle-btn" id="renameBtn">Rename</button><div class="dialog-actions"><button type="button" class="btn danger" id="deleteBtn">Delete</button><button type="button" class="btn primary" data-close="statsDialog">Done</button></div></div></div></dialog>
+<script>
+(()=>{'use strict';
+const KEY='daily-counter-v1';
+const $=id=>document.getElementById(id);
+const fmt=new Intl.NumberFormat(undefined);
+const pad=n=>String(n).padStart(2,'0');
+const dayKey=(date=new Date())=>`${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}`;
+const dateFromKey=k=>{const [y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d,12)};
+const shiftDay=(offset,base=new Date())=>{const d=new Date(base.getFullYear(),base.getMonth(),base.getDate()+offset,12);return dayKey(d)};
+const dateLabel=k=>dateFromKey(k).toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
+function load(){try{const v=JSON.parse(localStorage.getItem(KEY));if(Array.isArray(v))return v.filter(c=>c&&typeof c.id==='string'&&typeof c.name==='string'&&c.days&&typeof c.days==='object').map(c=>({id:c.id,name:c.name,days:c.days}));}catch(e){}return []}
+let counters=load(),selected=null,focused=null,lastDay=dayKey();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(counters));return true}catch(e){alert('Your browser could not save the counts. Check that local storage is enabled.');return false}}
+function safeCount(c,key){const n=Number(c.days[key]);return Number.isFinite(n)&&n>0?Math.floor(n):0}
+function current(){return counters.find(c=>c.id===selected)}
+function render(){const day=dayKey();lastDay=day;$('todayLabel').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'});$('counterSummary').textContent=`${counters.length} ${counters.length===1?'counter':'counters'}`;const grid=$('counterGrid');grid.replaceChildren();if(!counters.length){const empty=document.createElement('div');empty.className='empty';empty.innerHTML='<strong>Start with one small habit</strong><p>Choose “New counter” to track something each day.</p>';grid.append(empty);return}for(const c of counters){const tile=document.createElement('article');tile.className='tile';tile.dataset.counterId=c.id;tile.tabIndex=0;tile.setAttribute('role','button');tile.setAttribute('aria-label',`Focus on ${c.name}`);tile.addEventListener('click',e=>{if(e.target.closest('button'))return;openFocus(c.id)});tile.addEventListener('keydown',e=>{if(e.target!==tile)return;if(e.key==='Enter'||e.key===' '){e.preventDefault();openFocus(c.id)}});const head=document.createElement('div');head.className='tile-head';const h=document.createElement('h3');h.textContent=c.name;const stats=document.createElement('button');stats.type='button';stats.className='icon-btn';stats.setAttribute('aria-label',`Statistics for ${c.name}`);stats.title='Daily statistics';stats.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.7 3.5h4.6l.6 2.2 1.7.9 2.1-.8 2.3 4-1.7 1.5v1.9l1.7 1.5-2.3 4-2.1-.8-1.7.9-.6 2.2H9.7l-.6-2.2-1.7-.9-2.1.8-2.3-4 1.7-1.5v-1.9L3 9.8l2.3-4 2.1.8 1.7-.9z"/><circle cx="12" cy="12" r="3"/></svg>';stats.title='Counter settings and statistics';stats.setAttribute('aria-label',`Settings and statistics for ${c.name}`);stats.addEventListener('click',()=>openStats(c.id));const headerActions=document.createElement('div');headerActions.className='tile-head-actions';const grip=document.createElement('button');grip.type='button';grip.className='icon-btn drag-handle';grip.title='Drag to reorder';grip.setAttribute('aria-label',`Drag to reorder ${c.name}; use arrow keys to move`);grip.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="5" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="19" r="1"/></svg>';grip.querySelectorAll('circle').forEach(circle=>{circle.style.fill='currentColor';circle.style.stroke='none'});grip.addEventListener('pointerdown',e=>beginReorder(e,c.id,tile,grip));grip.addEventListener('keydown',e=>{if(e.key==='ArrowUp'||e.key==='ArrowLeft'||e.key==='ArrowDown'||e.key==='ArrowRight'){e.preventDefault();e.stopPropagation();moveCounter(c.id,(e.key==='ArrowUp'||e.key==='ArrowLeft')?-1:1);const next=[...document.querySelectorAll('.tile')].find(el=>el.dataset.counterId===c.id);next?.querySelector('.drag-handle')?.focus()}});headerActions.append(stats,grip);head.append(h,headerActions);const count=document.createElement('div');count.className='count';count.textContent=fmt.format(safeCount(c,day));const label=document.createElement('p');label.className='count-label';label.textContent='today';const actions=document.createElement('div');actions.className='tile-actions';const minus=document.createElement('button');minus.type='button';minus.className='round-btn';minus.textContent='−';minus.setAttribute('aria-label',`Subtract one from ${c.name}`);minus.disabled=!safeCount(c,day);minus.addEventListener('click',()=>change(c.id,-1));const plus=document.createElement('button');plus.type='button';plus.className='increment';plus.textContent='+1';plus.setAttribute('aria-label',`Add one to ${c.name}`);plus.addEventListener('click',()=>change(c.id,1));const history=document.createElement('button');history.type='button';history.className='round-btn';history.textContent='▥';history.title='History';history.setAttribute('aria-label',`History for ${c.name}`);history.addEventListener('click',()=>openStats(c.id));actions.append(minus,plus,history);tile.append(head,count,label,actions);grid.append(tile)}}
+function moveCounter(id,delta){const from=counters.findIndex(c=>c.id===id);if(from<0)return;const to=Math.max(0,Math.min(counters.length-1,from+delta));if(to===from)return;const [item]=counters.splice(from,1);counters.splice(to,0,item);save();render()}
+let reorderInProgress=false;
+function beginReorder(e,id,tile,handle){
+ if(reorderInProgress || !e.isPrimary || (e.pointerType==='mouse' && e.button!==0))return;
+ e.preventDefault();e.stopPropagation();
+ const grid=$('counterGrid'),pointerId=e.pointerId;
+ const startX=e.clientX,startY=e.clientY;
+ const originalOrder=[...grid.children];
+ const tileRect=tile.getBoundingClientRect();
+ const offsetX=startX-tileRect.left,offsetY=startY-tileRect.top;
+ const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
+ let active=false,ghost=null,finished=false,lastX=startX,lastY=startY;
+ let raf=0,scrollRaf=0;
+ reorderInProgress=true;
+ // Listen on window: the original grip can move with the placeholder during sorting.
+ // This also avoids losing the drag when the pointer leaves a tile.
+ const snapshot=()=>new Map([...grid.children].map(el=>[el,el.getBoundingClientRect()]));
+ const animatePositions=before=>{
+  if(reducedMotion)return;
+  for(const el of grid.children){
+   if(el===tile)continue;
+   const prev=before.get(el),next=el.getBoundingClientRect();
+   if(!prev)continue;
+   const dx=prev.left-next.left,dy=prev.top-next.top;
+   if(Math.abs(dx)+Math.abs(dy)<1)continue;
+   for(const anim of el.getAnimations()){if(anim.id==='reorder-shift')anim.cancel()}
+   el.animate([{transform:`translate(${dx}px,${dy}px)`},{transform:'translate(0,0)'}],{duration:190,easing:'cubic-bezier(.2,.75,.25,1)',id:'reorder-shift'});
+  }
+ };
+ function draw(){raf=0;if(ghost)ghost.style.transform=`translate3d(${lastX-offsetX}px,${lastY-offsetY}px,0)`}
+ function activate(){
+  active=true;
+  ghost=tile.cloneNode(true);
+  ghost.removeAttribute('id');ghost.removeAttribute('tabindex');ghost.removeAttribute('role');ghost.removeAttribute('aria-label');
+  ghost.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));
+  ghost.setAttribute('aria-hidden','true');ghost.classList.add('drag-preview');
+  ghost.style.width=`${tileRect.width}px`;ghost.style.height=`${tileRect.height}px`;
+  document.body.append(ghost);grid.classList.add('is-reordering');tile.classList.add('drag-placeholder');
+  draw();
+ }
+ function targetIndex(x,y){
+  // Fixed grid slots are independent of animated tiles and DOM hit-testing.
+  const bounds=grid.getBoundingClientRect();
+  const css=getComputedStyle(grid);
+  const columns=css.gridTemplateColumns.split(' ').filter(Boolean).length;
+  const gapX=parseFloat(css.columnGap)||0,gapY=parseFloat(css.rowGap)||0;
+  const cellWidth=(bounds.width-gapX*(columns-1))/columns;
+  const cellHeight=tile.offsetHeight;
+  const col=Math.max(0,Math.min(columns-1,Math.floor((x-bounds.left+gapX/2)/(cellWidth+gapX))));
+  const row=Math.max(0,Math.floor((y-bounds.top+gapY/2)/(cellHeight+gapY)));
+  return Math.max(0,Math.min(grid.children.length-1,row*columns+col));
+ }
+ function reorder(){
+  if(!active)return;
+  const from=[...grid.children].indexOf(tile),to=targetIndex(lastX,lastY);
+  if(from===to)return;
+  // Cancel previous FLIP animations before reading the original layout.
+  for(const el of grid.children)for(const anim of el.getAnimations())if(anim.id==='reorder-shift')anim.cancel();
+  const before=snapshot(),others=[...grid.children].filter(el=>el!==tile);
+  others.splice(to,0,tile);grid.append(...others);animatePositions(before);
+ }
+ function onMove(ev){
+  if(ev.pointerId!==pointerId||finished)return;
+  lastX=ev.clientX;lastY=ev.clientY;
+  if(!active){if(Math.hypot(lastX-startX,lastY-startY)<9)return;activate()}
+  if(!raf)raf=requestAnimationFrame(draw);
+  reorder();
+  if(!scrollRaf)scrollRaf=requestAnimationFrame(autoScroll);
+  ev.preventDefault();
+ }
+ function autoScroll(){
+  scrollRaf=0;if(!active||finished)return;
+  const edge=65,velocity=lastY<edge?-Math.min(12,(edge-lastY)/5):lastY>innerHeight-edge?Math.min(12,(lastY-(innerHeight-edge))/5):0;
+  if(velocity){window.scrollBy(0,velocity);reorder();scrollRaf=requestAnimationFrame(autoScroll)}
+ }
+ function cleanup(){
+  finished=true;reorderInProgress=false;
+  window.removeEventListener('pointermove',onMove,true);
+  window.removeEventListener('pointerup',finish,true);
+  window.removeEventListener('pointercancel',cancel,true);
+  window.removeEventListener('blur',cancel);
+  window.removeEventListener('keydown',onKey,true);
+  cancelAnimationFrame(raf);cancelAnimationFrame(scrollRaf);
+  grid.classList.remove('is-reordering');tile.classList.remove('drag-placeholder');
+ }
+ function finish(ev){
+  if(ev.pointerId!==pointerId||finished)return;
+  const wasActive=active;
+  if(wasActive){
+   const order=[...grid.children].map(el=>el.dataset.counterId);
+   counters.sort((a,b)=>order.indexOf(a.id)-order.indexOf(b.id));save();
+   // Suppress the synthetic click generated by lifting the pointer after dragging.
+   const suppress=click=>{click.preventDefault();click.stopImmediatePropagation()};
+   document.addEventListener('click',suppress,{capture:true,once:true});
+   setTimeout(()=>document.removeEventListener('click',suppress,true),150);
+  }
+  cleanup();
+  if(ghost){
+   if(wasActive&&!reducedMotion){
+    const rect=tile.getBoundingClientRect();
+    ghost.style.transition='transform 160ms cubic-bezier(.2,.8,.2,1),opacity 160ms ease';
+    ghost.style.transform=`translate3d(${rect.left}px,${rect.top}px,0)`;ghost.style.opacity='0';
+    setTimeout(()=>ghost.remove(),180);
+   }else ghost.remove();
+  }
+ }
+ function cancel(){if(finished)return;cleanup();ghost?.remove();if(active){grid.append(...originalOrder)}}
+ function onKey(ev){if(ev.key==='Escape'){ev.preventDefault();cancel()}}
+ window.addEventListener('pointermove',onMove,{capture:true,passive:false});
+ window.addEventListener('pointerup',finish,true);
+ window.addEventListener('pointercancel',cancel,true);
+ window.addEventListener('blur',cancel);
+ window.addEventListener('keydown',onKey,true);
+}
+
+function change(id,delta){const c=counters.find(x=>x.id===id);if(!c)return;const k=dayKey();c.days[k]=Math.max(0,safeCount(c,k)+delta);if(c.days[k]===0)delete c.days[k];save();render();if($('focusDialog').open&&focused===id)fillFocus()}
+function fillFocus(){const c=counters.find(x=>x.id===focused);if(!c)return;$('focusTitle').textContent=c.name;$('focusDate').textContent=dateLabel(dayKey());$('focusCount').textContent=fmt.format(safeCount(c,dayKey()));$('focusMinus').disabled=!safeCount(c,dayKey());$('focusTap').setAttribute('aria-label',`Add one to ${c.name}`)}
+function openFocus(id){focused=id;fillFocus();$('focusDialog').showModal()}
+$('focusTap').addEventListener('click',()=>{if(focused)change(focused,1)});
+$('focusMinus').addEventListener('click',()=>{if(focused)change(focused,-1)});
+$('focusStats').addEventListener('click',()=>{if(!focused)return;const id=focused;$('focusDialog').close();openStats(id)});
+function openStats(id){selected=id;fillStats();$('statsDialog').showModal()}
+function fillStats(){const c=current();if(!c)return;$('statsTitle').textContent=c.name;const today=dayKey();$('statToday').textContent=fmt.format(safeCount(c,today));let week=0,all=0;for(let i=0;i<7;i++)week+=safeCount(c,shiftDay(-i));for(const key of Object.keys(c.days))all+=safeCount(c,key);$('statSeven').textContent=fmt.format(week);$('statAll').textContent=fmt.format(all);const keys=Array.from({length:14},(_,i)=>shiftDay(i-13));const max=Math.max(1,...keys.map(k=>safeCount(c,k)));const chart=$('statsChart');chart.replaceChildren();chart.setAttribute('aria-label',keys.map(k=>`${dateLabel(k)}: ${safeCount(c,k)}`).join(', '));for(const k of keys){const col=document.createElement('div');col.className='bar-col'+(k===today?' today':'');col.title=`${dateLabel(k)}: ${fmt.format(safeCount(c,k))}`;const v=document.createElement('span');v.className='bar-value';const value=safeCount(c,k);v.textContent=value?fmt.format(value):'';const bar=document.createElement('div');bar.className='chart-bar';bar.style.height=`${Math.max(3,value/max*98)}px`;col.append(v,bar);chart.append(col)}$('chartStart').textContent=dateLabel(keys[0]);const history=$('historyList');history.replaceChildren();for(let i=0;i<30;i++){const k=shiftDay(-i),row=document.createElement('div');row.className='history-row';const date=document.createElement('span');date.textContent=i===0?`Today · ${dateLabel(k)}`:dateLabel(k);const num=document.createElement('b');num.textContent=fmt.format(safeCount(c,k));row.append(date,num);history.append(row)}}
+$('addBtn').addEventListener('click',()=>{$('counterName').value='';$('newDialog').showModal();$('counterName').focus()});$('newForm').addEventListener('submit',e=>{e.preventDefault();const name=$('counterName').value.trim();if(!name)return;const id=typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():`${Date.now()}-${Math.random()}`;counters.push({id,name,days:{}});save();$('newDialog').close();render()});
+$('renameBtn').addEventListener('click',()=>{const c=current();if(!c)return;const name=prompt('Rename counter',c.name);if(name===null)return;const trimmed=name.trim().slice(0,65);if(!trimmed)return;c.name=trimmed;save();fillStats();render()});$('deleteBtn').addEventListener('click',()=>{const c=current();if(!c)return;if(!confirm(`Delete “${c.name}” and all its recorded counts? This cannot be undone.`))return;counters=counters.filter(x=>x.id!==c.id);save();$('statsDialog').close();selected=null;render()});
+document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>$(b.dataset.close).close()));document.querySelectorAll('dialog').forEach(d=>d.addEventListener('click',e=>{if(e.target===d)d.close()}));
+setInterval(()=>{if(dayKey()!==lastDay){render();if($('statsDialog').open)fillStats();if($('focusDialog').open)fillFocus()}},30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden){render();if($('statsDialog').open)fillStats();if($('focusDialog').open)fillFocus()}});render();
+})();
+</script>
+</body>
+</html>
