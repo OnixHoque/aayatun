@@ -33,23 +33,26 @@
 	'use strict';
 
 	var HASHTAG = '#aayatun';
-	var SCALE = 2;            // output pixels per CSS pixel
+	// Cards are laid out in a friendly 420 px column and rendered at 1080 px
+	// wide, the size every share sheet and feed expects, so nothing is
+	// upscaled by the receiving app.
+	var OUTPUT_W = 1080;      // output pixels wide
 	var CARD_W = 420;         // CSS px wide card
-	var PAD = 20;             // CSS px card padding
+	var PAD = 26;             // CSS px card padding
 	var BAND = 64;            // CSS px of branding band
-	var MIN_BODY = 220;       // keep very short verses from making a strip
+	var MIN_BODY = 316;       // a short verse still fills a square card
 
-	var TITLE = { weight: 700, family: 'Merriweather, Georgia, serif', size: 24, line: 1.3 };
-	var SUB = { weight: 400, family: "'Open Sans', system-ui, sans-serif", size: 13, line: 1.5 };
-	var ARABIC = { weight: 700, family: 'Scheherazade, serif', size: 33, line: 1.75 };
-	var TRANS = { weight: 400, family: "'Open Sans', system-ui, sans-serif", size: 15, line: 1.55 };
+	var TITLE = { weight: 700, family: 'Merriweather, Georgia, serif', size: 27, line: 1.3 };
+	var SUB = { weight: 400, family: "'Open Sans', system-ui, sans-serif", size: 14, line: 1.5 };
+	var ARABIC = { weight: 700, family: 'Scheherazade, serif', size: 38, line: 1.75 };
+	var TRANS = { weight: 400, family: "'Open Sans', system-ui, sans-serif", size: 17, line: 1.55 };
 	// Multi-verse cards carry five verses, so they start a little smaller and
 	// shrink (down to the minimums) until the body fits MAX_BODY.
-	var M_ARABIC = { weight: 700, family: 'Scheherazade, serif', size: 28, line: 1.7 };
-	var M_TRANS = { weight: 400, family: "'Open Sans', system-ui, sans-serif", size: 13, line: 1.5 };
-	var M_MIN_ARABIC = 18;
-	var M_MIN_TRANS = 9.5;
-	var MAX_BODY = 1200;      // CSS px of text before the fit pass shrinks it
+	var M_ARABIC = { weight: 700, family: 'Scheherazade, serif', size: 31, line: 1.7 };
+	var M_TRANS = { weight: 400, family: "'Open Sans', system-ui, sans-serif", size: 15, line: 1.5 };
+	var M_MIN_ARABIC = 21;
+	var M_MIN_TRANS = 12;
+	var MAX_BODY = 1320;      // CSS px of text before the fit pass shrinks it
 
 	var VIEW_LABEL = {
 		arabic: 'Arabic text with translation',
@@ -435,10 +438,10 @@
 		var tagY = 692;
 
 		var out = document.createElement('canvas');
-		out.width = Math.round(MAP_W * SCALE);
-		out.height = Math.round(cardH * SCALE);
+		out.width = OUTPUT_W;
+		out.height = Math.round(cardH * (OUTPUT_W / MAP_W));
 		var ctx = out.getContext('2d');
-		ctx.scale(SCALE, SCALE);
+		ctx.scale(OUTPUT_W / MAP_W, OUTPUT_W / MAP_W);
 		ctx.textBaseline = 'middle';
 
 		ctx.fillStyle = dark ? '#1b1c1d' : '#ffffff';
@@ -458,11 +461,11 @@
 
 		ctx.textAlign = 'center';
 		ctx.fillStyle = titleColor;
-		ctx.font = fontFor(TITLE, TITLE.size);
-		ctx.fillText('Quran exploration map', MAP_W / 2, titleY);
+		ctx.font = fontFor(TITLE, 26);
+		ctx.fillText('Quran Exploration Map', MAP_W / 2, titleY);
 
 		ctx.fillStyle = dark ? 'rgba(255,255,255,.74)' : 'rgba(0,0,0,.64)';
-		ctx.font = "400 15px 'Open Sans', system-ui, sans-serif";
+		ctx.font = "400 16px 'Open Sans', system-ui, sans-serif";
 		var msgLines = wrap(ctx, card.message || mapMessage(), MAP_W - PAD * 2);
 		for (var m = 0; m < msgLines.length; m++) {
 			ctx.fillText(msgLines[m], MAP_W / 2, msgY + m * 21);
@@ -493,15 +496,15 @@
 			ctx.lineCap = 'butt';
 			ctx.textAlign = 'center';
 			ctx.fillStyle = dark ? 'rgba(255,255,255,.92)' : 'rgba(0,0,0,.82)';
-			ctx.font = "700 19px 'Open Sans', system-ui, sans-serif";
+			ctx.font = "700 21px 'Open Sans', system-ui, sans-serif";
 			ctx.fillText(pctLabel(pct), cx, ringsY + 1);
 
 			ctx.textAlign = 'left';
 			ctx.fillStyle = dark ? 'rgba(255,255,255,.9)' : 'rgba(0,0,0,.8)';
-			ctx.font = "600 14px 'Open Sans', system-ui, sans-serif";
+			ctx.font = "600 15px 'Open Sans', system-ui, sans-serif";
 			ctx.fillText(label, cx + 52, ringsY - 10);
 			ctx.fillStyle = muted;
-			ctx.font = "400 11.5px 'Open Sans', system-ui, sans-serif";
+			ctx.font = "400 12.5px 'Open Sans', system-ui, sans-serif";
 			ctx.fillText(note, cx + 52, ringsY + 11);
 		}
 
@@ -566,8 +569,8 @@
 
 		// The key lives on the card the way GitHub's does: the two categories
 		// spelled out, then the three deeper shades as a Less..More scale.
-		var sw = 10, g1 = 4, g2 = 14, g3 = 3;
-		ctx.font = "400 12px 'Open Sans', system-ui, sans-serif";
+		var sw = 11, g1 = 4, g2 = 13, g3 = 3;
+		ctx.font = "400 13px 'Open Sans', system-ui, sans-serif";
 		var wNot = ctx.measureText('Not yet').width;
 		var wPage = ctx.measureText('Page visited').width;
 		var wLess = ctx.measureText('Less').width;
@@ -601,12 +604,19 @@
 
 		ctx.textAlign = 'center';
 		ctx.fillStyle = dark ? 'rgba(255,255,255,.6)' : 'rgba(0,0,0,.55)';
-		ctx.font = "400 13px 'Open Sans', system-ui, sans-serif";
-		ctx.fillText(card.deep.toLocaleString() + ' of 6,236 verses studied · ' +
-			card.pages + ' of 604 pages visited.', MAP_W / 2, countsY);
+		var counts = card.deep.toLocaleString() + ' of 6,236 verses studied · ' +
+			card.pages + ' of 604 pages visited.';
+		var countsSize = 14;
+		var countsMax = MAP_W - PAD * 2;
+		ctx.font = "400 " + countsSize + "px 'Open Sans', system-ui, sans-serif";
+		while (ctx.measureText(counts).width > countsMax && countsSize > 11) {
+			countsSize -= 0.5;
+			ctx.font = "400 " + countsSize + "px 'Open Sans', system-ui, sans-serif";
+		}
+		ctx.fillText(counts, MAP_W / 2, countsY);
 
 		ctx.fillStyle = muted;
-		ctx.font = "400 12px 'Open Sans', system-ui, sans-serif";
+		ctx.font = "400 13px 'Open Sans', system-ui, sans-serif";
 		ctx.fillText('#aayatun', MAP_W / 2, tagY);
 
 		/* Brand band: the site name, then the full URL under it. */
@@ -616,15 +626,15 @@
 
 		ctx.textAlign = 'center';
 		ctx.fillStyle = dark ? 'rgba(255,255,255,.86)' : 'rgba(0,0,0,.72)';
-		ctx.font = "600 14px 'Open Sans', system-ui, sans-serif";
+		ctx.font = "600 15px 'Open Sans', system-ui, sans-serif";
 		ctx.fillText('aayatun.com', MAP_W / 2, bandTop + BAND * 0.36);
 
 		var label = String(card.url || '');
-		var size = 10.5;
+		var size = 11.5;
 		var bandMax = MAP_W - PAD * 2;
 		ctx.fillStyle = dark ? 'rgba(255,255,255,.58)' : 'rgba(0,0,0,.46)';
 		ctx.font = "400 " + size + "px 'Open Sans', system-ui, sans-serif";
-		while (label && ctx.measureText(label).width > bandMax && size > 8) {
+		while (label && ctx.measureText(label).width > bandMax && size > 9) {
 			size -= 0.5;
 			ctx.font = "400 " + size + "px 'Open Sans', system-ui, sans-serif";
 		}
@@ -677,10 +687,10 @@
 		var cardH = Math.max(MIN_BODY, bodyH) + PAD * 2 + BAND;
 
 		var out = document.createElement('canvas');
-		out.width = Math.round(CARD_W * SCALE);
-		out.height = Math.round(cardH * SCALE);
+		out.width = OUTPUT_W;
+		out.height = Math.round(cardH * (OUTPUT_W / CARD_W));
 		var ctx = out.getContext('2d');
-		ctx.scale(SCALE, SCALE);
+		ctx.scale(OUTPUT_W / CARD_W, OUTPUT_W / CARD_W);
 
 		ctx.fillStyle = dark ? '#1b1c1d' : '#ffffff';
 		ctx.fillRect(0, 0, CARD_W, cardH);
@@ -750,15 +760,15 @@
 		ctx.fillRect(0, bandTop, CARD_W, BAND);
 
 		ctx.fillStyle = dark ? 'rgba(255,255,255,.86)' : 'rgba(0,0,0,.72)';
-		ctx.font = "600 14px 'Open Sans', system-ui, sans-serif";
+		ctx.font = "600 15px 'Open Sans', system-ui, sans-serif";
 		ctx.fillText('aayatun.com', CARD_W / 2, bandTop + BAND * 0.36);
 
 		var label = String(card.url || '');
-		var size = 10.5;
+		var size = 11.5;
 		var bandMax = CARD_W - PAD * 2;
 		ctx.fillStyle = dark ? 'rgba(255,255,255,.58)' : 'rgba(0,0,0,.46)';
 		ctx.font = "400 " + size + "px 'Open Sans', system-ui, sans-serif";
-		while (label && ctx.measureText(label).width > bandMax && size > 8) {
+		while (label && ctx.measureText(label).width > bandMax && size > 9) {
 			size -= 0.5;
 			ctx.font = "400 " + size + "px 'Open Sans', system-ui, sans-serif";
 		}
@@ -908,7 +918,7 @@
 		};
 	}
 
-	// The map card is the largest one (920 x 1636 px) and encoding it takes
+	// The map card is the largest one (1080 x 1920 px) and encoding it takes
 	// long enough to be felt as a lag between the tap and the share sheet, so
 	// it is drawn and encoded once while the modal opens and the tap only
 	// hands the finished file over. The signature covers the counts and the

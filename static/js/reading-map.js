@@ -194,7 +194,7 @@
 			}
 		}
 
-		grid.setAttribute('aria-label', 'Quran exploration map: ' + deep +
+		grid.setAttribute('aria-label', 'Quran Exploration Map: ' + deep +
 			' of 6,236 verses studied, ' + pages + ' of 604 pages visited.');
 		stats.deep = deep;
 		stats.pages = pages;
@@ -471,6 +471,17 @@
 	grid.addEventListener('pointermove', hoverCell);
 	grid.addEventListener('click', selectCell);
 	grid.addEventListener('pointerleave', leaveGrid);
+
+	// Clicking anywhere outside the map itself (the readout cards, the
+	// legend, the page or the dimmer) drops the selection, so the readout
+	// returns to its hint and no square stays highlighted.
+	document.addEventListener('click', function (evt) {
+		if (selected < 0 || grid.contains(evt.target)) return;
+		selected = -1;
+		var prev = grid.querySelector('.rg-cell.is-selected');
+		if (prev) prev.classList.remove('is-selected');
+		renderReadout(-1);
+	});
 
 	// 0 = not yet, 1 = seen on a visited page, 2..4 = verse opened 1x/2x/3+x.
 	// The share card draws from this array so it never re-derives the bitsets.
