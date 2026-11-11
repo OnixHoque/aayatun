@@ -571,3 +571,106 @@ html.dark-theme .mushaf-row-jump td {
 		transition-duration: .001ms !important;
 	}
 }
+
+/* Index footer → More Apps popup. The two apps are card buttons, and the
+   modal surface needs its own dark colours because Fomantic hard-codes
+   white on .ui.modal > header/content/actions and the page text colour
+   would otherwise disappear into it. */
+#more-apps-modal.ui.modal {
+	border-radius: 14px;
+}
+
+#more-apps-modal.ui.modal > .content {
+	padding: 1.25rem 1.5rem 1.5rem;
+}
+
+.more-apps-intro {
+	margin: 0 0 14px;
+	font-size: 88%;
+	opacity: .65;
+}
+
+.more-apps-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+	gap: 12px;
+}
+
+.more-apps-card {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 16px 15px;
+	border: 1px solid rgba(34, 36, 38, .14);
+	border-radius: 12px;
+	background: #f7f8fa;
+	color: rgba(0, 0, 0, .87);
+	text-decoration: none;
+	transition: border-color .15s ease, background-color .15s ease, transform .1s ease;
+}
+
+.more-apps-card:hover,
+.more-apps-card:focus-visible {
+	border-color: #4183C4;
+	background: #eef4fc;
+	color: rgba(0, 0, 0, .87);
+	transform: translateY(-1px);
+}
+
+.more-apps-card:active {
+	transform: scale(.99);
+}
+
+.more-apps-icon {
+	font-size: 1.6rem;
+	line-height: 1;
+	color: #4183C4;
+}
+
+.more-apps-title {
+	font-size: 1.02rem;
+	font-weight: 700;
+}
+
+.more-apps-text {
+	font-size: 82%;
+	line-height: 1.4;
+	opacity: .7;
+}
+
+html.dark-theme #more-apps-modal.ui.modal,
+html.dark-theme #more-apps-modal.ui.modal > .header,
+html.dark-theme #more-apps-modal.ui.modal > .content {
+	background: rgb(44, 44, 44);
+	color: rgba(255, 255, 255, .87);
+}
+
+html.dark-theme #more-apps-modal.ui.modal > .header,
+html.dark-theme #more-apps-modal.ui.modal > .actions {
+	border-color: rgba(80, 80, 80, .8);
+}
+
+html.dark-theme #more-apps-modal.ui.modal > .actions {
+	background: rgb(38, 38, 38);
+}
+
+html.dark-theme #more-apps-modal.ui.modal > .close {
+	color: rgba(255, 255, 255, .7);
+}
+
+html.dark-theme .more-apps-card {
+	border-color: rgba(255, 255, 255, .14);
+	background: rgb(58, 58, 58);
+	color: rgba(255, 255, 255, .87);
+}
+
+html.dark-theme .more-apps-card:hover,
+html.dark-theme .more-apps-card:focus-visible {
+	border-color: #9CC4FF;
+	background: rgb(68, 68, 68);
+	color: rgba(255, 255, 255, .87);
+}
+
+html.dark-theme .more-apps-icon {
+	color: #9CC4FF;
+}

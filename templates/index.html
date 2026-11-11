@@ -970,21 +970,17 @@ document.addEventListener('DOMContentLoaded', function () {
 		<div id="more-apps-modal" class="ui small modal">
 			<div class="header">More Apps</div>
 			<div class="content">
-				<p style="margin-top: 0; color: gray;">Small tools that work alongside Aayatun.</p>
-				<div class="ui relaxed divided list">
-					<a class="item" href="{{ url_for('prayer_time') }}">
-						<i class="large middle aligned clock outline icon"></i>
-						<div class="content">
-							<div class="header">Prayer Time</div>
-							<div class="description">Daily prayer times, qibla direction and the monthly calendar for your location.</div>
-						</div>
+				<p class="more-apps-intro">Small tools that work alongside Aayatun.</p>
+				<div class="more-apps-grid">
+					<a class="more-apps-card" href="{{ url_for('prayer_time') }}">
+						<i class="more-apps-icon clock outline" aria-hidden="true"></i>
+						<span class="more-apps-title">Prayer Time</span>
+						<span class="more-apps-text">Prayer times, weather and recitation in one screen.</span>
 					</a>
-					<a class="item" href="{{ url_for('daily_counter') }}">
-						<i class="large middle aligned plus square outline icon"></i>
-						<div class="content">
-							<div class="header">Counter</div>
-							<div class="description">A simple daily counter for dhikr, with history and a distraction-free focus mode.</div>
-						</div>
+					<a class="more-apps-card" href="{{ url_for('daily_counter') }}">
+						<i class="more-apps-icon plus square outline" aria-hidden="true"></i>
+						<span class="more-apps-title">Counter</span>
+						<span class="more-apps-text">A simple daily dhikr counter with history and a focus mode.</span>
 					</a>
 				</div>
 			</div>
