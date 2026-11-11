@@ -241,21 +241,24 @@ def translation(surah):
 	# The share card needs both scripts; the page itself only shows Lora.
 	share_card = [[surah, v, ar, tr] for (v, ar), (_, tr) in zip(arabic, b)][:5]
 	return render_template('translation.html', surah_name=a, surah_no=surah, verses=b,
-		share_card=share_card, share_more=len(b) > 5, prev=prev_, nxt=next_)
+		share_card=share_card, share_more=len(b) > 5, prev=prev_, nxt=next_,
+		surah_overview=lib.get_surah_overview(surah))
 
 @app.route('/tafsir/bn/<int:surah>', strict_slashes=False)
 def bn_tafsir(surah):
 	a, b = lib.get_full_bn_tafsir(surah)
 	prev_ = surah - 1 if surah != 1 else 114
 	next_ = surah + 1 if surah != 114 else 1
-	return render_template('bn_tafsir.html', surah_name=a, surah_no=surah, verses=b, prev=prev_, nxt=next_)
+	return render_template('bn_tafsir.html', surah_name=a, surah_no=surah, verses=b, prev=prev_, nxt=next_,
+		surah_overview=lib.get_surah_overview(surah))
 
 @app.route('/tafsir/en/<int:surah>', strict_slashes=False)
 def en_tafsir(surah):
 	a, b = lib.get_full_en_tafsir(surah)
 	prev_ = surah - 1 if surah != 1 else 114
 	next_ = surah + 1 if surah != 114 else 1
-	return render_template('en_tafsir.html', surah_name=a, surah_no=surah, verses=b, prev=prev_, nxt=next_)
+	return render_template('en_tafsir.html', surah_name=a, surah_no=surah, verses=b, prev=prev_, nxt=next_,
+		surah_overview=lib.get_surah_overview(surah))
 
 @app.route('/mushaf/<int:surah>', strict_slashes=False)
 def arabic_fulltext(surah):
@@ -266,7 +269,8 @@ def arabic_fulltext(surah):
 	share_card = [[surah, v, ar, tr] for (v, ar), (_, tr) in zip(b, d)][:5]
 	return render_template('arabic_fulltext.html', surah_name=a, surah_no=surah, verses=b,
 		translation=list(d), qcf=lib.get_surah_qcf(surah), share_card=share_card,
-		share_more=len(b) > 5, prev=prev_, nxt=next_, mushaf='1')
+		share_more=len(b) > 5, prev=prev_, nxt=next_, mushaf='1',
+		surah_overview=lib.get_surah_overview(surah))
 
 @app.route('/page/<int:page_no>', strict_slashes=False)
 def mushaf_page(page_no):

@@ -1,0 +1,24 @@
+{% if surah_overview %}
+<div class="ui fluid styled accordion" id="surah-overview" style="text-align: left;">
+	<div class="title">
+		<i class="dropdown icon"></i>
+		<span>Surah Overview 🤖</span>
+	</div>
+	<div class="content">
+		{% include 'partials/_ai_notice.html' %}
+		<div class="page-overview-section">
+			<p class="page-overview-label">Context</p>
+			<p class="page-overview-text">{{ surah_overview.context }}</p>
+		</div>
+		<div class="page-overview-section">
+			<p class="page-overview-label">Summary</p>
+			<p class="page-overview-text">{{ surah_overview.summary }}</p>
+		</div>
+	</div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+	if (window.jQuery) $('#surah-overview').accordion();
+});
+</script>
+{% endif %}

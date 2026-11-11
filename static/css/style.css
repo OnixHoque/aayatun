@@ -421,20 +421,25 @@ body.mushaf-page-body {
    container and base.html's 110%/120% title/content rules give the exact
    verse-page sizes. It is deliberately borderless: base.html sets inline
    borders on .accordion in dark mode, so this has to win with !important. */
-#page-overview.ui.accordion {
+#page-overview.ui.accordion,
+#surah-overview.ui.accordion {
 	font-size: 78.75%;
 }
 
 /* base.html applies `padding: 20px 10px` to every accordion content as an
    inline style, so the side padding needs !important to take effect. */
-#page-overview.ui.accordion .content {
+#page-overview.ui.accordion .content,
+#surah-overview.ui.accordion .content {
 	padding-left: 20px !important;
 	padding-right: 20px !important;
 }
 
 #page-overview.ui.accordion,
 #page-overview.ui.accordion .title,
-#page-overview.ui.accordion .content {
+#page-overview.ui.accordion .content,
+#surah-overview.ui.accordion,
+#surah-overview.ui.accordion .title,
+#surah-overview.ui.accordion .content {
 	border: 0 !important;
 	border-radius: 0 !important;
 	box-shadow: none !important;

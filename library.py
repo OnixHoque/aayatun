@@ -1063,6 +1063,28 @@ def get_page_overview(page):
 		return None
 	return {'context': row['context'], 'summary': row['summary']}
 
+# AI-written orientation for each surah, generated offline from the surah's
+# own translation (see AGENTS.md). Same shape as the page overview; missing
+# rows simply hide the accordion.
+SURAH_OVERVIEWS_DB = 'db/surah_overviews.db'
+
+
+@lru_cache(maxsize=128)
+def get_surah_overview(surah):
+	if not (1 <= surah <= 114) or not os.path.exists(SURAH_OVERVIEWS_DB):
+		return None
+	try:
+		conn = get_db_connection(SURAH_OVERVIEWS_DB)
+		row = conn.execute(
+			'SELECT context, summary FROM surah_overviews WHERE surah = ?',
+			(surah,)).fetchone()
+		conn.close()
+	except sqlite3.Error:
+		return None
+	if not row or not row['context'] or not row['summary']:
+		return None
+	return {'context': row['context'], 'summary': row['summary']}
+
 @lru_cache(maxsize=16)
 def get_mushaf_lines(page):
 	"""Typed layout lines for one Madani page (1-604).
