@@ -920,6 +920,11 @@ document.addEventListener('DOMContentLoaded', function () {
 			window.AayatunReadingMap.refresh();
 	});
 
+	$('#more-apps-btn').click(function (evt) {
+		evt.preventDefault();
+		$('#more-apps-modal').modal('show');
+	});
+
     if('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register("/service-worker.js", { scope: '/' })
@@ -937,7 +942,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 {% block end_ %}
 <div class="ui text container" style="font-family: 'Open Sans'; display: flex; flex: 0 0 auto; flex-direction: column-reverse;">
-		<p style="text-align: center; color: gray; opacity: 90%; padding-top: 2%; font-size: 70%;">Aayatun v2.0 | <a href="#" id="change-theme">Dark Theme</a> | <a href="{{ url_for('prayer_time') }}">Prayer Time</a> </p>
+		<p style="text-align: center; color: gray; opacity: 90%; padding-top: 2%; font-size: 70%;"><a href="https://github.com/OnixHoque/aayatun/tree/deploy" target="_blank" rel="noopener">Aayatun v2.0</a> | <a href="#" id="change-theme">Dark Theme</a> | <a href="#" id="more-apps-btn">More Apps</a> </p>
 		<div id="install-banner" class="ui mini message" style="display: none; color: gray">
 		    <i class="close icon" id="install-close" role="button" aria-label="Dismiss" tabindex="0"></i>
 		    <div class="header" id="install-header">
@@ -960,6 +965,31 @@ document.addEventListener('DOMContentLoaded', function () {
 			</div>
 			<div class="actions">
 				<button type="button" class="ui button" onclick="$('#ios-install-modal').modal('hide')">Got it</button>
+			</div>
+		</div>
+		<div id="more-apps-modal" class="ui small modal">
+			<div class="header">More Apps</div>
+			<div class="content">
+				<p style="margin-top: 0; color: gray;">Small tools that work alongside Aayatun.</p>
+				<div class="ui relaxed divided list">
+					<a class="item" href="{{ url_for('prayer_time') }}">
+						<i class="large middle aligned clock outline icon"></i>
+						<div class="content">
+							<div class="header">Prayer Time</div>
+							<div class="description">Daily prayer times, qibla direction and the monthly calendar for your location.</div>
+						</div>
+					</a>
+					<a class="item" href="{{ url_for('daily_counter') }}">
+						<i class="large middle aligned plus square outline icon"></i>
+						<div class="content">
+							<div class="header">Counter</div>
+							<div class="description">A simple daily counter for dhikr, with history and a distraction-free focus mode.</div>
+						</div>
+					</a>
+				</div>
+			</div>
+			<div class="actions">
+				<button type="button" class="ui button" onclick="$('#more-apps-modal').modal('hide')">Close</button>
 			</div>
 		</div>
 		<div id="reading-map-modal" class="ui modal">

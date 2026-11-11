@@ -1,8 +1,9 @@
-const CACHE_NAME = 'aayatun-v61';
+const CACHE_NAME = 'aayatun-v62';
 
 const CORE_ASSETS = [
   '/',
   '/prayer-time',
+  '/daily-counter',
   '/static/offline.html',
   '/static/js/script.js',
   '/static/js/recent.js',
