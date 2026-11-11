@@ -1236,6 +1236,135 @@
   }
   #trend-play svg { width: 1rem; height: 1rem; overflow: hidden; fill: currentColor; stroke: none; cursor: pointer; touch-action: auto; }
   #trend-play:hover { background: var(--control-hover); transform: none; }
+
+  /* Minimal flat glass tiles: no gradient, with a border only on the active prayer. */
+  #list .row,
+  .pills .pill,
+  .forecast-day {
+    background: var(--tile-surface);
+    background-image: none;
+    border: 1px solid transparent;
+    box-shadow: none;
+    -webkit-backdrop-filter: blur(7px) saturate(110%);
+    backdrop-filter: blur(7px) saturate(110%);
+  }
+  #list .row::before,
+  .pills .pill::before,
+  .forecast-day::before { display: none; }
+  #list .row.active {
+    background: var(--tile-active-surface);
+    background-image: none;
+    color: var(--fg);
+    border: 1px solid rgba(255,255,255,.68);
+    box-shadow: none;
+  }
+  /* The adhan halo is separate from the border: enabled, inactive tiles stay borderless. */
+  #list .row.adhan-enabled,
+  body[data-waqt="morning"] #list .row.adhan-enabled,
+  body[data-waqt="dhuhr"] #list .row.adhan-enabled,
+  body[data-waqt="asr"] #list .row.adhan-enabled {
+    border-color: transparent;
+    box-shadow: 0 0 13px 2px var(--adhan-halo),
+                0 0 29px 5px rgba(255,186,111,.22);
+  }
+  #list .row.adhan-enabled.active,
+  body[data-waqt="morning"] #list .row.adhan-enabled.active,
+  body[data-waqt="dhuhr"] #list .row.adhan-enabled.active,
+  body[data-waqt="asr"] #list .row.adhan-enabled.active {
+    border-color: rgba(255,255,255,.68);
+    box-shadow: 0 0 13px 2px var(--adhan-halo),
+                0 0 29px 5px rgba(255,186,111,.22);
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    #list .row, .pills .pill, .forecast-day { background: var(--field) !important; }
+    #list .row.active { background: var(--field) !important; }
+  }
+
+  /* Unified minimal frosted-glass UI: no component gradients.
+     Keep only the sky's atmospheric gradient as a background, not on controls. */
+  .forecast-dialog,
+  .quran-dialog,
+  .details-dialog {
+    background: color-mix(in srgb, var(--sky-2) 91%, transparent);
+    background-image: none;
+    border: 1px solid var(--glass-edge);
+    -webkit-backdrop-filter: blur(24px) saturate(120%);
+    backdrop-filter: blur(24px) saturate(120%);
+    box-shadow: 0 18px 55px rgba(0,0,0,.19);
+  }
+  .forecast-day,
+  .forecast-hour,
+  .forecast-hour.current,
+  .q-trans,
+  .quran-dialog .q-trans,
+  .quran-dialog input:not([type="checkbox"]):not([type="range"]),
+  .quran-dialog select,
+  .lookup input:not([type="checkbox"]):not([type="range"]),
+  .opts input:not([type="checkbox"]):not([type="range"]),
+  .opts select {
+    background: var(--tile-surface);
+    background-image: none;
+    border-color: transparent;
+    box-shadow: none;
+    -webkit-backdrop-filter: blur(7px) saturate(110%);
+    backdrop-filter: blur(7px) saturate(110%);
+  }
+  .forecast-hour.current {
+    outline: 1px solid var(--line-strong);
+    outline-offset: -1px;
+  }
+  .quran-dialog button:not(.forecast-close),
+  .forecast-dialog button:not(.forecast-close),
+  .lookup button,
+  .opts button {
+    background: var(--tile-surface);
+    background-image: none;
+    color: var(--fg);
+    border: 1px solid transparent;
+    box-shadow: none;
+    -webkit-backdrop-filter: blur(7px) saturate(110%);
+    backdrop-filter: blur(7px) saturate(110%);
+  }
+  .quran-dialog button:not(.forecast-close):hover:not(:disabled),
+  .forecast-dialog button:not(.forecast-close):hover:not(:disabled),
+  .lookup button:hover:not(:disabled),
+  .opts button:hover:not(:disabled) {
+    background: var(--control-hover);
+    box-shadow: none;
+  }
+  /* Solid play button gives the primary audio action a clear affordance. */
+  .quran-dialog #q-play,
+  .quran-dialog #q-play:hover:not(:disabled) {
+    background: var(--fg);
+    color: var(--bg);
+    border-color: transparent;
+    box-shadow: none;
+  }
+  /* The weather chart's overlay button remains unobtrusive. */
+  #trend-play, #trend-play:hover {
+    background: var(--tile-surface);
+    background-image: none;
+    color: var(--fg);
+    border-color: transparent;
+    box-shadow: none;
+  }
+  /* No gradient fills or raised highlights on preset chips / player fields. */
+  .q-presets button,
+  .q-presets button.secondary,
+  .q-jump input,
+  .q-jump select {
+    background: var(--tile-surface);
+    background-image: none;
+    box-shadow: none;
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .forecast-dialog, .quran-dialog, .details-dialog,
+    .q-trans, .forecast-day, .forecast-hour,
+    .quran-dialog button:not(.forecast-close),
+    .quran-dialog input:not([type="checkbox"]):not([type="range"]),
+    .quran-dialog select { background: var(--field) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+    .quran-dialog #q-play { background: var(--fg) !important; color: var(--bg) !important; }
+  }
 </style>
 </head>
 <body data-waqt="isha">

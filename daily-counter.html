@@ -56,10 +56,131 @@ dialog{border:0;background:transparent;color:inherit;padding:14px;width:min(100%
 .grid.is-reordering .tile:not(.drag-placeholder){transition:none}
 .grid.is-reordering .tile:active{transform:none}
 @media(prefers-reduced-motion:reduce){.tile.drag-preview{transition:none!important}}
+
+/* Harmonized with the prayer-time app: unobtrusive pattern, flat frosted surfaces,
+   borderless idle tiles, no gradients on UI elements. */
+:root {
+  --bg:#0f1b33;
+  --fg:#dce6f5;
+  --muted:#b4c4dc;
+  --edge:rgba(220,230,245,.22);
+  --shine:rgba(255,255,255,.27);
+  --accent:#cbe9f1;
+  --glass:rgba(255,255,255,.09);
+  --glass-strong:rgba(255,255,255,.14);
+  --pattern-ink:#dce9ff;
+  --pattern-opacity:.20;
+}
+body {
+  background-color:#0b1931;
+  background-image:
+    radial-gradient(ellipse 64% 65% at 9% 13%,rgba(80,164,209,.25),transparent 72%),
+    radial-gradient(ellipse 58% 70% at 91% 79%,rgba(142,110,204,.22),transparent 76%),
+    radial-gradient(ellipse 53% 52% at 68% 5%,rgba(76,157,154,.13),transparent 74%),
+    linear-gradient(145deg,#142947 0%,#0b1931 55%,#283a60 100%);
+  background-attachment:fixed;
+  isolation:isolate;
+}
+body::before {
+    background-image: none;
+    background-color: var(--pattern-ink);
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120' fill='none' stroke='white' stroke-width='.65'%3E%3Cpath d='M60 5 78 42 115 60 78 78 60 115 42 78 5 60 42 42Z'/%3E%3Cpath d='M60 23 86 34 97 60 86 86 60 97 34 86 23 60 34 34Z'/%3E%3Cpath d='M60 5V23M60 97V115M5 60H23M97 60H115M0 0 34 34M86 86 120 120M120 0 86 34M34 86 0 120'/%3E%3Cpath d='M60 36 84 60 60 84 36 60Z'/%3E%3Ccircle cx='60' cy='60' r='3'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120' fill='none' stroke='white' stroke-width='.65'%3E%3Cpath d='M60 5 78 42 115 60 78 78 60 115 42 78 5 60 42 42Z'/%3E%3Cpath d='M60 23 86 34 97 60 86 86 60 97 34 86 23 60 34 34Z'/%3E%3Cpath d='M60 5V23M60 97V115M5 60H23M97 60H115M0 0 34 34M86 86 120 120M120 0 86 34M34 86 0 120'/%3E%3Cpath d='M60 36 84 60 60 84 36 60Z'/%3E%3Ccircle cx='60' cy='60' r='3'/%3E%3C/svg%3E");
+    -webkit-mask-size: 120px 120px;
+    mask-size: 120px 120px;
+    -webkit-mask-position: center center;
+    mask-position: center center;
+    transition: background-color 1.2s ease, opacity 1.2s ease;
+  }
+body::before {z-index:0;pointer-events:none;opacity:var(--pattern-opacity);}
+.shell {z-index:1;}
+.tile,.dialog-card,.stat,.round-btn,.increment,.add,.btn,.focus-tap,input[type=text],.empty,.chart-bar,.tile.drag-preview {
+  background-image:none;
+  -webkit-backdrop-filter:blur(12px) saturate(115%);
+  backdrop-filter:blur(12px) saturate(115%);
+}
+.tile {
+  background-color:var(--glass);
+  border:1px solid transparent;
+  box-shadow:0 6px 20px rgba(0,8,25,.055);
+}
+.tile::after {display:none;}
+.tile:hover,.tile:focus-within {
+  border-color:rgba(220,235,250,.36);
+  box-shadow:0 7px 22px rgba(0,8,25,.10);
+}
+.tile.dragging {border-color:rgba(220,235,250,.42);box-shadow:0 8px 25px rgba(0,8,25,.13);}
+.tile.drag-placeholder {border:1px dashed rgba(215,237,250,.34);background:rgba(255,255,255,.03);box-shadow:none;}
+.tile.drag-preview {background:rgba(43,65,91,.94);border:1px solid rgba(220,235,250,.35);box-shadow:0 20px 50px rgba(0,8,25,.22);}
+.add,.round-btn,.increment,.btn,.icon-btn,.stat {
+  box-shadow:none;
+}
+.add,.round-btn,.increment,.btn,.stat {
+  background-color:rgba(255,255,255,.095);
+  border:1px solid transparent;
+  color:var(--fg);
+}
+.add,.increment,.btn.primary {
+  background-color:rgba(202,230,244,.17);
+  border-color:transparent;
+  color:#f0f8ff;
+}
+.add:hover,.round-btn:hover,.increment:hover,.btn:hover,.icon-btn:hover {
+  background-color:rgba(228,240,255,.19);
+}
+.btn.danger {color:#ffd8d8;border-color:rgba(255,174,174,.22);}
+.dialog-card {
+  background-color:rgba(19,34,57,.94);
+  border:1px solid rgba(225,239,255,.20);
+  box-shadow:0 20px 65px rgba(0,5,20,.35);
+}
+input[type=text],.stat {background-color:rgba(255,255,255,.075);}
+input[type=text] {border-color:rgba(225,239,255,.20);}
+.focus-tap {
+  background-color:rgba(202,230,244,.14);
+  border:1px solid rgba(220,238,255,.38);
+  box-shadow:none;
+}
+.focus-tap:hover {background-color:rgba(202,230,244,.21);}
+.focus-instruction {color:var(--muted);}
+.chart-bar {background-color:rgba(177,217,229,.53);box-shadow:none;}
+.bar-col.today .chart-bar {background-color:rgba(220,248,250,.89);}
+.empty {background-color:rgba(255,255,255,.035);}
+@media(prefers-reduced-transparency:reduce){
+  .tile,.dialog-card,.stat,.round-btn,.increment,.add,.btn,.focus-tap,input[type=text] {
+    -webkit-backdrop-filter:none;backdrop-filter:none;
+  }
+  .tile {background-color:#283953;}
+  .dialog-card {background-color:#1b2c47;}
+}
+
+
+/* Same understated navigation control as the prayer-time screen. */
+.counter-nav {display:flex;align-items:center;height:2rem;margin:0 0 12px;}
+.counter-back {display:grid;place-items:center;width:2rem;height:2rem;min-height:0;padding:0;border:0;border-radius:50%;background:transparent;color:var(--fg);opacity:.65;box-shadow:none;cursor:pointer;}
+.counter-back svg {width:1.15rem;height:1.15rem;}
+.counter-back:hover,.counter-back:focus-visible {opacity:1;background:transparent;box-shadow:none;}
+/* Bottom-row settings control shares the other action buttons' simple glass style. */
+.tile-actions .card-settings{display:grid;place-items:center;padding:0}
+.tile-actions .card-settings svg{display:block;width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* Compact statistics actions — edit beside title, delete beside close. */
+.stats-heading{align-items:flex-start}
+.stats-heading-title{min-width:0;flex:1}
+.stats-title-line{display:flex;align-items:center;gap:5px;min-width:0}
+.stats-title-line h2{min-width:0;overflow-wrap:anywhere}
+.stats-heading-actions{display:flex;align-items:center;gap:3px;flex:none}
+.stats-heading .icon-btn{width:34px;height:34px;border:0;display:grid;place-items:center;flex:none}
+.stats-heading .icon-btn svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.stats-heading .stats-rename{color:var(--muted);margin-top:2px}
+.stats-heading .stats-delete{color:var(--muted)}
+.stats-heading .stats-delete:hover{color:#ffd1c7;background:rgba(255,160,140,.10)}
+.stats-heading .x{font-size:1.7rem}
 </style>
 </head>
 <body>
 <main class="shell">
+  <nav class="counter-nav" aria-label="Page navigation"><button id="backBtn" class="counter-back" type="button" aria-label="Back to home" title="Back to home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button></nav>
   <header class="top"><div><p class="eyebrow">A little progress, every day</p><h1>Daily Counter</h1><p class="date" id="todayLabel"></p></div><button class="add" id="addBtn" type="button"><span class="plus-icon" aria-hidden="true">+</span> New counter</button></header>
   <div class="intro"><h2>Your counters</h2><span id="counterSummary"></span></div>
   <section class="grid" id="counterGrid" aria-label="Counters"></section>
@@ -67,10 +188,11 @@ dialog{border:0;background:transparent;color:inherit;padding:14px;width:min(100%
 </main>
 <dialog id="focusDialog" class="focus-dialog" aria-labelledby="focusTitle"><div class="dialog-card focus-card"><div class="modal-heading focus-heading"><div><h2 id="focusTitle"></h2></div><button type="button" class="icon-btn x" data-close="focusDialog" aria-label="Close focus mode">×</button></div><div class="focus-center"><p class="focus-date" id="focusDate"></p><button type="button" id="focusTap" class="focus-tap" aria-label="Add one to today's count"><span class="focus-count" id="focusCount">0</span></button></div><div class="focus-bottom"><button type="button" id="focusMinus" class="btn" aria-label="Subtract one">−1</button><button type="button" id="focusStats" class="btn" aria-label="View counter history">Statistics</button></div></div></dialog>
 <dialog id="newDialog" aria-labelledby="newTitle"><div class="dialog-card"><div class="modal-heading"><div><p>CREATE</p><h2 id="newTitle">New counter</h2></div><button type="button" class="icon-btn x" data-close="newDialog" aria-label="Close">×</button></div><form id="newForm"><label class="field-label" for="counterName">Counter name</label><input id="counterName" type="text" maxlength="65" placeholder="e.g. Dhikr, Water, Reading" required autocomplete="off"><div class="dialog-actions"><button type="button" class="btn" data-close="newDialog">Cancel</button><button class="btn primary" type="submit">Create counter</button></div></form></div></dialog>
-<dialog id="statsDialog" aria-labelledby="statsTitle"><div class="dialog-card"><div class="modal-heading"><div><p>DAILY HISTORY</p><h2 id="statsTitle"></h2></div><button type="button" class="icon-btn x" data-close="statsDialog" aria-label="Close">×</button></div><div class="stats-overview"><div class="stat"><b id="statToday">0</b><span>Today</span></div><div class="stat"><b id="statSeven">0</b><span>Last 7 days</span></div><div class="stat"><b id="statAll">0</b><span>All time</span></div></div><p class="section-title">Last 14 days</p><div class="chart" id="statsChart" role="img" aria-label="Bar chart of counts for the last 14 days"></div><div class="chart-labels"><span id="chartStart"></span><span>Today</span></div><p class="section-title">Recent days</p><div class="history" id="historyList"></div><div class="stats-footer"><button type="button" class="subtle-btn" id="renameBtn">Rename</button><div class="dialog-actions"><button type="button" class="btn danger" id="deleteBtn">Delete</button><button type="button" class="btn primary" data-close="statsDialog">Done</button></div></div></div></dialog>
+<dialog id="statsDialog" aria-labelledby="statsTitle"><div class="dialog-card"><div class="modal-heading stats-heading"><div class="stats-heading-title"><p>DAILY HISTORY</p><div class="stats-title-line"><h2 id="statsTitle"></h2><button type="button" class="icon-btn stats-rename" id="renameBtn" aria-label="Rename counter" title="Rename counter"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L9 17l-4 1 1-4Z"/></svg></button></div></div><div class="stats-heading-actions"><button type="button" class="icon-btn stats-delete" id="deleteBtn" aria-label="Delete counter" title="Delete counter"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6m5 4v7m4-7v7"/></svg></button><button type="button" class="icon-btn x" data-close="statsDialog" aria-label="Close">×</button></div></div><div class="stats-overview"><div class="stat"><b id="statToday">0</b><span>Today</span></div><div class="stat"><b id="statSeven">0</b><span>Last 7 days</span></div><div class="stat"><b id="statAll">0</b><span>All time</span></div></div><p class="section-title">Last 14 days</p><div class="chart" id="statsChart" role="img" aria-label="Bar chart of counts for the last 14 days"></div><div class="chart-labels"><span id="chartStart"></span><span>Today</span></div><p class="section-title">Recent days</p><div class="history" id="historyList"></div></div></dialog>
 <script>
 (()=>{'use strict';
 const KEY='daily-counter-v1';
+ document.getElementById('backBtn').addEventListener('click',()=>{window.location.href='/';});
 const $=id=>document.getElementById(id);
 const fmt=new Intl.NumberFormat(undefined);
 const pad=n=>String(n).padStart(2,'0');
@@ -83,7 +205,7 @@ let counters=load(),selected=null,focused=null,lastDay=dayKey();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(counters));return true}catch(e){alert('Your browser could not save the counts. Check that local storage is enabled.');return false}}
 function safeCount(c,key){const n=Number(c.days[key]);return Number.isFinite(n)&&n>0?Math.floor(n):0}
 function current(){return counters.find(c=>c.id===selected)}
-function render(){const day=dayKey();lastDay=day;$('todayLabel').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'});$('counterSummary').textContent=`${counters.length} ${counters.length===1?'counter':'counters'}`;const grid=$('counterGrid');grid.replaceChildren();if(!counters.length){const empty=document.createElement('div');empty.className='empty';empty.innerHTML='<strong>Start with one small habit</strong><p>Choose “New counter” to track something each day.</p>';grid.append(empty);return}for(const c of counters){const tile=document.createElement('article');tile.className='tile';tile.dataset.counterId=c.id;tile.tabIndex=0;tile.setAttribute('role','button');tile.setAttribute('aria-label',`Focus on ${c.name}`);tile.addEventListener('click',e=>{if(e.target.closest('button'))return;openFocus(c.id)});tile.addEventListener('keydown',e=>{if(e.target!==tile)return;if(e.key==='Enter'||e.key===' '){e.preventDefault();openFocus(c.id)}});const head=document.createElement('div');head.className='tile-head';const h=document.createElement('h3');h.textContent=c.name;const stats=document.createElement('button');stats.type='button';stats.className='icon-btn';stats.setAttribute('aria-label',`Statistics for ${c.name}`);stats.title='Daily statistics';stats.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.7 3.5h4.6l.6 2.2 1.7.9 2.1-.8 2.3 4-1.7 1.5v1.9l1.7 1.5-2.3 4-2.1-.8-1.7.9-.6 2.2H9.7l-.6-2.2-1.7-.9-2.1.8-2.3-4 1.7-1.5v-1.9L3 9.8l2.3-4 2.1.8 1.7-.9z"/><circle cx="12" cy="12" r="3"/></svg>';stats.title='Counter settings and statistics';stats.setAttribute('aria-label',`Settings and statistics for ${c.name}`);stats.addEventListener('click',()=>openStats(c.id));const headerActions=document.createElement('div');headerActions.className='tile-head-actions';const grip=document.createElement('button');grip.type='button';grip.className='icon-btn drag-handle';grip.title='Drag to reorder';grip.setAttribute('aria-label',`Drag to reorder ${c.name}; use arrow keys to move`);grip.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="5" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="19" r="1"/></svg>';grip.querySelectorAll('circle').forEach(circle=>{circle.style.fill='currentColor';circle.style.stroke='none'});grip.addEventListener('pointerdown',e=>beginReorder(e,c.id,tile,grip));grip.addEventListener('keydown',e=>{if(e.key==='ArrowUp'||e.key==='ArrowLeft'||e.key==='ArrowDown'||e.key==='ArrowRight'){e.preventDefault();e.stopPropagation();moveCounter(c.id,(e.key==='ArrowUp'||e.key==='ArrowLeft')?-1:1);const next=[...document.querySelectorAll('.tile')].find(el=>el.dataset.counterId===c.id);next?.querySelector('.drag-handle')?.focus()}});headerActions.append(stats,grip);head.append(h,headerActions);const count=document.createElement('div');count.className='count';count.textContent=fmt.format(safeCount(c,day));const label=document.createElement('p');label.className='count-label';label.textContent='today';const actions=document.createElement('div');actions.className='tile-actions';const minus=document.createElement('button');minus.type='button';minus.className='round-btn';minus.textContent='−';minus.setAttribute('aria-label',`Subtract one from ${c.name}`);minus.disabled=!safeCount(c,day);minus.addEventListener('click',()=>change(c.id,-1));const plus=document.createElement('button');plus.type='button';plus.className='increment';plus.textContent='+1';plus.setAttribute('aria-label',`Add one to ${c.name}`);plus.addEventListener('click',()=>change(c.id,1));const history=document.createElement('button');history.type='button';history.className='round-btn';history.textContent='▥';history.title='History';history.setAttribute('aria-label',`History for ${c.name}`);history.addEventListener('click',()=>openStats(c.id));actions.append(minus,plus,history);tile.append(head,count,label,actions);grid.append(tile)}}
+function render(){const day=dayKey();lastDay=day;$('todayLabel').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'});$('counterSummary').textContent=`${counters.length} ${counters.length===1?'counter':'counters'}`;const grid=$('counterGrid');grid.replaceChildren();if(!counters.length){const empty=document.createElement('div');empty.className='empty';empty.innerHTML='<strong>Start with one small habit</strong><p>Choose “New counter” to track something each day.</p>';grid.append(empty);return}for(const c of counters){const tile=document.createElement('article');tile.className='tile';tile.dataset.counterId=c.id;tile.tabIndex=0;tile.setAttribute('role','button');tile.setAttribute('aria-label',`Focus on ${c.name}`);tile.addEventListener('click',e=>{if(e.target.closest('button'))return;openFocus(c.id)});tile.addEventListener('keydown',e=>{if(e.target!==tile)return;if(e.key==='Enter'||e.key===' '){e.preventDefault();openFocus(c.id)}});const head=document.createElement('div');head.className='tile-head';const h=document.createElement('h3');h.textContent=c.name;const stats=document.createElement('button');stats.type='button';stats.className='icon-btn';stats.setAttribute('aria-label',`Statistics for ${c.name}`);stats.title='Daily statistics';stats.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.7 3.5h4.6l.6 2.2 1.7.9 2.1-.8 2.3 4-1.7 1.5v1.9l1.7 1.5-2.3 4-2.1-.8-1.7.9-.6 2.2H9.7l-.6-2.2-1.7-.9-2.1.8-2.3-4 1.7-1.5v-1.9L3 9.8l2.3-4 2.1.8 1.7-.9z"/><circle cx="12" cy="12" r="3"/></svg>';stats.title='Counter settings and statistics';stats.setAttribute('aria-label',`Settings and statistics for ${c.name}`);stats.addEventListener('click',()=>openStats(c.id));const headerActions=document.createElement('div');headerActions.className='tile-head-actions';const grip=document.createElement('button');grip.type='button';grip.className='icon-btn drag-handle';grip.title='Drag to reorder';grip.setAttribute('aria-label',`Drag to reorder ${c.name}; use arrow keys to move`);grip.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="5" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="19" r="1"/></svg>';grip.querySelectorAll('circle').forEach(circle=>{circle.style.fill='currentColor';circle.style.stroke='none'});grip.addEventListener('pointerdown',e=>beginReorder(e,c.id,tile,grip));grip.addEventListener('keydown',e=>{if(e.key==='ArrowUp'||e.key==='ArrowLeft'||e.key==='ArrowDown'||e.key==='ArrowRight'){e.preventDefault();e.stopPropagation();moveCounter(c.id,(e.key==='ArrowUp'||e.key==='ArrowLeft')?-1:1);const next=[...document.querySelectorAll('.tile')].find(el=>el.dataset.counterId===c.id);next?.querySelector('.drag-handle')?.focus()}});headerActions.append(grip);head.append(h,headerActions);const count=document.createElement('div');count.className='count';count.textContent=fmt.format(safeCount(c,day));const label=document.createElement('p');label.className='count-label';label.textContent='today';const actions=document.createElement('div');actions.className='tile-actions';const minus=document.createElement('button');minus.type='button';minus.className='round-btn';minus.textContent='−';minus.setAttribute('aria-label',`Subtract one from ${c.name}`);minus.disabled=!safeCount(c,day);minus.addEventListener('click',()=>change(c.id,-1));const plus=document.createElement('button');plus.type='button';plus.className='increment';plus.textContent='+1';plus.setAttribute('aria-label',`Add one to ${c.name}`);plus.addEventListener('click',()=>change(c.id,1));stats.className='round-btn card-settings';stats.title='Counter settings and statistics';actions.append(minus,plus,stats);tile.append(head,count,label,actions);grid.append(tile)}}
 function moveCounter(id,delta){const from=counters.findIndex(c=>c.id===id);if(from<0)return;const to=Math.max(0,Math.min(counters.length-1,from+delta));if(to===from)return;const [item]=counters.splice(from,1);counters.splice(to,0,item);save();render()}
 let reorderInProgress=false;
 function beginReorder(e,id,tile,handle){
