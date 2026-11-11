@@ -17,10 +17,10 @@
  * band at the bottom. No buttons, legends or credits, and nothing depends on
  * what happens to be scrolled into view.
  *
- * The index's Quran exploration map gets its own card, a 9:16 poster: the
- * reader's own dated line, two large circular progress rings (pages visited,
- * verses studied), the map as one rectangular bitmap that spans the card, a
- * GitHub-style key, the counts and the brand band.
+ * The index's Quran Exploration Map gets its own card, a 9:16 poster: the
+ * reader's own dated line, two large circular progress rings that carry both
+ * counts under them, the map as one rectangular bitmap that spans the card, a
+ * two-row key, and the brand band.
  *
  * Drawing is synchronous, so the file can be produced inside the tap: Safari
  * requires navigator.share() to run within the user gesture, and a canvas
@@ -427,15 +427,15 @@
 		var mapH = MAP_ROWS * MAP_CELL;
 
 		// A story-sized poster: the reader's own line, the two rings, the
-		// map, its key, the counts and the tag, all inside one 9:16 frame.
+		// map, its key and the tag, all inside one 9:16 frame. The rings
+		// already spell out both counts, so there is no extra counts line.
 		var cardH = MAP_CARD_H;
-		var titleY = 84;
+		var titleY = 82;
 		var msgY = 122;
-		var ringsY = 250;
-		var mapTop = 362;
-		var legendY = 610;
-		var countsY = 652;
-		var tagY = 692;
+		var ringsY = 254;
+		var mapTop = 376;
+		var legendY = 616;
+		var tagY = 686;
 
 		var out = document.createElement('canvas');
 		out.width = OUTPUT_W;
@@ -461,25 +461,25 @@
 
 		ctx.textAlign = 'center';
 		ctx.fillStyle = titleColor;
-		ctx.font = fontFor(TITLE, 26);
+		ctx.font = fontFor(TITLE, 28);
 		ctx.fillText('Quran Exploration Map', MAP_W / 2, titleY);
 
 		ctx.fillStyle = dark ? 'rgba(255,255,255,.74)' : 'rgba(0,0,0,.64)';
-		ctx.font = "400 16px 'Open Sans', system-ui, sans-serif";
+		ctx.font = "400 17px 'Open Sans', system-ui, sans-serif";
 		var msgLines = wrap(ctx, card.message || mapMessage(), MAP_W - PAD * 2);
 		for (var m = 0; m < msgLines.length; m++) {
-			ctx.fillText(msgLines[m], MAP_W / 2, msgY + m * 21);
+			ctx.fillText(msgLines[m], MAP_W / 2, msgY + m * 24);
 		}
 
 		var pagesPct = (card.pages / MAP_PAGES) * 100;
 		var versesPct = (card.deep / MAP_VERSES) * 100;
 
-		// The rings are the card's headline: r=42 with an 11 px stroke, and
-		// the label/count sit beside each one so the stats row stays short
-		// and the map gets the rest of the height.
+		// The rings are the card's headline: a percentage inside, and the
+		// label and count centred underneath, so both stats read at a glance
+		// without repeating them again at the bottom of the poster.
 		function ringStat(cx, pct, color, label, note) {
-			var r = 42;
-			ctx.lineWidth = 11;
+			var r = 46;
+			ctx.lineWidth = 12;
 			ctx.lineCap = 'butt';
 			ctx.beginPath();
 			ctx.arc(cx, ringsY, r, 0, Math.PI * 2);
@@ -495,25 +495,22 @@
 			}
 			ctx.lineCap = 'butt';
 			ctx.textAlign = 'center';
-			ctx.fillStyle = dark ? 'rgba(255,255,255,.92)' : 'rgba(0,0,0,.82)';
-			ctx.font = "700 21px 'Open Sans', system-ui, sans-serif";
+			ctx.fillStyle = dark ? 'rgba(255,255,255,.94)' : 'rgba(0,0,0,.85)';
+			ctx.font = "700 25px 'Open Sans', system-ui, sans-serif";
 			ctx.fillText(pctLabel(pct), cx, ringsY + 1);
 
-			ctx.textAlign = 'left';
 			ctx.fillStyle = dark ? 'rgba(255,255,255,.9)' : 'rgba(0,0,0,.8)';
-			ctx.font = "600 15px 'Open Sans', system-ui, sans-serif";
-			ctx.fillText(label, cx + 52, ringsY - 10);
+			ctx.font = "600 17px 'Open Sans', system-ui, sans-serif";
+			ctx.fillText(label, cx, ringsY + r + 30);
 			ctx.fillStyle = muted;
-			ctx.font = "400 12.5px 'Open Sans', system-ui, sans-serif";
-			ctx.fillText(note, cx + 52, ringsY + 11);
+			ctx.font = "400 14px 'Open Sans', system-ui, sans-serif";
+			ctx.fillText(note, cx, ringsY + r + 52);
 		}
 
-		var blockW = 190;
-		var blockGap = 30;
-		var blockX = (MAP_W - blockW * 2 - blockGap) / 2;
-		ringStat(blockX + 42, pagesPct, ringLight,
+		var ringGap = 100;
+		ringStat(MAP_W / 2 - ringGap, pagesPct, ringLight,
 			'Pages visited', card.pages + ' of 604');
-		ringStat(blockX + blockW + blockGap + 42, versesPct, ringDeep,
+		ringStat(MAP_W / 2 + ringGap, versesPct, ringDeep,
 			'Verses studied', card.deep.toLocaleString() + ' of 6,236');
 
 		// Subsampling: every verse lands in a cell, and a cell takes the
@@ -567,56 +564,52 @@
 		ctx.drawImage(bmp, (MAP_W - mapW) / 2, mapTop, mapW, mapH);
 		ctx.imageSmoothingEnabled = true;
 
-		// The key lives on the card the way GitHub's does: the two categories
-		// spelled out, then the three deeper shades as a Less..More scale.
-		var sw = 11, g1 = 4, g2 = 13, g3 = 3;
-		ctx.font = "400 13px 'Open Sans', system-ui, sans-serif";
-		var wNot = ctx.measureText('Not yet').width;
-		var wPage = ctx.measureText('Page visited').width;
-		var wLess = ctx.measureText('Less').width;
-		var wMore = ctx.measureText('More').width;
-		var legendW = sw + g1 + wNot + g2 + sw + g1 + wPage + g2 + wLess +
-			g1 + sw + g3 + sw + g3 + sw + g1 + wMore;
-		var lx = (MAP_W - legendW) / 2;
+		// The key spells the shades out in two rows: the two page-level
+		// colours first, then the three verse-frequency greens with their
+		// multipliers, so nobody has to guess what "Less/More" means.
+		var sw = 15, gap = 7, groupGap = 30;
+		var legendFont = "400 17px 'Open Sans', system-ui, sans-serif";
+		ctx.font = legendFont;
 		ctx.textAlign = 'left';
 
-		function legendSwatch(rgb) {
+		function keySwatch(x, y, rgb) {
 			ctx.fillStyle = 'rgb(' + rgb.join(',') + ')';
-			ctx.fillRect(lx, legendY - sw / 2, sw, sw);
-			lx += sw;
+			ctx.fillRect(x, y - sw / 2, sw, sw);
 		}
-		function legendWord(text) {
-			lx += g1;
-			ctx.fillStyle = dark ? 'rgba(255,255,255,.68)' : 'rgba(0,0,0,.6)';
-			ctx.fillText(text, lx, legendY + 1);
-			lx += ctx.measureText(text).width;
+		function keyWord(x, y, text) {
+			ctx.fillStyle = dark ? 'rgba(255,255,255,.72)' : 'rgba(0,0,0,.62)';
+			ctx.fillText(text, x, y);
+			return x + ctx.measureText(text).width;
 		}
 
-		legendSwatch(shades[0]); legendWord('Not yet');
-		lx += g2;
-		legendSwatch(shades[1]); legendWord('Page visited');
-		lx += g2;
-		legendWord('Less');
-		lx += g3; legendSwatch(shades[2]);
-		lx += g3; legendSwatch(shades[3]);
-		lx += g3; legendSwatch(shades[4]);
-		legendWord('More');
+		var wNot = ctx.measureText('Not yet').width;
+		var wPage = ctx.measureText('Page visited').width;
+		var row1W = sw + gap + wNot + groupGap + sw + gap + wPage;
+		var lx = (MAP_W - row1W) / 2;
+		keySwatch(lx, legendY, shades[0]);
+		lx = keyWord(lx + sw + gap, legendY + 1, 'Not yet') + groupGap;
+		keySwatch(lx, legendY, shades[1]);
+		keyWord(lx + sw + gap, legendY + 1, 'Page visited');
+
+		var prefix = 'Verses opened: ';
+		var wOne = ctx.measureText('1×').width;
+		var wTwo = ctx.measureText('2×').width;
+		var wThree = ctx.measureText('3×+').width;
+		var row2W = ctx.measureText(prefix).width + sw + gap + wOne +
+			groupGap + sw + gap + wTwo + groupGap + sw + gap + wThree;
+		var lx2 = (MAP_W - row2W) / 2;
+		var y2 = legendY + 33;
+		lx2 = keyWord(lx2, y2, prefix);
+		keySwatch(lx2, y2 - 1, shades[2]);
+		lx2 = keyWord(lx2 + sw + gap, y2, '1×') + groupGap;
+		keySwatch(lx2, y2 - 1, shades[3]);
+		lx2 = keyWord(lx2 + sw + gap, y2, '2×') + groupGap;
+		keySwatch(lx2, y2 - 1, shades[4]);
+		keyWord(lx2 + sw + gap, y2, '3×+');
 
 		ctx.textAlign = 'center';
-		ctx.fillStyle = dark ? 'rgba(255,255,255,.6)' : 'rgba(0,0,0,.55)';
-		var counts = card.deep.toLocaleString() + ' of 6,236 verses studied · ' +
-			card.pages + ' of 604 pages visited.';
-		var countsSize = 14;
-		var countsMax = MAP_W - PAD * 2;
-		ctx.font = "400 " + countsSize + "px 'Open Sans', system-ui, sans-serif";
-		while (ctx.measureText(counts).width > countsMax && countsSize > 11) {
-			countsSize -= 0.5;
-			ctx.font = "400 " + countsSize + "px 'Open Sans', system-ui, sans-serif";
-		}
-		ctx.fillText(counts, MAP_W / 2, countsY);
-
 		ctx.fillStyle = muted;
-		ctx.font = "400 13px 'Open Sans', system-ui, sans-serif";
+		ctx.font = "400 15px 'Open Sans', system-ui, sans-serif";
 		ctx.fillText('#aayatun', MAP_W / 2, tagY);
 
 		/* Brand band: the site name, then the full URL under it. */
@@ -626,11 +619,11 @@
 
 		ctx.textAlign = 'center';
 		ctx.fillStyle = dark ? 'rgba(255,255,255,.86)' : 'rgba(0,0,0,.72)';
-		ctx.font = "600 15px 'Open Sans', system-ui, sans-serif";
+		ctx.font = "600 16px 'Open Sans', system-ui, sans-serif";
 		ctx.fillText('aayatun.com', MAP_W / 2, bandTop + BAND * 0.36);
 
 		var label = String(card.url || '');
-		var size = 11.5;
+		var size = 12;
 		var bandMax = MAP_W - PAD * 2;
 		ctx.fillStyle = dark ? 'rgba(255,255,255,.58)' : 'rgba(0,0,0,.46)';
 		ctx.font = "400 " + size + "px 'Open Sans', system-ui, sans-serif";
