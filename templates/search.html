@@ -31,6 +31,9 @@
 	}
 	.match {
 		background-color: yellow;
+		color: black;
+		padding: 0 1px;
+		border-radius: 2px;
 	}
 </style>
 
@@ -64,6 +67,9 @@
 			      <div class="item" data-value="all:">
 			        the entire Quran
 			      </div>
+			      <div class="item" data-value="ayah:">
+			        only in the Arabic verse
+			      </div>
 			      <div class="item" data-value="translation:">
 			        only in english translation
 			      </div>
@@ -72,6 +78,9 @@
 			      </div>
 			      <div class="item" data-value="bn_tafsir:">
 			        only in Tafsir Abu Bakr Zakaria
+			      </div>
+			      <div class="item" data-value="ai:">
+			        only in AI explanations
 			      </div>
 			    </div>
 			  </div>
@@ -114,15 +123,21 @@
 		data-position="bottom right"
 		data-html=
 		"<div class='ui basic segment' style='font-size: 90%; max-height: 50vh; overflow-y:auto; font-family: Open Sans'>
-			<h4>Use quotation to search for a phrase</h4>
-				<p>Example: &quot;But they who&quot;</p>
-			<h4>Use AND to conjunct two words</h4>
+			<h4>Jump to a verse</h4>
+				<p>Example: <strong>2:255</strong> (or 2/255)</p>
+			<h4>Use quotes for an exact phrase</h4>
+				<p>Example: &quot;in the name&quot;</p>
+			<h4>Use AND to require both words</h4>
 				<p>Example: garden AND pleasure</p>
 			<h4>Other boolean operators</h4>
 				<p>Example: garden NOT (pleasure OR elevated)</p>
-			<h4>Wildcard expressions</h4>
-				<p>Use ? to represent a single character and * to represent any number of characters</p>
-				<p>Example: jin? </p>
+			<h4>Wildcard</h4>
+				<p>Use * at the end of a word for word beginnings</p>
+				<p>Example: merc*</p>
+			<h4>Arabic &amp; Bengali search</h4>
+				<p>Arabic vowel marks are ignored, so بسم الله and الرحمن just work. Bengali works too, e.g. হিজরত</p>
+			<h4>Spelling doesn't need to be exact</h4>
+				<p>Typos are corrected automatically when nothing matches (e.g. &quot;dankness&quot; &rarr; darkness)</p>
 		</div>"
 		></i>
 		</div>
@@ -154,13 +169,19 @@
 
 	<div class="ui container" style="padding: 0 5%;">
 		<!-- <h3 style="font-family: Open Sans">Search result for "{{ query }}"</h3> -->
+		{% if corrected %}
+			<div class="ui info message" style="font-family: Open Sans;">Showing results for <strong>{{ corrected }}</strong> — no exact matches for &quot;{{ query }}&quot;.</div>
+		{% endif %}
+		{% if truncated %}
+			<div class="ui warning message" style="font-family: Open Sans;">Too many matches — showing the first 500. Try a narrower query or the filters above.</div>
+		{% endif %}
 		<div class="ui horizontal divider">
 	    Search Result ({{ results|length }})
 	  	</div>
 	  	<br>
 	  	{% if results|length == 0 %}
 	  		{% if suggestions|length > 0 %}
-	  			<p class="ui basic segment" style="text-align: center;">No result found! Did you mean- <strong><emp>{{ suggestions }}</emp></strong>?</p>
+	  			<p class="ui basic segment" style="text-align: center;">No result found! Did you mean- <strong>{{ suggestions|join(' ') }}</strong>?</p>
 	  		{% else %}
 				<p class="ui basic segment" style="text-align: center;">No result found!</p>
 	  		{% endif %}
@@ -184,8 +205,12 @@
 		    		<td style="text-align: center; padding: 5px;" class="selectable" onclick="showModal( {{ x.surah }} , {{ x.verse }} )"> <span class="surahlink" style="color: #0E6EB8"> {{ x.surah }}:{{ x.verse }} </span> <br> Surah {{ x.surah_name }} </td>
 		    		<td style="text-align: center;"> {{ x.actual_translation }} </td>
 		    		<td>
+		    			{% if x.chips %}
+		    				<p style="margin: 0 0 6px 0;">
+		    					{% for chip in x.chips %}<span class="ui mini teal label" style="margin-bottom: 3px;">{{ chip }}</span>{% endfor %}
+		    				</p>
+		    			{% endif %}
 
-		    			<!-- <p> {{ x.matched_term }} </p>   -->
 		    			{% if x.ayah %}
 		    				<h4 style="font-family: Open Sans">Matched in the verse</h4>
 
@@ -208,6 +233,12 @@
 		    			{% if x.en_tafsir %}
 		    				<h4 style="font-family: Open Sans">Matched in Tafsir Ibn Kathir</h4>
 		    				<p> ...{{ x.en_tafsir }}... </p>
+		    				<hr style="width: 50%; color: lightgray; opacity: 50%;">
+		    			{% endif %}
+
+		    			{% if x.ai %}
+		    				<h4 style="font-family: Open Sans">Matched in AI explanation <span style="font-size: 65%; color: gray; font-weight: normal;">(AI-generated)</span></h4>
+		    				<p> ...{{ x.ai }}... </p>
 		    				<hr style="width: 50%; color: lightgray; opacity: 50%;">
 		    			{% endif %}
 		    		</td>

@@ -13,7 +13,8 @@ import time
 from functools import lru_cache
 from datetime import datetime
 from urllib.parse import urlparse
-from flask import request, redirect, session, jsonify, make_response
+from flask import request, redirect, session, jsonify, make_response, url_for
+import re
 import searchtool as st
 
 @lru_cache(maxsize=1)
@@ -135,35 +136,44 @@ def details2(surah):
 		details=lib.get_verse_details(surah, 1), read_index=lib.verse_index(surah, 1),
 		surah_starts=lib.surah_starts(), api_token=api_token())))
 
+# "2:255" / "2/255" / "2.255" -> jump straight to the verse.
+_ref_re = re.compile(r'^\s*(\d{1,3})\s*[:/.\-]\s*(\d{1,3})\s*$')
+_search_fields = ('all', 'ayah', 'translation', 'en_tafsir', 'bn_tafsir', 'ai')
+
 @app.route('/search/', strict_slashes=False, methods = ['POST'])
 def search():
 	query_str = request.form['query_str']
 	n = 25
-	query_str_filter = query_str
-	t = "all:"
-	try:
-		t = request.form['target_field']
-		if t == "all:":
-			query_str_filter = query_str.strip()
-		else:
-			query_str_filter = t + "(" + query_str.strip() + ")"
-	except Exception:
-		pass
+	field = 'all'
+
+	ref = _ref_re.match(query_str)
+	if ref:
+		rs, rv = int(ref.group(1)), int(ref.group(2))
+		if lib.validate(rs, rv):
+			return redirect(url_for('details', surah=rs, verse=rv))
+
+	m = request.form.get('target_field')
+	if m:
+		f = m.split(':')[0].lower()
+		if f in _search_fields:
+			field = f
 
 	try:
-		m = request.form['limit']
-		if m == "-1":
+		limit = request.form.get('limit')
+		if limit == "-1":
 			n = None
-		else:
-			n = int(m)
+		elif limit is not None:
+			n = int(limit)
 	except Exception:
 		pass
 
-	results_dict, suggestion = st.index_search(query_str_filter, n)
+	results_dict, meta = st.index_search(query_str.strip(), n, field=field)
 	if n is None:
 		n = -1
 
-	return render_template('search.html', query=query_str, results=results_dict, suggestions=suggestion, limit_label=n, filter_value=t)
+	return render_template('search.html', query=query_str, results=results_dict,
+		suggestions=meta['suggestions'], corrected=meta['corrected'],
+		limit_label=n, filter_value=field + ':', truncated=meta['truncated'])
 
 # @app.route('/search/<query_str>', strict_slashes=False, methods = ['POST'])
 # def search2(query_str):

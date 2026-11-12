@@ -7,3 +7,7 @@ db/fonts/
 
 # session signing key (generated on first run)
 db/.secret_key
+
+# generated search index + typo vocabulary (rebuilt by build_search.py)
+db/search.db
+db/search_vocab.pkl
