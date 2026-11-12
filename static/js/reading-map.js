@@ -84,9 +84,18 @@
 	var openLink = document.getElementById('reading-map-open');
 	var nextBox = document.getElementById('reading-map-next');
 	var translationEl = document.getElementById('reading-map-translation');
+	var translationToggle = document.getElementById('reading-map-translation-toggle');
 	var translationCache = {};
 	var translationKey = null;
 	var apiToken = (document.querySelector('meta[name="aayatun-api-token"]') || {}).content || '';
+
+	function resetTranslationExpand()
+	{
+		if (!translationEl || !translationToggle) return;
+		translationEl.classList.remove('is-expanded');
+		translationToggle.textContent = 'more';
+		translationToggle.setAttribute('aria-expanded', 'false');
+	}
 
 	function hideTranslation()
 	{
@@ -94,6 +103,27 @@
 		if (!translationEl) return;
 		translationEl.hidden = true;
 		translationEl.textContent = '';
+		resetTranslationExpand();
+		if (translationToggle) translationToggle.hidden = true;
+	}
+
+	// Show the "more" toggle only when the two-line clamp hides text.
+	function syncTranslationToggle()
+	{
+		if (!translationEl || !translationToggle) return;
+		if (translationEl.classList.contains('is-expanded') || translationEl.hidden) {
+			translationToggle.hidden = translationEl.hidden;
+			return;
+		}
+		translationToggle.hidden = translationEl.scrollHeight <= translationEl.clientHeight + 1;
+	}
+
+	if (translationEl && translationToggle) {
+		translationToggle.addEventListener('click', function () {
+			var expanded = translationEl.classList.toggle('is-expanded');
+			translationToggle.textContent = expanded ? 'less' : 'more';
+			translationToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+		});
 	}
 
 	function showTranslation(i)
@@ -102,10 +132,14 @@
 		var loc = locate(i);
 		var key = loc.s.no + ':' + loc.verse;
 		translationKey = key;
+		resetTranslationExpand();
 		translationEl.hidden = false;
+		if (translationToggle) translationToggle.hidden = true;
 		if (Object.prototype.hasOwnProperty.call(translationCache, key)) {
-			translationEl.textContent = translationCache[key];
+			translationEl.textContent = translationCache[key]
+				? '“' + translationCache[key] + '”' : '';
 			translationEl.hidden = !translationCache[key];
+			if (!translationEl.hidden) syncTranslationToggle();
 			return;
 		}
 		translationEl.textContent = '…';
@@ -118,8 +152,9 @@
 			var t = (data && data.translation) || '';
 			translationCache[key] = t;
 			if (translationKey === key) {
-				translationEl.textContent = t;
+				translationEl.textContent = t ? '“' + t + '”' : '';
 				translationEl.hidden = !t;
+				if (!translationEl.hidden) syncTranslationToggle();
 			}
 		}).catch(function () {
 			translationCache[key] = '';
@@ -796,6 +831,10 @@
 	// returns to its hint and no square stays highlighted.
 	document.addEventListener('click', function (evt) {
 		if (selected < 0 || grid.contains(evt.target)) return;
+		// Clicks on the translation expander must not clear the selection.
+		var toggle = evt.target && evt.target.closest
+			? evt.target.closest('#reading-map-translation-toggle') : null;
+		if (toggle) return;
 		selected = -1;
 		var prev = grid.querySelector('.rg-cell.is-selected');
 		if (prev) prev.classList.remove('is-selected');

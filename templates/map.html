@@ -73,6 +73,7 @@
     .reading-map-translation {
         margin: 0;
         font-size: 82%;
+        font-style: italic;
         line-height: 1.4;
         opacity: .75;
         display: -webkit-box;
@@ -81,8 +82,36 @@
         overflow: hidden;
     }
 
-    .reading-map-translation[hidden] {
+    .reading-map-translation.is-expanded {
+        display: block;
+        -webkit-line-clamp: unset;
+        overflow: visible;
+    }
+
+    .reading-map-translation[hidden],
+    .reading-map-translation-toggle[hidden] {
         display: none !important;
+    }
+
+    /* Expander shown only when the clamped two lines hide text. */
+    .reading-map-translation-toggle {
+        flex: none;
+        align-self: flex-start;
+        border: 0;
+        background: none;
+        padding: 0 2px 0 0;
+        margin: -3px 0 0;
+        font-family: inherit;
+        font-size: 74%;
+        line-height: 1.4;
+        color: #2185d0;
+        cursor: pointer;
+    }
+
+    .reading-map-translation-toggle:hover,
+    .reading-map-translation-toggle:focus-visible {
+        text-decoration: underline;
+        outline: none;
     }
 
     #reading-map-hint {
@@ -912,6 +941,10 @@
         color: #ffb3b3;
     }
 
+    html.dark-theme .reading-map-translation-toggle {
+        color: #8cc8ff;
+    }
+
     html.dark-theme .reading-map-switch-track {
         background: rgba(255, 255, 255, .25);
     }
@@ -972,6 +1005,7 @@
 						<a id="reading-map-open" href="#" hidden></a>
 					</div>
 					<p class="reading-map-translation" id="reading-map-translation" hidden></p>
+					<button type="button" class="reading-map-translation-toggle" id="reading-map-translation-toggle" aria-expanded="false" hidden>more</button>
 					<div id="reading-map-next" class="reading-map-next"></div>
 				</div>
 				<div class="reading-map-card reading-map-stats">
