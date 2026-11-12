@@ -937,7 +937,11 @@ document.addEventListener('DOMContentLoaded', function () {
 		lastResort: 'top center',
 		exclusive: true,
 		hoverable: true,
-		distanceAway: 8
+		distanceAway: 8,
+		movePopup: false
+	});
+	window.addEventListener('pageshow', function () {
+		if ($.fn.popup) $('#more-apps-btn').popup('hide');
 	});
 	$('#more-apps-popup').on('click', 'a', function () {
 		$('#more-apps-btn').popup('hide');
@@ -960,7 +964,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 {% block end_ %}
 <div class="ui text container" style="font-family: 'Open Sans'; display: flex; flex: 0 0 auto; flex-direction: column-reverse;">
-		<p style="text-align: center; color: gray; opacity: 90%; padding-top: 2%; font-size: 70%;"><a href="https://github.com/OnixHoque/aayatun/tree/deploy" target="_blank" rel="noopener">Aayatun v2.0</a> | <a href="#" id="change-theme">Dark Theme</a> | <a href="#" id="more-apps-btn">More Apps</a> </p>
+		<p style="text-align: center; color: gray; opacity: 90%; padding-top: 2%; font-size: 70%;"><a href="https://github.com/OnixHoque/aayatun/tree/deploy" target="_blank" rel="noopener">Aayatun v2.0</a> | <a href="#" id="change-theme">Dark Theme</a> | <a href="#" id="more-apps-btn" role="button">More Apps</a> </p>
 		<div id="install-banner" class="ui mini message" style="display: none; color: gray">
 		    <i class="close icon" id="install-close" role="button" aria-label="Dismiss" tabindex="0"></i>
 		    <div class="header" id="install-header">
@@ -1103,6 +1107,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	;
 
 	const btnChangeTheme = document.querySelector('#change-theme');
+	if (btnChangeTheme) btnChangeTheme.addEventListener('click', function (e) { e.preventDefault(); });
 
 	if (is_dark_theme()==="true")
 		btnChangeTheme.innerHTML = 'Light Theme';
