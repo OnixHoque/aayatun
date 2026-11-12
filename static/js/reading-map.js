@@ -281,8 +281,15 @@
 	{
 		if (!themeLegend || !hasThemes) return;
 		var counts = themeCounts();
+		// Most used themes first; the id keeps the order stable on ties.
+		var order = [];
+		for (var t = 0; t < themes.length; t++) order.push(t);
+		order.sort(function (a, b) {
+			return counts[b] - counts[a] || a - b;
+		});
 		themeLegend.textContent = '';
-		for (var t = 0; t < themes.length; t++) {
+		for (var oi = 0; oi < order.length; oi++) {
+			var t = order[oi];
 			var item = document.createElement('button');
 			item.type = 'button';
 			item.className = 'rg-theme-key';
@@ -306,10 +313,39 @@
 
 	function setThemes(on)
 	{
+		var nav = window.AayatunNav;
+		var reduced = window.matchMedia &&
+			window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		var visible = grid && grid.getBoundingClientRect().width > 0;
+		// The switch flips 6,236 squares, so it goes through the site loading
+		// bar with a simple fade in/out instead of an animated color wash.
+		if (visible) {
+			if (nav && nav.loading) nav.loading();
+			else if (window.showLoading) window.showLoading();
+			if (!reduced) grid.classList.add('themes-fading');
+			window.setTimeout(function () {
+				applyThemeMode(on);
+				grid.classList.remove('themes-fading');
+				window.setTimeout(function () {
+					if (nav && nav.done) nav.done();
+					else if (window.hideLoading) window.hideLoading();
+				}, reduced ? 0 : 150);
+			}, reduced ? 0 : 90);
+			return;
+		}
+		applyThemeMode(on);
+	}
+
+	function applyThemeMode(on)
+	{
 		themesOn = !!on;
 		if (grid) grid.classList.toggle('themes-on', themesOn);
 		if (readingLegend) readingLegend.classList.toggle('themes-on', themesOn);
-		if (legendContext) legendContext.classList.toggle('is-visible', themesOn);
+		if (legendContext) {
+			legendContext.textContent = themesOn
+				? 'Verse Read Statistics:' : 'Page Read Statistics:';
+			legendContext.classList.add('is-visible');
+		}
 		if (legendRead) legendRead.hidden = !themesOn;
 		if (legendPage) legendPage.hidden = themesOn;
 		if (legendScale) legendScale.hidden = themesOn;
@@ -330,9 +366,12 @@
 
 	function initThemes()
 	{
+		if (legendContext) {
+			legendContext.textContent = 'Page Read Statistics:';
+			legendContext.classList.add('is-visible');
+		}
 		if (!hasThemes) {
 			if (themeToggle) themeToggle.hidden = true;
-			if (legendContext) legendContext.classList.remove('is-visible');
 			if (legendRead) legendRead.hidden = true;
 			if (themeLegend) themeLegend.hidden = true;
 			if (themeAttribution) themeAttribution.hidden = true;
@@ -341,7 +380,7 @@
 		renderThemeLegend();
 		var saved = null;
 		try { saved = localStorage.getItem('aayatun_read_map_themes_v1'); } catch (e) {}
-		setThemes(saved === '1');
+		applyThemeMode(saved === '1');
 		if (themeToggle && themeSwitchInput) {
 			themeToggle.hidden = false;
 			themeSwitchInput.addEventListener('change', function () {
@@ -361,16 +400,59 @@
 		}
 	}
 
+	// Box-size zoom for the grid itself: 100 %–200 % in 25 % steps, so the
+	// boxes stay readable on big screens. The pitch, the rows that fit,
+	// the axis ticks and the column flow all follow the zoom, and the step
+	// is remembered between visits.
+	var MAP_ZOOM = [100, 125, 150, 175, 200];
+	var mapZoomIndex = 0;
+	try {
+		var storedZoom = parseInt(localStorage.getItem('aayatun_map_zoom_v1'), 10);
+		if (storedZoom >= 0 && storedZoom < MAP_ZOOM.length) mapZoomIndex = storedZoom;
+	} catch (e) {}
+
+	function mapZoomFactor() { return MAP_ZOOM[mapZoomIndex] / 100; }
+	function pitch() { return 13 * mapZoomFactor(); }
+
+	var mapZoomOut = document.getElementById('map-zoom-out');
+	var mapZoomIn = document.getElementById('map-zoom-in');
+	var mapZoomLevel = document.getElementById('map-zoom-level');
+
+	function paintZoom(fit)
+	{
+		if (grid) grid.style.setProperty('--map-zoom', String(mapZoomFactor()));
+		if (mapZoomLevel) {
+			mapZoomLevel.textContent = MAP_ZOOM[mapZoomIndex] + '%';
+			mapZoomLevel.setAttribute('title', 'Zoom level: ' + MAP_ZOOM[mapZoomIndex] + '%');
+		}
+		if (mapZoomOut) mapZoomOut.disabled = mapZoomIndex === 0;
+		if (mapZoomIn) mapZoomIn.disabled = mapZoomIndex === MAP_ZOOM.length - 1;
+		try { localStorage.setItem('aayatun_map_zoom_v1', String(mapZoomIndex)); } catch (e) {}
+		if (fit && grid && grid.getBoundingClientRect().width > 0) layoutMap();
+	}
+
+	function stepZoom(delta)
+	{
+		var next = mapZoomIndex + delta;
+		if (next < 0 || next >= MAP_ZOOM.length) return;
+		mapZoomIndex = next;
+		paintZoom(true);
+	}
+
+	if (mapZoomOut) mapZoomOut.addEventListener('click', function () { stepZoom(-1); });
+	if (mapZoomIn) mapZoomIn.addEventListener('click', function () { stepZoom(1); });
+	paintZoom(false);
+
 	// One way only: the map takes whatever height is left in the viewport,
 	// and the resulting number of rows fixes how many columns 6,236 verses
 	// need. The columns then run off to the right and only the width scrolls.
-	var PITCH = 13;       // 10 px cell + 3 px gap
 	var mapRows = 0;
 
 	function layoutMap()
 	{
 		if (!grid || !scroll) return;
 		var top = scroll.getBoundingClientRect().top;
+		var zoom = mapZoomFactor();
 		// Leave room for the page ticks, the reading legend, the theme legend
 		// and the attribution line (when themes are on), the scrollbar and the
 		// frame padding, so the whole map block fits without scrolling.
@@ -380,11 +462,11 @@
 		var avail = window.innerHeight - top - reserved;
 		avail = Math.max(126,
 			Math.min(avail, Math.round(window.innerHeight * 0.7)));
-		var rows = Math.max(12, Math.floor((avail + 3) / PITCH));
+		var rows = Math.max(12, Math.floor((avail + 3 * zoom) / pitch()));
 		if (rows !== mapRows) {
 			mapRows = rows;
 			grid.style.setProperty('--map-rows', String(rows));
-			scroll.style.height = (rows * PITCH + 26) + 'px';
+			scroll.style.height = (rows * pitch() + 26) + 'px';
 		}
 		renderAxis();
 	}
@@ -397,7 +479,7 @@
 		if (!axis || !mapRows || !hasPageMap || !built) return;
 		var cells = grid.childElementCount;
 		if (!cells) return;
-		var width = Math.ceil(cells / mapRows) * PITCH - 3;
+		var width = Math.ceil(cells / mapRows) * pitch();
 		axis.style.width = width + 'px';
 
 		while (axis.firstChild) axis.removeChild(axis.firstChild);
@@ -408,7 +490,7 @@
 			if (no !== 1 && no % 50 !== 0) continue;
 			var verse = bounds[page];
 			if (!(verse >= 0) || verse >= VERSE_COUNT) continue;
-			var x = Math.floor((verse + breakBefore[verse]) / mapRows) * PITCH;
+			var x = Math.floor((verse + breakBefore[verse]) / mapRows) * pitch();
 			if (x - lastX < 90) continue;
 			var tick = document.createElement('span');
 			tick.style.left = x + 'px';

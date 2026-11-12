@@ -162,6 +162,22 @@
         width: min(92vw, 900px) !important;
     }
 
+    /* Tighten the header and subtitle so the map starts higher up. */
+    #reading-map-modal > .header {
+        padding: 11px 16px 2px;
+    }
+
+    #reading-map-modal > .content {
+        padding-top: 6px;
+    }
+
+    .reading-map-subtitle {
+        margin: 0 0 8px;
+        font-size: 72%;
+        line-height: 1.35;
+        opacity: .6;
+    }
+
     .reading-map-cards {
         display: grid;
         grid-template-columns: minmax(0, 1fr);
@@ -265,12 +281,14 @@
         min-width: 0;
     }
 
+    /* The two progress rows stack vertically so the lead card can take
+       more width. */
     .reading-map-stats {
-        flex-direction: row;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px 18px;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        align-items: stretch;
+        justify-content: center;
+        gap: 10px;
     }
 
     .reading-map-card-share {
@@ -325,7 +343,7 @@
        frame, the way GitHub puts its "Learn how we count contributions" link
        at the far end of the key. */
     #reading-map-clear {
-        margin-left: auto;
+        margin-left: 8px;
         border: 0;
         background: none;
         padding: 2px 0;
@@ -354,7 +372,7 @@
 
     @media (min-width: 900px) {
         .reading-map-cards {
-            grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.45fr) minmax(0, 0.9fr);
+            grid-template-columns: minmax(0, 1.45fr) minmax(0, 1.1fr) minmax(0, 0.9fr);
         }
 
         .reading-map-card-lead {
@@ -432,6 +450,29 @@
         display: inline-flex;
         align-items: center;
         gap: 5px;
+    }
+
+    /* The zoom stepper is pushed to the right end of the legend row,
+       next to Clear Visit History, and sized like the theme switch. */
+    .reading-map-zoom {
+        margin-left: auto;
+        gap: 4px;
+    }
+
+    .reading-map-zoom .ui.circular.basic.icon.button {
+        width: 26px;
+        height: 26px;
+        min-height: 0;
+        min-width: 0;
+        padding: 0;
+        margin: 0;
+        font-size: .72rem;
+        box-shadow: none;
+    }
+
+    .reading-map-zoom .mushaf-zoom-level {
+        min-width: 38px;
+        font-size: 72%;
     }
 
     /* The [hidden] attribute must win over the inline-flex display above. */
@@ -512,21 +553,27 @@
     }
 
     /* Column-major: the row count is set by the viewport, the number of
-       columns follows from it, so the grid is always wider than the box. */
+       columns follows from it, so the grid is always wider than the box.
+       The box size zooms through --map-zoom (100 %–200 %). */
     .reading-map-grid {
         display: grid;
-        grid-template-rows: repeat(var(--map-rows, 28), 10px);
+        grid-template-rows: repeat(var(--map-rows, 28), calc(10px * var(--map-zoom, 1)));
         grid-auto-flow: column;
-        grid-auto-columns: 10px;
-        gap: 3px;
+        grid-auto-columns: calc(10px * var(--map-zoom, 1));
+        gap: calc(3px * var(--map-zoom, 1));
         align-content: start;
         width: max-content;
+        transition: opacity .08s linear;
+    }
+
+    .reading-map-grid.themes-fading {
+        opacity: 0;
     }
 
     /* A blank cell at each surah start, so the blocks read apart. */
     .rg-break {
-        width: 10px;
-        height: 10px;
+        width: calc(10px * var(--map-zoom, 1));
+        height: calc(10px * var(--map-zoom, 1));
     }
 
     /* A real scrollbar instead of a native one (phones hide theirs), so the
@@ -562,16 +609,16 @@
         background: rgba(34, 36, 38, .5);
     }
 
+    /* The fill changes are deliberately instant (they are cheap to paint);
+       opacity is what animates when themes dim or the grid fades. */
     .rg-cell {
         position: relative;
-        width: 10px;
-        height: 10px;
-        border-radius: 2px;
+        width: calc(10px * var(--map-zoom, 1));
+        height: calc(10px * var(--map-zoom, 1));
+        border-radius: calc(2px * var(--map-zoom, 1));
         background: #fff;
         box-shadow: inset 0 0 0 1px rgba(27, 31, 36, .14);
-        /* the fill transition animates the reading palette flowing into
-           the theme palette when the switch flips */
-        transition: background-color .25s ease, box-shadow .25s ease, opacity .15s ease;
+        transition: opacity .12s linear;
     }
 
     .rg-cell.is-light { background: #9be9a8; box-shadow: none; }
@@ -607,26 +654,25 @@
     .reading-map-grid.themes-on .rg-cell.t10 { background: #a0cbe8; }
     .reading-map-grid.themes-on .rg-cell.t11 { background: #6b6b6b; }
 
-    /* The tick: a small white check that scales in when a verse is read. */
+    /* The tick: a small white check on every read verse. */
     .rg-cell::after {
         content: '';
         position: absolute;
         left: 50%;
         top: 50%;
-        width: 7px;
-        height: 4px;
-        margin: -3px 0 0 -4px;
-        border-left: 1.6px solid #fff;
-        border-bottom: 1.6px solid #fff;
-        transform: rotate(-45deg) scale(.4);
+        width: calc(7px * var(--map-zoom, 1));
+        height: calc(4px * var(--map-zoom, 1));
+        margin: calc(-3px * var(--map-zoom, 1)) 0 0 calc(-4px * var(--map-zoom, 1));
+        border-left: calc(1.6px * var(--map-zoom, 1)) solid #fff;
+        border-bottom: calc(1.6px * var(--map-zoom, 1)) solid #fff;
+        transform: rotate(-45deg);
         opacity: 0;
         pointer-events: none;
         filter: drop-shadow(0 0 1px rgba(0, 0, 0, .7));
-        transition: transform .18s cubic-bezier(.34, 1.4, .64, 1), opacity .15s ease;
+        transition: opacity .12s linear;
     }
 
     .reading-map-grid.themes-on .rg-cell.is-read::after {
-        transform: rotate(-45deg) scale(1);
         opacity: 1;
     }
 
@@ -1421,12 +1467,17 @@ document.addEventListener('DOMContentLoaded', function () {
 							<span class="reading-map-switch-track" aria-hidden="true"><span class="reading-map-switch-thumb"></span></span>
 							<span class="reading-map-switch-label">Themes</span>
 						</label>
-						<span class="reading-map-legend-context" id="reading-legend-context">Verse Read Statistics:</span>
+						<span class="reading-map-legend-context" id="reading-legend-context">Page Read Statistics:</span>
 						<span class="reading-map-legend-item"><i class="rg-swatch"></i>Unread</span>
 						<span class="reading-map-legend-item" id="reading-map-legend-read" hidden><i class="rg-swatch rg-swatch-tick"></i>Read</span>
 						<span class="reading-map-legend-item" id="reading-map-legend-page"><i class="rg-swatch light"></i>Page visited</span>
 						<span class="rg-scale" id="reading-map-legend-scale" title="Opened once, twice, 3+ times"><span>Less</span><i class="rg-swatch deep-1"></i><i class="rg-swatch deep-2"></i><i class="rg-swatch deep-3"></i><span>More</span></span>
-						<button type="button" id="reading-map-clear">Clear history</button>
+						<span class="mushaf-zoom reading-map-zoom" role="group" aria-label="Zoom the map">
+							<button id="map-zoom-out" type="button" title="Zoom out" aria-label="Zoom out" class="circular ui basic icon button"><i class="icon minus" aria-hidden="true"></i></button>
+							<span id="map-zoom-level" class="mushaf-zoom-level" aria-live="polite" title="Zoom level">100%</span>
+							<button id="map-zoom-in" type="button" title="Zoom in" aria-label="Zoom in" class="circular ui basic icon button"><i class="icon plus" aria-hidden="true"></i></button>
+						</span>
+						<button type="button" id="reading-map-clear" title="Clear your reading history">Clear Visit History</button>
 					</div>
 					<div id="reading-map-theme-legend" class="reading-map-theme-legend" hidden></div>
 				</div>
@@ -1437,13 +1488,13 @@ document.addEventListener('DOMContentLoaded', function () {
 			</div>
 		</div>
 		<div id="clear-history-modal" class="ui mini modal">
-			<div class="header">Clear reading history?</div>
+			<div class="header">Clear visit history?</div>
 			<div class="content">
 				<p>This removes your Recently Read list and every square on the exploration map. It cannot be undone.</p>
 			</div>
 			<div class="actions">
 				<button type="button" id="clear-history-cancel" class="ui button">Cancel</button>
-				<button type="button" id="clear-history-confirm" class="ui red button">Clear history</button>
+				<button type="button" id="clear-history-confirm" class="ui red button">Clear Visit History</button>
 			</div>
 		</div>
 		<div id="suggestion" class="ui mini message" style="display: none; color: gray">

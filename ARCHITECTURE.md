@@ -1058,7 +1058,7 @@ sequenceDiagram
 - A verse page opened in the shared modal marks the map (the page really is
   open) but leaves the chips behind the modal unchanged. `record()` updates
   the map *before* its `window.self !== window.top` return.
-- `clearAll()` removes both keys; the map modal's Clear history calls it and
+- `clearAll()` removes both keys; the map modal's **Clear Visit History** button calls it and
   then `AayatunReadingMap.refresh()`.
 - Pages without the meta (home, search, translation, tafsir, prayer-time)
   never record.
@@ -1079,25 +1079,30 @@ sequenceDiagram
 - One-way scroll: the grid scrolls horizontally only; a custom thumb
   (`.reading-map-scrollbar`, `role="scrollbar"`) replaces the hidden native
   scrollbar, with track click, Home/End/Arrows.
-- `#reading-map-axis` carries sparse page ticks (Page 1, every 50th to 600),
-  dropped if closer than 90 px and never clipped at the right edge.
+- The stats card stacks its two progress rings **vertically** so the lead
+  card gets more width; the 900 px grid is `1.45fr / 1.1fr / 0.9fr`.
+- A circular **zoom stepper** at the right end of the legend row (− / + /
+  NNN%, 100–200 % in 25 % steps) scales every square through `--map-zoom`;
+  the rows-per-height, the pitch and the axis ticks all refit, and the step
+  is remembered in `localStorage['aayatun_map_zoom_v1']`.
 - Clicking a square selects it (readout + border stay on it; hover only
   previews). Clicking **anywhere outside the grid** clears the selection and
   restores the hint.
 - A **Themes** switch in the legend row (shown only when `window.AAYATUN_THEMES`
   is present) flips the map into theme mode: the cell fill carries the theme
   and every read verse (state ≥ 1) gets a white tick; the page-visit legend is
-  replaced by a simplified one (`Unread` + `Read` with a ticked swatch) with the
-  context label `Verse Read Statistics:` sitting between the switch and the
-  legend. A selectable 12-theme legend shows verse counts; tapping one
-  highlights it temporarily (every other theme's cells drop to low opacity)
-  until tapped again or theme mode is switched off, or the map is closed. The
-  selected-verse readout shows the verse's theme (coloured chip + name) ahead
-  of `Surah n:v — state`, and theme-mode transitions are animated with
-  `prefers-reduced-motion` respected. The switch position is stored in
-  `localStorage['aayatun_read_map_themes_v1']`. A small line at the bottom of
-  the popup reads "Verse themes: AI-assisted (Aayatun)".
-  The share card and poster remain reading-only.
+  replaced by a simplified one (`Unread` + `Read` with a ticked swatch) with a
+  context label sitting between the switch and the legend (`Page Read
+  Statistics:` in reading mode, `Verse Read Statistics:` in theme mode). The
+  selectable 12-theme legend is sorted by frequency; tapping one highlights it
+  temporarily (every other theme's cells drop to low opacity) until tapped
+  again or theme mode is switched off, or the map is closed. The switch shows
+  the site loading bar and fades the grid through the swap; motion respects
+  `prefers-reduced-motion`. The selected-verse readout shows the verse's theme
+  (coloured chip + name) ahead of `Surah n:v — state`. The switch position is
+  stored in `localStorage['aayatun_read_map_themes_v1']`. A small line at the
+  bottom of the popup reads "Verse themes: AI-assisted (Aayatun)". The share
+  card and poster remain reading-only.
 - Suggestion: first unread white verse after `last` (wrapping), then the page
   tint, then any opened verse.
 - The share card is drawn by `share.js` from the same state array; only the
