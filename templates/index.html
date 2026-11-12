@@ -210,7 +210,9 @@
     }
 
     .reading-map-readout {
-        min-height: 1.5em;
+        /* Reserve two lines so hovering never resizes the card and shifts
+           the map below it. */
+        min-height: 2.8em;
         font-size: 90%;
         line-height: 1.4;
     }
@@ -221,6 +223,22 @@
 
     #reading-map-open {
         font-weight: 600;
+    }
+
+    /* The selected verse's theme chip: a small theme-coloured square plus
+       the theme name, ahead of "Surah n:v — state". */
+    .reading-map-theme-chip {
+        display: inline-block;
+        width: 9px;
+        height: 9px;
+        vertical-align: -1px;
+        margin-right: 5px;
+        border-radius: 2px;
+        box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .22);
+    }
+
+    .reading-map-theme-chip-name {
+        opacity: .8;
     }
 
     .reading-map-next {
@@ -416,12 +434,18 @@
         gap: 5px;
     }
 
+    /* The [hidden] attribute must win over the inline-flex display above. */
+    .reading-map-legend [hidden] {
+        display: none !important;
+    }
+
     .rg-swatch {
         width: 10px;
         height: 10px;
         border-radius: 2px;
         background: #fff;
         box-shadow: inset 0 0 0 1px rgba(27, 31, 36, .15);
+        transition: background .25s ease, box-shadow .25s ease;
     }
 
     .rg-swatch.deep-1 { background: #40c463; box-shadow: none; }
@@ -545,7 +569,9 @@
         border-radius: 2px;
         background: #fff;
         box-shadow: inset 0 0 0 1px rgba(27, 31, 36, .14);
-        transition: opacity .15s ease;
+        /* the fill transition animates the reading palette flowing into
+           the theme palette when the switch flips */
+        transition: background-color .25s ease, box-shadow .25s ease, opacity .15s ease;
     }
 
     .rg-cell.is-light { background: #9be9a8; box-shadow: none; }
@@ -560,10 +586,9 @@
         z-index: 1;
     }
 
-    /* Theme mode: the fill carries the theme and the border carries the
-       reading level, so the green square becomes a green ring and every
-       cell stays coloured by its theme. The neutral border stays for
-       verses that have not been read yet. */
+    /* Theme mode: the fill carries the theme and every read verse gets a
+       white tick; the border stays the quiet neutral ring so the reading
+       level is told by the tick and the counts, not by four greens. */
     .reading-map-grid.themes-on .rg-cell {
         background: #fff;
         box-shadow: inset 0 0 0 1px rgba(27, 31, 36, .2);
@@ -582,10 +607,28 @@
     .reading-map-grid.themes-on .rg-cell.t10 { background: #a0cbe8; }
     .reading-map-grid.themes-on .rg-cell.t11 { background: #6b6b6b; }
 
-    .reading-map-grid.themes-on .rg-cell.is-light { box-shadow: inset 0 0 0 1px #9be9a8; }
-    .reading-map-grid.themes-on .rg-cell.is-deep-1 { box-shadow: inset 0 0 0 1px #40c463; }
-    .reading-map-grid.themes-on .rg-cell.is-deep-2 { box-shadow: inset 0 0 0 1px #30a14e; }
-    .reading-map-grid.themes-on .rg-cell.is-deep-3 { box-shadow: inset 0 0 0 1px #216e39; }
+    /* The tick: a small white check that scales in when a verse is read. */
+    .rg-cell::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 7px;
+        height: 4px;
+        margin: -3px 0 0 -4px;
+        border-left: 1.6px solid #fff;
+        border-bottom: 1.6px solid #fff;
+        transform: rotate(-45deg) scale(.4);
+        opacity: 0;
+        pointer-events: none;
+        filter: drop-shadow(0 0 1px rgba(0, 0, 0, .7));
+        transition: transform .18s cubic-bezier(.34, 1.4, .64, 1), opacity .15s ease;
+    }
+
+    .reading-map-grid.themes-on .rg-cell.is-read::after {
+        transform: rotate(-45deg) scale(1);
+        opacity: 1;
+    }
 
     /* A selected theme dims every other theme so its verses stand out;
        the green rings stay visible on the selection. */
@@ -602,21 +645,53 @@
     .reading-map-grid[data-theme-focus="10"] .rg-cell:not(.t10) { opacity: .2; }
     .reading-map-grid[data-theme-focus="11"] .rg-cell:not(.t11) { opacity: .2; }
 
-    /* Reading legend mirrors the same language in theme mode: a white box
-       with a neutral ring, then green-ringed boxes for the visited levels. */
-    .reading-map-legend.themes-on .rg-swatch {
+    /* Theme mode legend: a neutral ring for Unread, then one ticked box,
+       preceded by the "Verse Read Statistics:" context label that slides
+       in with the theme switch. */
+    .reading-map-legend.themes-on .rg-swatch:not(.rg-swatch-tick) {
         background: #fff;
         box-shadow: inset 0 0 0 1px rgba(27, 31, 36, .35);
     }
 
-    .reading-map-legend.themes-on .rg-swatch.light { box-shadow: inset 0 0 0 2px #9be9a8; }
-    .reading-map-legend.themes-on .rg-swatch.deep-1 { box-shadow: inset 0 0 0 2px #40c463; }
-    .reading-map-legend.themes-on .rg-swatch.deep-2 { box-shadow: inset 0 0 0 2px #30a14e; }
-    .reading-map-legend.themes-on .rg-swatch.deep-3 { box-shadow: inset 0 0 0 2px #216e39; }
+    .rg-swatch-tick {
+        position: relative;
+        background: #7d8590;
+        box-shadow: none;
+    }
 
-    html.dark-theme .reading-map-legend.themes-on .rg-swatch {
+    .rg-swatch-tick::after {
+        content: '';
+        position: absolute;
+        left: 2.5px;
+        top: 3px;
+        width: 4px;
+        height: 2px;
+        border-left: 1.4px solid #fff;
+        border-bottom: 1.4px solid #fff;
+        transform: rotate(-45deg);
+    }
+
+    html.dark-theme .reading-map-legend.themes-on .rg-swatch:not(.rg-swatch-tick) {
         background: #21262d;
         box-shadow: inset 0 0 0 1px #30363d;
+    }
+
+    /* The context label between the switch and the visited legend; it
+       slides open when theme mode is on instead of jumping in. */
+    .reading-map-legend-context {
+        max-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        opacity: 0;
+        visibility: hidden;
+        cursor: default;
+        transition: max-width .3s ease, opacity .2s ease, visibility .2s ease;
+    }
+
+    .reading-map-legend-context.is-visible {
+        max-width: 170px;
+        opacity: 1;
+        visibility: visible;
     }
 
     /* Rounded switch for theme mode, in the legend row. */
@@ -705,6 +780,7 @@
         padding: 2px 6px 2px 4px;
         border: 1px solid transparent;
         border-radius: 6px;
+        transition: opacity .15s ease, border-color .15s ease, background .15s ease;
         background: transparent;
         color: inherit;
         font: inherit;
@@ -750,6 +826,18 @@
 
     .reading-map-theme-attribution[hidden] {
         display: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .rg-cell,
+        .rg-cell::after,
+        .rg-swatch,
+        .reading-map-legend-context,
+        .rg-theme-key,
+        .reading-map-switch-track,
+        .reading-map-switch-thumb {
+            transition: none !important;
+        }
     }
 
     html.dark-theme .reading-map-frame {
@@ -1329,9 +1417,11 @@ document.addEventListener('DOMContentLoaded', function () {
 							<span class="reading-map-switch-track" aria-hidden="true"><span class="reading-map-switch-thumb"></span></span>
 							<span class="reading-map-switch-label">Themes</span>
 						</label>
-						<span><i class="rg-swatch"></i>Not yet</span>
-						<span><i class="rg-swatch light"></i>Page visited</span>
-						<span class="rg-scale" title="Opened once, twice, 3+ times"><span>Less</span><i class="rg-swatch deep-1"></i><i class="rg-swatch deep-2"></i><i class="rg-swatch deep-3"></i><span>More</span></span>
+						<span class="reading-map-legend-context" id="reading-legend-context">Verse Read Statistics:</span>
+						<span class="reading-map-legend-item"><i class="rg-swatch"></i>Unread</span>
+						<span class="reading-map-legend-item" id="reading-map-legend-read" hidden><i class="rg-swatch rg-swatch-tick"></i>Read</span>
+						<span class="reading-map-legend-item" id="reading-map-legend-page"><i class="rg-swatch light"></i>Page visited</span>
+						<span class="rg-scale" id="reading-map-legend-scale" title="Opened once, twice, 3+ times"><span>Less</span><i class="rg-swatch deep-1"></i><i class="rg-swatch deep-2"></i><i class="rg-swatch deep-3"></i><span>More</span></span>
 						<button type="button" id="reading-map-clear">Clear history</button>
 					</div>
 					<div id="reading-map-theme-legend" class="reading-map-theme-legend" hidden></div>

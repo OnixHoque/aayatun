@@ -96,6 +96,10 @@
 	var themeLegend = document.getElementById('reading-map-theme-legend');
 	var themeAttribution = document.getElementById('reading-map-theme-attribution');
 	var readingLegend = document.querySelector('.reading-map-legend');
+	var legendContext = document.getElementById('reading-legend-context');
+	var legendRead = document.getElementById('reading-map-legend-read');
+	var legendPage = document.getElementById('reading-map-legend-page');
+	var legendScale = document.getElementById('reading-map-legend-scale');
 
 	if (!grid || !globe || surahs.length !== 114) return;
 
@@ -202,6 +206,7 @@
 			if (state > 1) deep++;
 			cell.className = 'rg-cell' +
 				(hasThemes ? ' t' + themeVerse[i] : '') +
+				(state > 0 ? ' is-read' : '') +
 				(state ? ' is-' + STATE_CLASS[state] : '') +
 				(i === selected ? ' is-selected' : '');
 		}
@@ -304,6 +309,10 @@
 		themesOn = !!on;
 		if (grid) grid.classList.toggle('themes-on', themesOn);
 		if (readingLegend) readingLegend.classList.toggle('themes-on', themesOn);
+		if (legendContext) legendContext.classList.toggle('is-visible', themesOn);
+		if (legendRead) legendRead.hidden = !themesOn;
+		if (legendPage) legendPage.hidden = themesOn;
+		if (legendScale) legendScale.hidden = themesOn;
 		if (themeSwitchInput) themeSwitchInput.checked = themesOn;
 		if (themeToggle) themeToggle.classList.toggle('is-on', themesOn);
 		if (themeLegend) themeLegend.hidden = !themesOn;
@@ -323,6 +332,8 @@
 	{
 		if (!hasThemes) {
 			if (themeToggle) themeToggle.hidden = true;
+			if (legendContext) legendContext.classList.remove('is-visible');
+			if (legendRead) legendRead.hidden = true;
 			if (themeLegend) themeLegend.hidden = true;
 			if (themeAttribution) themeAttribution.hidden = true;
 			return;
@@ -558,12 +569,28 @@
 		}
 		var loc = locate(i);
 		var state = stateOf(currentMap, i);
-		openLink.textContent = loc.s.name + ' ' + loc.s.no + ':' + loc.verse +
-			(state === 0 ? ' — not yet'
+		// The selected-verse card mirrors the map: surah, verse and the
+		// verse's theme, then the reading state.
+		openLink.textContent = '';
+		if (hasThemes && themes[themeVerse[i]]) {
+			var t = themes[themeVerse[i]];
+			var chip = document.createElement('i');
+			chip.className = 'reading-map-theme-chip';
+			chip.style.background = t.color || '';
+			chip.setAttribute('aria-hidden', 'true');
+			openLink.appendChild(chip);
+			var tname = document.createElement('span');
+			tname.className = 'reading-map-theme-chip-name';
+			tname.textContent = t.name + ' · ';
+			openLink.appendChild(tname);
+		}
+		openLink.appendChild(document.createTextNode(
+			loc.s.name + ' ' + loc.s.no + ':' + loc.verse +
+			(state === 0 ? ' — Unread'
 				: state === 1 ? ' — seen on page'
 				: state === 2 ? ' — opened once'
 				: state === 3 ? ' — opened twice'
-				: ' — opened 3+ times');
+				: ' — opened 3+ times')));
 		openLink.href = '/' + loc.s.no + '/' + loc.verse;
 		openLink.hidden = false;
 		hint.hidden = true;

@@ -1086,13 +1086,17 @@ sequenceDiagram
   restores the hint.
 - A **Themes** switch in the legend row (shown only when `window.AAYATUN_THEMES`
   is present) flips the map into theme mode: the cell fill carries the theme
-  and the visited green becomes the cell's border (neutral ring for unread
-  verses). A selectable 12-theme legend shows verse counts; tapping one
+  and every read verse (state ≥ 1) gets a white tick; the page-visit legend is
+  replaced by a simplified one (`Unread` + `Read` with a ticked swatch) with the
+  context label `Verse Read Statistics:` sitting between the switch and the
+  legend. A selectable 12-theme legend shows verse counts; tapping one
   highlights it temporarily (every other theme's cells drop to low opacity)
   until tapped again or theme mode is switched off, or the map is closed. The
-  switch position is stored in `localStorage['aayatun_read_map_themes_v1']` and
-  the reading legend swatches render as rings while theme mode is on. A small
-  line at the bottom of the popup reads "Verse themes: AI-assisted (Aayatun)".
+  selected-verse readout shows the verse's theme (coloured chip + name) ahead
+  of `Surah n:v — state`, and theme-mode transitions are animated with
+  `prefers-reduced-motion` respected. The switch position is stored in
+  `localStorage['aayatun_read_map_themes_v1']`. A small line at the bottom of
+  the popup reads "Verse themes: AI-assisted (Aayatun)".
   The share card and poster remain reading-only.
 - Suggestion: first unread white verse after `last` (wrapping), then the page
   tint, then any opened verse.
