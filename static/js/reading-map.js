@@ -7,7 +7,7 @@
  * printed mushaf page that was opened, and white otherwise. Deep always wins.
  *
  * The verse -> page mapping is a 604-entry start-offset array rendered by the
- * index route (window.AAYATUN_PAGE_BOUNDS); page membership in db/qcf_verses
+ * map route (window.AAYATUN_PAGE_BOUNDS); page membership in db/qcf_verses
  * .json is contiguous, so the client can fill it in a single pass. Surah names
  * and verse counts come from the picker options already in the page.
  */
@@ -83,7 +83,6 @@
 	var hint = document.getElementById('reading-map-hint');
 	var openLink = document.getElementById('reading-map-open');
 	var nextBox = document.getElementById('reading-map-next');
-	var globe = document.getElementById('recent-map');
 	var shareBtn = document.getElementById('reading-map-share');
 	var pagesRing = document.getElementById('reading-map-pages-ring');
 	var pagesPctEl = document.getElementById('reading-map-pages-pct');
@@ -101,7 +100,7 @@
 	var legendPage = document.getElementById('reading-map-legend-page');
 	var legendScale = document.getElementById('reading-map-legend-scale');
 
-	if (!grid || !globe || surahs.length !== 114) return;
+	if (!grid || surahs.length !== 114) return;
 
 	initThemes();
 
@@ -837,16 +836,13 @@
 		clearThemeFocus: clearThemeFocus
 	};
 
-	globe.addEventListener('click', function (evt) {
-		evt.preventDefault();
+	// Building all 6,236 cells blocks the main thread, so the first build
+	// shows the site's loading bar. Let it paint before the build starts.
+	function openMap()
+	{
 		var nav = window.AayatunNav;
-		// Building all 6,236 cells blocks the main thread, so the first open
-		// shows the site's loading bar. Let it paint before the build starts.
-		var firstOpen = !built;
-		if (firstOpen) {
-			if (nav && nav.loading) nav.loading();
-			else if (window.showLoading) window.showLoading();
-		}
+		if (built) return;
+		if (nav && nav.loading) nav.loading();
 
 		function done() {
 			if (nav && nav.done) nav.done();
@@ -857,28 +853,23 @@
 			window.setTimeout(function () {
 				if (!built) build();
 				paint();
-				if (window.jQuery) {
-					window.jQuery('#reading-map-modal').modal('show');
-					window.requestAnimationFrame(function () {
-						window.requestAnimationFrame(function () {
-							layoutMap();
-							scroll.scrollLeft = 0;
-							syncX();
-							if (firstOpen) done();
-						});
-					});
-					// The open animation moves (and scales) the modal, so the row
-					// count is measured again once it has settled.
-					window.setTimeout(function () {
-						layoutMap();
-						syncX();
-					}, 400);
-					// Let the modal finish opening before the card is drawn.
-					window.setTimeout(warmShare, 450);
-				} else if (firstOpen) {
+				window.requestAnimationFrame(function () {
+					layoutMap();
+					scroll.scrollLeft = 0;
+					syncX();
 					done();
-				}
+				});
+				// Re-fit once layout has settled.
+				window.setTimeout(function () {
+					layoutMap();
+					syncX();
+				}, 200);
+				// Let the page settle before the card is drawn.
+				window.setTimeout(warmShare, 450);
 			}, 0);
 		});
-	});
+	}
+
+	// The standalone /map page builds itself on load.
+	if (window.AAYATUN_MAP_INPAGE) openMap();
 })();

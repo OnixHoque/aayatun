@@ -1,0 +1,1042 @@
+{% extends 'base.html' %}
+
+{% block title %} Quran Exploration Map : Aayatun - An Ayah a Day {% endblock %}
+{% block meta_description %}Chart the verses and mushaf pages you have read on Aayatun — every square is one verse of the Quran.{% endblock %}
+{% block og_title %}Quran Exploration Map{% endblock %}
+{% block og_description %}Chart the verses and mushaf pages you have read on Aayatun — every square is one verse of the Quran.{% endblock %}
+
+{% block menu %}
+<div class="ui header three wide item" style="font-size: 200%; display: inline-block; text-align: middle;">
+	<a href="{{ url_for('index') }}" style="font-family: Merriweather;">Quran Explorer</a>
+</div>
+{% endblock %}
+
+{% block head_extra %}
+<style>
+    .reading-map-subtitle {
+        margin: 0 0 8px;
+        font-size: 72%;
+        line-height: 1.35;
+        opacity: .6;
+    }
+
+    .reading-map-cards {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+
+    .reading-map-subtitle {
+        margin: 0 0 12px;
+        font-size: 78%;
+        line-height: 1.45;
+        opacity: .6;
+    }
+
+    .reading-map-card {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        min-width: 0;
+        padding: 11px 13px;
+        border: 1px solid rgba(34, 36, 38, .12);
+        border-radius: 8px;
+        background: #fff;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, .035);
+    }
+
+    .reading-map-card-label {
+        font-size: 68%;
+        font-weight: 600;
+        letter-spacing: .05em;
+        text-transform: uppercase;
+        opacity: .5;
+    }
+
+    .reading-map-card-title {
+        font-size: 88%;
+        font-weight: 600;
+        line-height: 1.3;
+    }
+
+    .reading-map-card-text {
+        margin: 0;
+        font-size: 76%;
+        line-height: 1.4;
+        opacity: .65;
+    }
+
+    .reading-map-readout {
+        /* Reserve two lines so hovering never resizes the card and shifts
+           the map below it. */
+        min-height: 2.8em;
+        font-size: 90%;
+        line-height: 1.4;
+    }
+
+    #reading-map-hint {
+        opacity: .55;
+    }
+
+    #reading-map-open {
+        font-weight: 600;
+    }
+
+    /* The selected verse's theme chip: a small theme-coloured square plus
+       the theme name, ahead of "Surah n:v — state". */
+    .reading-map-theme-chip {
+        display: inline-block;
+        width: 9px;
+        height: 9px;
+        vertical-align: -1px;
+        margin-right: 5px;
+        border-radius: 2px;
+        box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .22);
+    }
+
+    .reading-map-theme-chip-name {
+        opacity: .8;
+    }
+
+    .reading-map-next {
+        font-size: 84%;
+        line-height: 1.4;
+    }
+
+    .reading-map-next a {
+        font-weight: 600;
+    }
+
+    .reading-map-help {
+        margin: 1px 0 0;
+        font-size: 74%;
+        line-height: 1.45;
+        opacity: .6;
+    }
+
+    .reading-map-stat {
+        display: flex;
+        flex: 0 0 auto;
+        align-items: center;
+        gap: 9px;
+        min-width: 0;
+    }
+
+    /* The two progress rows sit side by side whenever the card is wide
+       enough (all but the ≥ 900 px desktop stack). */
+    .reading-map-stats {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        padding: 9px 12px;
+    }
+
+    .reading-map-stats .reading-map-ring-wrap,
+    .reading-map-stats .reading-map-ring {
+        width: 40px;
+        height: 40px;
+    }
+
+    .reading-map-stats .reading-map-ring-pct {
+        font-size: 66%;
+    }
+
+    .reading-map-stats .reading-map-ring-label {
+        font-size: 76%;
+        line-height: 1.3;
+    }
+
+    .reading-map-stats .reading-map-ring-label small {
+        font-size: 92%;
+    }
+
+    .reading-map-card-share {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px 16px;
+    }
+
+    .reading-map-share {
+        flex: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 0;
+        border-radius: 6px;
+        background: #2185d0;
+        color: #fff;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 78%;
+        font-weight: 600;
+        line-height: 1.2;
+        padding: 7px 12px;
+    }
+
+    .reading-map-share .icon { margin: 0; }
+
+    .reading-map-share:hover,
+    .reading-map-share:focus-visible {
+        background: #1678c2;
+    }
+
+    /* Clear history sits at the right end of the legend row inside the map
+       frame, the way GitHub puts its "Learn how we count contributions" link
+       at the far end of the key. */
+    #reading-map-clear {
+        margin-left: 8px;
+        border: 0;
+        background: none;
+        padding: 2px 0;
+        color: #c0392b;
+        font-family: inherit;
+        font-size: 95%;
+        line-height: 1.2;
+        text-decoration: underline;
+        cursor: pointer;
+    }
+
+    #reading-map-clear:hover,
+    #reading-map-clear:focus-visible {
+        color: #e74c3c;
+    }
+
+    @media (min-width: 560px) {
+        .reading-map-cards {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .reading-map-card-lead {
+            grid-column: 1 / -1;
+        }
+    }
+
+    @media (min-width: 900px) {
+        .reading-map-cards {
+            grid-template-columns: minmax(0, 1fr) auto auto;
+        }
+
+        .reading-map-card-lead {
+            grid-column: auto;
+        }
+
+        /* Desktop: compact stacked stats card, rows hug the left edge. */
+        .reading-map-stats {
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            gap: 14px;
+        }
+
+        .reading-map-card-share {
+            flex-direction: column;
+            align-items: stretch;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .reading-map-card-share .reading-map-share {
+            justify-content: center;
+        }
+    }
+
+    .reading-map-ring-wrap {
+        position: relative;
+        flex: none;
+        width: 48px;
+        height: 48px;
+    }
+
+    .reading-map-ring {
+        display: block;
+        width: 48px;
+        height: 48px;
+        transform: rotate(-90deg);
+    }
+
+    .reading-map-ring circle {
+        fill: none;
+        stroke-width: 5;
+    }
+
+    .reading-map-ring .ring-track {
+        stroke: rgba(34, 36, 38, .14);
+    }
+
+    .reading-map-ring-fill {
+        stroke-linecap: round;
+        stroke-dasharray: 125.66;
+        stroke-dashoffset: 125.66;
+        transition: stroke-dashoffset .3s ease;
+    }
+
+    #reading-map-pages-ring { stroke: #9be9a8; }
+    #reading-map-verses-ring { stroke: #216e39; }
+
+    .reading-map-ring-pct {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 72%;
+        font-weight: 600;
+    }
+
+    .reading-map-ring-label {
+        font-size: 80%;
+        line-height: 1.35;
+        opacity: .8;
+    }
+
+    .reading-map-ring-label small {
+        display: block;
+        font-size: 92%;
+        opacity: .85;
+    }
+
+    .reading-map-legend {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 14px;
+        font-size: 80%;
+        opacity: .8;
+        margin: 0;
+        padding: 8px 4px 3px;
+    }
+
+    .reading-map-legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    /* The zoom stepper is pushed to the right end of the legend row,
+       next to Clear Visit History, and sized like the theme switch. */
+    .reading-map-zoom {
+        margin-left: auto;
+        gap: 4px;
+        align-items: center;
+    }
+
+    .reading-map-zoom .ui.circular.basic.icon.button {
+        width: 27px;
+        height: 27px;
+        min-height: 0;
+        min-width: 0;
+        padding: 0;
+        margin: 0;
+        font-size: .95rem;
+        box-shadow: inset 0 0 0 1px rgba(34, 36, 38, .22);
+    }
+
+    html.dark-theme .reading-map-zoom .ui.circular.basic.icon.button {
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .3);
+    }
+
+    .reading-map-zoom .mushaf-zoom-level {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 44px;
+        height: 28px;
+        padding: 0 2px;
+        font-size: 86%;
+        line-height: 1;
+        font-weight: 700;
+        opacity: .75;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* The [hidden] attribute must win over the inline-flex display above. */
+    .reading-map-legend [hidden] {
+        display: none !important;
+    }
+
+    .rg-swatch {
+        width: 10px;
+        height: 10px;
+        border-radius: 2px;
+        background: #fff;
+        box-shadow: inset 0 0 0 1px rgba(27, 31, 36, .15);
+        transition: background .25s ease, box-shadow .25s ease;
+    }
+
+    .rg-swatch.deep-1 { background: #40c463; box-shadow: none; }
+    .rg-swatch.deep-2 { background: #30a14e; box-shadow: none; }
+    .rg-swatch.deep-3 { background: #216e39; box-shadow: none; }
+    .rg-swatch.light { background: #9be9a8; box-shadow: none; }
+
+    .reading-map-legend .rg-scale {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+    }
+
+    /* The frame is the card GitHub draws around its contribution grid: the
+       grid sits on the tinted panel and the legend is part of the frame,
+       under the boxes, so the key never floats away from the map. */
+    .reading-map-frame {
+        border: 1px solid rgba(34, 36, 38, .12);
+        border-radius: 4px;
+        background: #fff;
+        padding: 6px 6px 2px;
+    }
+
+    /* The map scrolls one way only, like GitHub's contribution grid: every
+       row is visible and the verses advance column by column to the right.
+       The height is set from the space left in the viewport when it opens,
+       and the native scrollbar is hidden in favour of the thumb below. */
+    .reading-map-scroll {
+        position: relative;
+        height: 260px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        overscroll-behavior-x: contain;
+        touch-action: pan-x pan-y;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding: 4px;
+        border-radius: 3px;
+        background: #e8ecf0;
+    }
+
+    .reading-map-scroll::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Sparse page ticks above the columns, the way GitHub labels months:
+       "Page 100" sits over the column where that printed mushaf page
+       begins, and labels too close to the previous one are dropped. */
+    .reading-map-axis {
+        position: relative;
+        height: 14px;
+        margin-bottom: 4px;
+        overflow: hidden;
+        pointer-events: none;
+    }
+
+    .reading-map-axis span {
+        position: absolute;
+        top: 0;
+        font-size: 9px;
+        line-height: 14px;
+        color: rgba(27, 31, 36, .45);
+        white-space: nowrap;
+    }
+
+    /* Column-major: the row count is set by the viewport, the number of
+       columns follows from it, so the grid is always wider than the box.
+       The box size zooms through --map-zoom (100 %–200 %). */
+    .reading-map-grid {
+        display: grid;
+        grid-template-rows: repeat(var(--map-rows, 28), calc(10px * var(--map-zoom, 1)));
+        grid-auto-flow: column;
+        grid-auto-columns: calc(10px * var(--map-zoom, 1));
+        gap: calc(3px * var(--map-zoom, 1));
+        align-content: start;
+        width: max-content;
+    }
+
+    /* A blank cell at each surah start, so the blocks read apart. */
+    .rg-break {
+        width: calc(10px * var(--map-zoom, 1));
+        height: calc(10px * var(--map-zoom, 1));
+    }
+
+    /* A real scrollbar instead of a native one (phones hide theirs), so the
+       pan stays visible and draggable everywhere. */
+    .reading-map-scrollbar {
+        position: relative;
+        height: 12px;
+        margin: 12px 4px 0;
+        border-radius: 6px;
+        background: rgba(34, 36, 38, .09);
+        cursor: pointer;
+        touch-action: none;
+        outline-offset: 2px;
+    }
+
+    .reading-map-scrollbar[hidden] {
+        display: none;
+    }
+
+    .reading-map-scrollbar-thumb {
+        position: absolute;
+        top: 2px;
+        left: 0;
+        height: 8px;
+        width: 40px;
+        border-radius: 4px;
+        background: rgba(34, 36, 38, .34);
+        will-change: transform;
+    }
+
+    .reading-map-scrollbar:hover .reading-map-scrollbar-thumb,
+    .reading-map-scrollbar:focus-visible .reading-map-scrollbar-thumb {
+        background: rgba(34, 36, 38, .5);
+    }
+
+    /* The fill changes are deliberately instant (they are cheap to paint);
+       opacity is what animates when themes dim or the grid fades. */
+    .rg-cell {
+        position: relative;
+        width: calc(10px * var(--map-zoom, 1));
+        height: calc(10px * var(--map-zoom, 1));
+        border-radius: calc(2px * var(--map-zoom, 1));
+        background: #fff;
+        box-shadow: inset 0 0 0 1px rgba(27, 31, 36, .14);
+        transition: opacity .12s linear;
+    }
+
+    .rg-cell.is-light { background: #9be9a8; box-shadow: none; }
+    .rg-cell.is-deep-1 { background: #40c463; box-shadow: none; }
+    .rg-cell.is-deep-2 { background: #30a14e; box-shadow: none; }
+    .rg-cell.is-deep-3 { background: #216e39; box-shadow: none; }
+
+    .rg-cell.is-selected {
+        outline: 2px solid #2185d0;
+        outline-offset: 1px;
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Theme mode: the fill carries the theme and every read verse gets a
+       white tick; the border stays the quiet neutral ring so the reading
+       level is told by the tick and the counts, not by four greens. */
+    .reading-map-grid.themes-on .rg-cell {
+        background: #fff;
+        box-shadow: inset 0 0 0 1px rgba(27, 31, 36, .2);
+    }
+
+    .reading-map-grid.themes-on .rg-cell.t0 { background: #4e79a7; }
+    .reading-map-grid.themes-on .rg-cell.t1 { background: #f28e2b; }
+    .reading-map-grid.themes-on .rg-cell.t2 { background: #59a14f; }
+    .reading-map-grid.themes-on .rg-cell.t3 { background: #e15759; }
+    .reading-map-grid.themes-on .rg-cell.t4 { background: #b07aa1; }
+    .reading-map-grid.themes-on .rg-cell.t5 { background: #76b7b2; }
+    .reading-map-grid.themes-on .rg-cell.t6 { background: #edc948; }
+    .reading-map-grid.themes-on .rg-cell.t7 { background: #ff9da7; }
+    .reading-map-grid.themes-on .rg-cell.t8 { background: #9c755f; }
+    .reading-map-grid.themes-on .rg-cell.t9 { background: #7f9c4f; }
+    .reading-map-grid.themes-on .rg-cell.t10 { background: #a0cbe8; }
+    .reading-map-grid.themes-on .rg-cell.t11 { background: #6b6b6b; }
+
+    /* The tick: a small white check on every read verse. */
+    .rg-cell::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: calc(7px * var(--map-zoom, 1));
+        height: calc(4px * var(--map-zoom, 1));
+        margin: calc(-3px * var(--map-zoom, 1)) 0 0 calc(-4px * var(--map-zoom, 1));
+        border-left: calc(1.6px * var(--map-zoom, 1)) solid #fff;
+        border-bottom: calc(1.6px * var(--map-zoom, 1)) solid #fff;
+        transform: rotate(-45deg);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .12s linear;
+    }
+
+    .reading-map-grid.themes-on .rg-cell.is-read::after {
+        opacity: 1;
+    }
+
+    /* A selected theme dims every other theme so its verses stand out;
+       the green rings stay visible on the selection. */
+    .reading-map-grid[data-theme-focus="0"] .rg-cell:not(.t0) { opacity: .2; }
+    .reading-map-grid[data-theme-focus="1"] .rg-cell:not(.t1) { opacity: .2; }
+    .reading-map-grid[data-theme-focus="2"] .rg-cell:not(.t2) { opacity: .2; }
+    .reading-map-grid[data-theme-focus="3"] .rg-cell:not(.t3) { opacity: .2; }
+    .reading-map-grid[data-theme-focus="4"] .rg-cell:not(.t4) { opacity: .2; }
+    .reading-map-grid[data-theme-focus="5"] .rg-cell:not(.t5) { opacity: .2; }
+    .reading-map-grid[data-theme-focus="6"] .rg-cell:not(.t6) { opacity: .2; }
+    .reading-map-grid[data-theme-focus="7"] .rg-cell:not(.t7) { opacity: .2; }
+    .reading-map-grid[data-theme-focus="8"] .rg-cell:not(.t8) { opacity: .2; }
+    .reading-map-grid[data-theme-focus="9"] .rg-cell:not(.t9) { opacity: .2; }
+    .reading-map-grid[data-theme-focus="10"] .rg-cell:not(.t10) { opacity: .2; }
+    .reading-map-grid[data-theme-focus="11"] .rg-cell:not(.t11) { opacity: .2; }
+
+    /* Theme mode legend: a neutral ring for Unread, then one ticked box,
+       preceded by the "Verse Read Statistics:" context label that slides
+       in with the theme switch. */
+    .reading-map-legend.themes-on .rg-swatch:not(.rg-swatch-tick) {
+        background: #fff;
+        box-shadow: inset 0 0 0 1px rgba(27, 31, 36, .35);
+    }
+
+    .rg-swatch-tick {
+        position: relative;
+        background: #7d8590;
+        box-shadow: none;
+    }
+
+    .rg-swatch-tick::after {
+        content: '';
+        position: absolute;
+        left: 2.5px;
+        top: 3px;
+        width: 4px;
+        height: 2px;
+        border-left: 1.4px solid #fff;
+        border-bottom: 1.4px solid #fff;
+        transform: rotate(-45deg);
+    }
+
+    html.dark-theme .reading-map-legend.themes-on .rg-swatch:not(.rg-swatch-tick) {
+        background: #21262d;
+        box-shadow: inset 0 0 0 1px #30363d;
+    }
+
+    /* The context label between the switch and the visited legend; it
+       slides open when theme mode is on instead of jumping in. */
+    .reading-map-legend-context {
+        max-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        opacity: 0;
+        visibility: hidden;
+        cursor: default;
+        transition: max-width .3s ease, opacity .2s ease, visibility .2s ease;
+    }
+
+    .reading-map-legend-context.is-visible {
+        max-width: 170px;
+        opacity: 1;
+        visibility: visible;
+    }
+
+    /* Rounded switch for theme mode, in the legend row. */
+    .reading-map-switch {
+        flex: none;
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        -webkit-user-select: none;
+        user-select: none;
+        font-size: 80%;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+
+    .reading-map-switch[hidden] {
+        display: none;
+    }
+
+    .reading-map-switch input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        overflow: hidden;
+    }
+
+    .reading-map-switch-track {
+        position: relative;
+        display: inline-block;
+        width: 32px;
+        height: 18px;
+        border-radius: 999px;
+        background: rgba(34, 36, 38, .28);
+        transition: background .18s ease;
+    }
+
+    .reading-map-switch-thumb {
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, .35);
+        transition: transform .18s ease;
+    }
+
+    .reading-map-switch input:checked + .reading-map-switch-track {
+        background: #2185d0;
+    }
+
+    .reading-map-switch input:checked + .reading-map-switch-track .reading-map-switch-thumb {
+        transform: translateX(14px);
+    }
+
+    .reading-map-switch input:focus-visible + .reading-map-switch-track {
+        outline: 2px solid #2185d0;
+        outline-offset: 2px;
+    }
+
+    /* The theme legend doubles as a temporary highlight picker: tapping a
+       swatch keeps only that theme at full opacity; tapping it again (or
+       switching themes off) restores everything. */
+    .reading-map-theme-legend {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px 6px;
+        padding: 4px 0 10px;
+        font-size: 76%;
+        opacity: .9;
+    }
+
+    .reading-map-theme-legend[hidden] {
+        display: none;
+    }
+
+    .rg-theme-key {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 2px 6px 2px 4px;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        transition: opacity .15s ease, border-color .15s ease, background .15s ease;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    .rg-theme-key:hover,
+    .rg-theme-key:focus-visible {
+        border-color: rgba(34, 36, 38, .3);
+        outline: none;
+    }
+
+    .rg-theme-key.is-selected {
+        border-color: #2185d0;
+        background: rgba(33, 133, 208, .1);
+    }
+
+    .reading-map-theme-legend.has-selection .rg-theme-key:not(.is-selected) {
+        opacity: .45;
+    }
+
+    /* Temporary chip that appears only while a theme is highlighted. */
+    .rg-theme-clear {
+        display: none;
+        align-items: center;
+        gap: 4px;
+        margin-left: 2px;
+        padding: 2px 9px 2px 8px;
+        border: 1px solid rgba(34, 36, 38, .22);
+        border-radius: 999px;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        font-size: 92%;
+        line-height: 1.4;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: opacity .15s ease, border-color .15s ease, color .15s ease;
+    }
+
+    .reading-map-theme-legend.has-selection .rg-theme-clear {
+        display: inline-flex;
+    }
+
+    .rg-theme-clear:hover,
+    .rg-theme-clear:focus-visible {
+        border-color: #2185d0;
+        color: #2185d0;
+    }
+
+    html.dark-theme .rg-theme-clear {
+        border-color: rgba(255, 255, 255, .3);
+    }
+
+    html.dark-theme .rg-theme-clear:hover,
+    html.dark-theme .rg-theme-clear:focus-visible {
+        border-color: #64b5f6;
+        color: #64b5f6;
+    }
+
+    .rg-theme-swatch {
+        width: 10px;
+        height: 10px;
+        flex: 0 0 auto;
+        border-radius: 2px;
+        box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .22);
+    }
+
+    .rg-theme-key b {
+        font-weight: 600;
+        opacity: .65;
+    }
+
+    .reading-map-theme-attribution {
+        margin: 10px 2px 0;
+        font-size: 72%;
+        line-height: 1.3;
+        opacity: .55;
+        text-align: right;
+    }
+
+    .reading-map-theme-attribution[hidden] {
+        display: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .rg-cell,
+        .rg-cell::after,
+        .rg-swatch,
+        .reading-map-legend-context,
+        .rg-theme-key,
+        .reading-map-switch-track,
+        .reading-map-switch-thumb {
+            transition: none !important;
+        }
+    }
+
+    html.dark-theme .reading-map-frame {
+        background: #1b1c1d;
+        border-color: rgba(255, 255, 255, .12);
+    }
+
+    html.dark-theme .reading-map-scroll {
+        background: #0d1117;
+    }
+
+    html.dark-theme .reading-map-axis span {
+        color: rgba(255, 255, 255, .4);
+    }
+
+    html.dark-theme .reading-map-scrollbar {
+        background: rgba(255, 255, 255, .1);
+    }
+
+    html.dark-theme .reading-map-scrollbar-thumb {
+        background: rgba(255, 255, 255, .32);
+    }
+
+    html.dark-theme .reading-map-scrollbar:hover .reading-map-scrollbar-thumb,
+    html.dark-theme .reading-map-scrollbar:focus-visible .reading-map-scrollbar-thumb {
+        background: rgba(255, 255, 255, .5);
+    }
+
+    html.dark-theme .rg-cell,
+    html.dark-theme .rg-swatch {
+        background: #21262d;
+        box-shadow: inset 0 0 0 1px #30363d;
+    }
+
+    html.dark-theme .rg-cell.is-light,
+    html.dark-theme .rg-swatch.light { background: #0e4429; box-shadow: none; }
+
+    html.dark-theme .rg-cell.is-deep-1,
+    html.dark-theme .rg-swatch.deep-1 { background: #006d32; box-shadow: none; }
+
+    html.dark-theme .rg-cell.is-deep-2,
+    html.dark-theme .rg-swatch.deep-2 { background: #26a641; box-shadow: none; }
+
+    html.dark-theme .rg-cell.is-deep-3,
+    html.dark-theme .rg-swatch.deep-3 { background: #39d353; box-shadow: none; }
+
+    html.dark-theme .rg-cell.is-selected { outline-color: #64b5f6; }
+
+    html.dark-theme .reading-map-card {
+        background: #21262d;
+        border-color: rgba(255, 255, 255, .1);
+        box-shadow: none;
+    }
+
+    html.dark-theme .reading-map-share {
+        background: #64b5f6;
+        color: #0d1117;
+    }
+
+    html.dark-theme .reading-map-share:hover,
+    html.dark-theme .reading-map-share:focus-visible {
+        background: #8cc8ff;
+    }
+
+    html.dark-theme #reading-map-clear {
+        color: #ff8a8a;
+    }
+
+    html.dark-theme #reading-map-clear:hover,
+    html.dark-theme #reading-map-clear:focus-visible {
+        color: #ffb3b3;
+    }
+
+    html.dark-theme .reading-map-switch-track {
+        background: rgba(255, 255, 255, .25);
+    }
+
+    html.dark-theme .reading-map-switch input:checked + .reading-map-switch-track {
+        background: #64b5f6;
+    }
+
+    html.dark-theme .reading-map-switch input:checked + .reading-map-switch-track .reading-map-switch-thumb {
+        background: #0d1117;
+    }
+
+    html.dark-theme .reading-map-switch input:focus-visible + .reading-map-switch-track {
+        outline-color: #64b5f6;
+    }
+
+    html.dark-theme .reading-map-grid.themes-on .rg-cell {
+        box-shadow: inset 0 0 0 1px #30363d;
+    }
+
+    html.dark-theme .rg-theme-key:hover,
+    html.dark-theme .rg-theme-key:focus-visible {
+        border-color: rgba(255, 255, 255, .35);
+    }
+
+    html.dark-theme .rg-theme-key.is-selected {
+        border-color: #64b5f6;
+        background: rgba(100, 181, 246, .12);
+    }
+
+    html.dark-theme .reading-map-ring .ring-track {
+        stroke: rgba(255, 255, 255, .16);
+    }
+
+    html.dark-theme #reading-map-pages-ring { stroke: #2ea043; }
+    html.dark-theme #reading-map-verses-ring { stroke: #39d353; }
+
+    .reading-map-page-title {
+        font-family: 'Open Sans';
+        font-size: 140%;
+        margin: 14px 0 4px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+</style>
+{% endblock head_extra %}
+
+{% block content %}
+	{# The map reads surah names/verse counts from these options (they stay hidden). #}
+	<select class="ui search fluid dropdown" id="surah" style="display: none;" aria-hidden="true" tabindex="-1">
+	{% for s in surahs %}
+	  <option value="{{ s['surah_no'] }}" verse_count="{{ s['verse_count'] }}">{{ s['surah'] }}</option>
+	{% endfor %}
+	</select>
+{% endblock %}
+
+{% block content3 %}
+<div class="ui container" style="padding: 0 5%; font-family: 'Open Sans';">
+	<h1 class="reading-map-page-title"><i class="icon world" aria-hidden="true"></i> Quran Exploration Map</h1>
+			<p class="reading-map-subtitle">This map only tracks verse reading and mushaf page reading.</p>
+			<div class="reading-map-cards">
+				<div class="reading-map-card reading-map-card-lead">
+					<div class="reading-map-card-label">Selected verse</div>
+					<div class="reading-map-readout">
+						<span id="reading-map-hint">Hover or tap a square to see the verse.</span>
+						<a id="reading-map-open" href="#" hidden></a>
+					</div>
+					<div id="reading-map-next" class="reading-map-next"></div>
+					<p class="reading-map-help">Each square is one verse in mushaf order, from Al-Fatihah to An-Nas. Tap any square to open that verse; the legend below explains the colours.</p>
+				</div>
+				<div class="reading-map-card reading-map-stats">
+					<div class="reading-map-stat">
+						<div class="reading-map-ring-wrap">
+							<svg class="reading-map-ring" viewBox="0 0 48 48" role="progressbar" aria-label="Pages visited" aria-valuemin="0" aria-valuemax="604" aria-valuenow="0">
+								<circle class="ring-track" cx="24" cy="24" r="20"></circle>
+								<circle id="reading-map-pages-ring" class="reading-map-ring-fill is-pages" cx="24" cy="24" r="20"></circle>
+							</svg>
+							<span id="reading-map-pages-pct" class="reading-map-ring-pct">0%</span>
+						</div>
+						<div class="reading-map-ring-label">Pages visited<small id="reading-map-pages-note">0 of 604</small></div>
+					</div>
+					<div class="reading-map-stat">
+						<div class="reading-map-ring-wrap">
+							<svg class="reading-map-ring" viewBox="0 0 48 48" role="progressbar" aria-label="Verses studied" aria-valuemin="0" aria-valuemax="6236" aria-valuenow="0">
+								<circle class="ring-track" cx="24" cy="24" r="20"></circle>
+								<circle id="reading-map-verses-ring" class="reading-map-ring-fill is-verses" cx="24" cy="24" r="20"></circle>
+							</svg>
+							<span id="reading-map-verses-pct" class="reading-map-ring-pct">0%</span>
+						</div>
+						<div class="reading-map-ring-label">Verses studied<small id="reading-map-verses-note">0 of 6,236</small></div>
+					</div>
+				</div>
+				<div class="reading-map-card reading-map-card-share">
+					<div>
+						<div class="reading-map-card-title">Share with your friends!</div>
+						<p class="reading-map-card-text">Send them a picture of your map.</p>
+					</div>
+					<button type="button" id="reading-map-share" class="reading-map-share" title="Share the map with your friends" aria-label="Share the Quran Exploration Map with your friends"><i class="icon share alternate" aria-hidden="true"></i><span>Share map</span></button>
+				</div>
+			</div>
+			<div class="reading-map-frame">
+				<div id="reading-map-scroll" class="reading-map-scroll">
+					<div id="reading-map-axis" class="reading-map-axis" aria-hidden="true"></div>
+					<div id="reading-map-grid" class="reading-map-grid" role="img" aria-label="Quran Exploration Map"></div>
+				</div>
+				<div class="reading-map-legend">
+					<label class="reading-map-switch" id="reading-map-themes" hidden>
+						<input type="checkbox" id="reading-map-themes-input">
+						<span class="reading-map-switch-track" aria-hidden="true"><span class="reading-map-switch-thumb"></span></span>
+						<span class="reading-map-switch-label">Themes</span>
+					</label>
+					<span class="reading-map-legend-context" id="reading-legend-context">Page Read Statistics:</span>
+					<span class="reading-map-legend-item"><i class="rg-swatch"></i>Unread</span>
+					<span class="reading-map-legend-item" id="reading-map-legend-read" hidden><i class="rg-swatch rg-swatch-tick"></i>Read</span>
+					<span class="reading-map-legend-item" id="reading-map-legend-page"><i class="rg-swatch light"></i>Page visited</span>
+					<span class="rg-scale" id="reading-map-legend-scale" title="Opened once, twice, 3+ times"><span>Less</span><i class="rg-swatch deep-1"></i><i class="rg-swatch deep-2"></i><i class="rg-swatch deep-3"></i><span>More</span></span>
+					<span class="mushaf-zoom reading-map-zoom" role="group" aria-label="Zoom the map">
+						<button id="map-zoom-out" type="button" title="Zoom out" aria-label="Zoom out" class="circular ui basic icon button"><i class="icon minus" aria-hidden="true"></i></button>
+						<span id="map-zoom-level" class="mushaf-zoom-level" aria-live="polite" title="Zoom level">100%</span>
+						<button id="map-zoom-in" type="button" title="Zoom in" aria-label="Zoom in" class="circular ui basic icon button"><i class="icon plus" aria-hidden="true"></i></button>
+					</span>
+					<button type="button" id="reading-map-clear" title="Clear your reading history">Clear Visit History</button>
+				</div>
+				<div id="reading-map-theme-legend" class="reading-map-theme-legend" hidden></div>
+			</div>
+			<div id="reading-map-x" class="reading-map-scrollbar" role="scrollbar" aria-controls="reading-map-scroll" aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Scroll the map left and right" tabindex="0" hidden>
+				<div class="reading-map-scrollbar-thumb"></div>
+			</div>
+			<div id="reading-map-theme-attribution" class="reading-map-theme-attribution" hidden>Verse themes: AI-assisted (Aayatun)</div>
+</div>
+	<div id="clear-history-modal" class="ui mini modal">
+		<div class="header">Clear visit history?</div>
+		<div class="content">
+			<p>This removes your Recently Read list and every square on the exploration map. It cannot be undone.</p>
+		</div>
+		<div class="actions">
+			<button type="button" id="clear-history-cancel" class="ui button">Cancel</button>
+			<button type="button" id="clear-history-confirm" class="ui red button">Clear Visit History</button>
+		</div>
+	</div>
+{% endblock content3 %}
+
+{% block js %}
+<script>window.AAYATUN_PAGE_BOUNDS = {{ page_bounds|tojson }};</script>
+<script>window.AAYATUN_THEMES = {{ theme_data|tojson }};</script>
+<script>window.AAYATUN_MAP_INPAGE = true;</script>
+<script defer src="{{ url_for('static', filename='js/reading-map.js') }}"></script>
+{% endblock js %}
+
+{% block scriptcontent %}
+	// Standalone page: the floating search button would sit on top of the
+	// map's Clear Visit History button, so hide it here.
+	$('#search-btn').hide();
+	$('#menubar').removeClass('three').addClass('one');
+
+	$('#clear-history-modal').modal({ allowMultiple: true });
+	$('#reading-map-clear').click(function () {
+		$('#clear-history-modal').modal('show');
+	});
+	$('#clear-history-cancel').click(function () {
+		$('#clear-history-modal').modal('hide');
+	});
+	$('#clear-history-confirm').click(function () {
+		if (window.AayatunRecent) window.AayatunRecent.clearAll();
+		$('#clear-history-modal').modal('hide');
+		if (window.AayatunReadingMap && window.AayatunReadingMap.refresh)
+			window.AayatunReadingMap.refresh();
+	});
+{% endblock %}
