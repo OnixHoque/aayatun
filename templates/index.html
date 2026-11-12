@@ -399,9 +399,10 @@
             grid-column: auto;
         }
 
-        /* Desktop: compact stacked stats card; share card stacks too. */
+        /* Desktop: compact stacked stats card, rows hug the left edge. */
         .reading-map-stats {
             flex-direction: column;
+            align-items: flex-start;
             justify-content: center;
             gap: 14px;
         }
@@ -1152,6 +1153,8 @@ document.addEventListener('DOMContentLoaded', function () {
 	$('#clear-history-modal').modal({ allowMultiple: true });
 	$('#reading-map-modal').modal({
 		allowMultiple: true,
+		duration: 0,
+		transition: 'scale',
 		onShow: function () { $('#search-btn').hide(); },
 		onHide: function () {
 			$('#search-btn').show();

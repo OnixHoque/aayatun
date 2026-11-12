@@ -311,28 +311,32 @@
 		}
 	}
 
-	function setThemes(on)
+	// One synchronous repaint of all 6,236 squares through the site
+	// loading bar — no per-cell transitions and no artificial delays. The
+	// bar hides once the new frame has painted.
+	function withThemeSwap(fn)
 	{
 		var nav = window.AayatunNav;
 		var visible = grid && grid.getBoundingClientRect().width > 0;
 		if (nav && nav.loading) nav.loading();
 		else if (window.showLoading) window.showLoading();
-		// One synchronous repaint of all 6,236 squares through the site
-		// loading bar — no per-cell transitions and no artificial delays.
-		applyThemeMode(on);
+		fn();
 		if (!visible) {
 			if (nav && nav.done) nav.done();
 			else if (window.hideLoading) window.hideLoading();
 			return;
 		}
-		// Two animation frames guarantee the new frame has painted with
-		// the bar up, then hide it.
 		window.requestAnimationFrame(function () {
 			window.requestAnimationFrame(function () {
 				if (nav && nav.done) nav.done();
 				else if (window.hideLoading) window.hideLoading();
 			});
 		});
+	}
+
+	function setThemes(on)
+	{
+		withThemeSwap(function () { applyThemeMode(on); });
 	}
 
 	function applyThemeMode(on)
@@ -394,7 +398,12 @@
 					? evt.target.closest('.rg-theme-key') : null;
 				if (!btn) return;
 				var id = Number(btn.getAttribute('data-theme'));
-				setThemeFocus(themeFocus === id ? null : id);
+				// Selecting/unselecting a theme dims 6,236 cells —
+				// treat it like switching theme mode and show the
+				// loading bar for the repaint.
+				withThemeSwap(function () {
+					setThemeFocus(themeFocus === id ? null : id);
+				});
 			});
 		}
 	}
@@ -469,7 +478,10 @@
 				Math.min(avail, Math.round(window.innerHeight * 0.7)));
 			fixedFrameH = avail;
 		}
-		var rows = Math.max(12, Math.floor((fixedFrameH - 26 + 3 * zoom) / pitch()));
+		// Don't force a minimum that the fixed frame cannot hold — a
+		// 200 % zoom at a short window can only fit ~10 rows, and forcing
+		// 12 clipped the bottom rows under the frame.
+		var rows = Math.max(4, Math.floor((fixedFrameH - 26 + 3 * zoom) / pitch()));
 		mapRows = rows;
 		grid.style.setProperty('--map-rows', String(rows));
 		scroll.style.height = fixedFrameH + 'px';
