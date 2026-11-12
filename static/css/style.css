@@ -121,7 +121,7 @@ html.dark-theme .ayah-tajweed .tj-g { color: #FFA352; }  /* ghunnah */
 #tajweed-legend
 {
 	display: none;
-	margin: -4px 0 18px;
+	margin: 12px 0 18px;
 }
 
 #tajweed-legend.show { display: block; }
