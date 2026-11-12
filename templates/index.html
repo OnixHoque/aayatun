@@ -630,7 +630,7 @@
     .reading-map-scrollbar {
         position: relative;
         height: 12px;
-        margin: 8px 2px 0;
+        margin: 12px 4px 0;
         border-radius: 6px;
         background: rgba(34, 36, 38, .09);
         cursor: pointer;
@@ -858,7 +858,7 @@
         flex-wrap: wrap;
         align-items: center;
         gap: 4px 6px;
-        padding: 2px 0 8px;
+        padding: 4px 0 10px;
         font-size: 76%;
         opacity: .9;
     }
@@ -897,6 +897,45 @@
         opacity: .45;
     }
 
+    /* Temporary chip that appears only while a theme is highlighted. */
+    .rg-theme-clear {
+        display: none;
+        align-items: center;
+        gap: 4px;
+        margin-left: 2px;
+        padding: 2px 9px 2px 8px;
+        border: 1px solid rgba(34, 36, 38, .22);
+        border-radius: 999px;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        font-size: 92%;
+        line-height: 1.4;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: opacity .15s ease, border-color .15s ease, color .15s ease;
+    }
+
+    .reading-map-theme-legend.has-selection .rg-theme-clear {
+        display: inline-flex;
+    }
+
+    .rg-theme-clear:hover,
+    .rg-theme-clear:focus-visible {
+        border-color: #2185d0;
+        color: #2185d0;
+    }
+
+    html.dark-theme .rg-theme-clear {
+        border-color: rgba(255, 255, 255, .3);
+    }
+
+    html.dark-theme .rg-theme-clear:hover,
+    html.dark-theme .rg-theme-clear:focus-visible {
+        border-color: #64b5f6;
+        color: #64b5f6;
+    }
+
     .rg-theme-swatch {
         width: 10px;
         height: 10px;
@@ -911,7 +950,7 @@
     }
 
     .reading-map-theme-attribution {
-        margin: 4px 2px 0;
+        margin: 10px 2px 0;
         font-size: 72%;
         line-height: 1.3;
         opacity: .55;

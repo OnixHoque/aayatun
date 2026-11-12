@@ -309,6 +309,14 @@
 			item.appendChild(num);
 			themeLegend.appendChild(item);
 		}
+		// Temporary chip that clears the theme highlight; visible only
+		// while a theme is selected (the legend carries has-selection then).
+		var clearBtn = document.createElement('button');
+		clearBtn.type = 'button';
+		clearBtn.className = 'rg-theme-clear';
+		clearBtn.setAttribute('aria-label', 'Clear the theme highlight');
+		clearBtn.textContent = '× Clear';
+		themeLegend.appendChild(clearBtn);
 	}
 
 	// One synchronous repaint of all 6,236 squares through the site
@@ -394,6 +402,12 @@
 		// legend swatch again (or switching themes off) restores every colour.
 		if (themeLegend) {
 			themeLegend.addEventListener('click', function (evt) {
+				var clearBtn = evt.target && evt.target.closest
+					? evt.target.closest('.rg-theme-clear') : null;
+				if (clearBtn) {
+					withThemeSwap(function () { setThemeFocus(null); });
+					return;
+				}
 				var btn = evt.target && evt.target.closest
 					? evt.target.closest('.rg-theme-key') : null;
 				if (!btn) return;
@@ -736,6 +750,16 @@
 	grid.addEventListener('pointermove', hoverCell);
 	grid.addEventListener('click', selectCell);
 	grid.addEventListener('pointerleave', leaveGrid);
+
+	// Clicking anywhere outside the theme legend clears the temporary
+	// highlight too (with the loading bar, like switching themes). Clicks
+	// on the legend itself are left alone so select/unselect can work.
+	document.addEventListener('click', function (evt) {
+		if (themeFocus === null) return;
+		var legend = document.getElementById('reading-map-theme-legend');
+		if (legend && legend.contains(evt.target)) return;
+		withThemeSwap(function () { setThemeFocus(null); });
+	});
 
 	// Clicking anywhere outside the map itself (the readout cards, the
 	// legend, the page or the dimmer) drops the selection, so the readout
