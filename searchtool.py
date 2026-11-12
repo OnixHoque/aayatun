@@ -18,6 +18,8 @@ import re
 import sqlite3
 import threading
 
+from markupsafe import Markup
+
 import searchnorm
 from searchnorm import BKTree, normalize, snippet
 
@@ -322,7 +324,7 @@ def _format(rows, highlight_terms, offset=0):
 			'ai': '',
 		}
 		for col in matched:
-			item[_CHIP_TO_ITEM[col]] = snippet(field(col), terms)
+			item[_CHIP_TO_ITEM[col]] = Markup(snippet(field(col), terms))
 		results.append(item)
 	return results
 
