@@ -104,23 +104,87 @@
    window.showLoading = showLoading;
    window.hideLoading = hideLoading;
 
+   // Programmatic navigations (buttons, inline handlers, the verse modal
+   // iframe) call this instead of assigning location.href directly, so the
+   // bar appears in the same frame as the tap. From an iframe it shows the
+   // parent page's bar and navigates the parent.
+   function go(url, replace)
+   {
+     if (!url) return;
+     var target = window;
+     try {
+       if (window.parent && window.parent !== window && window.parent.AayatunNav) {
+         target = window.parent;
+       }
+     } catch (e) {}
+     if (target !== window && target.AayatunNav) target.AayatunNav.loading();
+     else showLoading();
+     if (replace) target.location.replace(url);
+     else target.location.href = url;
+   }
+   window.AayatunNav = { go: go, loading: showLoading, done: hideLoading };
+
    window.addEventListener('pageshow', hideLoading);
    // Mobile browsers (iOS Safari, Chrome) often skip beforeunload on
    // navigation but do fire pagehide; set the flag there as well.
    window.addEventListener('pagehide', showLoading);
    // Unload-time changes often never repaint on mobile (the old document is
    // torn down), so also show the bar at TAP time, before the default
-   // navigation begins. See also navigateVerse() and the index page, which
-   // call showLoading() for JS-driven redirects.
+   // navigation begins. Links are covered here; buttons/JS-driven redirects
+   // use AayatunNav.go(), [data-loading], or an inline location assignment.
    document.addEventListener('click', function (e) {
-     var a = e.target && e.target.closest && e.target.closest('a[href]');
-     if (!a) return;
-     var href = a.getAttribute('href');
-     if (!href || href.charAt(0) === '#') return;
-     if (a.target === '_blank' || a.hasAttribute('download')) return;
-     if (a.origin && a.origin !== window.location.origin) return;
-     showLoading();
+     var t = e.target;
+     if (!t || !t.closest) return;
+
+     // Real links first, so target/download/off-site rules always win.
+     var a = t.closest('a[href]');
+     if (a) {
+       var href = a.getAttribute('href');
+       if (!href || href.charAt(0) === '#') return;
+       if (a.target === '_blank' || a.hasAttribute('download')) return;
+       if (a.origin && a.origin !== window.location.origin) return;
+       showLoading();
+       return;
+     }
+
+     // Declarative hook for buttons whose handler navigates. The optional
+     // data-href lets a plain button navigate without its own handler.
+     var marked = t.closest('[data-loading], [data-navigate]');
+     if (marked) {
+       if (!marked.disabled && marked.getAttribute('aria-disabled') !== 'true') {
+         showLoading();
+       }
+       var dataHref = marked.getAttribute('data-href');
+       if (dataHref && !marked.hasAttribute('onclick')) {
+         e.preventDefault();
+         go(dataHref);
+       }
+       return;
+     }
+
+     // Safety net for existing inline handlers that assign a location
+     // directly. It only fires on buttons, never on toggles/modals/share.
+     var btn = t.closest('button, [role="button"], input[type="submit"], input[type="button"]');
+     if (btn) {
+       var inline = btn.getAttribute('onclick') || '';
+       if (/\blocation\s*\.\s*(href|replace|assign)\b/.test(inline)) showLoading();
+     }
    }, true);
+
+   // A submitting form navigates away (the search form is the only one).
+   // Bubble phase + defaultPrevented so Fomantic's validation can cancel it
+   // without leaving the bar stuck.
+   document.addEventListener('submit', function (e) {
+     var f = e.target;
+     if (!f || f.tagName !== 'FORM') return;
+     if (e.defaultPrevented || f.hasAttribute('data-no-loading')) return;
+     if (f.target && f.target !== '_self') return;
+     try {
+       var action = f.getAttribute('action');
+       if (action && new URL(action, window.location.href).origin !== window.location.origin) return;
+     } catch (err) {}
+     showLoading();
+   }, false);
  })();
  </script>
 

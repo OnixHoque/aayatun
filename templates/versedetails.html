@@ -215,16 +215,16 @@
     		<span id="more-controls" style="display: none;">
     			<span style="font-size: .8em; color: gray; text-align: center; padding-right: 30px;">Surah <span id="surah-name-label">{{ details['surah_name'] }}</span></span>
     			<span style="display: inline-block;">
-	    			<button style="font-family: 'Open Sans' font-size: 90%;" class="circular ui tiny basic icon button" onclick="window.parent.location.href ='{{ url_for('arabic_fulltext', surah=details['surah']) }}'">
+	    			<button id="surah-view-arabic" data-loading style="font-family: 'Open Sans' font-size: 90%;" class="circular ui tiny basic icon button" onclick="window.parent.location.href ='{{ url_for('arabic_fulltext', surah=details['surah']) }}'">
 						Arabic
 					</button>
-					<button style="font-family: 'Open Sans' font-size: 90%; " class="circular ui tiny basic icon button" onclick="window.parent.location.href ='{{ url_for('translation', surah=details['surah']) }}'">
+					<button id="surah-view-translation" data-loading style="font-family: 'Open Sans' font-size: 90%; " class="circular ui tiny basic icon button" onclick="window.parent.location.href ='{{ url_for('translation', surah=details['surah']) }}'">
 						Translation
 					</button>
-					<button style="font-family: 'Open Sans' font-size: 90%; " class="circular ui tiny basic icon button"  onclick="window.parent.location.href ='{{ url_for('bn_tafsir', surah=details['surah']) }}'">
+					<button id="surah-view-bn" data-loading style="font-family: 'Open Sans' font-size: 90%; " class="circular ui tiny basic icon button"  onclick="window.parent.location.href ='{{ url_for('bn_tafsir', surah=details['surah']) }}'">
 						Tafsir (Bn)
 					</button>
-					<button style="font-family: 'Open Sans' font-size: 90%; " class="circular ui tiny basic icon button" onclick="window.parent.location.href ='{{ url_for('en_tafsir', surah=details['surah']) }}'">
+					<button id="surah-view-en" data-loading style="font-family: 'Open Sans' font-size: 90%; " class="circular ui tiny basic icon button" onclick="window.parent.location.href ='{{ url_for('en_tafsir', surah=details['surah']) }}'">
 						Tafsir (En)
 					</button>
 				<i class="icon close" style="cursor: pointer;" onclick="$('#more-controls').hide(); $('#more-btn').show(); $('#play-btn').show(); $('#share-btn').show(); $('#tajweed-toggle-btn').show(); $('#mushaf-jump-btn').show()"></i>
@@ -238,7 +238,7 @@
 			  <i class="icon share alternate"></i>
 			</button>
 			{% if details['qcf_page'] %}
-	    	<button id="mushaf-jump-btn" data-tooltip="Open on the mushaf page" title="Open on the mushaf page" aria-label="Open on the mushaf page" class="circular ui basic icon button" onclick="window.parent.location.href ='{{ url_for('mushaf_page', page_no=details['qcf_page']) }}?v={{ details['surah'] }}:{{ details['verse'] }}'">
+	    	<button id="mushaf-jump-btn" data-loading data-tooltip="Open on the mushaf page" title="Open on the mushaf page" aria-label="Open on the mushaf page" class="circular ui basic icon button" onclick="window.parent.location.href ='{{ url_for('mushaf_page', page_no=details['qcf_page']) }}?v={{ details['surah'] }}:{{ details['verse'] }}'">
 			  <i class="icon book"></i>
 			</button>
 			<script>

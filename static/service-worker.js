@@ -1,4 +1,10 @@
-const CACHE_NAME = 'aayatun-v65';
+const CACHE_NAME = 'aayatun-v66';
+
+// Prayer Time's sunrise/sunset/midnight pills use Material Symbols. The CSS
+// is precached with the shell, and install then caches every font file it
+// references, so the icons still render offline.
+const MATERIAL_SYMBOLS_CSS =
+  'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&icon_names=bedtime,books_movies_and_music,date_range,wb_twilight,wb_twilight_2&display=block';
 
 const CORE_ASSETS = [
   '/',
@@ -12,12 +18,16 @@ const CORE_ASSETS = [
   '/static/js/verse-nav.js',
   '/static/js/qcf-font.js',
   '/static/js/mushaf-zoom.js',
+  '/static/js/install.js',
   '/static/css/style.css',
   '/static/manifest.json',
+  '/static/manifest-prayer.json',
+  '/static/manifest-counter.json',
   '/static/images/favicon.png',
   '/static/images/apple-touch-icon.png',
   '/static/images/icon-192.png',
   '/static/images/icon-512.png',
+  MATERIAL_SYMBOLS_CSS,
 ];
 
 const CACHEABLE_HOSTS = [
@@ -34,7 +44,7 @@ self.addEventListener('install', (evt) => {
       console.log('[ServiceWorker] Pre-caching app shell');
       return Promise.all(
         CORE_ASSETS.map((url) => cache.add(url).catch(() => null))
-      );
+      ).then(() => precacheIconFont(cache));
     })
   );
 
@@ -58,6 +68,22 @@ self.addEventListener('activate', (evt) => {
 
 function isCacheable(url) {
   return url.origin === self.location.origin || CACHEABLE_HOSTS.includes(url.hostname);
+}
+
+// The Material Symbols stylesheet points at hashed .woff2 files on
+// fonts.gstatic.com. Cache those too, otherwise the CSS survives offline but
+// the glyphs do not.
+function precacheIconFont(cache) {
+  return cache.match(MATERIAL_SYMBOLS_CSS).then((res) => {
+    if (!res) return null;
+    return res.text().then((css) => {
+      const urls = [];
+      const re = /url\((https:[^)]+)\)/g;
+      let match;
+      while ((match = re.exec(css))) urls.push(match[1]);
+      return Promise.all(urls.map((url) => cache.add(url).catch(() => null)));
+    });
+  }).catch(() => null);
 }
 
 // A failed fetch with nothing cached must still resolve to a Response:

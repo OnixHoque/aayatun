@@ -549,25 +549,46 @@
 
 	globe.addEventListener('click', function (evt) {
 		evt.preventDefault();
-		if (!built) build();
-		paint();
-		if (window.jQuery) {
-			window.jQuery('#reading-map-modal').modal('show');
-			window.requestAnimationFrame(function () {
-				window.requestAnimationFrame(function () {
-					layoutMap();
-					scroll.scrollLeft = 0;
-					syncX();
-				});
-			});
-			// The open animation moves (and scales) the modal, so the row
-			// count is measured again once it has settled.
-			window.setTimeout(function () {
-				layoutMap();
-				syncX();
-			}, 400);
-			// Let the modal finish opening before the card is drawn.
-			window.setTimeout(warmShare, 450);
+		var nav = window.AayatunNav;
+		// Building all 6,236 cells blocks the main thread, so the first open
+		// shows the site's loading bar. Let it paint before the build starts.
+		var firstOpen = !built;
+		if (firstOpen) {
+			if (nav && nav.loading) nav.loading();
+			else if (window.showLoading) window.showLoading();
 		}
+
+		function done() {
+			if (nav && nav.done) nav.done();
+			else if (window.hideLoading) window.hideLoading();
+		}
+
+		window.requestAnimationFrame(function () {
+			window.setTimeout(function () {
+				if (!built) build();
+				paint();
+				if (window.jQuery) {
+					window.jQuery('#reading-map-modal').modal('show');
+					window.requestAnimationFrame(function () {
+						window.requestAnimationFrame(function () {
+							layoutMap();
+							scroll.scrollLeft = 0;
+							syncX();
+							if (firstOpen) done();
+						});
+					});
+					// The open animation moves (and scales) the modal, so the row
+					// count is measured again once it has settled.
+					window.setTimeout(function () {
+						layoutMap();
+						syncX();
+					}, 400);
+					// Let the modal finish opening before the card is drawn.
+					window.setTimeout(warmShare, 450);
+				} else if (firstOpen) {
+					done();
+				}
+			}, 0);
+		});
 	});
 })();

@@ -45,6 +45,11 @@
 
     {% block options %}{% endblock %}
 
+    {# The basmala sits above the table, not in a row: DataTables sorts its
+       empty verse cell to the end and then detaches it from the DOM when it
+       paginates, so a row here would only appear on the last page. #}
+    {% block bismillah %}{% endblock %}
+
     <table class="ui very basic unstackable left aligned table" id="cur_table">
     	<thead>
     		<tr style="display: none;">
@@ -60,9 +65,6 @@
     		<!-- <td class="two wide selectable" onclick="window.location.href='{{ url_for('details', surah=surah_no, verse=x[0]) }}';" style="font-family: Lora; font-size: 100%; text-align: center; vertical-align: top; padding-top: 2%; border-radius: 3px;"> {{ x[0] }} </td>  -->
     		<td class="two wide selectable" onclick="showModal( {{ surah_no }} , {{ x[0] }} )" style="font-family: Lora; font-size: 100%; text-align: center; vertical-align: top; padding-top: 2%; border-radius: 3px;"> {{ x[0] }} </td> 
     		<td>
-    		{% if x[0] == 1 %}
-    			{% block bismillah %} {% endblock %}
-    		{% endif %}
 	    		{% if mushaf %}
 	    		<div class="mushaf-ayah" data-page="{{ qcf[loop.index0][0] or '' }}">
 	    			<span class="mushaf-plain">{{ x[1] }}</span><span class="mushaf-qcf">{{ qcf[loop.index0][1] }}</span>

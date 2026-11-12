@@ -6,8 +6,10 @@
 <meta name="theme-color" content="#0f1b33">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Counter">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="manifest" href="/static/manifest.json">
+<link rel="apple-touch-icon" sizes="180x180" href="/static/images/apple-touch-icon.png">
+<link rel="manifest" href="/static/manifest-counter.json">
 <title>Daily Counter</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -328,12 +330,23 @@ dialog[open] { animation: dlg-in .16s ease-out; }
 html:not(.kbd) :focus,
 html:not(.kbd) :focus-visible { outline: none !important; }
 button, .tile, input, [tabindex] { -webkit-tap-highlight-color: transparent; }
+
+/* Install button beside New counter. */
+.top-actions { display: flex; align-items: center; gap: 10px; flex: none; }
+.top-actions .install-btn { width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid var(--edge); border-radius: 50%; background: rgba(255,255,255,.06); color: var(--fg); }
+.top-actions .install-btn:hover { background: rgba(255,255,255,.14); border-color: rgba(205,240,243,.36); }
+.top-actions .install-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+@media (max-width: 560px) {
+  .top { flex-wrap: wrap; }
+  .top-actions { width: 100%; justify-content: space-between; }
+  .top-actions .add { flex: 1; justify-content: center; }
+}
 </style>
 </head>
 <body>
 <main class="shell">
   <nav class="counter-nav" aria-label="Page navigation"><button id="backBtn" class="counter-back" type="button" aria-label="Back to home" title="Back to home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button></nav>
-  <header class="top"><div><p class="eyebrow">A little progress, every day</p><h1>Daily Counter</h1><p class="date" id="todayLabel"></p></div><button class="add" id="addBtn" type="button"><span class="plus-icon" aria-hidden="true">+</span> New counter</button></header>
+  <header class="top"><div><p class="eyebrow">A little progress, every day</p><h1>Daily Counter</h1><p class="date" id="todayLabel"></p></div><div class="top-actions"><button type="button" class="install-btn" data-install-app aria-label="Install this app" title="Install this app" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11"/><path d="m8 10 4 4 4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></button><button class="add" id="addBtn" type="button"><span class="plus-icon" aria-hidden="true">+</span> New counter</button></div></header>
   <div class="intro"><h2>Your counters</h2><span id="counterSummary"></span></div>
   <section class="grid" id="counterGrid" aria-label="Counters"></section>
   <section class="archive" id="archiveSection" hidden aria-label="Archived counters"><button type="button" class="archive-toggle" id="archiveToggle" aria-expanded="false" aria-controls="archiveList"><span id="archiveLabel">Archived</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="archive-list" id="archiveList" hidden></div></section>
@@ -617,5 +630,6 @@ setInterval(()=>{if(dayKey()!==lastDay){render();if($('statsDialog').open)fillSt
   }
 })();
 </script>
+<script defer src="/static/js/install.js"></script>
 </body>
 </html>

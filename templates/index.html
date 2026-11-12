@@ -763,8 +763,8 @@ document.addEventListener('DOMContentLoaded', function () {
 			let s = $('#surah').find(":selected").attr('value');
 			// var v = $('#verse').find(":selected").attr('value');
 			// console.log(target_location[i]);
-			if (window.showLoading) { window.showLoading(); }
-			window.parent.location.href = target_location[i].replace("-1", s);
+			if (window.AayatunNav) window.AayatunNav.go(target_location[i].replace("-1", s));
+			else window.parent.location.href = target_location[i].replace("-1", s);
 		}
 	}
 	$('#surah').dropdown('setting', 'onChange', function () {
@@ -777,11 +777,14 @@ document.addEventListener('DOMContentLoaded', function () {
 		var s = $('#surah').find(":selected").attr('value');
 		var v = $('#verse').find(":selected").attr('value');
 		var base_url = window.location.origin;
-		if (window.showLoading) { window.showLoading(); }
-		if (isJumpToPage())
-			window.location.replace(base_url + '/page/' + v);
-		else
-			window.location.replace(base_url + '/' + s + '/' + v);
+		var url = isJumpToPage()
+			? base_url + '/page/' + v
+			: base_url + '/' + s + '/' + v;
+		if (window.AayatunNav) window.AayatunNav.go(url, true);
+		else {
+			if (window.showLoading) { window.showLoading(); }
+			window.location.replace(url);
+		}
 	})
 
 
@@ -799,7 +802,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
 	$('#btnSurprise').click(function()
 	{
-		window.location.href = surpriseTarget();
+		var url = surpriseTarget();
+		if (window.AayatunNav) window.AayatunNav.go(url);
+		else {
+			if (window.showLoading) { window.showLoading(); }
+			window.location.href = url;
+		}
 	})
 
 	function isJumpToPage()
@@ -920,9 +928,18 @@ document.addEventListener('DOMContentLoaded', function () {
 			window.AayatunReadingMap.refresh();
 	});
 
-	$('#more-apps-btn').click(function (evt) {
+	$('#more-apps-btn').on('click', function (evt) {
 		evt.preventDefault();
-		$('#more-apps-modal').modal('show');
+	}).popup({
+		popup: $('#more-apps-popup'),
+		on: 'click',
+		position: 'top center',
+		lastResort: 'bottom center',
+		exclusive: true,
+		hoverable: true
+	});
+	$('#more-apps-popup').on('click', 'a', function () {
+		$('#more-apps-btn').popup('hide');
 	});
 
     if('serviceWorker' in navigator) {
@@ -967,25 +984,22 @@ document.addEventListener('DOMContentLoaded', function () {
 				<button type="button" class="ui button" onclick="$('#ios-install-modal').modal('hide')">Got it</button>
 			</div>
 		</div>
-		<div id="more-apps-modal" class="ui small modal">
-			<div class="header">More Apps</div>
-			<div class="content">
-				<p class="more-apps-intro">Small tools that work alongside Aayatun.</p>
-				<div class="more-apps-grid">
-					<a class="more-apps-card" href="{{ url_for('prayer_time') }}">
-						<i class="more-apps-icon clock outline" aria-hidden="true"></i>
+		<div id="more-apps-popup" class="ui flowing pointing popup">
+			<div class="more-apps-menu">
+				<a class="more-apps-item" href="{{ url_for('prayer_time') }}">
+					<i class="more-apps-icon clock outline" aria-hidden="true"></i>
+					<span class="more-apps-copy">
 						<span class="more-apps-title">Prayer Time</span>
 						<span class="more-apps-text">Prayer times, weather and recitation in one screen.</span>
-					</a>
-					<a class="more-apps-card" href="{{ url_for('daily_counter') }}">
-						<i class="more-apps-icon plus square outline" aria-hidden="true"></i>
+					</span>
+				</a>
+				<a class="more-apps-item" href="{{ url_for('daily_counter') }}">
+					<i class="more-apps-icon plus square outline" aria-hidden="true"></i>
+					<span class="more-apps-copy">
 						<span class="more-apps-title">Counter</span>
 						<span class="more-apps-text">A simple daily dhikr counter with history and a focus mode.</span>
-					</a>
-				</div>
-			</div>
-			<div class="actions">
-				<button type="button" class="ui button" onclick="$('#more-apps-modal').modal('hide')">Close</button>
+					</span>
+				</a>
 			</div>
 		</div>
 		<div id="reading-map-modal" class="ui modal">

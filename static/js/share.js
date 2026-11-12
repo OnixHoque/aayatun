@@ -430,12 +430,14 @@
 		// map, its key and the tag, all inside one 9:16 frame. The rings
 		// already spell out both counts, so there is no extra counts line.
 		var cardH = MAP_CARD_H;
-		var titleY = 82;
-		var msgY = 122;
-		var ringsY = 254;
-		var mapTop = 376;
-		var legendY = 616;
-		var tagY = 686;
+		var titleY = 76;
+		var msgY = 112;
+		var ringsY = 240;
+		var mapTop = 358;
+		var legendHeadY = 590;
+		var legendY = 614;
+		var legendLine = 24;
+		var tagY = 730;
 
 		var out = document.createElement('canvas');
 		out.width = OUTPUT_W;
@@ -461,11 +463,11 @@
 
 		ctx.textAlign = 'center';
 		ctx.fillStyle = titleColor;
-		ctx.font = fontFor(TITLE, 28);
+		ctx.font = fontFor(TITLE, 30);
 		ctx.fillText('Quran Exploration Map', MAP_W / 2, titleY);
 
 		ctx.fillStyle = dark ? 'rgba(255,255,255,.74)' : 'rgba(0,0,0,.64)';
-		ctx.font = "400 17px 'Open Sans', system-ui, sans-serif";
+		ctx.font = "400 19px 'Open Sans', system-ui, sans-serif";
 		var msgLines = wrap(ctx, card.message || mapMessage(), MAP_W - PAD * 2);
 		for (var m = 0; m < msgLines.length; m++) {
 			ctx.fillText(msgLines[m], MAP_W / 2, msgY + m * 24);
@@ -500,10 +502,10 @@
 			ctx.fillText(pctLabel(pct), cx, ringsY + 1);
 
 			ctx.fillStyle = dark ? 'rgba(255,255,255,.9)' : 'rgba(0,0,0,.8)';
-			ctx.font = "600 17px 'Open Sans', system-ui, sans-serif";
+			ctx.font = "600 18px 'Open Sans', system-ui, sans-serif";
 			ctx.fillText(label, cx, ringsY + r + 30);
 			ctx.fillStyle = muted;
-			ctx.font = "400 14px 'Open Sans', system-ui, sans-serif";
+			ctx.font = "400 15px 'Open Sans', system-ui, sans-serif";
 			ctx.fillText(note, cx, ringsY + r + 52);
 		}
 
@@ -564,53 +566,58 @@
 		ctx.drawImage(bmp, (MAP_W - mapW) / 2, mapTop, mapW, mapH);
 		ctx.imageSmoothingEnabled = true;
 
-		// The key spells the shades out in two rows: the two page-level
-		// colours first, then the three verse-frequency greens with their
-		// multipliers, so nobody has to guess what "Less/More" means.
-		var sw = 15, gap = 7, groupGap = 30;
-		var legendFont = "400 17px 'Open Sans', system-ui, sans-serif";
-		ctx.font = legendFont;
+		// The key spells every shade out as a bulleted sentence, so someone
+		// who has never seen the map knows what each colour means.
 		ctx.textAlign = 'left';
+		ctx.fillStyle = dark ? 'rgba(255,255,255,.9)' : 'rgba(0,0,0,.78)';
+		ctx.font = "700 17px 'Open Sans', system-ui, sans-serif";
+		ctx.fillText('What the colours mean', PAD, legendHeadY);
 
-		function keySwatch(x, y, rgb) {
+		var sw = 14, gap = 10;
+		var legendText = [
+			"I haven't read this verse yet",
+			'I opened a mushaf page that contains this verse',
+			'I opened this verse once',
+			'I opened this verse twice',
+			'I opened this verse 3 or more times'
+		];
+		// The longest sentence sets the size: shrink until it fits beside the
+		// colour box instead of letting it run off the card.
+		var legendSize = 18;
+		var legendMax = MAP_W - PAD * 2 - sw - gap;
+		function setLegendFont() {
+			ctx.font = "400 " + legendSize + "px 'Open Sans', system-ui, sans-serif";
+		}
+		setLegendFont();
+		while (legendSize > 12 && legendText.some(function (t) {
+			return ctx.measureText(t).width > legendMax;
+		})) {
+			legendSize -= 1;
+			setLegendFont();
+		}
+
+		function legendRow(y, rgb, text) {
 			ctx.fillStyle = 'rgb(' + rgb.join(',') + ')';
-			ctx.fillRect(x, y - sw / 2, sw, sw);
-		}
-		function keyWord(x, y, text) {
-			ctx.fillStyle = dark ? 'rgba(255,255,255,.72)' : 'rgba(0,0,0,.62)';
-			ctx.fillText(text, x, y);
-			return x + ctx.measureText(text).width;
+			ctx.fillRect(PAD, y - sw / 2, sw, sw);
+			// "Not opened yet" is nearly white, so every box gets a hairline
+			// edge or it disappears into the card.
+			ctx.strokeStyle = dark ? 'rgba(255,255,255,.22)' : 'rgba(0,0,0,.14)';
+			ctx.lineWidth = 1;
+			ctx.strokeRect(PAD + 0.5, y - sw / 2 + 0.5, sw - 1, sw - 1);
+			ctx.fillStyle = dark ? 'rgba(255,255,255,.78)' : 'rgba(0,0,0,.7)';
+			ctx.fillText(text, PAD + sw + gap, y);
 		}
 
-		var wNot = ctx.measureText('Not yet').width;
-		var wPage = ctx.measureText('Page visited').width;
-		var row1W = sw + gap + wNot + groupGap + sw + gap + wPage;
-		var lx = (MAP_W - row1W) / 2;
-		keySwatch(lx, legendY, shades[0]);
-		lx = keyWord(lx + sw + gap, legendY + 1, 'Not yet') + groupGap;
-		keySwatch(lx, legendY, shades[1]);
-		keyWord(lx + sw + gap, legendY + 1, 'Page visited');
-
-		var prefix = 'Verses opened: ';
-		var wOne = ctx.measureText('1×').width;
-		var wTwo = ctx.measureText('2×').width;
-		var wThree = ctx.measureText('3×+').width;
-		var row2W = ctx.measureText(prefix).width + sw + gap + wOne +
-			groupGap + sw + gap + wTwo + groupGap + sw + gap + wThree;
-		var lx2 = (MAP_W - row2W) / 2;
-		var y2 = legendY + 33;
-		lx2 = keyWord(lx2, y2, prefix);
-		keySwatch(lx2, y2 - 1, shades[2]);
-		lx2 = keyWord(lx2 + sw + gap, y2, '1×') + groupGap;
-		keySwatch(lx2, y2 - 1, shades[3]);
-		lx2 = keyWord(lx2 + sw + gap, y2, '2×') + groupGap;
-		keySwatch(lx2, y2 - 1, shades[4]);
-		keyWord(lx2 + sw + gap, y2, '3×+');
+		legendRow(legendY, shades[0], legendText[0]);
+		legendRow(legendY + legendLine, shades[1], legendText[1]);
+		legendRow(legendY + legendLine * 2, shades[2], legendText[2]);
+		legendRow(legendY + legendLine * 3, shades[3], legendText[3]);
+		legendRow(legendY + legendLine * 4, shades[4], legendText[4]);
 
 		ctx.textAlign = 'center';
 		ctx.fillStyle = muted;
 		ctx.font = "400 15px 'Open Sans', system-ui, sans-serif";
-		ctx.fillText('#aayatun', MAP_W / 2, tagY);
+		ctx.fillText('Track your own reading at aayatun.com · #aayatun', MAP_W / 2, tagY);
 
 		/* Brand band: the site name, then the full URL under it. */
 		var bandTop = cardH - BAND;
@@ -890,7 +897,7 @@
 	}
 
 	function mapMessage() {
-		return 'My Quran exploration so far, as of ' + todayLabel();
+		return 'Every square is one verse of the Quran. This is how far I have explored as of ' + todayLabel() + '.';
 	}
 
 	function mapPayload(o) {
@@ -900,9 +907,9 @@
 			card: 'map',
 			ref: 'quran-exploration-map',
 			title: 'My Quran exploration — Aayatun',
-			text: mapMessage() + '\n\n' +
-				o.deep.toLocaleString() + ' of 6,236 verses studied · ' +
-				o.pages + ' of 604 pages visited.\n\n' + url + '\n' + HASHTAG,
+			text: 'I have explored ' + o.deep.toLocaleString() + ' of 6,236 verses and ' +
+				o.pages + ' of 604 pages of the Quran. Track your own reading journey ' +
+				'with the Quran Exploration Map on Aayatun.\n\n' + url + '\n' + HASHTAG,
 			url: url,
 			deep: o.deep,
 			pages: o.pages,

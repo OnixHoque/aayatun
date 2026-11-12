@@ -532,6 +532,39 @@
 		}
 	}
 
+	// The control row is rendered once for the verse the server sent. After a
+	// swipe (or an instant commit) it has to point at the verse now on screen,
+	// otherwise "Mushaf" opens the first verse's page instead of this one.
+	function syncVerseLinks(d) {
+		var jump = byId('mushaf-jump-btn');
+		if (jump) {
+			if (d.qcf_page) {
+				jump.style.display = '';
+				jump.onclick = function () {
+					var url = '/page/' + d.qcf_page + '?v=' + d.surah + ':' + d.verse;
+					if (window.AayatunNav) window.AayatunNav.go(url);
+					else window.parent.location.href = url;
+				};
+			} else {
+				jump.style.display = 'none';
+			}
+		}
+		var views = {
+			'surah-view-arabic': '/mushaf/' + d.surah,
+			'surah-view-translation': '/translation/' + d.surah,
+			'surah-view-bn': '/tafsir/bn/' + d.surah,
+			'surah-view-en': '/tafsir/en/' + d.surah
+		};
+		Object.keys(views).forEach(function (id) {
+			var btn = byId(id);
+			if (!btn) return;
+			btn.onclick = function () {
+				if (window.AayatunNav) window.AayatunNav.go(views[id]);
+				else window.parent.location.href = views[id];
+			};
+		});
+	}
+
 	function applyVerse(d, dir) {
 		// Arrow links go through the base template's click capture, which
 		// shows the bar before we get here. Make sure it never sticks.
@@ -568,6 +601,8 @@
 		}
 		var nameLabel = byId('surah-name-label');
 		if (nameLabel) nameLabel.textContent = state.surahName;
+
+		syncVerseLinks(d);
 
 		setArrow('prev-arrow', d.prev);
 		setArrow('next-arrow', d.next);
@@ -763,6 +798,7 @@
 				return;
 			}
 			// API unavailable / token stale: let the server render the page.
+			if (window.showLoading) window.showLoading();
 			window.location.href = '/' + surah + '/' + verse;
 		});
 	}
@@ -1021,6 +1057,7 @@
 		// Remember the verse first painted from the server response, so a
 		// later refresh with no connection still has its Arabic + translation.
 		offlinePut(state.data);
+		syncVerseLinks(state.data);
 
 		audioSources = audioUrl(state.surah, state.verse);
 

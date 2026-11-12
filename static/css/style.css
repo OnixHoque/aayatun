@@ -364,6 +364,14 @@ html.dark-theme .mushaf-zoom-sep {
 	padding: .3rem 0 .1rem;
 }
 
+/* The Arabic surah view gives the basmala its own line above the verses,
+   the way the mushaf page does, instead of sharing verse 1's cell. It sits
+   outside the DataTables table so sorting/pagination cannot move it. */
+.surah-bismillah {
+	text-align: center;
+	padding: .5rem 0 .7rem;
+}
+
 /* Fomantic's `.ui.table td` rule outranks a bare class selector, so the
    verse number kept inheriting the table's left alignment. */
 .ui.table td.mushaf-verse-no {
@@ -572,103 +580,95 @@ html.dark-theme .mushaf-row-jump td {
 	}
 }
 
-/* Index footer → More Apps popup. The two apps are card buttons, and the
-   modal surface needs its own dark colours because Fomantic hard-codes
-   white on .ui.modal > header/content/actions and the page text colour
-   would otherwise disappear into it. */
-#more-apps-modal.ui.modal {
-	border-radius: 14px;
+/* Index footer → More Apps pointing popup. A compact vertical menu instead
+   of a modal: two rows with an icon, title and one-line description. */
+#more-apps-popup.ui.popup {
+	padding: 8px;
+	border-radius: 12px;
+	max-width: calc(100vw - 24px);
 }
 
-#more-apps-modal.ui.modal > .content {
-	padding: 1.25rem 1.5rem 1.5rem;
-}
-
-.more-apps-intro {
-	margin: 0 0 14px;
-	font-size: 88%;
-	opacity: .65;
-}
-
-.more-apps-grid {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-	gap: 12px;
-}
-
-.more-apps-card {
+.more-apps-menu {
 	display: flex;
 	flex-direction: column;
-	gap: 6px;
-	padding: 16px 15px;
-	border: 1px solid rgba(34, 36, 38, .14);
-	border-radius: 12px;
-	background: #f7f8fa;
+	gap: 2px;
+	min-width: 240px;
+}
+
+.more-apps-item {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	padding: 10px 12px;
+	border-radius: 8px;
 	color: rgba(0, 0, 0, .87);
 	text-decoration: none;
-	transition: border-color .15s ease, background-color .15s ease, transform .1s ease;
+	transition: background-color .15s ease, color .15s ease;
 }
 
-.more-apps-card:hover,
-.more-apps-card:focus-visible {
-	border-color: #4183C4;
+.more-apps-item:hover,
+.more-apps-item:focus-visible {
 	background: #eef4fc;
 	color: rgba(0, 0, 0, .87);
-	transform: translateY(-1px);
 }
 
-.more-apps-card:active {
-	transform: scale(.99);
+.more-apps-item:active {
+	background: #e3edfa;
 }
 
 .more-apps-icon {
-	font-size: 1.6rem;
+	flex: none;
+	width: 1.4rem;
+	margin-top: 2px;
+	text-align: center;
+	font-size: 1.25rem;
 	line-height: 1;
 	color: #4183C4;
 }
 
+.more-apps-copy {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+}
+
 .more-apps-title {
-	font-size: 1.02rem;
+	font-size: .95rem;
 	font-weight: 700;
+	line-height: 1.2;
 }
 
 .more-apps-text {
-	font-size: 82%;
-	line-height: 1.4;
+	font-size: 78%;
+	line-height: 1.35;
 	opacity: .7;
 }
 
-html.dark-theme #more-apps-modal.ui.modal,
-html.dark-theme #more-apps-modal.ui.modal > .header,
-html.dark-theme #more-apps-modal.ui.modal > .content {
+html.dark-theme #more-apps-popup.ui.popup {
 	background: rgb(44, 44, 44);
 	color: rgba(255, 255, 255, .87);
+	border-color: rgba(80, 80, 80, .8);
+	box-shadow: 0 8px 24px rgba(0, 0, 0, .45);
 }
 
-html.dark-theme #more-apps-modal.ui.modal > .header,
-html.dark-theme #more-apps-modal.ui.modal > .actions {
+html.dark-theme #more-apps-popup.ui.popup:before {
+	background: rgb(44, 44, 44);
 	border-color: rgba(80, 80, 80, .8);
 }
 
-html.dark-theme #more-apps-modal.ui.modal > .actions {
-	background: rgb(38, 38, 38);
+html.dark-theme .more-apps-item {
+	color: rgba(255, 255, 255, .87);
 }
 
-html.dark-theme #more-apps-modal.ui.modal > .close {
-	color: rgba(255, 255, 255, .7);
-}
-
-html.dark-theme .more-apps-card {
-	border-color: rgba(255, 255, 255, .14);
+html.dark-theme .more-apps-item:hover,
+html.dark-theme .more-apps-item:focus-visible {
 	background: rgb(58, 58, 58);
-	color: rgba(255, 255, 255, .87);
+	color: #fff;
 }
 
-html.dark-theme .more-apps-card:hover,
-html.dark-theme .more-apps-card:focus-visible {
-	border-color: #9CC4FF;
+html.dark-theme .more-apps-item:active {
 	background: rgb(68, 68, 68);
-	color: rgba(255, 255, 255, .87);
 }
 
 html.dark-theme .more-apps-icon {
