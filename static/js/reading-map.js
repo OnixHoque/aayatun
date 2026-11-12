@@ -318,26 +318,29 @@
 		themeLegend.appendChild(clearBtn);
 	}
 
-	// One synchronous repaint of all 6,236 squares through the site
-	// loading bar — no per-cell transitions and no artificial delays. The
-	// bar hides once the new frame has painted.
+	// Show the loading bar, let it paint, then run the 6,236-cell repaint
+	// and hide once the new frame has painted. The repaint is a heavy
+	// style recalc, so running it synchronously right after nav.loading()
+	// would coalesce both into one frame and the bar would never appear;
+	// yielding a frame first lets it paint before the work starts.
 	function withThemeSwap(fn)
 	{
 		var nav = window.AayatunNav;
-		var visible = grid && grid.getBoundingClientRect().width > 0;
 		if (nav && nav.loading) nav.loading();
 		else if (window.showLoading) window.showLoading();
-		fn();
-		if (!visible) {
-			if (nav && nav.done) nav.done();
-			else if (window.hideLoading) window.hideLoading();
-			return;
-		}
 		window.requestAnimationFrame(function () {
-			window.requestAnimationFrame(function () {
-				if (nav && nav.done) nav.done();
-				else if (window.hideLoading) window.hideLoading();
-			});
+			window.setTimeout(function () {
+				try {
+					fn();
+				} finally {
+					window.requestAnimationFrame(function () {
+						window.requestAnimationFrame(function () {
+							if (nav && nav.done) nav.done();
+							else if (window.hideLoading) window.hideLoading();
+						});
+					});
+				}
+			}, 0);
 		});
 	}
 
