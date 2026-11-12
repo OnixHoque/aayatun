@@ -545,6 +545,7 @@
         border-radius: 2px;
         background: #fff;
         box-shadow: inset 0 0 0 1px rgba(27, 31, 36, .14);
+        transition: opacity .15s ease;
     }
 
     .rg-cell.is-light { background: #9be9a8; box-shadow: none; }
@@ -559,69 +560,138 @@
         z-index: 1;
     }
 
-    /* Theme dots sit inside the square and are only drawn when the map is
-       in theme mode. The theme class is carried on the cell so repainting
-       the reading colours never loses it. */
-    .rg-dot {
-        display: none;
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        width: 4px;
-        height: 4px;
-        margin: -2px 0 0 -2px;
-        border-radius: 50%;
-        box-shadow: 0 0 0 1px rgba(0, 0, 0, .28);
+    /* Theme mode: the fill carries the theme and the border carries the
+       reading level, so the green square becomes a green ring and every
+       cell stays coloured by its theme. The neutral border stays for
+       verses that have not been read yet. */
+    .reading-map-grid.themes-on .rg-cell {
+        background: #fff;
+        box-shadow: inset 0 0 0 1px rgba(27, 31, 36, .2);
     }
 
-    .reading-map-grid.themes-on .rg-dot { display: block; }
+    .reading-map-grid.themes-on .rg-cell.t0 { background: #4e79a7; }
+    .reading-map-grid.themes-on .rg-cell.t1 { background: #f28e2b; }
+    .reading-map-grid.themes-on .rg-cell.t2 { background: #59a14f; }
+    .reading-map-grid.themes-on .rg-cell.t3 { background: #e15759; }
+    .reading-map-grid.themes-on .rg-cell.t4 { background: #b07aa1; }
+    .reading-map-grid.themes-on .rg-cell.t5 { background: #76b7b2; }
+    .reading-map-grid.themes-on .rg-cell.t6 { background: #edc948; }
+    .reading-map-grid.themes-on .rg-cell.t7 { background: #ff9da7; }
+    .reading-map-grid.themes-on .rg-cell.t8 { background: #9c755f; }
+    .reading-map-grid.themes-on .rg-cell.t9 { background: #7f9c4f; }
+    .reading-map-grid.themes-on .rg-cell.t10 { background: #a0cbe8; }
+    .reading-map-grid.themes-on .rg-cell.t11 { background: #6b6b6b; }
 
-    .rg-cell.t0 .rg-dot { background: #4e79a7; }
-    .rg-cell.t1 .rg-dot { background: #f28e2b; }
-    .rg-cell.t2 .rg-dot { background: #59a14f; }
-    .rg-cell.t3 .rg-dot { background: #e15759; }
-    .rg-cell.t4 .rg-dot { background: #b07aa1; }
-    .rg-cell.t5 .rg-dot { background: #76b7b2; }
-    .rg-cell.t6 .rg-dot { background: #edc948; }
-    .rg-cell.t7 .rg-dot { background: #ff9da7; }
-    .rg-cell.t8 .rg-dot { background: #9c755f; }
-    .rg-cell.t9 .rg-dot { background: #7f9c4f; }
-    .rg-cell.t10 .rg-dot { background: #a0cbe8; }
-    .rg-cell.t11 .rg-dot { background: #6b6b6b; }
+    .reading-map-grid.themes-on .rg-cell.is-light { box-shadow: inset 0 0 0 1px #9be9a8; }
+    .reading-map-grid.themes-on .rg-cell.is-deep-1 { box-shadow: inset 0 0 0 1px #40c463; }
+    .reading-map-grid.themes-on .rg-cell.is-deep-2 { box-shadow: inset 0 0 0 1px #30a14e; }
+    .reading-map-grid.themes-on .rg-cell.is-deep-3 { box-shadow: inset 0 0 0 1px #216e39; }
 
-    .reading-map-themes-toggle {
+    /* A selected theme dims every other theme so its verses stand out;
+       the green rings stay visible on the selection. */
+    .reading-map-grid[data-theme-focus="0"] .rg-cell:not(.t0) { opacity: .2; }
+    .reading-map-grid[data-theme-focus="1"] .rg-cell:not(.t1) { opacity: .2; }
+    .reading-map-grid[data-theme-focus="2"] .rg-cell:not(.t2) { opacity: .2; }
+    .reading-map-grid[data-theme-focus="3"] .rg-cell:not(.t3) { opacity: .2; }
+    .reading-map-grid[data-theme-focus="4"] .rg-cell:not(.t4) { opacity: .2; }
+    .reading-map-grid[data-theme-focus="5"] .rg-cell:not(.t5) { opacity: .2; }
+    .reading-map-grid[data-theme-focus="6"] .rg-cell:not(.t6) { opacity: .2; }
+    .reading-map-grid[data-theme-focus="7"] .rg-cell:not(.t7) { opacity: .2; }
+    .reading-map-grid[data-theme-focus="8"] .rg-cell:not(.t8) { opacity: .2; }
+    .reading-map-grid[data-theme-focus="9"] .rg-cell:not(.t9) { opacity: .2; }
+    .reading-map-grid[data-theme-focus="10"] .rg-cell:not(.t10) { opacity: .2; }
+    .reading-map-grid[data-theme-focus="11"] .rg-cell:not(.t11) { opacity: .2; }
+
+    /* Reading legend mirrors the same language in theme mode: a white box
+       with a neutral ring, then green-ringed boxes for the visited levels. */
+    .reading-map-legend.themes-on .rg-swatch {
+        background: #fff;
+        box-shadow: inset 0 0 0 1px rgba(27, 31, 36, .35);
+    }
+
+    .reading-map-legend.themes-on .rg-swatch.light { box-shadow: inset 0 0 0 2px #9be9a8; }
+    .reading-map-legend.themes-on .rg-swatch.deep-1 { box-shadow: inset 0 0 0 2px #40c463; }
+    .reading-map-legend.themes-on .rg-swatch.deep-2 { box-shadow: inset 0 0 0 2px #30a14e; }
+    .reading-map-legend.themes-on .rg-swatch.deep-3 { box-shadow: inset 0 0 0 2px #216e39; }
+
+    html.dark-theme .reading-map-legend.themes-on .rg-swatch {
+        background: #21262d;
+        box-shadow: inset 0 0 0 1px #30363d;
+    }
+
+    /* Rounded switch for theme mode, in the legend row. */
+    .reading-map-switch {
         flex: none;
-        border: 1px solid rgba(34, 36, 38, .25);
-        border-radius: 999px;
-        background: transparent;
-        color: inherit;
-        font-family: inherit;
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        -webkit-user-select: none;
+        user-select: none;
         font-size: 80%;
         line-height: 1.2;
-        padding: 3px 10px;
-        cursor: pointer;
+        white-space: nowrap;
     }
 
-    .reading-map-themes-toggle:hover,
-    .reading-map-themes-toggle:focus-visible {
-        border-color: #2185d0;
-        color: #2185d0;
+    .reading-map-switch[hidden] {
+        display: none;
     }
 
-    .reading-map-themes-toggle.is-on {
+    .reading-map-switch input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        overflow: hidden;
+    }
+
+    .reading-map-switch-track {
+        position: relative;
+        display: inline-block;
+        width: 32px;
+        height: 18px;
+        border-radius: 999px;
+        background: rgba(34, 36, 38, .28);
+        transition: background .18s ease;
+    }
+
+    .reading-map-switch-thumb {
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, .35);
+        transition: transform .18s ease;
+    }
+
+    .reading-map-switch input:checked + .reading-map-switch-track {
         background: #2185d0;
-        border-color: #2185d0;
-        color: #fff;
     }
 
+    .reading-map-switch input:checked + .reading-map-switch-track .reading-map-switch-thumb {
+        transform: translateX(14px);
+    }
+
+    .reading-map-switch input:focus-visible + .reading-map-switch-track {
+        outline: 2px solid #2185d0;
+        outline-offset: 2px;
+    }
+
+    /* The theme legend doubles as a temporary highlight picker: tapping a
+       swatch keeps only that theme at full opacity; tapping it again (or
+       switching themes off) restores everything. */
     .reading-map-theme-legend {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 4px 12px;
-        padding: 4px 0 8px;
+        gap: 4px 6px;
+        padding: 2px 0 8px;
         font-size: 76%;
-        opacity: .85;
+        opacity: .9;
     }
 
     .reading-map-theme-legend[hidden] {
@@ -632,7 +702,37 @@
         display: inline-flex;
         align-items: center;
         gap: 5px;
+        padding: 2px 6px 2px 4px;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
         white-space: nowrap;
+    }
+
+    .rg-theme-key:hover,
+    .rg-theme-key:focus-visible {
+        border-color: rgba(34, 36, 38, .3);
+        outline: none;
+    }
+
+    .rg-theme-key.is-selected {
+        border-color: #2185d0;
+        background: rgba(33, 133, 208, .1);
+    }
+
+    .reading-map-theme-legend.has-selection .rg-theme-key:not(.is-selected) {
+        opacity: .45;
+    }
+
+    .rg-theme-swatch {
+        width: 10px;
+        height: 10px;
+        flex: 0 0 auto;
+        border-radius: 2px;
+        box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .22);
     }
 
     .rg-theme-key b {
@@ -723,20 +823,34 @@
         color: #ffb3b3;
     }
 
-    html.dark-theme .reading-map-themes-toggle {
-        border-color: rgba(255, 255, 255, .25);
+    html.dark-theme .reading-map-switch-track {
+        background: rgba(255, 255, 255, .25);
     }
 
-    html.dark-theme .reading-map-themes-toggle:hover,
-    html.dark-theme .reading-map-themes-toggle:focus-visible {
-        border-color: #64b5f6;
-        color: #64b5f6;
-    }
-
-    html.dark-theme .reading-map-themes-toggle.is-on {
+    html.dark-theme .reading-map-switch input:checked + .reading-map-switch-track {
         background: #64b5f6;
+    }
+
+    html.dark-theme .reading-map-switch input:checked + .reading-map-switch-track .reading-map-switch-thumb {
+        background: #0d1117;
+    }
+
+    html.dark-theme .reading-map-switch input:focus-visible + .reading-map-switch-track {
+        outline-color: #64b5f6;
+    }
+
+    html.dark-theme .reading-map-grid.themes-on .rg-cell {
+        box-shadow: inset 0 0 0 1px #30363d;
+    }
+
+    html.dark-theme .rg-theme-key:hover,
+    html.dark-theme .rg-theme-key:focus-visible {
+        border-color: rgba(255, 255, 255, .35);
+    }
+
+    html.dark-theme .rg-theme-key.is-selected {
         border-color: #64b5f6;
-        color: #0d1117;
+        background: rgba(100, 181, 246, .12);
     }
 
     html.dark-theme .reading-map-ring .ring-track {
@@ -858,7 +972,12 @@ document.addEventListener('DOMContentLoaded', function () {
 	$('#reading-map-modal').modal({
 		allowMultiple: true,
 		onShow: function () { $('#search-btn').hide(); },
-		onHide: function () { $('#search-btn').show(); }
+		onHide: function () {
+			$('#search-btn').show();
+			// The selected theme is a temporary highlight, not a filter.
+			if (window.AayatunReadingMap && window.AayatunReadingMap.clearThemeFocus)
+				window.AayatunReadingMap.clearThemeFocus();
+		}
 	});
 
 	let target_location = [	"{{ url_for('arabic_fulltext', surah=-1) }}",
@@ -1205,7 +1324,11 @@ document.addEventListener('DOMContentLoaded', function () {
 						<div id="reading-map-grid" class="reading-map-grid" role="img" aria-label="Quran Exploration Map"></div>
 					</div>
 					<div class="reading-map-legend">
-						<button type="button" id="reading-map-themes" class="reading-map-themes-toggle" aria-pressed="false" hidden>Themes</button>
+						<label class="reading-map-switch" id="reading-map-themes" hidden>
+							<input type="checkbox" id="reading-map-themes-input">
+							<span class="reading-map-switch-track" aria-hidden="true"><span class="reading-map-switch-thumb"></span></span>
+							<span class="reading-map-switch-label">Themes</span>
+						</label>
 						<span><i class="rg-swatch"></i>Not yet</span>
 						<span><i class="rg-swatch light"></i>Page visited</span>
 						<span class="rg-scale" title="Opened once, twice, 3+ times"><span>Less</span><i class="rg-swatch deep-1"></i><i class="rg-swatch deep-2"></i><i class="rg-swatch deep-3"></i><span>More</span></span>

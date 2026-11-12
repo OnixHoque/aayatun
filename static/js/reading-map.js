@@ -21,12 +21,14 @@
 
 	// Per-ayah theme tags (db/ayah_themes.db, inlined by the index route).
 	// The map popup is the only surface that shows them; the share card
-	// deliberately keeps its reading-only colours.
+	// deliberately keeps its reading-only colours. In theme mode the cell
+	// fill carries the theme and the border carries the reading level.
 	var themeData = window.AAYATUN_THEMES || {};
 	var themes = Array.isArray(themeData.themes) ? themeData.themes : [];
 	var themeVerse = Array.isArray(themeData.verses) ? themeData.verses : [];
 	var hasThemes = themes.length === 12 && themeVerse.length === VERSE_COUNT;
 	var themesOn = false;
+	var themeFocus = null;
 
 	// Capture the surah table before the dropdown plugin touches the select.
 	var surahs = [];
@@ -90,8 +92,10 @@
 	var versesPctEl = document.getElementById('reading-map-verses-pct');
 	var versesNote = document.getElementById('reading-map-verses-note');
 	var themeToggle = document.getElementById('reading-map-themes');
+	var themeSwitchInput = themeToggle ? themeToggle.querySelector('input') : null;
 	var themeLegend = document.getElementById('reading-map-theme-legend');
 	var themeAttribution = document.getElementById('reading-map-theme-attribution');
+	var readingLegend = document.querySelector('.reading-map-legend');
 
 	if (!grid || !globe || surahs.length !== 114) return;
 
@@ -151,12 +155,6 @@
 			var cell = document.createElement('span');
 			cell.className = 'rg-cell' + (hasThemes ? ' t' + themeVerse[i] : '');
 			cell.setAttribute('data-i', i);
-			if (hasThemes) {
-				var dot = document.createElement('i');
-				dot.className = 'rg-dot';
-				dot.setAttribute('aria-hidden', 'true');
-				cell.appendChild(dot);
-			}
 			frag.appendChild(cell);
 		}
 		grid.appendChild(frag);
@@ -237,27 +235,63 @@
 		renderReadout(selected);
 	}
 
-	// Theme dots and legend (popup only). The toggle is remembered so the
-	// map opens the way the reader left it; the share card stays reading-only.
+	// Theme mode (popup only): the cell fill carries the theme and the
+	// border carries the reading level. The switch is remembered, so the map
+	// opens the way the reader left it; the share card stays reading-only.
+	// Selecting a theme in the legend highlights it temporarily: every other
+	// theme's cells drop to a low opacity until the selection is cleared.
+	function themeCounts()
+	{
+		var counts = [];
+		for (var t = 0; t < themes.length; t++) counts.push(0);
+		for (var i = 0; i < themeVerse.length; i++) counts[themeVerse[i]]++;
+		return counts;
+	}
+
+	function setThemeFocus(id)
+	{
+		themeFocus = (id === null || id === undefined) ? null : Number(id);
+		if (grid) {
+			if (themeFocus === null) grid.removeAttribute('data-theme-focus');
+			else grid.setAttribute('data-theme-focus', String(themeFocus));
+		}
+		if (themeLegend) {
+			themeLegend.classList.toggle('has-selection', themeFocus !== null);
+			var buttons = themeLegend.querySelectorAll('.rg-theme-key');
+			for (var b = 0; b < buttons.length; b++) {
+				var on = themeFocus !== null &&
+					Number(buttons[b].getAttribute('data-theme')) === themeFocus;
+				buttons[b].classList.toggle('is-selected', on);
+				buttons[b].setAttribute('aria-pressed', on ? 'true' : 'false');
+			}
+		}
+	}
+
+	function clearThemeFocus()
+	{
+		setThemeFocus(null);
+	}
+
 	function renderThemeLegend()
 	{
 		if (!themeLegend || !hasThemes) return;
+		var counts = themeCounts();
 		themeLegend.textContent = '';
 		for (var t = 0; t < themes.length; t++) {
-			var item = document.createElement('span');
+			var item = document.createElement('button');
+			item.type = 'button';
 			item.className = 'rg-theme-key';
+			item.setAttribute('data-theme', String(t));
+			item.setAttribute('aria-pressed', 'false');
 			var swatch = document.createElement('i');
-			swatch.className = 'rg-dot';
+			swatch.className = 'rg-theme-swatch';
 			swatch.style.background = themes[t].color || '';
 			swatch.setAttribute('aria-hidden', 'true');
 			var label = document.createElement('span');
+			label.className = 'rg-theme-name';
 			label.textContent = themes[t].name;
-			var count = 0;
-			for (var i = 0; i < themeVerse.length; i++) {
-				if (themeVerse[i] === t) count++;
-			}
 			var num = document.createElement('b');
-			num.textContent = ' ' + count.toLocaleString();
+			num.textContent = counts[t].toLocaleString();
 			item.appendChild(swatch);
 			item.appendChild(label);
 			item.appendChild(num);
@@ -269,15 +303,20 @@
 	{
 		themesOn = !!on;
 		if (grid) grid.classList.toggle('themes-on', themesOn);
-		if (themeToggle) {
-			themeToggle.setAttribute('aria-pressed', themesOn ? 'true' : 'false');
-			themeToggle.classList.toggle('is-on', themesOn);
-		}
+		if (readingLegend) readingLegend.classList.toggle('themes-on', themesOn);
+		if (themeSwitchInput) themeSwitchInput.checked = themesOn;
+		if (themeToggle) themeToggle.classList.toggle('is-on', themesOn);
 		if (themeLegend) themeLegend.hidden = !themesOn;
 		if (themeAttribution) themeAttribution.hidden = !themesOn;
+		// The highlight is temporary, so leaving theme mode drops it.
+		if (!themesOn) clearThemeFocus();
 		try {
 			localStorage.setItem('aayatun_read_map_themes_v1', themesOn ? '1' : '0');
 		} catch (e) {}
+		// Toggling theme mode frees or forfeits the theme-legend space; re-fit
+		// the grid so the frame, both legends and the attribution stay above
+		// the fold. While the modal is hidden the rect is zero, so skip.
+		if (grid && grid.getBoundingClientRect().width > 0) layoutMap();
 	}
 
 	function initThemes()
@@ -292,10 +331,21 @@
 		var saved = null;
 		try { saved = localStorage.getItem('aayatun_read_map_themes_v1'); } catch (e) {}
 		setThemes(saved === '1');
-		if (themeToggle) {
+		if (themeToggle && themeSwitchInput) {
 			themeToggle.hidden = false;
-			themeToggle.addEventListener('click', function () {
-				setThemes(!themesOn);
+			themeSwitchInput.addEventListener('change', function () {
+				setThemes(themeSwitchInput.checked);
+			});
+		}
+		// A selected theme is a temporary highlight, not a filter: tapping a
+		// legend swatch again (or switching themes off) restores every colour.
+		if (themeLegend) {
+			themeLegend.addEventListener('click', function (evt) {
+				var btn = evt.target && evt.target.closest
+					? evt.target.closest('.rg-theme-key') : null;
+				if (!btn) return;
+				var id = Number(btn.getAttribute('data-theme'));
+				setThemeFocus(themeFocus === id ? null : id);
 			});
 		}
 	}
@@ -310,9 +360,13 @@
 	{
 		if (!grid || !scroll) return;
 		var top = scroll.getBoundingClientRect().top;
-		// Leave room for the page ticks, the legend inside the frame and the
-		// scrollbar under it, so the whole map block fits without scrolling.
-		var avail = window.innerHeight - top - 76;
+		// Leave room for the page ticks, the reading legend, the theme legend
+		// and the attribution line (when themes are on), the scrollbar and the
+		// frame padding, so the whole map block fits without scrolling.
+		var reserved = 96;
+		if (themeLegend && !themeLegend.hidden) reserved += themeLegend.offsetHeight;
+		if (themeAttribution && !themeAttribution.hidden) reserved += themeAttribution.offsetHeight;
+		var avail = window.innerHeight - top - reserved;
 		avail = Math.max(126,
 			Math.min(avail, Math.round(window.innerHeight * 0.7)));
 		var rows = Math.max(12, Math.floor((avail + 3) / PITCH));
@@ -628,7 +682,8 @@
 		states: mapStates,
 		shareData: shareData,
 		share: shareMap,
-		refresh: refresh
+		refresh: refresh,
+		clearThemeFocus: clearThemeFocus
 	};
 
 	globe.addEventListener('click', function (evt) {
