@@ -288,7 +288,7 @@
         flex-wrap: nowrap;
         align-items: stretch;
         justify-content: center;
-        gap: 3px;
+        gap: 16px;
         padding: 9px 12px;
     }
 
@@ -392,7 +392,7 @@
 
     @media (min-width: 900px) {
         .reading-map-cards {
-            grid-template-columns: minmax(0, 1.45fr) minmax(0, 1.1fr) minmax(0, 0.9fr);
+            grid-template-columns: minmax(0, 1fr) auto auto;
         }
 
         .reading-map-card-lead {
@@ -476,7 +476,7 @@
        next to Clear Visit History, and sized like the theme switch. */
     .reading-map-zoom {
         margin-left: auto;
-        gap: 5px;
+        gap: 4px;
         align-items: center;
     }
 
@@ -496,8 +496,13 @@
     }
 
     .reading-map-zoom .mushaf-zoom-level {
-        min-width: 36px;
-        font-size: 80%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 44px;
+        height: 28px;
+        padding: 0 2px;
+        font-size: 86%;
         line-height: 1;
         font-weight: 700;
         opacity: .75;
