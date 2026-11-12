@@ -425,19 +425,19 @@
 		var cells = MAP_COLS * MAP_ROWS;
 		var mapW = MAP_COLS * MAP_CELL;
 		var mapH = MAP_ROWS * MAP_CELL;
+		var PAD = 34;
 
-		// A story-sized poster: the reader's own line, the two rings, the
-		// map, its key and the tag, all inside one 9:16 frame. The rings
-		// already spell out both counts, so there is no extra counts line.
+		// A story-sized poster for a social post: small kicker, the
+		// headline count as the hero, the map, one caption, one CTA.
 		var cardH = MAP_CARD_H;
-		var titleY = 65;
-		var ringsY = 180;
-		var mapTop = 300;
-		var msgY = 530;
-		var legendHeadY = 602;
-		var legendY = 626;
-		var legendLine = 24;
-		var tagY = 742;
+		var kickerY = 74;
+		var heroY = 190;
+		var subY = 262;
+		var metaY = 292;
+		var mapTop = 346;
+		var captionY = mapTop + mapH + 34;
+		var tagY = captionY + 62;
+		var hashY = tagY + 28;
 
 		var out = document.createElement('canvas');
 		out.width = OUTPUT_W;
@@ -450,68 +450,47 @@
 		ctx.fillRect(0, 0, MAP_W, cardH);
 
 		var titleColor = dark ? '#9CC4FF' : '#4183C4';
-		var muted = dark ? 'rgba(255,255,255,.56)' : 'rgba(0,0,0,.5)';
-		var track = dark ? 'rgba(255,255,255,.13)' : 'rgba(0,0,0,.07)';
+		var body = dark ? 'rgba(255,255,255,.92)' : 'rgba(0,0,0,.82)';
+		var muted = dark ? 'rgba(255,255,255,.55)' : 'rgba(0,0,0,.48)';
 		var none = dark ? [42, 47, 54] : [230, 233, 236];
 		var light = dark ? [14, 68, 41] : [155, 233, 168];
 		var deep1 = dark ? [0, 109, 50] : [64, 196, 99];
 		var deep2 = dark ? [38, 166, 65] : [48, 161, 78];
 		var deep3 = dark ? [57, 211, 83] : [33, 110, 57];
 		var shades = [none, light, deep1, deep2, deep3];
-		var ringLight = dark ? '#2ea043' : '#9be9a8';
-		var ringDeep = dark ? '#39d353' : '#216e39';
-
-		ctx.textAlign = 'center';
-		ctx.fillStyle = titleColor;
-		ctx.font = fontFor(TITLE, 30);
-		ctx.fillText('Quran Exploration Map', MAP_W / 2, titleY);
 
 		var pagesPct = (card.pages / MAP_PAGES) * 100;
 		var versesPct = (card.deep / MAP_VERSES) * 100;
 
-		// The rings are the card's headline: a percentage inside, and the
-		// label and count centred underneath, so both stats read at a glance
-		// without repeating them again at the bottom of the poster.
-		function ringStat(cx, pct, color, label, note) {
-			var r = 46;
-			ctx.lineWidth = 12;
-			ctx.lineCap = 'butt';
-			ctx.beginPath();
-			ctx.arc(cx, ringsY, r, 0, Math.PI * 2);
-			ctx.strokeStyle = track;
-			ctx.stroke();
-			if (pct > 0) {
-				ctx.beginPath();
-				ctx.arc(cx, ringsY, r, -Math.PI / 2,
-					-Math.PI / 2 + Math.PI * 2 * Math.min(1, pct / 100));
-				ctx.lineCap = 'round';
-				ctx.strokeStyle = color;
-				ctx.stroke();
-			}
-			ctx.lineCap = 'butt';
-			ctx.textAlign = 'center';
-			ctx.fillStyle = dark ? 'rgba(255,255,255,.94)' : 'rgba(0,0,0,.85)';
-			ctx.font = "700 25px 'Open Sans', system-ui, sans-serif";
-			ctx.fillText(pctLabel(pct), cx, ringsY + 1);
+		// Kicker: the view, small and tracked out.
+		ctx.textAlign = 'center';
+		try { ctx.letterSpacing = '4px'; } catch (e) {}
+		ctx.fillStyle = muted;
+		ctx.font = "700 15px 'Open Sans', system-ui, sans-serif";
+		ctx.fillText('QURAN EXPLORATION MAP', MAP_W / 2, kickerY);
+		try { ctx.letterSpacing = '0px'; } catch (e) {}
 
-			ctx.fillStyle = dark ? 'rgba(255,255,255,.9)' : 'rgba(0,0,0,.8)';
-			ctx.font = "600 18px 'Open Sans', system-ui, sans-serif";
-			ctx.fillText(label, cx, ringsY + r + 30);
-			ctx.fillStyle = muted;
-			ctx.font = "400 15px 'Open Sans', system-ui, sans-serif";
-			ctx.fillText(note, cx, ringsY + r + 52);
+		// Hero: the count as one big line, shrinking until it fits.
+		var hero = (card.deep || 0).toLocaleString() + ' / 6,236';
+		var heroSize = 118;
+		ctx.fillStyle = titleColor;
+		while (heroSize > 60) {
+			ctx.font = "700 " + heroSize + "px Merriweather, Georgia, serif";
+			if (ctx.measureText(hero).width <= MAP_W - PAD * 2) break;
+			heroSize -= 4;
 		}
+		ctx.fillText(hero, MAP_W / 2, heroY);
 
-		var ringGap = 100;
-		ringStat(MAP_W / 2 - ringGap, pagesPct, ringLight,
-			'Pages visited', card.pages + ' of 604');
-		ringStat(MAP_W / 2 + ringGap, versesPct, ringDeep,
-			'Verses studied', card.deep.toLocaleString() + ' of 6,236');
+		// Subline and one quiet meta line under the hero.
+		ctx.fillStyle = body;
+		ctx.font = "400 21px 'Open Sans', system-ui, sans-serif";
+		ctx.fillText('verses of the Quran explored', MAP_W / 2, subY);
+		ctx.fillStyle = muted;
+		ctx.font = "400 15px 'Open Sans', system-ui, sans-serif";
+		ctx.fillText((card.pages || 0) + ' of 604 pages visited · ' + pctLabel(versesPct),
+			MAP_W / 2, metaY);
 
-		// Subsampling: every verse lands in a cell, and a cell takes the
-		// strongest state found there (deep beats light). One bitmap pixel
-		// per card pixel, with a 1 px gap left inside each cell, so the map
-		// is a field of dots the way the in-app grid is, not a solid sheet.
+		// The map as one bitmap, subsampled verse by verse.
 		var RES = MAP_CELL;
 		var bmp = document.createElement('canvas');
 		bmp.width = MAP_COLS * RES;
@@ -538,7 +517,6 @@
 		var dot = RES - 1;
 		for (var c = 0; c < cells; c++) {
 			var rgb = shades[cellState[c]];
-			// Column-major, so the card reads across exactly like the popup.
 			var row = c % MAP_ROWS;
 			var col = (c - row) / MAP_ROWS;
 			var x = col * RES;
@@ -559,67 +537,24 @@
 		ctx.drawImage(bmp, (MAP_W - mapW) / 2, mapTop, mapW, mapH);
 		ctx.imageSmoothingEnabled = true;
 
-		// Explain the squares immediately after the map, before its key.
-		ctx.textAlign = 'center';
-		ctx.fillStyle = dark ? 'rgba(255,255,255,.74)' : 'rgba(0,0,0,.64)';
-		ctx.font = "400 19px 'Open Sans', system-ui, sans-serif";
-		var msgLines = wrap(ctx, card.message || mapMessage(), MAP_W - PAD * 2);
-		for (var m = 0; m < msgLines.length; m++) {
-			ctx.fillText(msgLines[m], MAP_W / 2, msgY + m * 24);
+		// One italic caption under the map — all the explanation it gets.
+		ctx.fillStyle = muted;
+		ctx.font = "italic 400 17px 'Open Sans', system-ui, sans-serif";
+		ctx.fillText('Every square is one verse of the Quran.', MAP_W / 2, captionY);
+
+		// The CTA: one big line, auto-fitted, and the hashtag under it.
+		var tag = 'Track your own reading at aayatun.com';
+		var tagSize = 26;
+		ctx.fillStyle = titleColor;
+		while (tagSize > 14) {
+			ctx.font = "700 " + tagSize + "px 'Open Sans', system-ui, sans-serif";
+			if (ctx.measureText(tag).width <= MAP_W - PAD * 2) break;
+			tagSize -= 1;
 		}
-
-		// The key spells every shade out as a bulleted sentence, so someone
-		// who has never seen the map knows what each colour means.
-		ctx.textAlign = 'left';
-		ctx.fillStyle = dark ? 'rgba(255,255,255,.9)' : 'rgba(0,0,0,.78)';
-		ctx.font = "700 17px 'Open Sans', system-ui, sans-serif";
-		ctx.fillText('What the colours mean', PAD, legendHeadY);
-
-		var sw = 14, gap = 10;
-		var legendText = [
-			"I haven't read this verse yet",
-			'I opened a mushaf page that contains this verse',
-			'I opened this verse once',
-			'I opened this verse twice',
-			'I opened this verse 3 or more times'
-		];
-		// The longest sentence sets the size: shrink until it fits beside the
-		// colour box instead of letting it run off the card.
-		var legendSize = 18;
-		var legendMax = MAP_W - PAD * 2 - sw - gap;
-		function setLegendFont() {
-			ctx.font = "400 " + legendSize + "px 'Open Sans', system-ui, sans-serif";
-		}
-		setLegendFont();
-		while (legendSize > 12 && legendText.some(function (t) {
-			return ctx.measureText(t).width > legendMax;
-		})) {
-			legendSize -= 1;
-			setLegendFont();
-		}
-
-		function legendRow(y, rgb, text) {
-			ctx.fillStyle = 'rgb(' + rgb.join(',') + ')';
-			ctx.fillRect(PAD, y - sw / 2, sw, sw);
-			// "Not opened yet" is nearly white, so every box gets a hairline
-			// edge or it disappears into the card.
-			ctx.strokeStyle = dark ? 'rgba(255,255,255,.22)' : 'rgba(0,0,0,.14)';
-			ctx.lineWidth = 1;
-			ctx.strokeRect(PAD + 0.5, y - sw / 2 + 0.5, sw - 1, sw - 1);
-			ctx.fillStyle = dark ? 'rgba(255,255,255,.78)' : 'rgba(0,0,0,.7)';
-			ctx.fillText(text, PAD + sw + gap, y);
-		}
-
-		legendRow(legendY, shades[0], legendText[0]);
-		legendRow(legendY + legendLine, shades[1], legendText[1]);
-		legendRow(legendY + legendLine * 2, shades[2], legendText[2]);
-		legendRow(legendY + legendLine * 3, shades[3], legendText[3]);
-		legendRow(legendY + legendLine * 4, shades[4], legendText[4]);
-
-		ctx.textAlign = 'center';
+		ctx.fillText(tag, MAP_W / 2, tagY);
 		ctx.fillStyle = muted;
 		ctx.font = "400 15px 'Open Sans', system-ui, sans-serif";
-		ctx.fillText('Track your own reading at aayatun.com · #aayatun', MAP_W / 2, tagY);
+		ctx.fillText(HASHTAG, MAP_W / 2, hashY);
 
 		/* Brand band: the site name, then the full URL under it. */
 		var bandTop = cardH - BAND;
