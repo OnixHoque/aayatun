@@ -750,15 +750,6 @@
 	grid.addEventListener('click', selectCell);
 	grid.addEventListener('pointerleave', leaveGrid);
 
-	// Clicking anywhere outside the theme legend clears the temporary
-	// highlight too (with the loading bar, like switching themes). Clicks
-	// on the legend itself are left alone so select/unselect can work.
-	document.addEventListener('click', function (evt) {
-		if (themeFocus === null) return;
-		var legend = document.getElementById('reading-map-theme-legend');
-		if (legend && legend.contains(evt.target)) return;
-		withThemeSwap(function () { setThemeFocus(null); });
-	});
 
 	// Clicking anywhere outside the map itself (the readout cards, the
 	// legend, the page or the dimmer) drops the selection, so the readout
