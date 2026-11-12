@@ -1196,6 +1196,20 @@ def get_ayah_themes():
 		verses[starts[surah - 1] + verse - 1] = int(theme_id)
 	return {'themes': themes, 'verses': verses}
 
+
+@lru_cache(maxsize=4)
+def get_surah_themes(surah):
+	"""The theme palette plus a verse -> theme id array for one surah, for
+	the verse page's theme pill. Returns empty lists when the theme database
+	is missing, which hides the pill."""
+	data = get_ayah_themes()
+	if not data['verses']:
+		return {'themes': [], 'verses': []}
+	starts = surah_starts()
+	start = starts[surah - 1]
+	n = _surah_verse_count(surah)
+	return {'themes': data['themes'], 'verses': data['verses'][start:start + n]}
+
 # The text of every verse of a surah, for the swipe carousel: the client asks
 # once and then moves between verses without any further round trip. Kept
 # compact (arrays, no repeated keys) since Al-Baqarah alone is ~200 KB.

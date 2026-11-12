@@ -11,6 +11,39 @@
 <meta name="aayatun-read" content="verse|{{ details['surah'] }}:{{ details['verse'] }}|{{ details['surah'] }}:{{ details['verse'] }} &middot; {{ details['surah_name'] }}">
 <meta name="aayatun-read-index" content="{{ read_index }}">
 <script>window.AAYATUN_SURAH_STARTS = {{ surah_starts|tojson }};</script>
+<script>window.AAYATUN_SURAH_THEMES = {{ surah_themes|tojson }};</script>
+<style>
+	.theme-pill {
+		position: absolute;
+		left: 2px;
+		top: 50%;
+		transform: translateY(-50%);
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 5px 10px;
+		border: 1px solid rgba(34, 36, 38, .18);
+		border-radius: 999px;
+		background: rgba(34, 36, 38, .04);
+		color: inherit;
+		font-size: 76%;
+		font-family: 'Open Sans';
+		line-height: 1.2;
+		white-space: nowrap;
+		z-index: 1;
+	}
+	.theme-pill-dot {
+		width: 9px;
+		height: 9px;
+		border-radius: 50%;
+		flex: 0 0 auto;
+		box-shadow: 0 0 0 1px rgba(0, 0, 0, .18);
+	}
+	html.dark-theme .theme-pill {
+		border-color: rgba(255, 255, 255, .22);
+		background: rgba(255, 255, 255, .06);
+	}
+</style>
 {% endblock head_extra %}
 
 {% block js %}
@@ -211,6 +244,34 @@
     		<p style="width: 100%; font-size: 80%; color: gray; text-align: center; padding-bottom: 30px;"> [Source: <a href="https://everyayah.com/data/getfile.php" target="_blank">Verse By Verse Quran MP3 Project</a>] </p>
     	</div>
     	<div id="control-btns" style="position: relative; padding-bottom: 20px">
+			{% if surah_themes and surah_themes.verses %}
+			{% set _tid = surah_themes.verses[details['verse'] - 1] %}
+			{% set _theme = surah_themes.themes[_tid] %}
+			<span id="theme-pill" class="theme-pill" role="status" aria-live="polite" title="Theme (AI-assisted, Aayatun): {{ _theme['name'] }}">
+				<i class="theme-pill-dot" aria-hidden="true" style="background: {{ _theme['color'] }}"></i>
+				<span id="theme-pill-name">{{ _theme['name'] }}</span>
+			</span>
+			<script>
+			// Keep the pill in step with the swipe carousel (no page reload).
+			(function () {
+				var data = window.AAYATUN_SURAH_THEMES;
+				var pill = document.getElementById('theme-pill');
+				if (!data || !pill) return;
+				var nameEl = document.getElementById('theme-pill-name');
+				var dotEl = pill.querySelector('.theme-pill-dot');
+				document.addEventListener('aayatun:verse', function (evt) {
+					var d = evt.detail || {};
+					var idx = ((d.verse | 0) || 1) - 1;
+					var tid = data.verses[idx];
+					var theme = data.themes[tid];
+					if (!theme) return;
+					nameEl.textContent = theme.name;
+					dotEl.style.background = theme.color;
+					pill.title = 'Theme (AI-assisted, Aayatun): ' + theme.name;
+				});
+			})();
+			</script>
+			{% endif %}
 
     		<span id="more-controls" style="display: none;">
     			<span style="font-size: .8em; color: gray; text-align: center; padding-right: 30px;">Surah <span id="surah-name-label">{{ details['surah_name'] }}</span></span>
@@ -227,11 +288,11 @@
 					<button id="surah-view-en" data-loading style="font-family: 'Open Sans' font-size: 90%; " class="circular ui tiny basic icon button" onclick="window.parent.location.href ='{{ url_for('en_tafsir', surah=details['surah']) }}'">
 						Tafsir (En)
 					</button>
-				<i class="icon close" style="cursor: pointer;" onclick="$('#more-controls').hide(); $('#more-btn').show(); $('#play-btn').show(); $('#share-btn').show(); $('#tajweed-toggle-btn').show(); $('#mushaf-jump-btn').show()"></i>
+				<i class="icon close" style="cursor: pointer;" onclick="$('#more-controls').hide(); $('#more-btn').show(); $('#play-btn').show(); $('#share-btn').show(); $('#tajweed-toggle-btn').show(); $('#mushaf-jump-btn').show(); $('#theme-pill').show()"></i>
 				</span>
 
     		</span>
-			<button id="more-btn" data-tooltip="Comprehensive Reading" class="circular ui basic icon button" onclick="$('#more-btn').hide(); $('#play-btn').hide(); $('#share-btn').hide(); $('#tajweed-toggle-btn').hide(); $('#mushaf-jump-btn').hide(); $('#more-controls').fadeIn();">
+			<button id="more-btn" data-tooltip="Comprehensive Reading" class="circular ui basic icon button" onclick="$('#more-btn').hide(); $('#play-btn').hide(); $('#share-btn').hide(); $('#tajweed-toggle-btn').hide(); $('#mushaf-jump-btn').hide(); $('#theme-pill').hide(); $('#more-controls').fadeIn();">
 			  <i class="icon ellipsis horizontal"></i>
 			</button>
 	    	<button id="share-btn" data-tooltip="Share this ayah" class="circular ui basic icon button" onclick="shareVerse()">

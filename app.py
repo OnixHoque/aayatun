@@ -134,7 +134,8 @@ def index():
 def details2(surah):
 	return private_page(make_response(render_template('versedetails.html',
 		details=lib.get_verse_details(surah, 1), read_index=lib.verse_index(surah, 1),
-		surah_starts=lib.surah_starts(), api_token=api_token())))
+		surah_starts=lib.surah_starts(), api_token=api_token(),
+		surah_themes=lib.get_surah_themes(surah))))
 
 # "2:255" / "2/255" / "2.255" -> jump straight to the verse.
 _ref_re = re.compile(r'^\s*(\d{1,3})\s*[:/.\-]\s*(\d{1,3})\s*$')
@@ -186,7 +187,8 @@ def details(surah, verse):
 	# which keeps this page at a few KB instead of the whole tafsir/morphology.
 	return private_page(make_response(render_template('versedetails.html',
 		details=lib.get_verse_core(surah, verse), read_index=lib.verse_index(surah, verse),
-		surah_starts=lib.surah_starts(), api_token=api_token())))
+		surah_starts=lib.surah_starts(), api_token=api_token(),
+		surah_themes=lib.get_surah_themes(surah))))
 
 # Lightweight payload used by next/prev navigation. Only the parts that change
 # on screen are sent; accordion sections are fetched on demand.
