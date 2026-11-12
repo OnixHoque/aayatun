@@ -463,11 +463,12 @@
 		avail = Math.max(126,
 			Math.min(avail, Math.round(window.innerHeight * 0.7)));
 		var rows = Math.max(12, Math.floor((avail + 3 * zoom) / pitch()));
-		if (rows !== mapRows) {
-			mapRows = rows;
-			grid.style.setProperty('--map-rows', String(rows));
-			scroll.style.height = (rows * pitch() + 26) + 'px';
-		}
+		// Always re-fit: when only the zoom changes, the row count can stay
+		// the same while the cell height changes, and a stale scroll height
+		// would clip the bottom rows under the container.
+		mapRows = rows;
+		grid.style.setProperty('--map-rows', String(rows));
+		scroll.style.height = (rows * pitch() + 26) + 'px';
 		renderAxis();
 	}
 

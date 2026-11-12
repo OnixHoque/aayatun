@@ -275,20 +275,40 @@
 
     .reading-map-stat {
         display: flex;
-        flex: 1 1 130px;
+        flex: 0 0 auto;
         align-items: center;
-        gap: 10px;
+        gap: 9px;
         min-width: 0;
     }
 
-    /* The two progress rows stack vertically so the lead card can take
-       more width. */
+    /* The two progress rows stack vertically and hug each other so the
+       card stays compact; the lead card takes the rest of the width. */
     .reading-map-stats {
         flex-direction: column;
         flex-wrap: nowrap;
         align-items: stretch;
         justify-content: center;
-        gap: 10px;
+        gap: 3px;
+        padding: 9px 12px;
+    }
+
+    .reading-map-stats .reading-map-ring-wrap,
+    .reading-map-stats .reading-map-ring {
+        width: 40px;
+        height: 40px;
+    }
+
+    .reading-map-stats .reading-map-ring-pct {
+        font-size: 66%;
+    }
+
+    .reading-map-stats .reading-map-ring-label {
+        font-size: 76%;
+        line-height: 1.3;
+    }
+
+    .reading-map-stats .reading-map-ring-label small {
+        font-size: 92%;
     }
 
     .reading-map-card-share {
@@ -456,23 +476,33 @@
        next to Clear Visit History, and sized like the theme switch. */
     .reading-map-zoom {
         margin-left: auto;
-        gap: 4px;
+        gap: 5px;
+        align-items: center;
     }
 
     .reading-map-zoom .ui.circular.basic.icon.button {
-        width: 26px;
-        height: 26px;
+        width: 27px;
+        height: 27px;
         min-height: 0;
         min-width: 0;
         padding: 0;
         margin: 0;
-        font-size: .72rem;
-        box-shadow: none;
+        font-size: .95rem;
+        box-shadow: inset 0 0 0 1px rgba(34, 36, 38, .22);
+    }
+
+    html.dark-theme .reading-map-zoom .ui.circular.basic.icon.button {
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .3);
     }
 
     .reading-map-zoom .mushaf-zoom-level {
-        min-width: 38px;
-        font-size: 72%;
+        min-width: 36px;
+        font-size: 80%;
+        line-height: 1;
+        font-weight: 700;
+        opacity: .75;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
     }
 
     /* The [hidden] attribute must win over the inline-flex display above. */
@@ -1413,7 +1443,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		</div>
 		<div id="reading-map-modal" class="ui modal">
 			<i class="close icon" aria-label="Close" role="button" tabindex="0"></i>
-			<div class="header">Quran Exploration Map</div>
+			<div class="header"><i class="icon world" aria-hidden="true"></i> Quran Exploration Map</div>
 			<div class="content">
 				<p class="reading-map-subtitle">This map only tracks verse reading and mushaf page reading.</p>
 				<div class="reading-map-cards">
