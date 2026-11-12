@@ -45,10 +45,9 @@
 
     {% block options %}{% endblock %}
 
-    {# The basmala sits above the table, not in a row: DataTables sorts its
-       empty verse cell to the end and then detaches it from the DOM when it
-       paginates, so a row here would only appear on the last page. #}
-    {% block bismillah %}{% endblock %}
+    {# Child pages may provide a display-only row. It is cloned into the
+       DataTables tbody after each draw so it cannot be sorted/paginated. #}
+    {% block bismillah_row %}{% endblock %}
 
     <table class="ui very basic unstackable left aligned table" id="cur_table">
     	<thead>
@@ -102,8 +101,15 @@ document.addEventListener('DOMContentLoaded', function () {
 	$(document).ready(function() {
 	    $('#cur_table').DataTable(
 	    	{
-	    		"drawCallback": function( settings ) {
-	    			//dark theme!
+			"drawCallback": function( settings ) {
+				var source = document.getElementById('bismillah-row-template');
+				var body = document.querySelector('#cur_table tbody');
+				var api = this.api();
+				if (source && body && api.page.info().page === 0 &&
+					!body.querySelector('.bismillah-row')) {
+					body.insertBefore(source.content.firstElementChild.cloneNode(true), body.firstChild);
+				}
+				//dark theme!
 	    			if (is_dark_theme()==="true") {
 		    			$('.pagination').addClass('inverted');
 		    			$('.icon.input').addClass('transparent inverted');

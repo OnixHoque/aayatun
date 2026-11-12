@@ -764,12 +764,11 @@ Used by `/translation`, `/mushaf`, `/tafsir/en`, `/tafsir/bn`.
 - Menu: prev/next surah arrows with `url_for` targets supplied by each child.
 - Includes `partials/_verse_modal.html` (the shared verse iframe modal).
 - Includes `partials/_surah_overview.html` above the options block.
-- Provides `{% block options %}` (toggles) and `{% block bismillah %}` (a hook
-  **above** the DataTables table; the Arabic surah view overrides it with a
-  `.surah-bismillah` wrapper holding the `.mushaf-bismillah` ligature, so the
-  basmala gets its own line like the mushaf instead of sharing verse 1's cell).
-  It cannot live in a `<tr>`: DataTables sorts the empty verse cell to the end
-  and detaches the row from the DOM once it paginates, which hid it entirely.
+- Provides `{% block options %}` (toggles) and `{% block bismillah_row %}`.
+  The Arabic view supplies a `<template>` containing a real two-cell row;
+  `drawCallback` clones it to the start of page one's `<tbody>` after every
+  DataTables draw. This puts the basmala under the search controls with the
+  verses without making it sortable or part of pagination.
 - Renders one repeated block per verse with a `font_config` block that each
   child overrides (Scheherazade 225 % for Arabic, Lora 100 % for translation,
   Baloo Da 2 for Bangla).
@@ -1054,6 +1053,8 @@ sequenceDiagram
   tint, then any opened verse.
 - The share card is drawn by `share.js` from the same state array; only the
   shared image is subsampled (6,236 verses → 84×42 cells), never the popup.
+- The poster order is title → progress rings → bitmap → dated “Every square
+  is one verse…” message → “What the colours mean” key → site band.
 
 ### 7.6 `share.js`
 
@@ -1131,7 +1132,7 @@ content so the theme and menu work even if later CDN scripts fail.
 
 `static/service-worker.js` is served at `/service-worker.js` (root scope) and
 registered from `index.html` and both standalone pages (`/prayer-time`,
-`/daily-counter`). `CACHE_NAME` is currently **`aayatun-v66`**; bump it
+`/daily-counter`). `CACHE_NAME` is currently **`aayatun-v67`**; bump it
 whenever the precache list or caching logic changes.
 
 ```mermaid
@@ -1244,7 +1245,7 @@ flowchart LR
 | SQLite | Host | `tajweed_cache.db`, `qcf_cache.db` | Permanent |
 | Disk files | Host | `db/fonts/v4-pN.woff2` | Permanent |
 | HTTP | Browser/proxy | `private_page` (pages with token), `no-store` (API), `private, max-age=300` (mushaf pages), `immutable` (fonts) | Per header |
-| Service worker | Browser | app shell, same-origin assets, CDN assets | `aayatun-v66` until bumped |
+| Service worker | Browser | app shell, same-origin assets, CDN assets | `aayatun-v67` until bumped |
 | `localStorage` | Browser | prefs, offline verse, recent reads, map | Until cleared |
 
 **localStorage / sessionStorage keys**

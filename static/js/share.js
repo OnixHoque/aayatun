@@ -430,14 +430,14 @@
 		// map, its key and the tag, all inside one 9:16 frame. The rings
 		// already spell out both counts, so there is no extra counts line.
 		var cardH = MAP_CARD_H;
-		var titleY = 76;
-		var msgY = 112;
-		var ringsY = 240;
-		var mapTop = 358;
-		var legendHeadY = 590;
-		var legendY = 614;
+		var titleY = 65;
+		var ringsY = 180;
+		var mapTop = 300;
+		var msgY = 530;
+		var legendHeadY = 602;
+		var legendY = 626;
 		var legendLine = 24;
-		var tagY = 730;
+		var tagY = 742;
 
 		var out = document.createElement('canvas');
 		out.width = OUTPUT_W;
@@ -465,13 +465,6 @@
 		ctx.fillStyle = titleColor;
 		ctx.font = fontFor(TITLE, 30);
 		ctx.fillText('Quran Exploration Map', MAP_W / 2, titleY);
-
-		ctx.fillStyle = dark ? 'rgba(255,255,255,.74)' : 'rgba(0,0,0,.64)';
-		ctx.font = "400 19px 'Open Sans', system-ui, sans-serif";
-		var msgLines = wrap(ctx, card.message || mapMessage(), MAP_W - PAD * 2);
-		for (var m = 0; m < msgLines.length; m++) {
-			ctx.fillText(msgLines[m], MAP_W / 2, msgY + m * 24);
-		}
 
 		var pagesPct = (card.pages / MAP_PAGES) * 100;
 		var versesPct = (card.deep / MAP_VERSES) * 100;
@@ -565,6 +558,15 @@
 		ctx.imageSmoothingEnabled = false;
 		ctx.drawImage(bmp, (MAP_W - mapW) / 2, mapTop, mapW, mapH);
 		ctx.imageSmoothingEnabled = true;
+
+		// Explain the squares immediately after the map, before its key.
+		ctx.textAlign = 'center';
+		ctx.fillStyle = dark ? 'rgba(255,255,255,.74)' : 'rgba(0,0,0,.64)';
+		ctx.font = "400 19px 'Open Sans', system-ui, sans-serif";
+		var msgLines = wrap(ctx, card.message || mapMessage(), MAP_W - PAD * 2);
+		for (var m = 0; m < msgLines.length; m++) {
+			ctx.fillText(msgLines[m], MAP_W / 2, msgY + m * 24);
+		}
 
 		// The key spells every shade out as a bulleted sentence, so someone
 		// who has never seen the map knows what each colour means.

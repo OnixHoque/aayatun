@@ -364,12 +364,12 @@ html.dark-theme .mushaf-zoom-sep {
 	padding: .3rem 0 .1rem;
 }
 
-/* The Arabic surah view gives the basmala its own line above the verses,
-   the way the mushaf page does, instead of sharing verse 1's cell. It sits
-   outside the DataTables table so sorting/pagination cannot move it. */
-.surah-bismillah {
-	text-align: center;
-	padding: .5rem 0 .7rem;
+/* DataTables injects this display-only row at the start of page one after
+   each draw, so it remains under the search controls without being sorted. */
+.ui.table tr.bismillah-row > td {
+	border: none !important;
+	padding: .5rem 0 .7rem !important;
+	vertical-align: middle;
 }
 
 /* Fomantic's `.ui.table td` rule outranks a bare class selector, so the
@@ -619,10 +619,10 @@ html.dark-theme .mushaf-row-jump td {
 .more-apps-icon {
 	flex: none;
 	width: 1.4rem;
+	height: 1.4rem;
 	margin-top: 2px;
 	text-align: center;
 	font-size: 1.25rem;
-	line-height: 1;
 	color: #4183C4;
 }
 

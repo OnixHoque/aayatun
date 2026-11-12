@@ -31,9 +31,14 @@
 	<p id="qcf-credit" class="qcf-credit" style="display: none;">Colored mushaf font &copy; <a href="https://qurancomplex.gov.sa/" target="_blank">King Fahd Complex</a> &middot; packaged by <a href="https://quran.com" target="_blank">quran.com</a></p>
 {% endblock %}
 
-{% block bismillah %}
+{% block bismillah_row %}
 	{% if surah_no != 1 and surah_no != 9 %}
-	<div class="surah-bismillah"><div class="mushaf-bismillah">&#xFDFD;</div></div>
+	<template id="bismillah-row-template">
+		<tr class="bismillah-row" role="row">
+			<td aria-hidden="true"></td>
+			<td><div class="mushaf-bismillah">&#xFDFD;</div></td>
+		</tr>
+	</template>
 	{% endif %}
 {% endblock %}
     		
