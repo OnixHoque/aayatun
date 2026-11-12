@@ -83,6 +83,9 @@
 	var hint = document.getElementById('reading-map-hint');
 	var openLink = document.getElementById('reading-map-open');
 	var nextBox = document.getElementById('reading-map-next');
+	var verseNav = document.getElementById('reading-map-verse-nav');
+	var versePrev = document.getElementById('reading-map-verse-prev');
+	var verseNext = document.getElementById('reading-map-verse-next');
 	var translationEl = document.getElementById('reading-map-translation');
 	var translationToggle = document.getElementById('reading-map-translation-toggle');
 	var translationCache = {};
@@ -783,6 +786,47 @@
 		hint.hidden = true;
 	}
 
+	function syncVerseNav()
+	{
+		var has = selected >= 0;
+		if (verseNav) verseNav.hidden = !has;
+		if (has && versePrev && verseNext) {
+			versePrev.disabled = selected <= 0;
+			verseNext.disabled = selected >= VERSE_COUNT - 1;
+		}
+	}
+
+	function scrollSelectedIntoView()
+	{
+		if (selected < 0 || !scroll) return;
+		var cell = grid.querySelector('.rg-cell[data-i="' + selected + '"]');
+		if (!cell) return;
+		var left = cell.offsetLeft;
+		var right = left + cell.offsetWidth;
+		var viewL = scroll.scrollLeft;
+		var viewR = viewL + scroll.clientWidth;
+		if (left >= viewL + 8 && right <= viewR - 8) return;
+		var target = left - Math.max(0, (scroll.clientWidth - cell.offsetWidth) / 2);
+		scroll.scrollLeft = Math.max(0, target);
+		syncX();
+	}
+
+	function selectAt(i)
+	{
+		if (!(i >= 0) || i >= VERSE_COUNT) return;
+		if (selected >= 0) {
+			var prev = grid.querySelector('.rg-cell.is-selected');
+			if (prev) prev.classList.remove('is-selected');
+		}
+		selected = i;
+		var node = grid.querySelector('.rg-cell[data-i="' + i + '"]');
+		if (node) node.classList.add('is-selected');
+		renderReadout(i);
+		showTranslation(i);
+		syncVerseNav();
+		scrollSelectedIntoView();
+	}
+
 	function cellOf(evt)
 	{
 		var node = evt.target;
@@ -804,15 +848,7 @@
 	{
 		var node = cellOf(evt);
 		if (!node) return;
-		var i = +node.getAttribute('data-i');
-		if (selected >= 0) {
-			var prev = grid.querySelector('.rg-cell.is-selected');
-			if (prev) prev.classList.remove('is-selected');
-		}
-		selected = i;
-		node.classList.add('is-selected');
-		renderReadout(i);
-		showTranslation(i);
+		selectAt(+node.getAttribute('data-i'));
 	}
 
 	function leaveGrid(evt)
@@ -825,21 +861,30 @@
 	grid.addEventListener('click', selectCell);
 	grid.addEventListener('pointerleave', leaveGrid);
 
+	if (versePrev) versePrev.addEventListener('click', function () {
+		if (selected > 0) selectAt(selected - 1);
+	});
+	if (verseNext) verseNext.addEventListener('click', function () {
+		if (selected < VERSE_COUNT - 1) selectAt(selected + 1);
+	});
+
 
 	// Clicking anywhere outside the map itself (the readout cards, the
 	// legend, the page or the dimmer) drops the selection, so the readout
 	// returns to its hint and no square stays highlighted.
 	document.addEventListener('click', function (evt) {
 		if (selected < 0 || grid.contains(evt.target)) return;
-		// Clicks on the translation expander must not clear the selection.
-		var toggle = evt.target && evt.target.closest
-			? evt.target.closest('#reading-map-translation-toggle') : null;
-		if (toggle) return;
+		// Clicks anywhere inside the lead tile (readout, translation
+		// expander, prev/next buttons) must not clear the selection.
+		var inside = evt.target && evt.target.closest
+			? evt.target.closest('.reading-map-card-lead') : null;
+		if (inside) return;
 		selected = -1;
 		var prev = grid.querySelector('.rg-cell.is-selected');
 		if (prev) prev.classList.remove('is-selected');
 		renderReadout(-1);
 		hideTranslation();
+		syncVerseNav();
 	});
 
 	// 0 = not yet, 1 = seen on a visited page, 2..4 = verse opened 1x/2x/3+x.
@@ -896,6 +941,7 @@
 	{
 		selected = -1;
 		hideTranslation();
+		syncVerseNav();
 		paint();
 		window.setTimeout(warmShare, 400);
 	}

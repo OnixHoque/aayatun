@@ -47,6 +47,34 @@
         opacity: .5;
     }
 
+    .reading-map-card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin: 0;
+    }
+
+    .reading-map-verse-nav {
+        display: flex;
+        gap: 4px;
+    }
+
+    .reading-map-verse-nav .ui.circular.basic.icon.button {
+        width: 24px;
+        height: 24px;
+        min-height: 0;
+        min-width: 0;
+        padding: 0;
+        margin: 0;
+        font-size: .8rem;
+        box-shadow: inset 0 0 0 1px rgba(34, 36, 38, .22);
+    }
+
+    .reading-map-verse-nav .ui.circular.basic.icon.button:disabled {
+        opacity: .35;
+    }
+
     .reading-map-card-title {
         font-size: 100%;
         font-weight: 600;
@@ -1005,7 +1033,13 @@
 			<p class="reading-map-subtitle">This map tracks the verses and mushaf pages you have read so far.</p>
 			<div class="reading-map-cards">
 				<div class="reading-map-card reading-map-card-lead">
-					<div class="reading-map-card-label">Selected verse</div>
+					<div class="reading-map-card-head">
+						<div class="reading-map-card-label">Selected verse</div>
+						<div class="reading-map-verse-nav" id="reading-map-verse-nav" hidden>
+							<button type="button" id="reading-map-verse-prev" class="circular ui basic icon button" title="Previous verse" aria-label="Previous verse"><i class="icon angle left" aria-hidden="true"></i></button>
+							<button type="button" id="reading-map-verse-next" class="circular ui basic icon button" title="Next verse" aria-label="Next verse"><i class="icon angle right" aria-hidden="true"></i></button>
+						</div>
+					</div>
 					<div class="reading-map-readout">
 						<span id="reading-map-hint">Hover or tap a square to see the verse.</span>
 						<a id="reading-map-open" href="#" hidden></a>
