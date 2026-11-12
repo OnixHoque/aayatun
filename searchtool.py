@@ -155,8 +155,11 @@ def _expand_prefix(tok, gloss):
 	return '(' + ' OR '.join([tok + '*'] + parts) + ')'
 
 
-def _bare(seg, gloss, highlight):
-	"""Normalize a non-quoted segment into an FTS5 expression fragment."""
+def _bare(seg, gloss, highlight, join='OR'):
+	"""Normalize a non-quoted segment into an FTS5 expression fragment.
+
+	Bare operands with no explicit operator between them are OR'ed by default
+	(legacy parity); with join='AND' they are AND'ed (the full-match tier)."""
 	out = []
 	prev_operand = False
 	for item in _TOKEN_RE.findall(seg):
@@ -179,7 +182,7 @@ def _bare(seg, gloss, highlight):
 					highlight.append(m)
 			atom = _expand_prefix(t, gloss) if prefix else _expand(t, gloss)
 			if prev_operand and (not out or out[-1] not in ('AND', 'OR', 'NOT', '(')):
-				out.append('OR')
+				out.append(join)
 			out.append(atom)
 			prev_operand = True
 	while out and out[0] == 'NOT':
@@ -189,21 +192,21 @@ def _bare(seg, gloss, highlight):
 	return ' '.join(out) if out else None
 
 
-def _build_match(raw, col, gloss):
+def _build_match(raw, col, gloss, join='OR'):
 	"""Return (fts5_match_expr, highlight_terms) or (None, [])."""
 	highlight = []
 	parts = []
 	last = 0
 	for m in re.finditer(r'"([^"]*)"', raw):
-		parts.append(_bare(raw[last:m.start()], gloss, highlight))
+		parts.append(_bare(raw[last:m.start()], gloss, highlight, join))
 		q, _ = normalize(m.group(1))
 		q = q.strip()
 		if q:
 			highlight.extend(q.split())
 			parts.append('"' + q + '"')
 		last = m.end()
-	parts.append(_bare(raw[last:], gloss, highlight))
-	expr = ' OR '.join(p for p in parts if p)
+	parts.append(_bare(raw[last:], gloss, highlight, join))
+	expr = f' {join} '.join(p for p in parts if p)
 	if not expr:
 		return None, []
 	# De-duplicate highlight terms, longest first for nicer spans.
@@ -368,6 +371,10 @@ def index_search(search_query, result_limit=10, dirname=None, search_fields=None
 
 	gloss = _load_glossary()
 	match_expr, terms = _build_match(raw, col, gloss)
+	# Full-match tier: every token must be present somewhere. Docs matching
+	# all words are merged in front of the partial-match tier (OR), so a
+	# multi-word query always shows complete matches first.
+	full_expr, _ = _build_match(raw, col, gloss, join='AND')
 	meta['truncated'] = False
 	# SQL fetch limit: one extra row so we can detect that "show all" overran
 	# the render cap.
@@ -376,9 +383,14 @@ def index_search(search_query, result_limit=10, dirname=None, search_fields=None
 	conn = _connect()
 	try:
 		rows = []
+		seen = set()
 		if match_expr:
 			try:
-				rows = _run_query(conn, match_expr, sql_limit)
+				if full_expr and full_expr != match_expr:
+					rows = _run_query(conn, full_expr, sql_limit)
+					seen = {(r['surah'], r['verse']) for r in rows}
+				partial = _run_query(conn, match_expr, sql_limit)
+				rows += [r for r in partial if (r['surah'], r['verse']) not in seen]
 			except sqlite3.OperationalError:
 				# Malformed boolean/paren mix the user typed: plain OR of tokens.
 				n, _ = normalize(raw)
@@ -391,6 +403,8 @@ def index_search(search_query, result_limit=10, dirname=None, search_fields=None
 					terms = toks
 				except sqlite3.OperationalError:
 					rows = []
+		else:
+			rows = []
 		if not rows:
 			tri = _run_trigram(conn, raw, sql_limit)
 			if tri:
@@ -401,9 +415,16 @@ def index_search(search_query, result_limit=10, dirname=None, search_fields=None
 				if corrected:
 					n2 = ' '.join(corrected)
 					m2, t2 = _build_match(n2, col, gloss)
+					m2_and, _ = _build_match(n2, col, gloss, join='AND')
 					if m2:
 						try:
-							rows = _run_query(conn, m2, sql_limit)
+							rows = []
+							seen = set()
+							if m2_and and m2_and != m2:
+								rows = _run_query(conn, m2_and, sql_limit)
+								seen = {(r['surah'], r['verse']) for r in rows}
+							partial = _run_query(conn, m2, sql_limit)
+							rows += [r for r in partial if (r['surah'], r['verse']) not in seen]
 						except sqlite3.OperationalError:
 							rows = []
 					if rows:
@@ -411,6 +432,8 @@ def index_search(search_query, result_limit=10, dirname=None, search_fields=None
 						terms = t2
 					else:
 						meta['suggestions'] = corrected
+		if not need_all and len(rows) > result_limit:
+			rows = rows[:result_limit]
 		if need_all and len(rows) > TRUNC_MAX:
 			rows = rows[:TRUNC_MAX]
 			meta['truncated'] = True

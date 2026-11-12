@@ -574,6 +574,9 @@ ta-marbuta unified) and rendered from the original Uthmani text; all columns
 are stored normalized for matching with raw text as `UNINDEXED` display
 columns. Ranking is BM25 with per-column weights emitted as OR'ed
 column-filtered clauses (plain unfiltered FTS5 matches flatten the weights).
+Multi-word queries run an all-tokens pass first and merge those rows in front
+of the OR pass (bm25 orders within each tier), so complete matches always
+outrank partial matches; a trailing `*` acts as a prefix wildcard.
 The `db3/` Whoosh index and the `pd_backup.json` path are gone.
 
 ### 4.11 In-process caches
