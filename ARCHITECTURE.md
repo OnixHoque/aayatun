@@ -572,7 +572,11 @@ restoring those databases.
 DBs. Arabic is indexed in normalized form (diacritics stripped, alif/hamza/ya/
 ta-marbuta unified) and rendered from the original Uthmani text; all columns
 are stored normalized for matching with raw text as `UNINDEXED` display
-columns. Ranking is BM25 with per-column weights emitted as OR'ed
+columns. The `docs_trgm` trigram table (substring/root-search fallback) is
+skipped automatically on hosts whose SQLite lacks the trigram tokenizer
+(needs SQLite >= 3.34, e.g. PythonAnywhere); keyword search is otherwise
+unchanged, only the substring fallback is lost there. Ranking is BM25 with
+per-column weights emitted as OR'ed
 column-filtered clauses (plain unfiltered FTS5 matches flatten the weights).
 Multi-word queries run an all-tokens pass first and merge those rows in front
 of the OR pass (bm25 orders within each tier), so complete matches always
@@ -710,7 +714,8 @@ explanation. Without `git lfs pull`, verse pages fail.
 (flattened `verse_context` + word meanings) and `db/quran_stat.json`, strips
 HTML, normalizes (via `searchnorm.normalize`) and writes two FTS5 tables:
 `docs` (all columns + raw display columns as `UNINDEXED`, BM25 weights
-ar/en 10, AI 1.5, tafsirs 2, surah name 3) and `docs_trgm` (trigram over the
+ar/en 10, AI 1.5, tafsirs 2, surah name 3) and, when the host's SQLite
+supports it (>= 3.34), `docs_trgm` (trigram over the
 Arabic and English text for substring/root search fallback). Also writes
 `db/search_vocab.pkl` (token → frequency, ~30 k entries) which powers
 edit-distance "did you mean" suggestions via a BK-tree built lazily on the
@@ -720,7 +725,7 @@ ORs the whole group into the query, which is why translations still outrank
 AI passages for common words. Highlighting wraps the original (diacritized)
 text using a normalized→original index map, escaping via `_render` in
 `searchnorm.py`. Bengali has no stemming; it matches on exact tokens and
-trigram substrings.
+trigram substrings (where the host's SQLite provides them).
 
 ---
 

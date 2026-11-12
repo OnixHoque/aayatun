@@ -4,8 +4,12 @@
 Run from the repo root:   python3 build_search.py
 
 Outputs (both gitignored, regenerated any time):
-  db/search.db        FTS5 index (docs + docs_trgm)
+  db/search.db        FTS5 index (docs, plus docs_trgm when the host's SQLite supports it)
   db/search_vocab.pkl token -> frequency map used for typo suggestions
+
+The docs_trgm trigram table (substring fallback) is skipped automatically when
+the host's SQLite lacks the trigram tokenizer (needs SQLite >= 3.34); keyword
+search is otherwise unchanged, only substring fallback is lost there.
 
 All sources are local files; no network calls. The heavy part is tokenizing
 ~30 MB of text, which takes a few seconds. searchtool.index_search() will
@@ -130,13 +134,22 @@ def build():
 			tokenize = 'unicode61 remove_diacritics 2'
 		)
 	""")
-	conn.execute("""
-		CREATE VIRTUAL TABLE docs_trgm USING fts5(
-			ar_norm, en,
-			surah UNINDEXED, verse UNINDEXED,
-			tokenize = 'trigram'
-		)
-	""")
+	# The trigram tokenizer (FTS5 substring search) requires SQLite >= 3.34.
+	# Older builds (e.g. PythonAnywhere's libsqlite3) skip it; everything else
+	# still works, and the search just loses the zero-hit substring fallback.
+	try:
+		conn.execute("""
+			CREATE VIRTUAL TABLE docs_trgm USING fts5(
+				ar_norm, en_norm,
+				surah UNINDEXED, verse UNINDEXED,
+				tokenize = 'trigram'
+			)
+		""")
+		trgm_ok = True
+	except sqlite3.OperationalError:
+		trgm_ok = False
+		print('note: FTS5 trigram tokenizer unavailable (needs SQLite >= 3.34) '
+		      '- substring fallback disabled')
 	vocab = Counter()
 	for r in rows:
 		ar_norm, _ = searchnorm.normalize(r['ar_raw'])
@@ -150,8 +163,9 @@ def build():
 			(ar_norm, en_norm, ai_norm, en_tafsir_norm, bn_tafsir_norm, r['surah_name'],
 			 r['surah'], r['verse'],
 			 r['ar_raw'], r['en'], r['ai'], r['en_tafsir'], r['bn_tafsir']))
-		conn.execute('INSERT INTO docs_trgm VALUES (?,?,?,?)',
-		             (ar_norm, en_norm, r['surah'], r['verse']))
+		if trgm_ok:
+			conn.execute('INSERT INTO docs_trgm VALUES (?,?,?,?)',
+			             (ar_norm, en_norm, r['surah'], r['verse']))
 		for tok in ar_norm.split():
 			if len(tok) >= 2:
 				vocab[tok] += 1
@@ -175,7 +189,8 @@ def build():
 		pickle.dump(vtbl, fh, protocol=pickle.HIGHEST_PROTOCOL)
 
 	conn.execute('INSERT INTO docs(docs) VALUES (\'optimize\')')
-	conn.execute('INSERT INTO docs_trgm(docs_trgm) VALUES (\'optimize\')')
+	if trgm_ok:
+		conn.execute("INSERT INTO docs_trgm(docs_trgm) VALUES ('optimize')")
 	conn.commit()
 	size_mb = os.path.getsize(DB_OUT) / 1e6
 	conn.close()

@@ -243,8 +243,24 @@ def _run_query(conn, match_expr, limit):
 TRUNC_MAX = 500
 
 
+_trgm_available = None
+
+
+def _trgm_ok(conn):
+	"""True when the optional trigram table was built on this host (needs
+	SQLite >= 3.34). Checked once per process."""
+	global _trgm_available
+	if _trgm_available is None:
+		_trgm_available = bool(conn.execute(
+			"SELECT name FROM sqlite_master WHERE type='table' AND name='docs_trgm'"
+		).fetchone())
+	return _trgm_available
+
+
 def _run_trigram(conn, raw, limit):
 	"""Substring fallback for zero-hit queries (Arabic roots, partial words)."""
+	if not _trgm_ok(conn):
+		return []
 	n, _ = normalize(raw)
 	toks = [t for t in n.split() if len(t) >= 3]
 	if not toks:
