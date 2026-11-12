@@ -337,8 +337,9 @@
     }
 
     @media (max-width: 560px) {
-        /* Phone: smaller swatches and type so the key breaks into two
-           tidy lines instead of orphaning the context label. */
+        /* Phone: smaller swatches and type. The context label gets its
+           own line — the switch is alone on line one, the label heads
+           the key on line two, the swatches follow on line three. */
         .reading-map-legend {
             gap: 4px 10px;
             font-size: 76%;
@@ -348,6 +349,11 @@
 
         .reading-map-legend span {
             gap: 4px;
+        }
+
+        .reading-map-legend-context.is-visible {
+            max-width: none;
+            flex-basis: 100%;
         }
     }
 
@@ -1005,7 +1011,7 @@
 			</div>
 			<div class="reading-map-frame">
 				<div class="reading-map-help-row">
-					<p class="reading-map-help">Each square is one verse in mushaf order, from Al-Fatihah to An-Nas. Tap any square to open that verse; the legend below explains the colours.</p>
+					<p class="reading-map-help">Each square is one verse in mushaf order, from Al-Fatihah to An-Nas. Tap any square and click on the link above to open that verse; the legend below explains the colours.</p>
 					<span class="mushaf-zoom reading-map-zoom" role="group" aria-label="Zoom the map">
 						<button id="map-zoom-out" type="button" title="Zoom out" aria-label="Zoom out" class="circular ui basic icon button"><i class="icon minus" aria-hidden="true"></i></button>
 						<span id="map-zoom-level" class="mushaf-zoom-level" aria-live="polite" title="Zoom level">100%</span>
@@ -1025,7 +1031,7 @@
 					<label class="reading-map-switch" id="reading-map-themes" hidden>
 						<input type="checkbox" id="reading-map-themes-input">
 						<span class="reading-map-switch-track" aria-hidden="true"><span class="reading-map-switch-thumb"></span></span>
-						<span class="reading-map-switch-label">Themes</span>
+						<span class="reading-map-switch-label">Show Verse Themes</span>
 					</label>
 					<span class="reading-map-legend-context" id="reading-legend-context">Verse Read Statistics:</span>
 					<span class="reading-map-legend-item"><i class="rg-swatch"></i>Unread</span>
