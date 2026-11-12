@@ -2367,6 +2367,14 @@
     note.hidden = false;
     noteTimer = setTimeout(updateNote, 8000);
   }
+  function dismissNote() {
+    if (note.hidden) return;
+    // Keep the adhan-unlock prompt until audio is actually unlocked.
+    if (note.textContent === 'Tap anywhere to turn on adhan sound') return;
+    clearTimeout(noteTimer);
+    updateNote();
+  }
+  document.addEventListener('click', dismissNote, true);
 
   // Browsers only allow sound after a tap, so quietly "play" once inside a tap to unlock it.
   function primeAudio() {
