@@ -13,23 +13,16 @@
 
 {% block head_extra %}
 <style>
-    .reading-map-subtitle {
-        margin: 0 0 8px;
-        font-size: 72%;
-        line-height: 1.35;
-        opacity: .6;
-    }
-
     .reading-map-cards {
         display: grid;
         grid-template-columns: minmax(0, 1fr);
         gap: 10px;
-        margin-bottom: 14px;
+        margin-top: 14px;
     }
 
     .reading-map-subtitle {
-        margin: 0 0 12px;
-        font-size: 78%;
+        margin: 0 0 8px;
+        font-size: 90%;
         line-height: 1.45;
         opacity: .6;
     }
@@ -47,7 +40,7 @@
     }
 
     .reading-map-card-label {
-        font-size: 68%;
+        font-size: 78%;
         font-weight: 600;
         letter-spacing: .05em;
         text-transform: uppercase;
@@ -55,23 +48,23 @@
     }
 
     .reading-map-card-title {
-        font-size: 88%;
+        font-size: 100%;
         font-weight: 600;
         line-height: 1.3;
     }
 
     .reading-map-card-text {
         margin: 0;
-        font-size: 76%;
+        font-size: 88%;
         line-height: 1.4;
         opacity: .65;
     }
 
     .reading-map-readout {
-        /* Reserve two lines so hovering never resizes the card and shifts
+        /* Reserve one line so hovering never resizes the card and shifts
            the map below it. */
-        min-height: 2.8em;
-        font-size: 90%;
+        min-height: 1.4em;
+        font-size: 100%;
         line-height: 1.4;
     }
 
@@ -100,7 +93,7 @@
     }
 
     .reading-map-next {
-        font-size: 84%;
+        font-size: 95%;
         line-height: 1.4;
     }
 
@@ -109,8 +102,8 @@
     }
 
     .reading-map-help {
-        margin: 1px 0 0;
-        font-size: 74%;
+        margin: 0 0 12px;
+        font-size: 85%;
         line-height: 1.45;
         opacity: .6;
     }
@@ -141,11 +134,11 @@
     }
 
     .reading-map-stats .reading-map-ring-pct {
-        font-size: 66%;
+        font-size: 74%;
     }
 
     .reading-map-stats .reading-map-ring-label {
-        font-size: 76%;
+        font-size: 88%;
         line-height: 1.3;
     }
 
@@ -172,7 +165,7 @@
         color: #fff;
         cursor: pointer;
         font-family: inherit;
-        font-size: 78%;
+        font-size: 90%;
         font-weight: 600;
         line-height: 1.2;
         padding: 7px 12px;
@@ -195,7 +188,7 @@
         padding: 2px 0;
         color: #c0392b;
         font-family: inherit;
-        font-size: 95%;
+        font-size: 100%;
         line-height: 1.2;
         text-decoration: underline;
         cursor: pointer;
@@ -284,12 +277,12 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 72%;
+        font-size: 84%;
         font-weight: 600;
     }
 
     .reading-map-ring-label {
-        font-size: 80%;
+        font-size: 88%;
         line-height: 1.35;
         opacity: .8;
     }
@@ -305,7 +298,7 @@
         flex-wrap: wrap;
         align-items: center;
         gap: 6px 14px;
-        font-size: 80%;
+        font-size: 92%;
         opacity: .8;
         margin: 0;
         padding: 8px 4px 3px;
@@ -347,7 +340,7 @@
         min-width: 44px;
         height: 28px;
         padding: 0 2px;
-        font-size: 86%;
+        font-size: 95%;
         line-height: 1;
         font-weight: 700;
         opacity: .75;
@@ -426,7 +419,7 @@
     .reading-map-axis span {
         position: absolute;
         top: 0;
-        font-size: 9px;
+        font-size: 11px;
         line-height: 14px;
         color: rgba(27, 31, 36, .45);
         white-space: nowrap;
@@ -456,7 +449,7 @@
     .reading-map-scrollbar {
         position: relative;
         height: 12px;
-        margin: 12px 4px 0;
+        margin: 2px 4px 0;
         border-radius: 6px;
         background: rgba(34, 36, 38, .09);
         cursor: pointer;
@@ -624,7 +617,7 @@
         cursor: pointer;
         -webkit-user-select: none;
         user-select: none;
-        font-size: 80%;
+        font-size: 92%;
         line-height: 1.2;
         white-space: nowrap;
     }
@@ -683,9 +676,10 @@
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 4px 6px;
-        padding: 4px 0 10px;
-        font-size: 76%;
+        gap: 2px 6px;
+        padding: 2px 0 8px;
+        font-size: 88%;
+        line-height: 1.15;
         opacity: .9;
     }
 
@@ -697,7 +691,7 @@
         display: inline-flex;
         align-items: center;
         gap: 5px;
-        padding: 2px 6px 2px 4px;
+        padding: 1px 6px 1px 4px;
         border: 1px solid transparent;
         border-radius: 6px;
         transition: opacity .15s ease, border-color .15s ease, background .15s ease;
@@ -777,7 +771,7 @@
 
     .reading-map-theme-attribution {
         margin: 10px 2px 0;
-        font-size: 72%;
+        font-size: 84%;
         line-height: 1.3;
         opacity: .55;
         text-align: right;
@@ -922,6 +916,35 @@
 {% block content3 %}
 <div class="ui container" style="padding: 0 5%; font-family: 'Open Sans';">
 			<p class="reading-map-subtitle">This map only tracks verse reading and mushaf page reading.</p>
+			<p class="reading-map-help">Each square is one verse in mushaf order, from Al-Fatihah to An-Nas. Tap any square to open that verse; the legend below explains the colours.</p>
+			<div class="reading-map-frame">
+				<div id="reading-map-scroll" class="reading-map-scroll">
+					<div id="reading-map-axis" class="reading-map-axis" aria-hidden="true"></div>
+					<div id="reading-map-grid" class="reading-map-grid" role="img" aria-label="Quran Exploration Map"></div>
+				</div>
+				<div class="reading-map-legend">
+					<label class="reading-map-switch" id="reading-map-themes" hidden>
+						<input type="checkbox" id="reading-map-themes-input">
+						<span class="reading-map-switch-track" aria-hidden="true"><span class="reading-map-switch-thumb"></span></span>
+						<span class="reading-map-switch-label">Themes</span>
+					</label>
+					<span class="reading-map-legend-context" id="reading-legend-context">Page Read Statistics:</span>
+					<span class="reading-map-legend-item"><i class="rg-swatch"></i>Unread</span>
+					<span class="reading-map-legend-item" id="reading-map-legend-read" hidden><i class="rg-swatch rg-swatch-tick"></i>Read</span>
+					<span class="reading-map-legend-item" id="reading-map-legend-page"><i class="rg-swatch light"></i>Page visited</span>
+					<span class="rg-scale" id="reading-map-legend-scale" title="Opened once, twice, 3+ times"><span>Less</span><i class="rg-swatch deep-1"></i><i class="rg-swatch deep-2"></i><i class="rg-swatch deep-3"></i><span>More</span></span>
+					<span class="mushaf-zoom reading-map-zoom" role="group" aria-label="Zoom the map">
+						<button id="map-zoom-out" type="button" title="Zoom out" aria-label="Zoom out" class="circular ui basic icon button"><i class="icon minus" aria-hidden="true"></i></button>
+						<span id="map-zoom-level" class="mushaf-zoom-level" aria-live="polite" title="Zoom level">100%</span>
+						<button id="map-zoom-in" type="button" title="Zoom in" aria-label="Zoom in" class="circular ui basic icon button"><i class="icon plus" aria-hidden="true"></i></button>
+					</span>
+					<button type="button" id="reading-map-clear" title="Clear your reading history">Clear Visit History</button>
+				</div>
+				<div id="reading-map-theme-legend" class="reading-map-theme-legend" hidden></div>
+			</div>
+			<div id="reading-map-x" class="reading-map-scrollbar" role="scrollbar" aria-controls="reading-map-scroll" aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Scroll the map left and right" tabindex="0" hidden>
+				<div class="reading-map-scrollbar-thumb"></div>
+			</div>
 			<div class="reading-map-cards">
 				<div class="reading-map-card reading-map-card-lead">
 					<div class="reading-map-card-label">Selected verse</div>
@@ -930,7 +953,6 @@
 						<a id="reading-map-open" href="#" hidden></a>
 					</div>
 					<div id="reading-map-next" class="reading-map-next"></div>
-					<p class="reading-map-help">Each square is one verse in mushaf order, from Al-Fatihah to An-Nas. Tap any square to open that verse; the legend below explains the colours.</p>
 				</div>
 				<div class="reading-map-card reading-map-stats">
 					<div class="reading-map-stat">
@@ -962,34 +984,7 @@
 					<button type="button" id="reading-map-share" class="reading-map-share" title="Share the map with your friends" aria-label="Share the Quran Exploration Map with your friends"><i class="icon share alternate" aria-hidden="true"></i><span>Share map</span></button>
 				</div>
 			</div>
-			<div class="reading-map-frame">
-				<div id="reading-map-scroll" class="reading-map-scroll">
-					<div id="reading-map-axis" class="reading-map-axis" aria-hidden="true"></div>
-					<div id="reading-map-grid" class="reading-map-grid" role="img" aria-label="Quran Exploration Map"></div>
-				</div>
-				<div class="reading-map-legend">
-					<label class="reading-map-switch" id="reading-map-themes" hidden>
-						<input type="checkbox" id="reading-map-themes-input">
-						<span class="reading-map-switch-track" aria-hidden="true"><span class="reading-map-switch-thumb"></span></span>
-						<span class="reading-map-switch-label">Themes</span>
-					</label>
-					<span class="reading-map-legend-context" id="reading-legend-context">Page Read Statistics:</span>
-					<span class="reading-map-legend-item"><i class="rg-swatch"></i>Unread</span>
-					<span class="reading-map-legend-item" id="reading-map-legend-read" hidden><i class="rg-swatch rg-swatch-tick"></i>Read</span>
-					<span class="reading-map-legend-item" id="reading-map-legend-page"><i class="rg-swatch light"></i>Page visited</span>
-					<span class="rg-scale" id="reading-map-legend-scale" title="Opened once, twice, 3+ times"><span>Less</span><i class="rg-swatch deep-1"></i><i class="rg-swatch deep-2"></i><i class="rg-swatch deep-3"></i><span>More</span></span>
-					<span class="mushaf-zoom reading-map-zoom" role="group" aria-label="Zoom the map">
-						<button id="map-zoom-out" type="button" title="Zoom out" aria-label="Zoom out" class="circular ui basic icon button"><i class="icon minus" aria-hidden="true"></i></button>
-						<span id="map-zoom-level" class="mushaf-zoom-level" aria-live="polite" title="Zoom level">100%</span>
-						<button id="map-zoom-in" type="button" title="Zoom in" aria-label="Zoom in" class="circular ui basic icon button"><i class="icon plus" aria-hidden="true"></i></button>
-					</span>
-					<button type="button" id="reading-map-clear" title="Clear your reading history">Clear Visit History</button>
-				</div>
-				<div id="reading-map-theme-legend" class="reading-map-theme-legend" hidden></div>
-			</div>
-			<div id="reading-map-x" class="reading-map-scrollbar" role="scrollbar" aria-controls="reading-map-scroll" aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Scroll the map left and right" tabindex="0" hidden>
-				<div class="reading-map-scrollbar-thumb"></div>
-			</div>
+
 			<div id="reading-map-theme-attribution" class="reading-map-theme-attribution" hidden>Verse themes: AI-assisted (Aayatun)</div>
 </div>
 	<div id="clear-history-modal" class="ui mini modal">
@@ -1002,6 +997,7 @@
 			<button type="button" id="clear-history-confirm" class="ui red button">Clear Visit History</button>
 		</div>
 	</div>
+	{% include 'partials/_verse_modal.html' %}
 {% endblock content3 %}
 
 {% block js %}
@@ -1016,6 +1012,18 @@
 	// map's Clear Visit History button, so hide it here.
 	$('#search-btn').hide();
 	$('#menubar').removeClass('three').addClass('one');
+
+	// Selected-verse link and the "Suggested…" line open the shared verse
+	// modal instead of navigating away from the map.
+	document.addEventListener('click', function (evt) {
+		var a = evt.target && evt.target.closest
+			? evt.target.closest('#reading-map-open, #reading-map-next a') : null;
+		if (!a) return;
+		var m = (a.getAttribute('href') || '').match(/^\/(\d+)\/(\d+)/);
+		if (!m) return;
+		evt.preventDefault();
+		if (window.showModal) window.showModal(parseInt(m[1], 10), parseInt(m[2], 10));
+	});
 
 	$('#clear-history-modal').modal({ allowMultiple: true });
 	$('#reading-map-clear').click(function () {
