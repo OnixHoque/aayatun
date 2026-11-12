@@ -311,6 +311,12 @@
             gap: 10px;
         }
 
+        .reading-map-card-share > div {
+            /* The row layout's flex: 1 would stretch this wrapper
+               vertically here and shove the button to the bottom. */
+            flex: 0 0 auto;
+        }
+
         .reading-map-card-share .reading-map-share {
             justify-content: center;
         }
