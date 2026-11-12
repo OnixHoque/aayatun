@@ -355,8 +355,6 @@
 		if (grid) grid.classList.toggle('themes-on', themesOn);
 		if (readingLegend) readingLegend.classList.toggle('themes-on', themesOn);
 		if (legendContext) {
-			legendContext.textContent = themesOn
-				? 'Verse Read Statistics:' : 'Page Read Statistics:';
 			legendContext.classList.add('is-visible');
 		}
 		if (legendRead) legendRead.hidden = !themesOn;
@@ -380,7 +378,7 @@
 	function initThemes()
 	{
 		if (legendContext) {
-			legendContext.textContent = 'Page Read Statistics:';
+			legendContext.textContent = 'Verse Read Statistics:';
 			legendContext.classList.add('is-visible');
 		}
 		if (!hasThemes) {
