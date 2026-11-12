@@ -68,6 +68,23 @@
         line-height: 1.4;
     }
 
+    /* The selected verse's translation, shown above the suggestion:
+       a two-line glance, ellipsised and muted. */
+    .reading-map-translation {
+        margin: 0;
+        font-size: 82%;
+        line-height: 1.4;
+        opacity: .75;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .reading-map-translation[hidden] {
+        display: none !important;
+    }
+
     #reading-map-hint {
         opacity: .55;
     }
@@ -349,11 +366,6 @@
 
         .reading-map-legend span {
             gap: 4px;
-        }
-
-        .reading-map-legend-context.is-visible {
-            max-width: none;
-            flex-basis: 100%;
         }
     }
 
@@ -642,26 +654,9 @@
         box-shadow: inset 0 0 0 1px #30363d;
     }
 
-    /* The context label between the switch and the visited legend; it
-       slides open when theme mode is on instead of jumping in. */
-    .reading-map-legend-context {
-        max-width: 0;
-        overflow: hidden;
-        white-space: nowrap;
-        opacity: 0;
-        visibility: hidden;
-        cursor: default;
-        transition: max-width .3s ease, opacity .2s ease, visibility .2s ease;
-    }
-
-    .reading-map-legend-context.is-visible {
-        max-width: 170px;
-        opacity: 1;
-        visibility: visible;
-    }
-
     /* Rounded switch for theme mode, in the legend row. */
     .reading-map-switch {
+        margin-left: auto;
         flex: none;
         position: relative;
         display: inline-flex;
@@ -838,7 +833,6 @@
         .rg-cell,
         .rg-cell::after,
         .rg-swatch,
-        .reading-map-legend-context,
         .rg-theme-key,
         .reading-map-switch-track,
         .reading-map-switch-thumb {
@@ -977,6 +971,7 @@
 						<span id="reading-map-hint">Hover or tap a square to see the verse.</span>
 						<a id="reading-map-open" href="#" hidden></a>
 					</div>
+					<p class="reading-map-translation" id="reading-map-translation" hidden></p>
 					<div id="reading-map-next" class="reading-map-next"></div>
 				</div>
 				<div class="reading-map-card reading-map-stats">
@@ -1028,16 +1023,16 @@
 					<div class="reading-map-scrollbar-thumb"></div>
 				</div>
 				<div class="reading-map-legend">
+					<span class="reading-map-legend-item"><i class="rg-swatch"></i>Unread</span>
+					<span class="reading-map-legend-item" id="reading-map-legend-read" hidden><i class="rg-swatch rg-swatch-tick"></i>Read</span>
+					<span class="reading-map-legend-item" id="reading-map-legend-page"><i class="rg-swatch light"></i>Page visited</span>
+					<span class="rg-scale" id="reading-map-legend-scale" title="Opened once, twice, 3+ times"><span>Less</span><i class="rg-swatch deep-1"></i><i class="rg-swatch deep-2"></i><i class="rg-swatch deep-3"></i><span>More</span></span>
+					<span class="mushaf-zoom-sep" aria-hidden="true"></span>
 					<label class="reading-map-switch" id="reading-map-themes" hidden>
 						<input type="checkbox" id="reading-map-themes-input">
 						<span class="reading-map-switch-track" aria-hidden="true"><span class="reading-map-switch-thumb"></span></span>
 						<span class="reading-map-switch-label">Show Verse Themes</span>
 					</label>
-					<span class="reading-map-legend-context" id="reading-legend-context">Verse Read Statistics:</span>
-					<span class="reading-map-legend-item"><i class="rg-swatch"></i>Unread</span>
-					<span class="reading-map-legend-item" id="reading-map-legend-read" hidden><i class="rg-swatch rg-swatch-tick"></i>Read</span>
-					<span class="reading-map-legend-item" id="reading-map-legend-page"><i class="rg-swatch light"></i>Page visited</span>
-					<span class="rg-scale" id="reading-map-legend-scale" title="Opened once, twice, 3+ times"><span>Less</span><i class="rg-swatch deep-1"></i><i class="rg-swatch deep-2"></i><i class="rg-swatch deep-3"></i><span>More</span></span>
 				</div>
 				<div id="reading-map-theme-legend" class="reading-map-theme-legend" hidden></div>
 			</div>
@@ -1057,6 +1052,7 @@
 {% endblock content3 %}
 
 {% block js %}
+<meta name="aayatun-api-token" content="{{ api_token }}">
 <script>window.AAYATUN_PAGE_BOUNDS = {{ page_bounds|tojson }};</script>
 <script>window.AAYATUN_THEMES = {{ theme_data|tojson }};</script>
 <script>window.AAYATUN_MAP_INPAGE = true;</script>

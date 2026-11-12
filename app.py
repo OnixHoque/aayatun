@@ -133,7 +133,8 @@ def index():
 @app.route('/map')
 def reading_map():
 	return render_template('map.html', surahs=getVerseMaps(),
-		page_bounds=lib.get_page_bounds(), theme_data=lib.get_ayah_themes())
+		page_bounds=lib.get_page_bounds(), theme_data=lib.get_ayah_themes(),
+		api_token=api_token())
 
 @app.route('/<int:surah>/', strict_slashes=False)
 def details2(surah):

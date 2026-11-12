@@ -83,6 +83,49 @@
 	var hint = document.getElementById('reading-map-hint');
 	var openLink = document.getElementById('reading-map-open');
 	var nextBox = document.getElementById('reading-map-next');
+	var translationEl = document.getElementById('reading-map-translation');
+	var translationCache = {};
+	var translationKey = null;
+	var apiToken = (document.querySelector('meta[name="aayatun-api-token"]') || {}).content || '';
+
+	function hideTranslation()
+	{
+		translationKey = null;
+		if (!translationEl) return;
+		translationEl.hidden = true;
+		translationEl.textContent = '';
+	}
+
+	function showTranslation(i)
+	{
+		if (!translationEl || !window.fetch || i === undefined || i === null || i < 0) return;
+		var loc = locate(i);
+		var key = loc.s.no + ':' + loc.verse;
+		translationKey = key;
+		translationEl.hidden = false;
+		if (Object.prototype.hasOwnProperty.call(translationCache, key)) {
+			translationEl.textContent = translationCache[key];
+			translationEl.hidden = !translationCache[key];
+			return;
+		}
+		translationEl.textContent = '…';
+		window.fetch('/api/v1/verse/' + loc.s.no + '/' + loc.verse, {
+			headers: { 'X-Aayatun-Token': apiToken }
+		}).then(function (resp) {
+			if (!resp.ok) throw new Error('verse ' + resp.status);
+			return resp.json();
+		}).then(function (data) {
+			var t = (data && data.translation) || '';
+			translationCache[key] = t;
+			if (translationKey === key) {
+				translationEl.textContent = t;
+				translationEl.hidden = !t;
+			}
+		}).catch(function () {
+			translationCache[key] = '';
+			if (translationKey === key) translationEl.hidden = true;
+		});
+	}
 	var shareBtn = document.getElementById('reading-map-share');
 	var pagesRing = document.getElementById('reading-map-pages-ring');
 	var pagesPctEl = document.getElementById('reading-map-pages-pct');
@@ -95,7 +138,6 @@
 	var themeLegend = document.getElementById('reading-map-theme-legend');
 	var themeAttribution = document.getElementById('reading-map-theme-attribution');
 	var readingLegend = document.querySelector('.reading-map-legend');
-	var legendContext = document.getElementById('reading-legend-context');
 	var legendRead = document.getElementById('reading-map-legend-read');
 	var legendPage = document.getElementById('reading-map-legend-page');
 	var legendScale = document.getElementById('reading-map-legend-scale');
@@ -354,9 +396,6 @@
 		themesOn = !!on;
 		if (grid) grid.classList.toggle('themes-on', themesOn);
 		if (readingLegend) readingLegend.classList.toggle('themes-on', themesOn);
-		if (legendContext) {
-			legendContext.classList.add('is-visible');
-		}
 		if (legendRead) legendRead.hidden = !themesOn;
 		if (legendPage) legendPage.hidden = themesOn;
 		if (legendScale) legendScale.hidden = themesOn;
@@ -377,10 +416,6 @@
 
 	function initThemes()
 	{
-		if (legendContext) {
-			legendContext.textContent = 'Verse Read Statistics:';
-			legendContext.classList.add('is-visible');
-		}
 		if (!hasThemes) {
 			if (themeToggle) themeToggle.hidden = true;
 			if (legendRead) legendRead.hidden = true;
@@ -742,6 +777,7 @@
 		selected = i;
 		node.classList.add('is-selected');
 		renderReadout(i);
+		showTranslation(i);
 	}
 
 	function leaveGrid(evt)
@@ -764,6 +800,7 @@
 		var prev = grid.querySelector('.rg-cell.is-selected');
 		if (prev) prev.classList.remove('is-selected');
 		renderReadout(-1);
+		hideTranslation();
 	});
 
 	// 0 = not yet, 1 = seen on a visited page, 2..4 = verse opened 1x/2x/3+x.
@@ -819,6 +856,7 @@
 	function refresh()
 	{
 		selected = -1;
+		hideTranslation();
 		paint();
 		window.setTimeout(warmShare, 400);
 	}
