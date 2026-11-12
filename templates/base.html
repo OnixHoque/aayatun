@@ -141,6 +141,9 @@
      if (a) {
        var href = a.getAttribute('href');
        if (!href || href.charAt(0) === '#') return;
+       // Pseudo-links like href="javascript:void(0)" are toggles, not
+       // navigation (e.g. More Apps); never show the loading bar for them.
+       if (/^\s*javascript\s*:/i.test(href)) return;
        if (a.target === '_blank' || a.hasAttribute('download')) return;
        if (a.origin && a.origin !== window.location.origin) return;
        showLoading();

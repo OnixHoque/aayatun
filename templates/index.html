@@ -1282,6 +1282,10 @@ document.addEventListener('DOMContentLoaded', function () {
 			window.AayatunReadingMap.refresh();
 	});
 
+	// More Apps is a toggle (href="javascript:void(0)"), not a navigation.
+	// The preventDefault handler must be registered BEFORE .popup() so it
+	// runs before Fomantic's own click handler (jQuery runs same-element
+	// handlers in registration order) and the page never "jumps".
 	$('#more-apps-btn').on('click', function (evt) {
 		evt.preventDefault();
 	}).popup({
