@@ -281,14 +281,14 @@
         min-width: 0;
     }
 
-    /* The two progress rows stack vertically and hug each other so the
-       card stays compact; the lead card takes the rest of the width. */
+    /* The two progress rows sit side by side whenever the card is wide
+       enough (all but the ≥ 900 px desktop stack). */
     .reading-map-stats {
-        flex-direction: column;
+        flex-direction: row;
         flex-wrap: nowrap;
-        align-items: stretch;
+        align-items: center;
         justify-content: center;
-        gap: 16px;
+        gap: 14px;
         padding: 9px 12px;
     }
 
@@ -397,6 +397,24 @@
 
         .reading-map-card-lead {
             grid-column: auto;
+        }
+
+        /* Desktop: compact stacked stats card; share card stacks too. */
+        .reading-map-stats {
+            flex-direction: column;
+            justify-content: center;
+            gap: 14px;
+        }
+
+        .reading-map-card-share {
+            flex-direction: column;
+            align-items: stretch;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .reading-map-card-share .reading-map-share {
+            justify-content: center;
         }
     }
 
@@ -598,11 +616,6 @@
         gap: calc(3px * var(--map-zoom, 1));
         align-content: start;
         width: max-content;
-        transition: opacity .08s linear;
-    }
-
-    .reading-map-grid.themes-fading {
-        opacity: 0;
     }
 
     /* A blank cell at each surah start, so the blocks read apart. */
@@ -703,7 +716,6 @@
         transform: rotate(-45deg);
         opacity: 0;
         pointer-events: none;
-        filter: drop-shadow(0 0 1px rgba(0, 0, 0, .7));
         transition: opacity .12s linear;
     }
 

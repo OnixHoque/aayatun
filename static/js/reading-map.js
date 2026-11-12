@@ -314,26 +314,25 @@
 	function setThemes(on)
 	{
 		var nav = window.AayatunNav;
-		var reduced = window.matchMedia &&
-			window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 		var visible = grid && grid.getBoundingClientRect().width > 0;
-		// The switch flips 6,236 squares, so it goes through the site loading
-		// bar with a simple fade in/out instead of an animated color wash.
-		if (visible) {
-			if (nav && nav.loading) nav.loading();
-			else if (window.showLoading) window.showLoading();
-			if (!reduced) grid.classList.add('themes-fading');
-			window.setTimeout(function () {
-				applyThemeMode(on);
-				grid.classList.remove('themes-fading');
-				window.setTimeout(function () {
-					if (nav && nav.done) nav.done();
-					else if (window.hideLoading) window.hideLoading();
-				}, reduced ? 0 : 150);
-			}, reduced ? 0 : 90);
+		if (nav && nav.loading) nav.loading();
+		else if (window.showLoading) window.showLoading();
+		// One synchronous repaint of all 6,236 squares through the site
+		// loading bar — no per-cell transitions and no artificial delays.
+		applyThemeMode(on);
+		if (!visible) {
+			if (nav && nav.done) nav.done();
+			else if (window.hideLoading) window.hideLoading();
 			return;
 		}
-		applyThemeMode(on);
+		// Two animation frames guarantee the new frame has painted with
+		// the bar up, then hide it.
+		window.requestAnimationFrame(function () {
+			window.requestAnimationFrame(function () {
+				if (nav && nav.done) nav.done();
+				else if (window.hideLoading) window.hideLoading();
+			});
+		});
 	}
 
 	function applyThemeMode(on)
@@ -448,27 +447,32 @@
 	// need. The columns then run off to the right and only the width scrolls.
 	var mapRows = 0;
 
+	// The frame keeps a fixed height across the zoom steps; the boxes
+	// rewrap inside it, so the popup itself never resizes.
+	var fixedFrameH = 0;
+
 	function layoutMap()
 	{
 		if (!grid || !scroll) return;
 		var top = scroll.getBoundingClientRect().top;
 		var zoom = mapZoomFactor();
-		// Leave room for the page ticks, the reading legend, the theme legend
-		// and the attribution line (when themes are on), the scrollbar and the
-		// frame padding, so the whole map block fits without scrolling.
+		// Leave room for the page ticks, the reading legend, the theme
+		// legend and the attribution line (when themes are on), the
+		// scrollbar and the frame padding, so the whole map block fits
+		// without scrolling.
 		var reserved = 96;
 		if (themeLegend && !themeLegend.hidden) reserved += themeLegend.offsetHeight;
 		if (themeAttribution && !themeAttribution.hidden) reserved += themeAttribution.offsetHeight;
-		var avail = window.innerHeight - top - reserved;
-		avail = Math.max(126,
-			Math.min(avail, Math.round(window.innerHeight * 0.7)));
-		var rows = Math.max(12, Math.floor((avail + 3 * zoom) / pitch()));
-		// Always re-fit: when only the zoom changes, the row count can stay
-		// the same while the cell height changes, and a stale scroll height
-		// would clip the bottom rows under the container.
+		if (!fixedFrameH) {
+			var avail = window.innerHeight - top - reserved;
+			avail = Math.max(126,
+				Math.min(avail, Math.round(window.innerHeight * 0.7)));
+			fixedFrameH = avail;
+		}
+		var rows = Math.max(12, Math.floor((fixedFrameH - 26 + 3 * zoom) / pitch()));
 		mapRows = rows;
 		grid.style.setProperty('--map-rows', String(rows));
-		scroll.style.height = (rows * pitch() + 26) + 'px';
+		scroll.style.height = fixedFrameH + 'px';
 		renderAxis();
 	}
 
@@ -594,6 +598,7 @@
 
 		scroll.addEventListener('scroll', syncX, { passive: true });
 		window.addEventListener('resize', function () {
+			fixedFrameH = 0;
 			layoutMap();
 			syncX();
 		});

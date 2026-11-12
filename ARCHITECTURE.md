@@ -1072,10 +1072,10 @@ sequenceDiagram
   always beats the tint.
 - No network: data comes from `recent.js` bitsets; the page mapping is
   `window.AAYATUN_PAGE_BOUNDS`, surah names/counts come from `#surah`.
-- `layoutMap()` derives the row count from the space under the map, clamps it
-  to `[126px, 70 % vh]` and at least 12 rows, then sets
-  `grid-template-rows` and the frame height. Re-measured after the modal
-  transition and on resize.
+- `layoutMap()` sizes the frame once (the space under the map, clamped to
+  `[126px, 70 % vh]`, at least 12 rows) with a fixed height; zoom only
+  rewraps the cells inside it, so the popup never resizes. Re-measured on
+  resize.
 - One-way scroll: the grid scrolls horizontally only; a custom thumb
   (`.reading-map-scrollbar`, `role="scrollbar"`) replaces the hidden native
   scrollbar, with track click, Home/End/Arrows.
