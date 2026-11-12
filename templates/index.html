@@ -934,9 +934,10 @@ document.addEventListener('DOMContentLoaded', function () {
 		popup: $('#more-apps-popup'),
 		on: 'click',
 		position: 'top center',
-		lastResort: 'bottom center',
+		lastResort: 'top center',
 		exclusive: true,
-		hoverable: true
+		hoverable: true,
+		distanceAway: 8
 	});
 	$('#more-apps-popup').on('click', 'a', function () {
 		$('#more-apps-btn').popup('hide');
