@@ -671,6 +671,7 @@
 				  <button name="menuitem" class="circular ui tiny basic icon button" style="font-family: 'Open Sans'; font-size: 78%;">Translation</button>
 				  <button name="menuitem" class="circular ui tiny basic icon button" style="font-family: 'Open Sans'; font-size: 78%;">Tafsir (Bn)</button>
 				  <button name="menuitem" class="circular ui tiny basic icon button" style="font-family: 'Open Sans'; font-size: 78%;">Tafsir (En)</button>
+				  <button id="btn-whole-mushaf" type="button" class="circular ui tiny basic icon button" style="font-family: 'Open Sans'; font-size: 78%;">Mushaf</button>
 				</div>
 			</div>
 
@@ -757,7 +758,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	// console.log(target_location[0]);
 	let options = document.querySelectorAll("[name='menuitem']");
 	console.log(options.length);
-	for (let i = 0; i < options.length; i++)
+	for (let i = 0; i < Math.min(options.length, 4); i++)
 	{
 		options[i].onclick = function(){
 			let s = $('#surah').find(":selected").attr('value');
@@ -767,6 +768,41 @@ document.addEventListener('DOMContentLoaded', function () {
 			else window.parent.location.href = target_location[i].replace("-1", s);
 		}
 	}
+
+	// "Mushaf" opens the printed page containing the surah's first verse and
+	// highlights it (the page view centres/marks the ?v=surah:verse target).
+	(function () {
+		var btn = document.getElementById('btn-whole-mushaf');
+		if (!btn) return;
+		var bounds = Array.isArray(window.AAYATUN_PAGE_BOUNDS) ? window.AAYATUN_PAGE_BOUNDS : [];
+		function surahStartIndex(surahNo) {
+			var opts = document.querySelectorAll('#surah option');
+			var total = 0;
+			for (var i = 0; i < opts.length; i++) {
+				var no = parseInt(opts[i].value, 10);
+				if (no === surahNo) return total;
+				total += parseInt(opts[i].getAttribute('verse_count'), 10) || 0;
+			}
+			return 0;
+		}
+		function pageForIndex(idx) {
+			if (!bounds.length) return 1;
+			var lo = 0, hi = bounds.length - 1;
+			while (lo < hi) {
+				var mid = (lo + hi + 1) >> 1;
+				if (bounds[mid] <= idx) lo = mid;
+				else hi = mid - 1;
+			}
+			return lo + 1;
+		}
+		btn.addEventListener('click', function () {
+			var s = parseInt($('#surah').find(':selected').attr('value'), 10) || 1;
+			var page = pageForIndex(surahStartIndex(s));
+			var url = "{{ url_for('mushaf_page', page_no=0) }}".replace('/0', '/' + page) + '?v=' + s + ':1';
+			if (window.AayatunNav) window.AayatunNav.go(url);
+			else window.location.href = url;
+		});
+	})();
 	$('#surah').dropdown('setting', 'onChange', function () {
 		if (!isJumpToPage()) updateVerse();
 	});
