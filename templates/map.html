@@ -914,7 +914,7 @@
 {% endblock %}
 
 {% block content3 %}
-<div class="ui container" style="padding: 0 5%; font-family: 'Open Sans';">
+<div class="ui container" style="padding: 0 5% 40px; font-family: 'Open Sans';">
 			<p class="reading-map-subtitle">This map only tracks verse reading and mushaf page reading.</p>
 			<div class="reading-map-frame">
 				<p class="reading-map-help">Each square is one verse in mushaf order, from Al-Fatihah to An-Nas. Tap any square to open that verse; the legend below explains the colours.</p>
@@ -1022,6 +1022,10 @@
 		var m = (a.getAttribute('href') || '').match(/^\/(\d+)\/(\d+)/);
 		if (!m) return;
 		evt.preventDefault();
+		// The base capture-phase click listener showed the loading bar for
+		// this anchor; the navigation it advertises never happens, so
+		// clear it here or the bar would stay up forever.
+		if (window.hideLoading) window.hideLoading();
 		if (window.showModal) window.showModal(parseInt(m[1], 10), parseInt(m[2], 10));
 	});
 

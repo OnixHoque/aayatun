@@ -499,6 +499,9 @@
 		grid.style.setProperty('--map-rows', String(rows));
 		scroll.style.height = fixedFrameH + 'px';
 		renderAxis();
+		// Zoom rewraps the columns, so the bar width and position must
+		// follow (zoom changes grid width without any scroll event).
+		syncX();
 	}
 
 	// Sparse page ticks over the columns: one label where each 50th printed
