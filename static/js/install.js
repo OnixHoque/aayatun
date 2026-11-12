@@ -30,10 +30,12 @@
 			'.aayatun-install-sub{margin:0 0 14px;color:rgba(231,238,249,.7);font-size:.9rem}' +
 			'.aayatun-install-card ol{margin:0;padding-left:1.2em}' +
 			'.aayatun-install-card li{margin:0 0 9px}' +
-			'.aayatun-install-close{position:absolute;top:10px;right:12px;width:34px;height:34px;border:0;border-radius:50%;background:transparent;color:inherit;font-size:1.5rem;line-height:1;cursor:pointer}' +
-			'.aayatun-install-close:hover{background:rgba(255,255,255,.1)}' +
+			'.aayatun-install-close{position:absolute;top:10px;right:12px;width:34px;height:34px;padding:0;border:0;border-radius:50%;display:grid;place-items:center;background:transparent;color:inherit;font-size:1.5rem;line-height:1;cursor:pointer;-webkit-appearance:none;appearance:none;-webkit-tap-highlight-color:transparent}' +
+			'.aayatun-install-close:focus,.aayatun-install-close:active{background:transparent;outline:none}' +
+			'.aayatun-install-close:focus-visible{outline:2px solid rgba(231,238,249,.55);outline-offset:2px}' +
+			'@media (hover:hover){.aayatun-install-close:hover{background:rgba(255,255,255,.1)}}' +
 			'.aayatun-install-ok{margin-top:8px;min-height:42px;padding:9px 18px;border:1px solid rgba(255,255,255,.22);border-radius:12px;background:rgba(255,255,255,.1);color:inherit;font:inherit;font-weight:700;cursor:pointer}' +
-			'.aayatun-install-ok:hover{background:rgba(255,255,255,.17)}';
+			'@media (hover:hover){.aayatun-install-ok:hover{background:rgba(255,255,255,.17)}}';
 		document.head.appendChild(style);
 	})();
 
