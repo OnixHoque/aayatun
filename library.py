@@ -1165,6 +1165,37 @@ def get_page_bounds():
 		return ()
 	return tuple(bounds)
 
+
+@lru_cache(maxsize=1)
+def get_ayah_themes():
+	"""Theme palette and a 6,236-entry verse -> theme id array for the map.
+
+	db/ayah_themes.db is a generated, tracked SQLite file (see
+	generate_ayah_themes.py). The index route inlines this into the page, so
+	the map popup needs no extra request and works from the service worker
+	cache. A missing or incomplete database returns empty lists, which the
+	map treats as "themes unavailable" and simply hides the toggle."""
+	path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'db', 'ayah_themes.db')
+	if not os.path.exists(path):
+		return {'themes': [], 'verses': []}
+	conn = sqlite3.connect(path)
+	try:
+		themes = [
+			{'id': int(r[0]), 'name': str(r[1]), 'color': str(r[2])}
+			for r in conn.execute('select id, name, color from themes order by id')
+		]
+		rows = list(conn.execute(
+			'select surah, verse, theme_id from verse_themes order by surah, verse'))
+	finally:
+		conn.close()
+	if len(rows) != 6236 or len(themes) != 12:
+		return {'themes': [], 'verses': []}
+	starts = surah_starts()
+	verses = [0] * 6236
+	for surah, verse, theme_id in rows:
+		verses[starts[surah - 1] + verse - 1] = int(theme_id)
+	return {'themes': themes, 'verses': verses}
+
 # The text of every verse of a surah, for the swipe carousel: the client asks
 # once and then moves between verses without any further round trip. Kept
 # compact (arrays, no repeated keys) since Al-Baqarah alone is ~200 KB.

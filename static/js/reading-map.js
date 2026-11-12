@@ -19,6 +19,15 @@
 		? window.AAYATUN_PAGE_BOUNDS : [];
 	var hasPageMap = bounds.length === PAGE_COUNT;
 
+	// Per-ayah theme tags (db/ayah_themes.db, inlined by the index route).
+	// The map popup is the only surface that shows them; the share card
+	// deliberately keeps its reading-only colours.
+	var themeData = window.AAYATUN_THEMES || {};
+	var themes = Array.isArray(themeData.themes) ? themeData.themes : [];
+	var themeVerse = Array.isArray(themeData.verses) ? themeData.verses : [];
+	var hasThemes = themes.length === 12 && themeVerse.length === VERSE_COUNT;
+	var themesOn = false;
+
 	// Capture the surah table before the dropdown plugin touches the select.
 	var surahs = [];
 	var options = document.querySelectorAll('#surah option');
@@ -80,8 +89,13 @@
 	var versesRing = document.getElementById('reading-map-verses-ring');
 	var versesPctEl = document.getElementById('reading-map-verses-pct');
 	var versesNote = document.getElementById('reading-map-verses-note');
+	var themeToggle = document.getElementById('reading-map-themes');
+	var themeLegend = document.getElementById('reading-map-theme-legend');
+	var themeAttribution = document.getElementById('reading-map-theme-attribution');
 
 	if (!grid || !globe || surahs.length !== 114) return;
+
+	initThemes();
 
 	var built = false;
 	var currentMap = null;
@@ -135,8 +149,14 @@
 				frag.appendChild(brk);
 			}
 			var cell = document.createElement('span');
-			cell.className = 'rg-cell';
+			cell.className = 'rg-cell' + (hasThemes ? ' t' + themeVerse[i] : '');
 			cell.setAttribute('data-i', i);
+			if (hasThemes) {
+				var dot = document.createElement('i');
+				dot.className = 'rg-dot';
+				dot.setAttribute('aria-hidden', 'true');
+				cell.appendChild(dot);
+			}
 			frag.appendChild(cell);
 		}
 		grid.appendChild(frag);
@@ -183,6 +203,7 @@
 			var state = stateOf(currentMap, i);
 			if (state > 1) deep++;
 			cell.className = 'rg-cell' +
+				(hasThemes ? ' t' + themeVerse[i] : '') +
 				(state ? ' is-' + STATE_CLASS[state] : '') +
 				(i === selected ? ' is-selected' : '');
 		}
@@ -214,6 +235,69 @@
 
 		suggest(currentMap);
 		renderReadout(selected);
+	}
+
+	// Theme dots and legend (popup only). The toggle is remembered so the
+	// map opens the way the reader left it; the share card stays reading-only.
+	function renderThemeLegend()
+	{
+		if (!themeLegend || !hasThemes) return;
+		themeLegend.textContent = '';
+		for (var t = 0; t < themes.length; t++) {
+			var item = document.createElement('span');
+			item.className = 'rg-theme-key';
+			var swatch = document.createElement('i');
+			swatch.className = 'rg-dot';
+			swatch.style.background = themes[t].color || '';
+			swatch.setAttribute('aria-hidden', 'true');
+			var label = document.createElement('span');
+			label.textContent = themes[t].name;
+			var count = 0;
+			for (var i = 0; i < themeVerse.length; i++) {
+				if (themeVerse[i] === t) count++;
+			}
+			var num = document.createElement('b');
+			num.textContent = ' ' + count.toLocaleString();
+			item.appendChild(swatch);
+			item.appendChild(label);
+			item.appendChild(num);
+			themeLegend.appendChild(item);
+		}
+	}
+
+	function setThemes(on)
+	{
+		themesOn = !!on;
+		if (grid) grid.classList.toggle('themes-on', themesOn);
+		if (themeToggle) {
+			themeToggle.setAttribute('aria-pressed', themesOn ? 'true' : 'false');
+			themeToggle.classList.toggle('is-on', themesOn);
+		}
+		if (themeLegend) themeLegend.hidden = !themesOn;
+		if (themeAttribution) themeAttribution.hidden = !themesOn;
+		try {
+			localStorage.setItem('aayatun_read_map_themes_v1', themesOn ? '1' : '0');
+		} catch (e) {}
+	}
+
+	function initThemes()
+	{
+		if (!hasThemes) {
+			if (themeToggle) themeToggle.hidden = true;
+			if (themeLegend) themeLegend.hidden = true;
+			if (themeAttribution) themeAttribution.hidden = true;
+			return;
+		}
+		renderThemeLegend();
+		var saved = null;
+		try { saved = localStorage.getItem('aayatun_read_map_themes_v1'); } catch (e) {}
+		setThemes(saved === '1');
+		if (themeToggle) {
+			themeToggle.hidden = false;
+			themeToggle.addEventListener('click', function () {
+				setThemes(!themesOn);
+			});
+		}
 	}
 
 	// One way only: the map takes whatever height is left in the viewport,

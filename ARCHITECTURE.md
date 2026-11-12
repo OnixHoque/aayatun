@@ -553,10 +553,13 @@ or a paragraph is missing; `None` simply hides the accordion. Both use
 | `surah_starts()` | 114 ints | 0-based flat index of each surah's first verse; `lru_cache(1)` |
 | `verse_index(s, v)` | 0–6235 | `surah_starts[s-1] + v - 1`; validates bounds |
 | `get_page_bounds()` | 604 ints | Start offset of each page, derived from `qcf_page_index`; returns `()` unless the total is exactly 6,236 |
+| `get_ayah_themes()` | `{themes, verses}` | 12 themes + a 6,236-entry canonical-order id array; returns empty lists if `db/ayah_themes.db` is missing/incomplete |
 
 The index page renders `window.AAYATUN_PAGE_BOUNDS` from `get_page_bounds()`,
-so the map can place every verse without shipping a 6,236-entry table.
-`verse_index` feeds `<meta name="aayatun-read-index">` on verse and page views.
+so the map can place every verse without shipping a 6,236-entry table, and
+`window.AAYATUN_THEMES` from `get_ayah_themes()`, so the popup's theme mode
+needs no extra request and works offline. `verse_index` feeds `<meta
+name="aayatun-read-index">` on verse and page views.
 
 ### 4.10 Legacy and unused paths
 
@@ -686,6 +689,7 @@ Names are misleading; read this table, not the filenames.
 | `mushaf_lines.json` | 2.0 MB | `{"pages": {"N": [lines]}}` | yes | Printed line layout, 604 pages |
 | `page_overviews.db` | 840 KB | `page_overviews(page, context, summary, model, generated_at)` | yes | AI page orientation |
 | `surah_overviews.db` | 180 KB | `surah_overviews(surah, context, summary, model, generated_at)` | yes | AI surah orientation |
+| `ayah_themes.db` | ~180 KB | `themes(id, name, color)` + `verse_themes(surah, verse, theme_id)` | yes | 12 one-word themes, one per ayah |
 | `quran_index.txt` | 61 KB | Python literal list of `(surah, verse)` | yes | Flat mushaf order (legacy path + search) |
 | `ruku_index.txt` | 5.4 KB | Python literal list of `(surah, verse)` | yes | Ruku starts; random **Surprise me!** |
 | `pos_tags_dict.txt` | 1.3 KB | Python literal dict | yes | POS tag → description |
@@ -1080,6 +1084,12 @@ sequenceDiagram
 - Clicking a square selects it (readout + border stay on it; hover only
   previews). Clicking **anywhere outside the grid** clears the selection and
   restores the hint.
+- A **Themes** toggle in the legend row (shown only when `window.AAYATUN_THEMES`
+  is present) turns on a 4 px theme dot inside every square and a 12-theme
+  legend with verse counts; the choice is stored in
+  `localStorage['aayatun_read_map_themes_v1']` and a line at the bottom of the
+  popup reads "Verse themes: AI-assisted (Aayatun)". The share card and poster
+  remain reading-only.
 - Suggestion: first unread white verse after `last` (wrapping), then the page
   tint, then any opened verse.
 - The share card is drawn by `share.js` from the same state array; only the
@@ -1339,11 +1349,13 @@ flowchart LR
     C["zone tecde mushaf-layout<br/>QPC2 pages"] --> D["mushaf_lines.json"]
     E["OpenAI / Gemini"] --> F["page_overviews.db"]
     E --> G["surah_overviews.db"]
+    E --> G2["ayah_themes.db"]
     H["local DBs<br/>quran.db · en_quran.db · tafsirs · ai_context.db"] --> I["build_search.py<br/>→ db/search.db + db/search_vocab.pkl"]
     B --> J["get_mushaf_page<br/>get_page_bounds"]
     D --> K["get_mushaf_lines"]
     F --> L["get_page_overview"]
     G --> M["get_surah_overview"]
+    G2 --> M2["get_ayah_themes"]
     I --> N["searchtool.index_search"]
 ```
 
@@ -1353,6 +1365,7 @@ flowchart LR
 | `db/mushaf_lines.json` | from `zonetecde/mushaf-layout` `v2/mushaf/QPC2/page-XXX.json` | Keep page membership in sync with `qcf_verses.json`; banners fixed at load |
 | `db/page_overviews.db` | `/mnt/d/PROJECTS/aayatun_ai_content/generate_page_overviews.py` | Batched, resumable, Gemini/OpenAI; run from the app root; one row per page |
 | `db/surah_overviews.db` | `…/generate_surah_overviews.py` | Batched by verse count, resumable; 70–110 word `context`/`summary`; 114 rows |
+| `db/ayah_themes.db` | `generate_ayah_themes.py` | Batched by surah (40 ayahs per OpenAI call), resumable from a cached result file; a deterministic post-process fixes disconnected letters -> Revelation plus a short manual list; 6,236 rows |
 | `db/search.db` + `db/search_vocab.pkl` | `build_search.py` | Run from the repo root after any source DB changes; outputs are gitignored; auto-built once by `searchtool` if missing |
 
 Both overview generators store `model` and `generated_at`, never the API key.

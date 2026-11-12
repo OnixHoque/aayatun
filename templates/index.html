@@ -4,6 +4,7 @@
 
 {% block js %}
 <script>window.AAYATUN_PAGE_BOUNDS = {{ page_bounds|tojson }};</script>
+<script>window.AAYATUN_THEMES = {{ theme_data|tojson }};</script>
 <script defer src="{{ url_for('static', filename='js/reading-map.js') }}"></script>
 {% endblock %}
 
@@ -538,6 +539,7 @@
     }
 
     .rg-cell {
+        position: relative;
         width: 10px;
         height: 10px;
         border-radius: 2px;
@@ -555,6 +557,99 @@
         outline-offset: 1px;
         position: relative;
         z-index: 1;
+    }
+
+    /* Theme dots sit inside the square and are only drawn when the map is
+       in theme mode. The theme class is carried on the cell so repainting
+       the reading colours never loses it. */
+    .rg-dot {
+        display: none;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 4px;
+        height: 4px;
+        margin: -2px 0 0 -2px;
+        border-radius: 50%;
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, .28);
+    }
+
+    .reading-map-grid.themes-on .rg-dot { display: block; }
+
+    .rg-cell.t0 .rg-dot { background: #4e79a7; }
+    .rg-cell.t1 .rg-dot { background: #f28e2b; }
+    .rg-cell.t2 .rg-dot { background: #59a14f; }
+    .rg-cell.t3 .rg-dot { background: #e15759; }
+    .rg-cell.t4 .rg-dot { background: #b07aa1; }
+    .rg-cell.t5 .rg-dot { background: #76b7b2; }
+    .rg-cell.t6 .rg-dot { background: #edc948; }
+    .rg-cell.t7 .rg-dot { background: #ff9da7; }
+    .rg-cell.t8 .rg-dot { background: #9c755f; }
+    .rg-cell.t9 .rg-dot { background: #7f9c4f; }
+    .rg-cell.t10 .rg-dot { background: #a0cbe8; }
+    .rg-cell.t11 .rg-dot { background: #6b6b6b; }
+
+    .reading-map-themes-toggle {
+        flex: none;
+        border: 1px solid rgba(34, 36, 38, .25);
+        border-radius: 999px;
+        background: transparent;
+        color: inherit;
+        font-family: inherit;
+        font-size: 80%;
+        line-height: 1.2;
+        padding: 3px 10px;
+        cursor: pointer;
+    }
+
+    .reading-map-themes-toggle:hover,
+    .reading-map-themes-toggle:focus-visible {
+        border-color: #2185d0;
+        color: #2185d0;
+    }
+
+    .reading-map-themes-toggle.is-on {
+        background: #2185d0;
+        border-color: #2185d0;
+        color: #fff;
+    }
+
+    .reading-map-theme-legend {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px 12px;
+        padding: 4px 0 8px;
+        font-size: 76%;
+        opacity: .85;
+    }
+
+    .reading-map-theme-legend[hidden] {
+        display: none;
+    }
+
+    .rg-theme-key {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        white-space: nowrap;
+    }
+
+    .rg-theme-key b {
+        font-weight: 600;
+        opacity: .65;
+    }
+
+    .reading-map-theme-attribution {
+        margin: 4px 2px 0;
+        font-size: 72%;
+        line-height: 1.3;
+        opacity: .55;
+        text-align: right;
+    }
+
+    .reading-map-theme-attribution[hidden] {
+        display: none;
     }
 
     html.dark-theme .reading-map-frame {
@@ -626,6 +721,22 @@
     html.dark-theme #reading-map-clear:hover,
     html.dark-theme #reading-map-clear:focus-visible {
         color: #ffb3b3;
+    }
+
+    html.dark-theme .reading-map-themes-toggle {
+        border-color: rgba(255, 255, 255, .25);
+    }
+
+    html.dark-theme .reading-map-themes-toggle:hover,
+    html.dark-theme .reading-map-themes-toggle:focus-visible {
+        border-color: #64b5f6;
+        color: #64b5f6;
+    }
+
+    html.dark-theme .reading-map-themes-toggle.is-on {
+        background: #64b5f6;
+        border-color: #64b5f6;
+        color: #0d1117;
     }
 
     html.dark-theme .reading-map-ring .ring-track {
@@ -1094,15 +1205,18 @@ document.addEventListener('DOMContentLoaded', function () {
 						<div id="reading-map-grid" class="reading-map-grid" role="img" aria-label="Quran Exploration Map"></div>
 					</div>
 					<div class="reading-map-legend">
+						<button type="button" id="reading-map-themes" class="reading-map-themes-toggle" aria-pressed="false" hidden>Themes</button>
 						<span><i class="rg-swatch"></i>Not yet</span>
 						<span><i class="rg-swatch light"></i>Page visited</span>
 						<span class="rg-scale" title="Opened once, twice, 3+ times"><span>Less</span><i class="rg-swatch deep-1"></i><i class="rg-swatch deep-2"></i><i class="rg-swatch deep-3"></i><span>More</span></span>
 						<button type="button" id="reading-map-clear">Clear history</button>
 					</div>
+					<div id="reading-map-theme-legend" class="reading-map-theme-legend" hidden></div>
 				</div>
 				<div id="reading-map-x" class="reading-map-scrollbar" role="scrollbar" aria-controls="reading-map-scroll" aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Scroll the map left and right" tabindex="0" hidden>
 					<div class="reading-map-scrollbar-thumb"></div>
 				</div>
+				<div id="reading-map-theme-attribution" class="reading-map-theme-attribution" hidden>Verse themes: AI-assisted (Aayatun)</div>
 			</div>
 		</div>
 		<div id="clear-history-modal" class="ui mini modal">
