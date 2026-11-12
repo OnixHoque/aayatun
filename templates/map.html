@@ -102,7 +102,7 @@
     }
 
     .reading-map-help {
-        margin: 0 0 12px;
+        margin: 2px 4px 8px;
         font-size: 85%;
         line-height: 1.45;
         opacity: .6;
@@ -916,11 +916,14 @@
 {% block content3 %}
 <div class="ui container" style="padding: 0 5%; font-family: 'Open Sans';">
 			<p class="reading-map-subtitle">This map only tracks verse reading and mushaf page reading.</p>
-			<p class="reading-map-help">Each square is one verse in mushaf order, from Al-Fatihah to An-Nas. Tap any square to open that verse; the legend below explains the colours.</p>
 			<div class="reading-map-frame">
+				<p class="reading-map-help">Each square is one verse in mushaf order, from Al-Fatihah to An-Nas. Tap any square to open that verse; the legend below explains the colours.</p>
 				<div id="reading-map-scroll" class="reading-map-scroll">
 					<div id="reading-map-axis" class="reading-map-axis" aria-hidden="true"></div>
 					<div id="reading-map-grid" class="reading-map-grid" role="img" aria-label="Quran Exploration Map"></div>
+				</div>
+				<div id="reading-map-x" class="reading-map-scrollbar" role="scrollbar" aria-controls="reading-map-scroll" aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Scroll the map left and right" tabindex="0" hidden>
+					<div class="reading-map-scrollbar-thumb"></div>
 				</div>
 				<div class="reading-map-legend">
 					<label class="reading-map-switch" id="reading-map-themes" hidden>
@@ -941,9 +944,6 @@
 					<button type="button" id="reading-map-clear" title="Clear your reading history">Clear Visit History</button>
 				</div>
 				<div id="reading-map-theme-legend" class="reading-map-theme-legend" hidden></div>
-			</div>
-			<div id="reading-map-x" class="reading-map-scrollbar" role="scrollbar" aria-controls="reading-map-scroll" aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Scroll the map left and right" tabindex="0" hidden>
-				<div class="reading-map-scrollbar-thumb"></div>
 			</div>
 			<div class="reading-map-cards">
 				<div class="reading-map-card reading-map-card-lead">
