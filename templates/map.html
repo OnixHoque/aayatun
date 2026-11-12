@@ -101,11 +101,40 @@
         font-weight: 600;
     }
 
-    .reading-map-help {
+    .reading-map-help-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
         margin: 2px 4px 8px;
+        flex-wrap: wrap;
+    }
+
+    @media (min-width: 700px) {
+        .reading-map-help-row {
+            /* Help wraps inside its own area; the controls stay on the
+               cleared right side of the text, always one line. */
+            flex-wrap: nowrap;
+        }
+    }
+
+    @media (max-width: 699px) {
+        .reading-map-help {
+            flex: 1 1 100%;
+        }
+    }
+
+    .reading-map-help {
+        margin: 0;
+        flex: 1 1 auto;
+        min-width: 0;
         font-size: 85%;
         line-height: 1.45;
         opacity: .6;
+    }
+
+    .reading-map-help-row .mushaf-zoom,
+    .reading-map-help-row #reading-map-clear {
+        flex: none;
     }
 
     .reading-map-stat {
@@ -315,8 +344,8 @@
         gap: 5px;
     }
 
-    /* The zoom stepper is pushed to the right end of the legend row,
-       next to Clear Visit History, and sized like the theme switch. */
+    /* The zoom stepper is pushed to the right end of the row, sized
+       like the theme switch. */
     .reading-map-zoom {
         margin-left: auto;
         gap: 4px;
@@ -961,7 +990,15 @@
 				</div>
 			</div>
 			<div class="reading-map-frame">
-				<p class="reading-map-help">Each square is one verse in mushaf order, from Al-Fatihah to An-Nas. Tap any square to open that verse; the legend below explains the colours.</p>
+				<div class="reading-map-help-row">
+					<p class="reading-map-help">Each square is one verse in mushaf order, from Al-Fatihah to An-Nas. Tap any square to open that verse; the legend below explains the colours.</p>
+					<span class="mushaf-zoom reading-map-zoom" role="group" aria-label="Zoom the map">
+						<button id="map-zoom-out" type="button" title="Zoom out" aria-label="Zoom out" class="circular ui basic icon button"><i class="icon minus" aria-hidden="true"></i></button>
+						<span id="map-zoom-level" class="mushaf-zoom-level" aria-live="polite" title="Zoom level">100%</span>
+						<button id="map-zoom-in" type="button" title="Zoom in" aria-label="Zoom in" class="circular ui basic icon button"><i class="icon plus" aria-hidden="true"></i></button>
+					</span>
+					<button type="button" id="reading-map-clear" title="Delete your reading history" aria-label="Delete visit history">Delete</button>
+				</div>
 				<div id="reading-map-scroll" class="reading-map-scroll">
 					<div id="reading-map-axis" class="reading-map-axis" aria-hidden="true"></div>
 					<div id="reading-map-grid" class="reading-map-grid" role="img" aria-label="Quran Exploration Map"></div>
@@ -980,25 +1017,19 @@
 					<span class="reading-map-legend-item" id="reading-map-legend-read" hidden><i class="rg-swatch rg-swatch-tick"></i>Read</span>
 					<span class="reading-map-legend-item" id="reading-map-legend-page"><i class="rg-swatch light"></i>Page visited</span>
 					<span class="rg-scale" id="reading-map-legend-scale" title="Opened once, twice, 3+ times"><span>Less</span><i class="rg-swatch deep-1"></i><i class="rg-swatch deep-2"></i><i class="rg-swatch deep-3"></i><span>More</span></span>
-					<span class="mushaf-zoom reading-map-zoom" role="group" aria-label="Zoom the map">
-						<button id="map-zoom-out" type="button" title="Zoom out" aria-label="Zoom out" class="circular ui basic icon button"><i class="icon minus" aria-hidden="true"></i></button>
-						<span id="map-zoom-level" class="mushaf-zoom-level" aria-live="polite" title="Zoom level">100%</span>
-						<button id="map-zoom-in" type="button" title="Zoom in" aria-label="Zoom in" class="circular ui basic icon button"><i class="icon plus" aria-hidden="true"></i></button>
-					</span>
-					<button type="button" id="reading-map-clear" title="Clear your reading history">Clear Visit History</button>
 				</div>
 				<div id="reading-map-theme-legend" class="reading-map-theme-legend" hidden></div>
 			</div>
 			<div id="reading-map-theme-attribution" class="reading-map-theme-attribution" hidden>Verse themes: AI-assisted (Aayatun)</div>
 </div>
 	<div id="clear-history-modal" class="ui mini modal">
-		<div class="header">Clear visit history?</div>
+		<div class="header">Delete visit history?</div>
 		<div class="content">
 			<p>This removes your Recently Read list and every square on the exploration map. It cannot be undone.</p>
 		</div>
 		<div class="actions">
 			<button type="button" id="clear-history-cancel" class="ui button">Cancel</button>
-			<button type="button" id="clear-history-confirm" class="ui red button">Clear Visit History</button>
+			<button type="button" id="clear-history-confirm" class="ui red button">Delete</button>
 		</div>
 	</div>
 	{% include 'partials/_verse_modal.html' %}
@@ -1013,7 +1044,7 @@
 
 {% block scriptcontent %}
 	// Standalone page: the floating search button would sit on top of the
-	// map's Clear Visit History button, so hide it here.
+	// map's Delete button, so hide it here.
 	$('#search-btn').hide();
 	$('#menubar').removeClass('three').addClass('one');
 
