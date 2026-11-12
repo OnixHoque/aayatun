@@ -336,6 +336,21 @@
         padding: 8px 4px 3px;
     }
 
+    @media (max-width: 560px) {
+        /* Phone: smaller swatches and type so the key breaks into two
+           tidy lines instead of orphaning the context label. */
+        .reading-map-legend {
+            gap: 4px 10px;
+            font-size: 76%;
+            padding: 6px 2px 2px;
+            opacity: .85;
+        }
+
+        .reading-map-legend span {
+            gap: 4px;
+        }
+    }
+
     .reading-map-legend span {
         display: inline-flex;
         align-items: center;
