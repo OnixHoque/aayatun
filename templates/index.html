@@ -498,34 +498,74 @@ document.addEventListener('DOMContentLoaded', function () {
 	});
 
 	// More Apps is link-looking text (a span, not an anchor/button) with a
-	// click handler; role="button" keeps it keyboard-accessible, Enter/Space
-	// work through the keydown handler. The popup is Fomantic's, positioned
-	// top center with the documented option (https://semantic-ui.com/modules/popup.html).
-	$('#more-apps-btn').on('keydown', function (evt) {
-		if (evt.key === 'Enter' || evt.key === ' ') {
-			evt.preventDefault();
-			$(this).trigger('click');
+	// click handler; role="button" keeps it keyboard-accessible. The popup
+	// is a custom fixed-position popover: Fomantic's popup opens on
+	// touchstart, so the synthesized click from the same tap lands on the
+	// popup and its clickaway logic closes it again ("nothing happens" in
+	// phone mode). position: fixed coordinates never affect page height.
+	(function () {
+		var btn = document.getElementById('more-apps-btn');
+		var pop = document.getElementById('more-apps-popup');
+		if (!btn || !pop) return;
+
+		function isOpen() { return pop.classList.contains('is-open'); }
+
+		function place() {
+			var r = btn.getBoundingClientRect();
+			var vw = window.innerWidth;
+			// Anchor the popup's bottom edge 8 px above the trigger's top edge
+			// so it never covers the button (using vh keeps it inside viewport).
+			pop.style.top = 'auto';
+			pop.style.bottom = (window.innerHeight - r.top + 8) + 'px';
+			pop.style.right = Math.max(8, vw - r.right) + 'px';
+			pop.style.left = 'auto';
 		}
-	}).on('click', function (evt) {
-		evt.preventDefault();
-		evt.stopPropagation();
-		this.blur();
-	}).popup({
-		popup: $('#more-apps-popup'),
-		on: 'click',
-		position: 'top center',
-		lastResort: 'top center',
-		exclusive: true,
-		hoverable: true,
-		distanceAway: 8,
-		movePopup: false
-	});
-	window.addEventListener('pageshow', function () {
-		if ($.fn.popup) $('#more-apps-btn').popup('hide');
-	});
-	$('#more-apps-popup').on('click', 'a', function () {
-		$('#more-apps-btn').popup('hide');
-	});
+
+		function open() {
+			pop.classList.add('is-open');
+			btn.setAttribute('aria-expanded', 'true');
+			place();
+		}
+
+		function close() {
+			pop.classList.remove('is-open');
+			btn.setAttribute('aria-expanded', 'false');
+		}
+
+		btn.addEventListener('keydown', function (evt) {
+			if (evt.key === 'Enter' || evt.key === ' ') {
+				evt.preventDefault();
+				this.click();
+			}
+		});
+
+		btn.addEventListener('click', function (evt) {
+			evt.preventDefault();
+			evt.stopPropagation();
+			this.blur();
+			if (isOpen()) close(); else open();
+		});
+
+		// Click-outside to dismiss, on mousedown so the synthesized click
+		// from an opening tap cannot instantly close the popup again.
+		document.addEventListener('mousedown', function (evt) {
+			if (isOpen() && !pop.contains(evt.target) && !btn.contains(evt.target)) {
+				close();
+			}
+		}, true);
+
+		document.addEventListener('keydown', function (evt) {
+			if (evt.key === 'Escape') close();
+		});
+
+		pop.addEventListener('click', function (evt) {
+			var a = evt.target && evt.target.closest ? evt.target.closest('a') : null;
+			if (a) close();
+		});
+
+		window.addEventListener('resize', function () { if (isOpen()) place(); });
+		window.addEventListener('scroll', function () { if (isOpen()) place(); }, { passive: true });
+	})();
     if('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register("/service-worker.js", { scope: '/' })
@@ -568,7 +608,7 @@ document.addEventListener('DOMContentLoaded', function () {
 				<button type="button" class="ui button" onclick="$('#ios-install-modal').modal('hide')">Got it</button>
 			</div>
 		</div>
-		<div id="more-apps-popup" class="ui flowing pointing popup">
+		<div id="more-apps-popup" class="ui flowing pointing popup top right">
 			<div class="more-apps-menu">
 				<a class="more-apps-item" href="{{ url_for('prayer_time') }}">
 					<svg class="more-apps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.7 13.2A8.5 8.5 0 1 1 10.8 3.3a6.6 6.6 0 0 0 9.9 9.9Z"/><path d="m17.5 2 .45 1.05L19 3.5l-1.05.45L17.5 5l-.45-1.05L16 3.5l1.05-.45L17.5 2Z"/><path d="m21 6 .3.7.7.3-.7.3-.3.7-.3-.7L20 7l.7-.3L21 6Z"/></svg>
