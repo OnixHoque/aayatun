@@ -494,14 +494,38 @@
 		saveHistory(history);
 
 		byId('quiz-final-score').textContent = state.score + '/' + total;
-		byId('quiz-final-pct').textContent = Math.round(pct * 100) + '%';
 
 		var ring = byId('quiz-ring');
 		var C = 326.7; // 2 * pi * 52
-		ring.style.strokeDashoffset = String(C * (1 - pct));
+		var target = C * (1 - pct);
+		var pctEl = byId('quiz-final-pct');
+		ring.style.transition = 'none';
+		ring.style.strokeDashoffset = String(C);
+		void ring.getBoundingClientRect();
+		ring.style.transition = '';
 		ring.classList.remove('mid', 'low');
 		if (pct < 0.4) ring.classList.add('low');
 		else if (pct < 0.7) ring.classList.add('mid');
+		showView('result');
+		if (reducedMotion) {
+			ring.style.strokeDashoffset = String(target);
+			pctEl.textContent = Math.round(pct * 100) + '%';
+		} else {
+			// animate the stroke first, count the percentage up with it
+			requestAnimationFrame(function () {
+				ring.style.strokeDashoffset = String(target);
+			});
+			var start = null, dur = 1000;
+			function tick(t) {
+				if (!start) start = t;
+				var p = Math.min(1, (t - start) / dur);
+				var eased = p === 1 ? 1 : 1 - Math.pow(2, -8 * p);
+				pctEl.textContent = Math.round(pct * 100 * eased) + '%';
+				if (p < 1) requestAnimationFrame(tick);
+				else pctEl.textContent = Math.round(pct * 100) + '%';
+			}
+			requestAnimationFrame(tick);
+		}
 
 		var tag = byId('quiz-result-tag');
 		if (pct >= 0.9) tag.textContent = 'Outstanding — you read with care.';
@@ -553,7 +577,6 @@
 			}
 		};
 
-		showView('result');
 		renderStats();
 	}
 
