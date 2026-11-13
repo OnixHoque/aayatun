@@ -30,7 +30,7 @@
 			'.aayatun-install-sub{margin:0 0 14px;color:rgba(231,238,249,.7);font-size:.9rem}' +
 			'.aayatun-install-card ol{margin:0;padding-left:1.2em}' +
 			'.aayatun-install-card li{margin:0 0 9px}' +
-			'.aayatun-install-close{position:absolute;top:10px;right:12px;width:34px;height:34px;min-height:0;padding:0;border:0;border-radius:50%;display:grid;place-items:center;background:transparent;color:inherit;font-size:1.5rem;line-height:1;cursor:pointer;-webkit-appearance:none;appearance:none;-webkit-tap-highlight-color:transparent}' +
+			'.aayatun-install-close{position:absolute;top:10px;right:12px;width:34px;height:34px;min-height:0;padding:0;border:0!important;border-radius:50%;display:grid;place-items:center;background:transparent!important;color:inherit!important;box-shadow:none!important;font-size:1.5rem;font-weight:400;line-height:1;cursor:pointer;-webkit-appearance:none;appearance:none;-webkit-tap-highlight-color:transparent}' +
 			'.aayatun-install-close:focus,.aayatun-install-close:active{background:transparent;outline:none;box-shadow:none}' +
 			'.aayatun-install-close:focus-visible{outline:none;box-shadow:none}' +
 			'@media (hover:hover){.aayatun-install-close:hover{background:rgba(255,255,255,.1)}}' +
