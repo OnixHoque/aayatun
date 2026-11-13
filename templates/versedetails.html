@@ -16,8 +16,7 @@
 <style>
 	#control-btns {
 		position: relative;
-		/* Legend-style pill straddles this hairline so it never sits on the buttons. */
-		border-top: 1px solid rgba(34, 36, 38, .18);
+		/* Pill straddles the row's top edge; the hairline itself is invisible. */
 		margin-top: 22px;
 	}
 	.theme-pill {
@@ -54,9 +53,6 @@
 		border-radius: 50%;
 		flex: 0 0 auto;
 		box-shadow: 0 0 0 1px rgba(0, 0, 0, .18);
-	}
-	html.dark-theme #control-btns {
-		border-top-color: rgba(255, 255, 255, .16);
 	}
 	html.dark-theme .theme-pill {
 		border-color: rgba(255, 255, 255, .22);
