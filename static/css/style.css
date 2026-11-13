@@ -609,6 +609,30 @@ html.dark-theme .mushaf-row-jump td {
 	}
 }
 
+/* Eight-pointed star lattice shared with the Prayer Time / Counter apps.
+   A faint architectural pattern fixed behind every page (slate ink on the
+   light theme, pale blue-gray on the dark theme). */
+body::before {
+	content: "";
+	position: fixed;
+	inset: 0;
+	z-index: 0;
+	pointer-events: none;
+	opacity: .38;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80' fill='none' stroke='%236e7c92' stroke-width='.8' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M70 40 18.79 61.21 40 10 61.21 61.21 10 40 61.21 18.79 40 70 18.79 18.79Z'/%3E%3Cpath d='M52 40 48.49 48.49 40 52 31.51 48.49 28 40 31.51 31.51 40 28 48.49 31.51Z'/%3E%3Cpath d='M0 40H10M70 40H80M40 0V10M40 70V80'/%3E%3Cpath d='M14 0 0 14M66 0 80 14M0 66 14 80M66 80 80 66'/%3E%3Cpath d='M18.79 18.79 9.9 9.9M61.21 18.79 70.1 9.9M18.79 61.21 9.9 70.1M61.21 61.21 70.1 70.1'/%3E%3Ccircle cx='40' cy='40' r='4'/%3E%3C/svg%3E");
+	background-size: 80px 80px;
+	background-position: center top;
+}
+
+html.dark-theme body::before {
+	opacity: .26;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80' fill='none' stroke='%23cdd6e4' stroke-width='.8' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M70 40 18.79 61.21 40 10 61.21 61.21 10 40 61.21 18.79 40 70 18.79 18.79Z'/%3E%3Cpath d='M52 40 48.49 48.49 40 52 31.51 48.49 28 40 31.51 31.51 40 28 48.49 31.51Z'/%3E%3Cpath d='M0 40H10M70 40H80M40 0V10M40 70V80'/%3E%3Cpath d='M14 0 0 14M66 0 80 14M0 66 14 80M66 80 80 66'/%3E%3Cpath d='M18.79 18.79 9.9 9.9M61.21 18.79 70.1 9.9M18.79 61.21 9.9 70.1M61.21 61.21 70.1 70.1'/%3E%3Ccircle cx='40' cy='40' r='4'/%3E%3C/svg%3E");
+}
+
+@media (prefers-reduced-transparency: reduce) {
+	body::before { display: none; }
+}
+
 /* Merriweather (latin, weight 700 only — the site uses no other weights).
    Vendored so the navbar title never depends on Google Fonts delivery.
    SIL Open Font License 1.1 — https://openfontlicense.org */
