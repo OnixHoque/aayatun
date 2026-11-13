@@ -368,6 +368,17 @@ button, .tile, input, [tabindex] { -webkit-tap-highlight-color: transparent; }
 .top-actions .install-btn { width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid var(--edge); border-radius: 50%; background: rgba(255,255,255,.06); color: var(--fg); }
 .top-actions .install-btn:hover { background: rgba(255,255,255,.14); border-color: rgba(205,240,243,.36); }
 .top-actions .install-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+/* Import / export habit history */
+.top-actions .io-btn { width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid var(--edge); border-radius: 50%; background: rgba(255,255,255,.06); color: var(--fg); }
+.top-actions .io-btn:hover { background: rgba(255,255,255,.14); border-color: rgba(205,240,243,.36); }
+.top-actions .io-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.io-section { display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 1px solid var(--edge); border-radius: 14px; background: rgba(255,255,255,.04); margin-top: 12px; }
+.io-head { margin: 0; font-weight: 700; font-size: .95rem; }
+.io-sub { margin: 3px 0 0; color: var(--muted); font-size: .78rem; line-height: 1.5; }
+.io-textarea { box-sizing: border-box; width: 100%; min-height: 96px; resize: vertical; padding: 10px 12px; background: rgba(255,255,255,.06); border: 1px solid var(--edge); border-radius: 12px; color: var(--fg); font: 400 .78rem/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.io-textarea:focus-visible { outline: 2px solid #d5f5f3; outline-offset: 2px; }
+.io-error { margin: 0; color: #ffc9c9; font-size: .8rem; line-height: 1.45; }
+.io-confirm-text { margin: 6px 0 14px; font-size: .92rem; line-height: 1.6; }
 @media (max-width: 560px) {
   .top { flex-wrap: wrap; }
   .top-actions { width: 100%; justify-content: space-between; }
@@ -398,7 +409,7 @@ button, .tile, input, [tabindex] { -webkit-tap-highlight-color: transparent; }
 
 <main class="shell">
   <nav class="counter-nav" aria-label="Page navigation"><button id="backBtn" class="counter-back" type="button" aria-label="Back to home" title="Back to home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button></nav>
-  <header class="top"><div><p class="eyebrow">A little progress, every day</p><h1>Habit Tracker</h1><p class="date" id="todayLabel"></p></div><div class="top-actions"><button type="button" class="install-btn" data-install-app aria-label="Install this app" title="Install this app" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11"/><path d="m8 10 4 4 4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></button><button class="add" id="addBtn" type="button"><span class="plus-icon" aria-hidden="true">+</span> New habit</button></div></header>
+  <header class="top"><div><p class="eyebrow">A little progress, every day</p><h1>Habit Tracker</h1><p class="date" id="todayLabel"></p></div><div class="top-actions"><button type="button" class="install-btn" data-install-app aria-label="Install this app" title="Install this app" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11"/><path d="m8 10 4 4 4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></button><button type="button" class="io-btn" id="ioOpenBtn" aria-label="Import or export habit history" title="Import or export habit history"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v13"/><path d="M7 4 4 7"/><path d="M7 4l3 3"/><path d="M17 20V7"/><path d="M17 20l3-3"/><path d="M17 20l-3-3"/></svg></button><button class="add" id="addBtn" type="button"><span class="plus-icon" aria-hidden="true">+</span> New habit</button></div></header>
   <div class="intro"><h2>Your habits</h2><span id="counterSummary"></span></div>
   <section class="grid" id="counterGrid" aria-label="Habits"></section>
   <section class="archive" id="archiveSection" hidden aria-label="Archived habits"><button type="button" class="archive-toggle" id="archiveToggle" aria-expanded="false" aria-controls="archiveList"><span id="archiveLabel">Archived</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="archive-list" id="archiveList" hidden></div></section>
@@ -410,6 +421,7 @@ button, .tile, input, [tabindex] { -webkit-tap-highlight-color: transparent; }
 <div class="toast" id="toast" role="status" aria-live="polite" hidden><span id="toastText"></span><button type="button" class="toast-undo" id="toastUndo">Undo</button></div>
 <dialog id="renameDialog" aria-labelledby="renameTitle"><div class="dialog-card"><div class="modal-heading"><div><p>RENAME</p><h2 id="renameTitle">Rename habit</h2></div><button type="button" class="icon-btn x" data-close="renameDialog" aria-label="Close">×</button></div><form id="renameForm"><label class="field-label" for="renameName">Habit name</label><input id="renameName" type="text" maxlength="65" required autocomplete="off"><div class="dialog-actions"><button type="button" class="btn" data-close="renameDialog">Cancel</button><button class="btn primary" type="submit">Save name</button></div></form></div></dialog>
 <dialog id="deleteDialog" class="confirm-dialog" aria-labelledby="deleteTitle"><div class="dialog-card"><div class="modal-heading"><div><p>DELETE</p><h2 id="deleteTitle">Delete habit?</h2></div><button type="button" class="icon-btn x" data-close="deleteDialog" aria-label="Close">×</button></div><p class="confirm-text">“<b id="deleteName"></b>” and all of its recorded counts will be removed. This can’t be undone.</p><div class="dialog-actions"><button type="button" class="btn" data-close="deleteDialog">Keep it</button><button type="button" class="btn danger" id="deleteConfirm">Delete</button></div></div></dialog>
+<dialog id="ioDialog" aria-labelledby="ioTitle"><div class="dialog-card"><div class="modal-heading"><div><p>BACKUP</p><h2 id="ioTitle">Import / export</h2></div><button type="button" class="icon-btn x" data-close="ioDialog" aria-label="Close">×</button></div><div id="ioMain"><div class="io-section"><div><p class="io-head">Export</p><p class="io-sub">Copies your full habit history as JSON, exactly as stored on this device. Anyone you paste this to can read these counts.</p></div><button type="button" class="btn primary" id="ioExportBtn">Copy to clipboard</button></div><div class="io-section"><div><p class="io-head">Import</p><p class="io-sub">Pasted day-counts replace the counts already saved for the same dates. Your current data is backed up automatically before anything changes.</p></div><textarea id="ioPaste" class="io-textarea" rows="5" spellcheck="false" autocomplete="off" placeholder='Paste backup JSON, e.g. [{"name":"Dhikr","days":{"2026-11-13":3}}]'></textarea><p class="io-error" id="ioError" hidden></p><div class="dialog-actions" style="margin-top:0"><button type="button" class="btn primary" id="ioImportBtn">Import</button></div></div></div><div id="ioConfirm" hidden><p class="io-confirm-text" id="ioConfirmText"></p><div class="dialog-actions"><button type="button" class="btn" id="ioCancelImport">Cancel</button><button type="button" class="btn primary" id="ioConfirmImport">Import</button></div></div></div></dialog>
 <script>
 (()=>{'use strict';
 const KEY='daily-counter-v1';
@@ -426,7 +438,7 @@ let counters=load(),selected=null,focused=null,lastDay=dayKey();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(counters));return true}catch(e){alert('Your browser could not save the counts. Check that local storage is enabled.');return false}}
 function safeCount(c,key){const n=Number(c.days[key]);return Number.isFinite(n)&&n>0?Math.floor(n):0}
 function current(){return counters.find(c=>c.id===selected)}
-function render(){const day=dayKey();lastDay=day;$('todayLabel').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'});const active=counters.filter(c=>!c.archived);$('counterSummary').textContent=`${active.length} ${active.length===1?'counter':'counters'}`;const grid=$('counterGrid');grid.replaceChildren();renderArchive();if(!active.length){const empty=document.createElement('div');empty.className='empty';empty.innerHTML=counters.length?'<strong>All habits are archived</strong><p>Restore one below, or choose “New habit”.</p>':'<strong>Start with one small habit</strong><p>Choose “New counter” to track something each day.</p>';grid.append(empty);return}for(const c of active){const tile=document.createElement('article');tile.className='tile';tile.dataset.counterId=c.id;tile.tabIndex=0;tile.setAttribute('role','button');tile.setAttribute('aria-label',`Focus on ${c.name}`);tile.addEventListener('click',e=>{if(e.target.closest('button'))return;openFocus(c.id)});tile.addEventListener('keydown',e=>{if(e.target!==tile)return;if(e.key==='Enter'||e.key===' '){e.preventDefault();openFocus(c.id)}});const head=document.createElement('div');head.className='tile-head';const h=document.createElement('h3');h.textContent=c.name;const stats=document.createElement('button');stats.type='button';stats.className='icon-btn';stats.setAttribute('aria-label',`Statistics for ${c.name}`);stats.title='Daily statistics';stats.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.7 3.5h4.6l.6 2.2 1.7.9 2.1-.8 2.3 4-1.7 1.5v1.9l1.7 1.5-2.3 4-2.1-.8-1.7.9-.6 2.2H9.7l-.6-2.2-1.7-.9-2.1.8-2.3-4 1.7-1.5v-1.9L3 9.8l2.3-4 2.1.8 1.7-.9z"/><circle cx="12" cy="12" r="3"/></svg>';stats.title='Habit settings and statistics';stats.setAttribute('aria-label',`Settings and statistics for ${c.name}`);stats.addEventListener('click',()=>openStats(c.id));const headerActions=document.createElement('div');headerActions.className='tile-head-actions';const grip=document.createElement('button');grip.type='button';grip.className='icon-btn drag-handle';grip.title='Drag to reorder';grip.setAttribute('aria-label',`Drag to reorder ${c.name}; use arrow keys to move`);grip.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="5" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="19" r="1"/></svg>';grip.querySelectorAll('circle').forEach(circle=>{circle.style.fill='currentColor';circle.style.stroke='none'});grip.addEventListener('pointerdown',e=>beginReorder(e,c.id,tile,grip));grip.addEventListener('keydown',e=>{if(e.key==='ArrowUp'||e.key==='ArrowLeft'||e.key==='ArrowDown'||e.key==='ArrowRight'){e.preventDefault();e.stopPropagation();moveCounter(c.id,(e.key==='ArrowUp'||e.key==='ArrowLeft')?-1:1);const next=[...document.querySelectorAll('.tile')].find(el=>el.dataset.counterId===c.id);next?.querySelector('.drag-handle')?.focus()}});headerActions.append(grip);head.append(h,headerActions);const count=document.createElement('div');count.className='count';count.textContent=fmt.format(safeCount(c,day));const label=document.createElement('p');label.className='count-label';label.textContent='today';const actions=document.createElement('div');actions.className='tile-actions';const minus=document.createElement('button');minus.type='button';minus.className='round-btn';minus.textContent='−';minus.setAttribute('aria-label',`Subtract one from ${c.name}`);minus.disabled=!safeCount(c,day);minus.addEventListener('click',()=>change(c.id,-1));const plus=document.createElement('button');plus.type='button';plus.className='increment';plus.textContent='+1';plus.setAttribute('aria-label',`Add one to ${c.name}`);plus.addEventListener('click',()=>change(c.id,1));stats.className='round-btn card-settings';stats.title='Habit settings and statistics';actions.append(minus,plus,stats);tile.append(head,count,label,actions);grid.append(tile)}}
+function render(){const day=dayKey();lastDay=day;$('todayLabel').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'});const active=counters.filter(c=>!c.archived);$('counterSummary').textContent=`${active.length} ${active.length===1?'habit':'habits'}`;const grid=$('counterGrid');grid.replaceChildren();renderArchive();if(!active.length){const empty=document.createElement('div');empty.className='empty';empty.innerHTML=counters.length?'<strong>All habits are archived</strong><p>Restore one below, or choose “New habit”.</p>':'<strong>Start with one small habit</strong><p>Choose “New habit” to track something each day.</p>';grid.append(empty);return}for(const c of active){const tile=document.createElement('article');tile.className='tile';tile.dataset.counterId=c.id;tile.tabIndex=0;tile.setAttribute('role','button');tile.setAttribute('aria-label',`Focus on ${c.name}`);tile.addEventListener('click',e=>{if(e.target.closest('button'))return;openFocus(c.id)});tile.addEventListener('keydown',e=>{if(e.target!==tile)return;if(e.key==='Enter'||e.key===' '){e.preventDefault();openFocus(c.id)}});const head=document.createElement('div');head.className='tile-head';const h=document.createElement('h3');h.textContent=c.name;const stats=document.createElement('button');stats.type='button';stats.className='icon-btn';stats.setAttribute('aria-label',`Statistics for ${c.name}`);stats.title='Daily statistics';stats.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.7 3.5h4.6l.6 2.2 1.7.9 2.1-.8 2.3 4-1.7 1.5v1.9l1.7 1.5-2.3 4-2.1-.8-1.7.9-.6 2.2H9.7l-.6-2.2-1.7-.9-2.1.8-2.3-4 1.7-1.5v-1.9L3 9.8l2.3-4 2.1.8 1.7-.9z"/><circle cx="12" cy="12" r="3"/></svg>';stats.title='Habit settings and statistics';stats.setAttribute('aria-label',`Settings and statistics for ${c.name}`);stats.addEventListener('click',()=>openStats(c.id));const headerActions=document.createElement('div');headerActions.className='tile-head-actions';const grip=document.createElement('button');grip.type='button';grip.className='icon-btn drag-handle';grip.title='Drag to reorder';grip.setAttribute('aria-label',`Drag to reorder ${c.name}; use arrow keys to move`);grip.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="5" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="19" r="1"/></svg>';grip.querySelectorAll('circle').forEach(circle=>{circle.style.fill='currentColor';circle.style.stroke='none'});grip.addEventListener('pointerdown',e=>beginReorder(e,c.id,tile,grip));grip.addEventListener('keydown',e=>{if(e.key==='ArrowUp'||e.key==='ArrowLeft'||e.key==='ArrowDown'||e.key==='ArrowRight'){e.preventDefault();e.stopPropagation();moveCounter(c.id,(e.key==='ArrowUp'||e.key==='ArrowLeft')?-1:1);const next=[...document.querySelectorAll('.tile')].find(el=>el.dataset.counterId===c.id);next?.querySelector('.drag-handle')?.focus()}});headerActions.append(grip);head.append(h,headerActions);const count=document.createElement('div');count.className='count';count.textContent=fmt.format(safeCount(c,day));const label=document.createElement('p');label.className='count-label';label.textContent='today';const actions=document.createElement('div');actions.className='tile-actions';const minus=document.createElement('button');minus.type='button';minus.className='round-btn';minus.textContent='−';minus.setAttribute('aria-label',`Subtract one from ${c.name}`);minus.disabled=!safeCount(c,day);minus.addEventListener('click',()=>change(c.id,-1));const plus=document.createElement('button');plus.type='button';plus.className='increment';plus.textContent='+1';plus.setAttribute('aria-label',`Add one to ${c.name}`);plus.addEventListener('click',()=>change(c.id,1));stats.className='round-btn card-settings';stats.title='Habit settings and statistics';actions.append(minus,plus,stats);tile.append(head,count,label,actions);grid.append(tile)}}
 function moveCounter(id,delta){const act=counters.filter(c=>!c.archived);const from=act.findIndex(c=>c.id===id);if(from<0)return;const to=Math.max(0,Math.min(act.length-1,from+delta));if(to===from)return;const [item]=act.splice(from,1);act.splice(to,0,item);counters=[...act,...counters.filter(c=>c.archived)];save();render()}
 let reorderInProgress=false;
 function beginReorder(e,id,tile,handle){
@@ -642,6 +654,95 @@ function renderArchive(){
 }
 $('archiveToggle').addEventListener('click',()=>{archiveOpen=!archiveOpen;renderArchive()});
 
+/* ---- Import / export ---- */
+const BAK_KEY=KEY+'-bak';
+const DAY_RE=/^\d{4}-\d{2}-\d{2}$/;
+const genId=()=>typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():`${Date.now()}-${Math.random()}`;
+async function copyText(text){
+  try{ if(navigator.clipboard&&navigator.clipboard.writeText){ await navigator.clipboard.writeText(text); return true } }catch(e){}
+  try{ const ta=document.createElement('textarea'); ta.value=text; ta.setAttribute('readonly',''); ta.style.cssText='position:fixed;top:0;left:0;opacity:0'; document.body.append(ta); ta.select(); const ok=document.execCommand('copy'); ta.remove(); return !!ok }catch(e){ return false }
+}
+function parseImport(text){
+  if(text.length>512*1024) throw new Error('That paste is too large — export again and copy the whole JSON.');
+  let data;
+  try{ data=JSON.parse(text) }catch(e){ throw new Error('That is not valid JSON — nothing was imported.') }
+  if(data && !Array.isArray(data) && Array.isArray(data.counters)) data=data.counters;
+  if(!Array.isArray(data)) throw new Error('The paste must be a JSON array of habits (the same data Export copies).');
+  const habits=[]; let skipped=0;
+  for(const item of data){
+    if(!item||typeof item!=='object'){ skipped++; continue }
+    const name=String(item.name==null?'':item.name).trim().slice(0,65);
+    if(!name){ skipped++; continue }
+    const days={};
+    if(item.days&&typeof item.days==='object'){
+      for(const k of Object.keys(item.days)){
+        if(!DAY_RE.test(k)) continue;
+        const n=Number(item.days[k]);
+        if(!Number.isFinite(n)||n<0) continue;
+        const f=Math.floor(n);
+        if(f>0) days[k]=Math.min(f,10000);
+      }
+    }
+    habits.push({ id: typeof item.id==='string'&&item.id.trim()?item.id.trim().slice(0,64):null, name, days, archived: item.archived===true });
+  }
+  return { habits, skipped };
+}
+function planImport(habits){
+  const byId=new Map(counters.map(c=>[c.id,c]));
+  const byName=new Map(counters.map(c=>[c.name.trim().toLowerCase(),c]));
+  const entries=[]; let newCount=0, updatedHabits=0, countsToWrite=0, replacedCounts=0;
+  for(const inc of habits){
+    const target=(inc.id&&byId.get(inc.id))||byName.get(inc.name.trim().toLowerCase())||null;
+    entries.push({ inc, target });
+    if(target) updatedHabits++; else newCount++;
+    for(const [k] of Object.entries(inc.days)){
+      countsToWrite++;
+      if(target&&safeCount(target,k)>0) replacedCounts++;
+    }
+  }
+  return { entries, newCount, updatedHabits, countsToWrite, replacedCounts };
+}
+let pendingPlan=null;
+$('ioOpenBtn').addEventListener('click',()=>{ $('ioError').hidden=true; $('ioMain').hidden=false; $('ioConfirm').hidden=true; $('ioDialog').showModal() });
+$('ioExportBtn').addEventListener('click',async ()=>{
+  const ok=await copyText(JSON.stringify(counters,null,2));
+  if(ok){ $('ioDialog').close(); toast('Habit history copied to clipboard.'); }
+  else toast('Could not copy — clipboard access was blocked.');
+});
+$('ioImportBtn').addEventListener('click',()=>{
+  const err=$('ioError'); err.hidden=true;
+  const text=$('ioPaste').value.trim();
+  if(!text){ err.textContent='Paste the backup JSON to import.'; err.hidden=false; return }
+  let parsed;
+  try{ parsed=parseImport(text) }catch(e){ err.textContent=e.message; err.hidden=false; return }
+  if(!parsed.habits.length){ err.textContent=parsed.skipped?`Nothing valid in the paste — all ${parsed.skipped} ${parsed.skipped===1?'entry was':'entries were'} skipped.`:'No habits found in the paste.'; err.hidden=false; return }
+  pendingPlan=planImport(parsed.habits);
+  pendingPlan.skipped=parsed.skipped;
+  const r=pendingPlan;
+  $('ioConfirmText').textContent=`${r.updatedHabits} ${r.updatedHabits===1?'habit':'habits'} updated · ${r.newCount} new ${r.newCount===1?'habit':'habits'} added · ${r.countsToWrite} day-count${r.countsToWrite===1?'':'s'} written (${r.replacedCounts} replacing existing).${r.skipped?` ${r.skipped} ${r.skipped===1?'entry':'entries'} skipped.`:''} A backup of your current data is kept automatically — you can undo afterwards.`;
+  $('ioMain').hidden=true; $('ioConfirm').hidden=false;
+});
+$('ioCancelImport').addEventListener('click',()=>{ pendingPlan=null; $('ioConfirm').hidden=true; $('ioMain').hidden=false });
+$('ioConfirmImport').addEventListener('click',()=>{
+  if(!pendingPlan) return;
+  try{ localStorage.setItem(BAK_KEY, JSON.stringify(counters)) }catch(e){}
+  let created=0, updated=0, written=0;
+  for(const { inc, target } of pendingPlan.entries){
+    if(target){ updated++; for(const [k,v] of Object.entries(inc.days)){ target.days[k]=v; written++ } }
+    else { created++; counters.push({ id: inc.id||genId(), name: inc.name, days: { ...inc.days }, archived: inc.archived }); written+=Object.keys(inc.days).length }
+  }
+  pendingPlan=null;
+  save(); render(); $('ioDialog').close(); $('ioPaste').value='';
+  toast(`Imported — ${created} new · ${updated} updated · ${written} counts written.`, ()=>{
+    try{
+      const bak=localStorage.getItem(BAK_KEY); if(!bak) return;
+      const v=JSON.parse(bak);
+      if(!Array.isArray(v)) return;
+      counters=v.filter(c=>c&&typeof c.id==='string'&&typeof c.name==='string'&&c.days&&typeof c.days==='object').map(c=>({id:c.id,name:c.name,days:c.days,archived:c.archived===true}));
+      save(); render(); toast('Import undone — your previous data was restored.');
+    }catch(e){}
+  });
+});
 $('addBtn').addEventListener('click',()=>{$('counterName').value='';$('newDialog').showModal();$('counterName').focus()});$('newForm').addEventListener('submit',e=>{e.preventDefault();const name=$('counterName').value.trim();if(!name)return;const id=typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():`${Date.now()}-${Math.random()}`;counters.push({id,name,days:{}});save();$('newDialog').close();render()});
 $('renameBtn').addEventListener('click',()=>{const c=current();if(!c)return;$('renameName').value=c.name;$('renameDialog').showModal();$('renameName').select()});$('renameForm').addEventListener('submit',e=>{e.preventDefault();const c=current();const name=$('renameName').value.trim().slice(0,65);if(!c||!name)return;c.name=name;save();$('renameDialog').close();fillStats();render()});$('archiveBtn').addEventListener('click',()=>{const c=current();if(c)setArchived(c,!c.archived,true)});$('deleteConfirm').addEventListener('click',()=>{const id=deleteTarget;deleteTarget=null;if(!id)return;counters=counters.filter(x=>x.id!==id);save();$('deleteDialog').close();if(selected===id){$('statsDialog').close();selected=null}render()});
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>$(b.dataset.close).close()));document.querySelectorAll('dialog').forEach(d=>d.addEventListener('click',e=>{if(e.target===d)d.close()}));
