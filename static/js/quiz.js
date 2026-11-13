@@ -27,7 +27,17 @@
 
 	function showView(name) {
 		Object.keys(views).forEach(function (key) {
-			if (views[key]) views[key].hidden = key !== name;
+			var view = views[key];
+			if (!view) return;
+			if (key === name) {
+				view.hidden = false;
+				view.classList.remove('is-visible');
+				void view.offsetWidth;
+				view.classList.add('is-visible');
+			} else {
+				view.classList.remove('is-visible');
+				view.hidden = true;
+			}
 		});
 		var hud = byId('quiz-score-hud');
 		if (hud) hud.hidden = name === 'start';
@@ -47,7 +57,8 @@
 		startedAt: 0,
 		locked: false,
 		hintUsed: false,
-		lifelines: { addTime: true, fiftyFifty: true }
+		lifelines: { addTime: true, fiftyFifty: true },
+		historyExpanded: false
 	};
 
 	/* ------------------------------ history ------------------------------ */
@@ -68,7 +79,10 @@
 	}
 
 	function clearHistory() {
-		try { localStorage.removeItem(HISTORY_KEY); } catch (e) {}
+		try {
+			localStorage.removeItem(HISTORY_KEY);
+			localStorage.removeItem('aayatun_quiz_seen_v1');
+		} catch (e) {}
 		renderStats();
 	}
 
@@ -91,13 +105,15 @@
 
 		var wrap = byId('quiz-history');
 		var list = byId('quiz-history-list');
+		var moreBtn = byId('quiz-history-more');
 		if (!history.length) {
 			wrap.hidden = true;
 			return;
 		}
 		wrap.hidden = false;
 		list.innerHTML = '';
-		history.slice(0, MAX_HISTORY).forEach(function (entry) {
+		var visible = state.historyExpanded ? history.slice(0, MAX_HISTORY) : history.slice(0, 5);
+		visible.forEach(function (entry) {
 			var row = document.createElement('div');
 			row.className = 'quiz-history-row';
 
@@ -127,6 +143,16 @@
 			row.appendChild(dots);
 			list.appendChild(row);
 		});
+		if (moreBtn) {
+			if (history.length > 5) {
+				moreBtn.hidden = false;
+				moreBtn.textContent = state.historyExpanded
+					? 'Show less'
+					: 'Show ' + Math.min(history.length - 5, MAX_HISTORY - 5) + ' more';
+			} else {
+				moreBtn.hidden = true;
+			}
+		}
 	}
 
 	/* 200 points per correct answer. On a correct tap, number tokens fly
@@ -311,14 +337,14 @@
 
 	function startTimer() {
 		clearTimer();
-		var duration = state.timerDuration;
-		state.endsAt = Date.now() + duration;
+		state.endsAt = Date.now() + state.timerDuration;
 		var bar = byId('quiz-timer-bar');
 		var text = byId('quiz-timer-text');
 		bar.classList.remove('low');
 		bar.style.width = '100%';
-		text.textContent = Math.ceil(duration / 1000) + 's';
+		text.textContent = Math.ceil(state.timerDuration / 1000) + 's';
 		state.timerId = setInterval(function () {
+			var duration = state.timerDuration; // read live — +30s grows the window mid-question
 			var remain = state.endsAt - Date.now();
 			if (remain <= 0) {
 				remain = 0;
@@ -582,10 +608,39 @@
 
 	/* ------------------------------ fetch ------------------------------- */
 
+	/* Track which questions the user has been shown so the session API can
+	   skip them (falling back to recycling a verse's bank when it is empty).
+	   IDs are the server's stable surah:verse:aspect:hash identifiers. */
+	var SEEN_KEY = 'aayatun_quiz_seen_v1';
+	var MAX_SEEN_SENT = 400;   // ids sent per request (~80 KB worst case, usually tiny)
+	var MAX_SEEN_STORED = 2000;
+
+	function readSeenIds() {
+		try {
+			var s = JSON.parse(localStorage.getItem(SEEN_KEY) || '[]');
+			return Array.isArray(s) ? s.slice(-MAX_SEEN_SENT) : [];
+		} catch (e) {
+			return [];
+		}
+	}
+
+	function rememberSeen(ids) {
+		try {
+			var s = JSON.parse(localStorage.getItem(SEEN_KEY) || '[]');
+			if (!Array.isArray(s)) s = [];
+			s = s.concat(ids).slice(-MAX_SEEN_STORED);
+			localStorage.setItem(SEEN_KEY, JSON.stringify(s));
+		} catch (e) { /* quota full: history just won't grow */ }
+	}
+
 	function fetchSession() {
 		return fetch('/api/v1/quiz/session', {
+			method: 'POST',
 			credentials: 'same-origin',
-			headers: token ? { 'X-Aayatun-Token': token } : {}
+			headers: Object.assign(
+				{ 'Content-Type': 'application/json' },
+				token ? { 'X-Aayatun-Token': token } : {}),
+			body: JSON.stringify({ seen: readSeenIds() })
 		}).then(function (res) {
 			if (!res.ok) throw new Error('HTTP ' + res.status);
 			return res.json();
@@ -604,6 +659,7 @@
 			}
 			state.session = session;
 			state.questions = questions;
+			rememberSeen(session.questions.map(function (q) { return q.id; }));
 			state.index = 0;
 			state.score = 0;
 			state.stepAnswers = [];
@@ -683,6 +739,11 @@
 		startQuiz();
 	});
 
+	byId('quiz-history-more').addEventListener('click', function () {
+		state.historyExpanded = !state.historyExpanded;
+		renderStats();
+	});
+
 	byId('quiz-clear-history').addEventListener('click', function () {
 		var modal = byId('quiz-clear-modal');
 		if (modal && window.$) { window.$(modal).modal('show'); }
@@ -694,5 +755,6 @@
 
 	window.AayatunQuiz = { clearHistory: clearHistory };
 
+	showView('start');
 	renderStats();
 })();

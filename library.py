@@ -8,6 +8,7 @@ import random
 import re
 import json
 import copy
+import hashlib
 import time
 import threading
 import urllib.request
@@ -1316,11 +1317,20 @@ def _short_surah_name(full):
 	name = re.sub(r'\s*\([^)]*\)\s*$', '', str(full or '')).strip()
 	return name
 
-def get_random_session():
+def quiz_question_id(surah, verse, aspect, prompt):
+	"""Stable question identity: surah:verse:aspect:prompt-hash. Reused across
+	sessions for repeat avoidance; changes only if the question text changes."""
+	h = hashlib.md5(str(prompt).encode('utf-8')).hexdigest()[:12]
+	return f'{int(surah)}:{int(verse)}:{aspect}:{h}'
+
+def get_random_session(exclude=()):
 	"""One random verse's five-question session, or None if the bank is empty.
 
-	The verse must carry a complete five-question set. Choices are shuffled
-	per question; Arabic/translation are joined live from the pickle."""
+	The verse must carry at least five questions; five are picked at random
+	when more are stored. Questions whose IDs are in `exclude` are skipped
+	unless the verse only has been-seen questions left (then it recycles).
+	Aspect order is re-imposed for display. Choices are shuffled per
+	question; Arabic/translation are joined live from the pickle."""
 	if not os.path.exists(QUIZ_DB):
 		return None
 	conn = sqlite3.connect(QUIZ_DB)
@@ -1337,9 +1347,22 @@ def get_random_session():
 		bank = json.loads(questions)
 	except Exception:
 		return None
-	if not isinstance(bank, list) or len(bank) != 5:
+	if not isinstance(bank, list) or len(bank) < 5:
 		return None
 	order = list(QUIZ_ASPECT_ORDER)
+	def with_id(item):
+		q = dict(item)
+		q['id'] = quiz_question_id(int(surah), int(verse), q.get('aspect'), q.get('prompt'))
+		return q
+	bank = [with_id(q) for q in bank]
+	try:
+		excl = {str(x) for x in exclude}
+		unseen = [q for q in bank if q['id'] not in excl]
+		bank = unseen if len(unseen) >= 5 else bank
+	except Exception:
+		pass
+	if len(bank) > 5:
+		bank = random.sample(bank, 5)
 	bank = sorted(bank, key=lambda q: order.index(q.get('aspect'))
 		if q.get('aspect') in order else 99)
 	try:
@@ -1355,6 +1378,7 @@ def get_random_session():
 			answer_text = choices[int(q['answer'])]
 			random.shuffle(choices)
 			out_questions.append({
+				'id': q.get('id'),
 				'aspect': q.get('aspect'),
 				'difficulty': q.get('difficulty', 'easy'),
 				'prompt': q['prompt'],
@@ -1387,3 +1411,54 @@ def quiz_session_count():
 		return int(row[0] or 0)
 	except Exception:
 		return 0
+
+def quiz_bank_stats():
+	"""Aggregate stats about the verse quiz bank for the /quiz/stats page."""
+	if not os.path.exists(QUIZ_DB):
+		return None
+	conn = sqlite3.connect(QUIZ_DB)
+	try:
+		total_rows, bank_count, total_questions = conn.execute(
+			'SELECT COUNT(*), COALESCE(SUM(CASE WHEN count >= 5 THEN 1 ELSE 0 END), 0), '
+			'COALESCE(SUM(count), 0) FROM verse_quizzes').fetchone()
+		body = {}
+		body['total_rows'] = int(total_rows)
+		body['bank_verses'] = int(bank_count)
+		body['total_questions'] = int(total_questions)
+		body['skips'] = int(total_rows - bank_count)
+		body['18_qa_verses'] = int(conn.execute(
+			'SELECT COUNT(*) FROM verse_quizzes WHERE count > 5').fetchone()[0])
+		body['models'] = dict(conn.execute(
+			'SELECT model, COUNT(*) FROM verse_quizzes WHERE count >= 5 '
+			'GROUP BY model ORDER BY 2 DESC').fetchall())
+		body['skip_reasons'] = dict(conn.execute(
+			"SELECT COALESCE(skipped_reason, 'unknown'), COUNT(*) FROM verse_quizzes "
+			"WHERE count = 0 GROUP BY skipped_reason ORDER BY 2 DESC").fetchall())
+		difficulty = {'easy': 0, 'medium': 0, 'hard': 0}
+		aspect_totals = {a: 0 for a in QUIZ_ASPECT_ORDER}
+		min_gen = None
+		max_gen = None
+		per_verse_counts = {5: 0}
+		for surah, verse, questions in conn.execute(
+				'SELECT surah, verse, questions FROM verse_quizzes WHERE count >= 5'):
+			try:
+				bank = json.loads(questions)
+			except Exception:
+				continue
+			per_verse_counts[len(bank)] = per_verse_counts.get(len(bank), 0) + 1
+			for q in bank:
+				if q.get('difficulty') in difficulty:
+					difficulty[q['difficulty']] += 1
+				if q.get('aspect') in aspect_totals:
+					aspect_totals[q['aspect']] += 1
+		body['difficulty'] = difficulty
+		body['aspect_totals'] = aspect_totals
+		row = conn.execute(
+			"SELECT MIN(generated_at), MAX(generated_at) FROM verse_quizzes "
+			"WHERE generated_at IS NOT NULL").fetchone()
+		body['first_generated'] = row[0]
+		body['last_generated'] = row[1]
+		body['questions_per_verse'] = per_verse_counts
+		return body
+	finally:
+		conn.close()

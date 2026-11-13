@@ -140,6 +140,10 @@ def reading_map():
 def quiz():
 	return render_template('quiz.html', api_token=api_token(), bank_size=lib.quiz_session_count())
 
+@app.route('/quiz/stats')
+def quiz_stats():
+	return render_template('quiz_stats.html', stats=lib.quiz_bank_stats())
+
 @app.route('/<int:surah>/', strict_slashes=False)
 def details2(surah):
 	return private_page(make_response(render_template('versedetails.html',
@@ -227,13 +231,23 @@ def surah_api(surah):
 		resp.headers['Content-Encoding'] = 'gzip'
 	return resp
 
-# One random verse's five-question quiz session for /quiz: public text, so
-# no cache ever holds a copy, and the token binds it to this site's sessions
-# (like the verse API).
-@app.route('/api/v1/quiz/session', strict_slashes=False)
+# One random verse's five-question quiz session for /quiz. The client POSTs
+# the IDs of the questions it has already shown (last ~400) so the pool skips
+# anything the user has recently seen (falling back to recycling a verse's
+# bank when it is exhausted). Token-protected like the verse API; no-store.
+@app.route('/api/v1/quiz/session', strict_slashes=False, methods=['POST'])
 def quiz_api():
 	require_api_token()
-	session = lib.get_random_session()
+	try:
+		body = request.get_json(silent=True) or {}
+	except Exception:
+		body = {}
+	seen = body.get('seen') if isinstance(body, dict) else None
+	if isinstance(seen, list):
+		seen = [str(s)[:80] for s in seen[:2000]]
+	else:
+		seen = []
+	session = lib.get_random_session(exclude=seen)
 	if session is None:
 		return no_store(jsonify({'error': 'bank-unavailable'}))
 	return no_store(jsonify(session))

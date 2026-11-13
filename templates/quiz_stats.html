@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+
+{% block title %} Quran Quiz — Question Bank Stats : Aayatun {% endblock %}
+{% block meta_description %}Statistics about Aayatun's Quran Quiz question bank: verses with questions, difficulty mix, five aspects per verse, and generation history.{% endblock %}
+
+{% block menu %}
+<div class="ui header three wide item" style="font-size: 200%; display: inline-block; text-align: middle;">
+	<a href="{{ url_for('index') }}" style="font-family: Merriweather;">Quran Quiz</a>
+</div>
+{% endblock %}
+
+{% block content3 %}
+<div class="ui container quiz-stats-page" style="padding: 4% 8% 8%; font-family: 'Open Sans'">
+	<p style="opacity: .6; font-size: 86%; margin: 0 0 22px;"><a href="{{ url_for('quiz') }}">← Back to the quiz</a></p>
+
+	{% if stats %}
+	<h1 style="font-family: Merriweather; font-size: 2rem; margin: 0;">Question bank</h1>
+	<p style="opacity: .55; font-size: 85%; margin-top: 6px;">Every eligible verse of the Qur'an gets five AI-generated English multiple-choice questions, one per aspect, grounded in the verse itself, Ibn Kathir's tafsir, and the AI verse-analysis notes.</p>
+
+	<div class="ui three column stackable grid" style="margin-top: 24px;">
+		<div class="column">
+			<div class="stats-tile">
+				<div class="stats-tile-value">{{ '{:,}'.format(stats.total_questions) }}</div>
+				<div class="stats-tile-label">Questions generated</div>
+			</div>
+		</div>
+		<div class="column">
+			<div class="stats-tile">
+				<div class="stats-tile-value">{{ '{:,}'.format(stats.bank_verses) }}</div>
+				<div class="stats-tile-label">Verses covered</div>
+			</div>
+		</div>
+		<div class="column">
+			<div class="stats-tile">
+				<div class="stats-tile-value">{{ '{:,}'.format(stats.total_questions // stats.bank_verses if stats.bank_verses else 0) }}</div>
+				<div class="stats-tile-label">Questions per verse</div>
+			</div>
+		</div>
+	</div>
+
+	<h2 class="stats-h2">Difficulty mix</h2>
+	{% set total_d = stats.difficulty.easy + stats.difficulty.medium + stats.difficulty.hard %}
+	<div class="ui tiny progress" style="height: 30px; border-radius: 15px; overflow: hidden;">
+		{% if total_d %}
+		<div class="bar" style="width: {{ (100 * stats.difficulty.easy / total_d) | round(2) }}%; background: #16a34a; height: 100%; float: left;"></div>
+		<div class="bar" style="width: {{ (100 * stats.difficulty.medium / total_d) | round(2) }}%; background: #d97706; height: 100%; float: left;"></div>
+		<div class="bar" style="width: {{ (100 * stats.difficulty.hard / total_d) | round(2) }}%; background: #dc2626; height: 100%; float: left;"></div>
+		{% endif %}
+	</div>
+	<div style="display: flex; justify-content: space-between; font-size: 82%; margin-top: 8px;">
+		<span><i class="green circle icon"></i> Easy · {{ stats.difficulty.easy | int }} ({{ (100 * stats.difficulty.easy / total_d) | round(1) if total_d else 0 }}%)</span>
+		<span><i class="orange circle icon"></i> Medium · {{ stats.difficulty.medium | int }} ({{ (100 * stats.difficulty.medium / total_d) | round(1) if total_d else 0 }}%)</span>
+		<span><i class="red circle icon"></i> Hard · {{ stats.difficulty.hard | int }} ({{ (100 * stats.difficulty.hard / total_d) | round(1) if total_d else 0 }}%)</span>
+	</div>
+
+	<h2 class="stats-h2">Questions per aspect</h2>
+	<div class="ui five column stackable grid">
+		{% for aspect in ['translation', 'word_meaning', 'grammar', 'tafsir', 'ai_context'] %}
+		<div class="column">
+			<div class="stats-tile small">
+				<div class="stats-tile-value">{{ '{:,}'.format(stats.aspect_totals[aspect]) }}</div>
+				<div class="stats-tile-label">{{ {
+					'translation': 'Translation',
+					'word_meaning': 'Word meaning',
+					'grammar': 'Grammar',
+					'tafsir': 'Tafsir',
+					'ai_context': 'AI context'
+				}[aspect] }}</div>
+			</div>
+		</div>
+		{% endfor %}
+	</div>
+
+	<div class="ui two column stackable grid" style="margin-top: 24px;">
+		<div class="column">
+			<h2 class="stats-h2">Skipped verses</h2>
+			<table class="ui very basic table" style="font-size: 88%;">
+				<tbody>
+				<tr><td>Basmala (1:1)</td><td style="text-align: right;">{{ stats.skip_reasons.get('basmala', 0) }}</td></tr>
+				<tr><td>Muqatta'at (disjointed letters)</td><td style="text-align: right;">{{ stats.skip_reasons.get('muqattaat', 0) }}</td></tr>
+				<tr><td>Too short (≤ 3 words)</td><td style="text-align: right;">{{ stats.skip_reasons.get('too-short', 0) }}</td></tr>
+				<tr><td>Other / missing source text</td><td style="text-align: right;">{{ stats.skips - (stats.skip_reasons.get('basmala', 0) + stats.skip_reasons.get('muqattaat', 0) + stats.skip_reasons.get('too-short', 0)) }}</td></tr>
+				<tr><th>Total skipped</th><th style="text-align: right;">{{ stats.skips }}</th></tr>
+				</tbody>
+			</table>
+		</div>
+		<div class="column">
+			<h2 class="stats-h2">Generation</h2>
+			<table class="ui very basic table" style="font-size: 88%;">
+				<tbody>
+				{% for model, count in stats.models.items() %}
+				<tr><td>{{ model }}</td><td style="text-align: right;">{{ count | int }} verses</td></tr>
+				{% endfor %}
+				<tr><td>First generated</td><td style="text-align: right;">{{ stats.first_generated[:10] if stats.first_generated else '—' }}</td></tr>
+				<tr><td>Last generated</td><td style="text-align: right;">{{ stats.last_generated[:10] if stats.last_generated else '—' }}</td></tr>
+				<tr><td>Eligible verses with a bank</td><td style="text-align: right;">{{ stats.bank_verses }} / {{ stats.total_rows }}</td></tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+
+	<p style="opacity: .5; font-size: 78%; margin-top: 28px;">The bank was generated offline with OpenAI (GPT-5.6 Luna). Difficulty is tagged per question by the model and validated in code (at least two “easy” questions per verse, at most three “medium”). Questions grounded in the verse itself, Ibn Kathir's tafsir, and the AI verse-analysis notes — nothing else.</p>
+
+	{% else %}
+	<h1 style="font-family: Merriweather; font-size: 2rem;">Question bank</h1>
+	<p>The quiz bank database is not available on this host yet.</p>
+	{% endif %}
+</div>
+
+<style>
+.quiz-stats-page h2.stats-h2 { font-family: Merriweather, serif; font-size: 1.15rem; margin: 26px 0 12px; }
+.stats-tile { border: 1px solid rgba(0,0,0,.08); border-radius: 20px; padding: 18px 20px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+.stats-tile.small { padding: 14px 12px; }
+.stats-tile-value { font-family: Merriweather, serif; font-size: 1.9rem; line-height: 1; color: #4183C4; }
+.stats-tile.small .stats-tile-value { font-size: 1.35rem; }
+.stats-tile-label { font-size: 72%; text-transform: uppercase; letter-spacing: .06em; opacity: .55; margin-top: 8px; }
+html.dark-theme .stats-tile { border-color: rgba(255,255,255,.14); background: rgba(255,255,255,.04); }
+html.dark-theme .stats-tile-value { color: #9CC4FF; }
+html.dark-theme .ui.tiny.progress { background: rgba(255,255,255,.12); }
+</style>
+{% endblock content3 %}
+
+{% block scriptcontent %}
+	// Standalone page: hide the floating search button.
+	$('#search-btn').hide();
+	$('#menubar').removeClass('three').addClass('one');
+{% endblock %}

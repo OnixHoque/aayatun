@@ -47,8 +47,10 @@
 				<button id="quiz-clear-history" type="button">Clear</button>
 			</div>
 			<div class="quiz-history-list" id="quiz-history-list"></div>
+			<button class="quiz-history-more" id="quiz-history-more" type="button" hidden>Show more</button>
 		</div>
 		<div class="quiz-ai">{% include 'partials/_ai_notice.html' %}</div>
+		<p class="quiz-start-note" style="margin-top: 16px;"><a href="{{ url_for('quiz_stats') }}">Question bank stats →</a></p>
 	</div>
 
 	<!-- ======================= a round ======================= -->
@@ -133,9 +135,10 @@
 
 <!-- Clear history confirmation -->
 <div class="ui tiny modal" id="quiz-clear-modal">
+	<i class="close icon"></i>
 	<div class="header">Clear quiz history?</div>
 	<div class="content">
-		<p>This removes your attempts and your best score from this device. It cannot be undone.</p>
+		<p>This removes your attempts, your best score, and the record of which questions you have seen — the quiz will start fresh on this device. It cannot be undone.</p>
 	</div>
 	<div class="actions">
 		<div class="ui basic cancel button" id="quiz-clear-cancel">Keep history</div>
