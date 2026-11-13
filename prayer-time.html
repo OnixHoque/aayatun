@@ -11,6 +11,37 @@
 <meta name="apple-mobile-web-app-title" content="Prayer Time">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" sizes="180x180" href="/static/images/apple-touch-icon.png">
+<script>
+  // Loading bar: mirrors base.html. The flag in sessionStorage lets the
+  // destination page paint the bar from its first frame.
+  (function () {
+    try {
+      if (sessionStorage.getItem('aayatun_loading') === '1') {
+        document.documentElement.classList.add('is-loading');
+      }
+    } catch (e) {}
+  })();
+</script>
+<style>
+  /* Loading bar (dark variant of the site-wide one; no Fomantic here). */
+  #loading-bar {
+    display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 2000;
+    box-sizing: border-box; width: 100%; padding: 8px 0 calc(8px + env(safe-area-inset-bottom, 0px));
+    font-family: 'Open Sans', open sans; font-size: 13px; text-align: center;
+    color: #e7eef9; background: rgba(15, 27, 51, .88);
+  }
+  html.is-loading #loading-bar { display: block; }
+  #loading-bar .lb-spin {
+    display: inline-block; width: 14px; height: 14px; vertical-align: -2px; margin-right: 8px;
+    border: 2px solid rgba(231, 238, 249, .3); border-top-color: #e7eef9;
+    border-radius: 50%; animation: lb-spin .8s linear infinite;
+  }
+  @keyframes lb-spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { #loading-bar .lb-spin { animation: none; } }
+  /* Back button: larger tap target and icon than the sibling bar buttons. */
+  #back { width: 2.9rem; height: 2.9rem; }
+  #back svg { width: 1.65rem !important; height: 1.65rem !important; }
+</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600;700&amp;family=Open+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
@@ -253,7 +284,7 @@
     top: 0;
     z-index: 3;
     flex: none;
-    height: 2rem;
+    height: 2.9rem;
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
@@ -1421,6 +1452,26 @@
 </style>
 </head>
 <body data-waqt="isha">
+<footer id="loading-bar" role="status" aria-live="polite"><span class="lb-spin" aria-hidden="true"></span>Loading...</footer>
+<script>
+  function showLoading() {
+    try { sessionStorage.setItem('aayatun_loading', '1'); } catch (e) {}
+    document.documentElement.classList.add('is-loading');
+    var bar = document.getElementById('loading-bar');
+    if (bar) bar.style.display = 'block';
+  }
+  function hideLoading() {
+    try { sessionStorage.removeItem('aayatun_loading'); } catch (e) {}
+    document.documentElement.classList.remove('is-loading');
+    var bar = document.getElementById('loading-bar');
+    if (bar) bar.style.display = 'none';
+  }
+  window.showLoading = showLoading;
+  window.hideLoading = hideLoading;
+  window.addEventListener('pageshow', hideLoading);
+  window.addEventListener('pagehide', showLoading);
+</script>
+
 <main class="app editing" id="app">
 
   <div class="bar">
@@ -3136,7 +3187,7 @@
   $('#lookup').addEventListener('submit', (e) => { e.preventDefault(); loadFromForm({ close: true }); });
   $('#locate').addEventListener('click', () => loadFromGps({ close: true }));
   // $('#clock').addEventListener('click', () => history.back());   // tapping the clock goes back
-  const goBack = () => { window.location.href = '/'; };
+  const goBack = () => { showLoading(); window.location.href = '/'; };
   // $('#clock').addEventListener('click', goBack);
   $('#back').addEventListener('click', goBack);
   $('#change').addEventListener('click', () => setEditing(!app.classList.contains('editing')));

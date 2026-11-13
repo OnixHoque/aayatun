@@ -10,6 +10,38 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" sizes="180x180" href="/static/images/apple-touch-icon.png">
 <link rel="manifest" href="/static/manifest-counter.json">
+<script>
+  // Loading bar: mirrors base.html. The flag in sessionStorage lets the
+  // destination page paint the bar from its first frame.
+  (function () {
+    try {
+      if (sessionStorage.getItem('aayatun_loading') === '1') {
+        document.documentElement.classList.add('is-loading');
+      }
+    } catch (e) {}
+  })();
+</script>
+<style>
+  /* Loading bar (dark page-local variant of the site-wide bar). */
+  #loading-bar {
+    display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 2000;
+    box-sizing: border-box; width: 100%; padding: 8px 0 calc(8px + env(safe-area-inset-bottom, 0px));
+    font-family: 'Open Sans', system-ui, sans-serif; font-size: 13px; text-align: center;
+    color: #e7eef9; background: rgba(15, 27, 51, .88);
+  }
+  html.is-loading #loading-bar { display: block; }
+  #loading-bar .lb-spin {
+    display: inline-block; width: 14px; height: 14px; vertical-align: -2px; margin-right: 8px;
+    border: 2px solid rgba(231, 238, 249, .3); border-top-color: #e7eef9;
+    border-radius: 50%; animation: lb-spin .8s linear infinite;
+  }
+  @keyframes lb-spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { #loading-bar .lb-spin { animation: none; } }
+  /* Back button: larger tap target and icon. */
+  .counter-nav { height: 2.9rem; }
+  .counter-back { width: 2.9rem; height: 2.9rem; }
+  .counter-back svg { width: 1.65rem; height: 1.65rem; }
+</style>
 <title>Daily Counter</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -344,6 +376,26 @@ button, .tile, input, [tabindex] { -webkit-tap-highlight-color: transparent; }
 </style>
 </head>
 <body>
+<footer id="loading-bar" role="status" aria-live="polite"><span class="lb-spin" aria-hidden="true"></span>Loading...</footer>
+<script>
+  function showLoading() {
+    try { sessionStorage.setItem('aayatun_loading', '1'); } catch (e) {}
+    document.documentElement.classList.add('is-loading');
+    var bar = document.getElementById('loading-bar');
+    if (bar) bar.style.display = 'block';
+  }
+  function hideLoading() {
+    try { sessionStorage.removeItem('aayatun_loading'); } catch (e) {}
+    document.documentElement.classList.remove('is-loading');
+    var bar = document.getElementById('loading-bar');
+    if (bar) bar.style.display = 'none';
+  }
+  window.showLoading = showLoading;
+  window.hideLoading = hideLoading;
+  window.addEventListener('pageshow', hideLoading);
+  window.addEventListener('pagehide', showLoading);
+</script>
+
 <main class="shell">
   <nav class="counter-nav" aria-label="Page navigation"><button id="backBtn" class="counter-back" type="button" aria-label="Back to home" title="Back to home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button></nav>
   <header class="top"><div><p class="eyebrow">A little progress, every day</p><h1>Daily Counter</h1><p class="date" id="todayLabel"></p></div><div class="top-actions"><button type="button" class="install-btn" data-install-app aria-label="Install this app" title="Install this app" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11"/><path d="m8 10 4 4 4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></button><button class="add" id="addBtn" type="button"><span class="plus-icon" aria-hidden="true">+</span> New counter</button></div></header>
@@ -361,7 +413,7 @@ button, .tile, input, [tabindex] { -webkit-tap-highlight-color: transparent; }
 <script>
 (()=>{'use strict';
 const KEY='daily-counter-v1';
- document.getElementById('backBtn').addEventListener('click',()=>{window.location.href='/';});
+ document.getElementById('backBtn').addEventListener('click',()=>{showLoading();window.location.href='/';});
 const $=id=>document.getElementById(id);
 const fmt=new Intl.NumberFormat(undefined);
 const pad=n=>String(n).padStart(2,'0');
