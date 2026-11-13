@@ -1362,7 +1362,7 @@ The dark theme and the menu work even if later CDN scripts fail.
 
 `static/service-worker.js` is served at `/service-worker.js` (root scope).
 `index.html` and both standalone pages register it. `CACHE_NAME` is
-**`aayatun-v99`**; bump it whenever the precache list or the caching logic
+**`aayatun-v100`**; bump it whenever the precache list or the caching logic
 changes.
 
 ```mermaid

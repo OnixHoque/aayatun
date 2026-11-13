@@ -500,33 +500,71 @@ document.addEventListener('DOMContentLoaded', function () {
 	// More Apps is link-looking text (a span, not an anchor/button) with a
 	// click handler, so a tap triggers no browser focus/scroll behaviour on
 	// Android; role="button" keeps it keyboard-accessible, with keydown for
-	// Enter/Space.
-	$('#more-apps-btn').on('keydown', function (evt) {
-		if (evt.key === 'Enter' || evt.key === ' ') {
-			evt.preventDefault();
-			$(this).trigger('click');
-		}
-	}).on('click', function (evt) {
-		evt.preventDefault();
-		evt.stopPropagation();
-		this.blur();
-	}).popup({
-		popup: $('#more-apps-popup'),
-		on: 'click',
-		position: 'top center',
-		lastResort: 'top center',
-		exclusive: true,
-		hoverable: true,
-		distanceAway: 8,
-		movePopup: false
-	});
-	window.addEventListener('pageshow', function () {
-		if ($.fn.popup) $('#more-apps-btn').popup('hide');
-	});
-	$('#more-apps-popup').on('click', 'a', function () {
-		$('#more-apps-btn').popup('hide');
-	});
+	// Enter/Space. The popup is positioned with position: fixed + measured
+	// coordinates instead of Fomantic's popup: Fomantic's offset math put
+	// the panel below the bottom of the document on some devices (growing
+	// the page). Fixed coordinates never grow the page.
+	(function () {
+		var btn = document.getElementById('more-apps-btn');
+		var pop = document.getElementById('more-apps-popup');
+		if (!btn || !pop) return;
 
+		function isOpen() { return pop.classList.contains('is-open'); }
+
+		function place() {
+			var r = btn.getBoundingClientRect();
+			var pw = pop.offsetWidth;
+			var ph = pop.offsetHeight;
+			var top = Math.max(8, r.top - ph - 8);
+			var right = Math.max(8, window.innerWidth - r.right);
+			pop.style.top = top + 'px';
+			pop.style.right = right + 'px';
+			pop.style.left = 'auto';
+			pop.style.bottom = 'auto';
+		}
+
+		function open() {
+			pop.classList.add('is-open');
+			btn.setAttribute('aria-expanded', 'true');
+			place();
+		}
+
+		function close() {
+			pop.classList.remove('is-open');
+			btn.setAttribute('aria-expanded', 'false');
+		}
+
+		function toggle() {
+			if (isOpen()) close(); else open();
+		}
+
+		btn.addEventListener('click', function (evt) {
+			evt.preventDefault();
+			evt.stopPropagation();
+			this.blur();
+			toggle();
+		});
+		btn.addEventListener('keydown', function (evt) {
+			if (evt.key === 'Enter' || evt.key === ' ') {
+				evt.preventDefault();
+				this.click();
+			}
+		});
+		pop.addEventListener('click', function (evt) {
+			var a = evt.target && evt.target.closest ? evt.target.closest('a') : null;
+			if (a) close();
+		});
+		document.addEventListener('click', function (evt) {
+			if (isOpen() && !pop.contains(evt.target) && !btn.contains(evt.target)) {
+				close();
+			}
+		});
+		document.addEventListener('keydown', function (evt) {
+			if (evt.key === 'Escape') close();
+		});
+		window.addEventListener('resize', function () { if (isOpen()) place(); });
+		window.addEventListener('scroll', function () { if (isOpen()) place(); }, { passive: true });
+	})();
     if('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register("/service-worker.js", { scope: '/' })
