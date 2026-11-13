@@ -87,6 +87,7 @@
 	var versePrev = document.getElementById('reading-map-verse-prev');
 	var verseNext = document.getElementById('reading-map-verse-next');
 	var translationEl = document.getElementById('reading-map-translation');
+	var translationText = document.getElementById('reading-map-translation-text');
 	var translationToggle = document.getElementById('reading-map-translation-toggle');
 	var translationCache = {};
 	var translationKey = null;
@@ -108,7 +109,7 @@
 	{
 		if (!translationEl || !translationToggle) return;
 		var expanded = translationEl.classList.contains('is-expanded');
-		var hasText = (translationEl.textContent || '').length > 0;
+		var hasText = (translationText.textContent || '').length > 0;
 		translationToggle.hidden = expanded || !hasText ||
 			translationEl.scrollHeight <= translationEl.clientHeight + 1;
 	}
@@ -128,7 +129,7 @@
 	function hideTranslation()
 	{
 		translationKey = null;
-		if (translationEl) translationEl.textContent = '';
+		if (translationEl) translationText.textContent = '';
 		resetTranslationExpand();
 		if (translationToggle) translationToggle.hidden = true;
 	}
@@ -159,13 +160,13 @@
 			var cached = translationCache[key];
 			resetTranslationExpand();
 			fadeSwap(translationEl, function () {
-				translationEl.textContent = cached ? '“' + cached + '”' : '';
+				translationText.textContent = cached ? '“' + cached + '”' : '';
 				syncTranslationToggle();
 			});
 			return;
 		}
 		fadeSwap(translationEl, function () {
-			translationEl.textContent = '…';
+			translationText.textContent = '…';
 			if (translationToggle) translationToggle.hidden = true;
 		});
 		window.fetch('/api/v1/verse/' + loc.s.no + '/' + loc.verse, {
@@ -179,7 +180,7 @@
 			if (translationKey === key) {
 				resetTranslationExpand();
 				fadeSwap(translationEl, function () {
-					translationEl.textContent = t ? '“' + t + '”' : '';
+					translationText.textContent = t ? '“' + t + '”' : '';
 					syncTranslationToggle();
 				});
 			}
@@ -188,7 +189,7 @@
 			if (translationKey === key) {
 				resetTranslationExpand();
 				fadeSwap(translationEl, function () {
-					translationEl.textContent = '';
+					translationText.textContent = '';
 					syncTranslationToggle();
 				});
 			}

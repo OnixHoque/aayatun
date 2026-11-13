@@ -123,8 +123,11 @@
 
     /* The selected verse's translation, shown above the suggestion:
        a two-line glance, ellipsised and muted. The element always keeps
-       its two-line box so selecting a verse never resizes the card. */
+       its two-line box so selecting a verse never resizes the card.
+       The more/less toggle rides inline in the text flow and is pinned to
+       the end of line two, fading over the tail. */
     .reading-map-translation {
+        --card-bg: #fff;
         margin: 0;
         font-size: 82%;
         font-style: italic;
@@ -135,6 +138,7 @@
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
+        position: relative;
     }
 
     .reading-map-translation.is-expanded {
@@ -154,19 +158,28 @@
         opacity: 0 !important;
     }
 
-    /* Expander shown only when the two-line clamp hides text. */
+    /* More/less sits at the end of line two: inline in the text flow,
+       pinned to the bottom-right corner while clamped, fades over the tail. */
     .reading-map-translation-toggle {
-        flex: none;
-        align-self: flex-start;
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        margin: 0;
         border: 0;
-        background: none;
-        padding: 0 2px 0 0;
-        margin: -3px 0 0;
+        background: linear-gradient(to right, transparent, var(--card-bg, #fff) 30%);
+        padding: 0 .1em 0 1.4em;
         font-family: inherit;
-        font-size: 74%;
+        font-size: 82%;
         line-height: 1.4;
+        font-style: normal;
         color: #2185d0;
         cursor: pointer;
+    }
+
+    .reading-map-translation.is-expanded .reading-map-translation-toggle {
+        position: static;
+        background: none;
+        padding: 0 0 0 .3em;
     }
 
     .reading-map-translation-toggle:hover,
@@ -1003,6 +1016,10 @@
         background: #8cc8ff;
     }
 
+    html.dark-theme .reading-map-translation {
+        --card-bg: #21262d;
+    }
+
     html.dark-theme .reading-map-translation-toggle {
         color: #8cc8ff;
     }
@@ -1082,8 +1099,7 @@
 						<span id="reading-map-hint">Hover or tap a square to see the verse.</span>
 						<a id="reading-map-open" href="#" hidden></a>
 					</div>
-					<p class="reading-map-translation" id="reading-map-translation" aria-live="polite"></p>
-					<button type="button" class="reading-map-translation-toggle" id="reading-map-translation-toggle" aria-expanded="false" hidden>more</button>
+					<p class="reading-map-translation" id="reading-map-translation" aria-live="polite"><span id="reading-map-translation-text"></span><button type="button" class="reading-map-translation-toggle" id="reading-map-translation-toggle" aria-expanded="false" hidden>more</button></p>
 					<div id="reading-map-next" class="reading-map-next"></div>
 				</div>
 				<div class="reading-map-card reading-map-stats">

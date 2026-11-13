@@ -1478,7 +1478,7 @@ flowchart LR
 | SQLite | Host | `tajweed_cache.db`, `qcf_cache.db` | permanent |
 | Disk files | Host | `db/fonts/v4-pN.woff2` | permanent |
 | HTTP | Browser/proxy | `private_page` (pages with token), `no-store` (API), `private, max-age=300` (mushaf + theme pages), `immutable` (fonts) | per header |
-| Service worker | Browser | app shell, same-origin assets, CDN assets | `aayatun-v96` until bumped |
+| Service worker | Browser | app shell, same-origin assets, CDN assets | `aayatun-v104` until bumped |
 | `localStorage` | Browser | prefs, offline verse, recent reads, map | until cleared |
 
 **localStorage / sessionStorage keys**
