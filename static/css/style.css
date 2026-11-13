@@ -609,6 +609,18 @@ html.dark-theme .mushaf-row-jump td {
 	}
 }
 
+/* Merriweather (latin, weight 700 only — the site uses no other weights).
+   Vendored so the navbar title never depends on Google Fonts delivery.
+   SIL Open Font License 1.1 — https://openfontlicense.org */
+@font-face {
+	font-family: 'Merriweather';
+	font-style: normal;
+	font-weight: 700;
+	font-stretch: 100%;
+	font-display: swap;
+	src: url('/static/fonts/merriweather-700-latin.woff2') format('woff2');
+}
+
 /* Index footer → More Apps pointing popup. A compact vertical menu instead
    of a modal: two rows with an icon, title and one-line description. */
 #more-apps-popup.ui.popup {
