@@ -27,7 +27,7 @@
  * costs a few milliseconds where html2canvas cost a few hundred. Where the
  * browser cannot attach files, the text is shared (or copied) instead.
  *
- * Tafsir views are text-only.
+ * Tafsir and theme views are text-only.
  */
 (function () {
 	'use strict';
@@ -116,6 +116,12 @@
 			'\n\nRead on Aayatun: ' + o.url + '\n' + HASHTAG;
 	}
 
+	function themeText(o) {
+		return 'Theme ‘' + o.theme + '’ — ' + o.count +
+			' verses of the Quran on Aayatun.\n\nRead on Aayatun: ' + o.url +
+			'\n' + HASHTAG;
+	}
+
 	function parseVerses(raw) {
 		if (!raw) return null;
 		try {
@@ -180,6 +186,14 @@
 			payload.page = d.page;
 			payload.range = d.range || '';
 			payload.card = 'page';
+		} else if (kind === 'theme') {
+			var tcount = parseInt(d.themeCount, 10) || 0;
+			payload.title = 'Aayatun — Theme: ' + d.theme;
+			payload.text = themeText({
+				theme: d.theme, count: tcount, url: payload.url
+			});
+			payload.theme = d.theme;
+			payload.themeCount = tcount;
 		} else if (kind === 'verse') {
 			payload.title = d.shareTitle || 'Aayatun';
 			payload.text = d.shareText || '';

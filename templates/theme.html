@@ -1,0 +1,346 @@
+{% extends 'comprehensive.html' %}
+{% from 'partials/_share_macros.html' import share_button %}
+
+{% block title %}Theme: {{ theme.name }} : Aayatun - An Ayah a Day{% endblock %}
+{% block og_title %}Theme: {{ theme.name }} — Arabic with translation{% endblock %}
+{% block og_description %}All {{ '{:,}'.format(verse_count) }} verses of the Quran tagged “{{ theme.name }}” (AI-assisted), in Arabic with verse-by-verse English translation on Aayatun.{% endblock %}
+
+{% block js %}
+<script defer src="{{ url_for('static', filename='js/qcf-font.js') }}"></script>
+<script defer src="{{ url_for('static', filename='js/mushaf-zoom.js') }}"></script>
+{% endblock js %}
+
+{% block head_extra %}
+<style>
+	.theme-page-count {
+		text-align: center;
+		color: gray;
+		font-size: 90%;
+		margin: 0;
+	}
+	.theme-ref {
+		font-family: Lora;
+		font-size: 110%;
+	}
+	.theme-surah-name {
+		display: block;
+		font-family: 'Open Sans';
+		font-size: 68%;
+		color: gray;
+		margin-top: 2px;
+	}
+</style>
+{% endblock head_extra %}
+
+{% block menu %}
+
+<div class="item" style="outline: none;">
+<a class="ui icon basic huge left floated button" href="{{ url_for('theme_page', theme_id=prev) }}" title="Previous theme" aria-label="Previous theme"><i class="left arrow icon"></i></a>
+</div>
+
+<div class="ui header item" style="font-size: 160%; display: inline-block; text-align: middle;">
+<a href="javascript:void(0)" id="theme-menu-btn" role="button" aria-haspopup="true" aria-expanded="false" aria-controls="theme-menu-popup" style="font-family: Merriweather; cursor: pointer; white-space: nowrap;" title="Choose theme"><span>{{ theme.name }}</span> <i class="dropdown icon" style="font-size: .5em; vertical-align: middle; margin: 0 0 0 .35em; opacity: .65;" aria-hidden="true"></i></a>
+</div>
+
+<div class="item">
+<a class="ui icon basic right floated huge button" href="{{ url_for('theme_page', theme_id=nxt) }}" title="Next theme" aria-label="Next theme"><i class="right arrow icon"></i></a>
+</div>
+
+{% endblock %}
+
+{% block content_heading %}
+<p class="theme-page-count" id="theme-page-count" aria-live="polite"></p>
+{% endblock %}
+
+{% block options %}
+
+	<div class="mushaf-controls" style="display: flex; justify-content: flex-end; padding: 20px 0 8px; gap: 8px; flex-wrap: wrap;">
+		{% include 'partials/_mushaf_zoom.html' %}
+		<button id="tajweed-toggle-btn" type="button" title="Colored mushaf font" aria-label="Colored mushaf font" aria-pressed="false" data-tooltip="Colored mushaf font" class="circular ui basic icon button" onclick="toggleTajweedFont()">
+			<i class="icon tint" aria-hidden="true"></i>
+		</button>
+		<button id="translation-toggle-btn" type="button" title="Show translation" aria-label="Show translation" aria-pressed="true" class="circular active ui basic toggle icon button" onclick="update_translation_visibility(this)">
+			<svg class="translate-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
+		</button>
+		{{ share_button('theme', url_for('theme_page', theme_id=theme_id, _external=True),
+			ref='theme-' ~ theme_id,
+			title='Theme: ' ~ theme.name, theme=theme.name, theme_count=verse_count) }}
+	</div>
+	<p id="qcf-credit" class="qcf-credit" style="display: none;">Colored mushaf font &copy; <a href="https://qurancomplex.gov.sa/" target="_blank">King Fahd Complex</a> &middot; packaged by <a href="https://quran.com" target="_blank">quran.com</a></p>
+{% endblock %}
+
+{% block table_rows %}
+    {% for r in rows %}
+    	<tr class="mushaf-row" data-surah="{{ r.surah }}" data-verse="{{ r.verse }}" style="padding: 1%">
+    		<td class="two wide selectable" data-order="{{ '{:09d}'.format(r.surah * 1000 + r.verse) }}" onclick="showModal( {{ r.surah }} , {{ r.verse }} )" style="text-align: center; vertical-align: top; padding-top: 2%; border-radius: 3px;">
+    			<span class="theme-ref">{{ r.surah }}:{{ r.verse }}</span>
+    			<span class="theme-surah-name">{{ r.surah_name }}</span>
+    		</td>
+    		<td>
+			<div class="mushaf-ayah" data-page="{{ r.qcf_page }}">
+				<span class="mushaf-plain">{{ r.arabic }}</span><span class="mushaf-qcf">{{ r.codev2 }}</span>
+			</div>
+	    		<div class="extra-translation" style="opacity: .7;">
+		    		<p class="extra-translation-text" style="font-family: Open Sans;">
+		    			{{ r.translation }}
+		    		</p>
+    			</div>
+    		</td>
+    	</tr>
+    {% endfor %}
+{% endblock %}
+
+{% block content3 %}
+<div id="theme-menu-popup" class="ui flowing pointing popup" role="menu" aria-label="Choose a theme">
+	<div class="theme-menu">
+		{% for t in all_themes %}
+		<a class="theme-menu-item{% if t.id == theme_id %} active{% endif %}" href="{{ url_for('theme_page', theme_id=t.id) }}" role="menuitem"{% if t.id == theme_id %} aria-current="page"{% endif %}>
+			<i class="circle icon theme-menu-dot" style="color: {{ t.color }}" aria-hidden="true"></i>
+			<span class="theme-menu-name">{{ t.name }}</span>
+		</a>
+		{% endfor %}
+		<div class="theme-menu-divider" role="separator"></div>
+		<a class="theme-menu-item" href="{{ url_for('index') }}" role="menuitem">
+			<i class="left arrow icon theme-menu-arrow" aria-hidden="true"></i>
+			<span class="theme-menu-name">Home Page</span>
+		</a>
+	</div>
+</div>
+{% endblock %}
+
+{% block scriptcontent %}
+
+	// Translation visibility is tracked here (not with Fomantic's `.state()`)
+	// so the icon-only button can keep `aria-pressed` in sync. Default on,
+	// matching the surah pages.
+	var translationsOn = true;
+
+	function update_translation_visibility(e) {
+		var btn = e || document.getElementById('translation-toggle-btn');
+		translationsOn = !translationsOn;
+		$('.extra-translation').stop(true, true)[translationsOn ? 'fadeIn' : 'fadeOut'](180);
+		if (btn) {
+			btn.classList.toggle('active', translationsOn);
+			btn.setAttribute('aria-pressed', translationsOn ? 'true' : 'false');
+		}
+	}
+	window.update_translation_visibility = update_translation_visibility;
+
+	// Tajweed font toggle: shares localStorage['ayahTajweedOn'] with the verse
+	// page and the surah pages. A theme spans dozens of page fonts (~78 KB
+	// each), so each font is fetched only when a row carrying its page nears
+	// the viewport; rows stay in plain Scheherazade until their font is ready.
+	(function () {
+		var btn = document.getElementById('tajweed-toggle-btn');
+		var credit = document.getElementById('qcf-credit');
+		var rows = Array.prototype.slice.call(document.querySelectorAll('.mushaf-ayah[data-page]'));
+		var pending = {};
+		var observer = null;
+
+		function mark(on) {
+			if (btn) {
+				btn.classList.toggle('tajweed-on', on);
+				btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+			}
+			if (credit) credit.style.display = on ? '' : 'none';
+		}
+
+		function paint(page) {
+			if (!window.QcfFont || !QcfFont.isOn()) return;
+			document.querySelectorAll('.mushaf-ayah[data-page="' + page + '"]').forEach(function (el) {
+				QcfFont.apply(el, page);
+				el.classList.add('ayah-qcf');
+			});
+		}
+
+		function loadPage(page) {
+			if (!page || !window.QcfFont) return;
+			if (pending[page]) return pending[page];
+			pending[page] = QcfFont.load(page).then(function () {
+				paint(page);
+			}, function () {});
+			return pending[page];
+		}
+
+		function observe() {
+			if (!('IntersectionObserver' in window)) {
+				rows.forEach(function (el) { loadPage(parseInt(el.getAttribute('data-page'), 10)); });
+				return;
+			}
+			if (!observer) {
+				observer = new IntersectionObserver(function (entries) {
+					entries.forEach(function (en) {
+						if (!en.isIntersecting || !QcfFont.isOn()) return;
+						loadPage(parseInt(en.target.getAttribute('data-page'), 10));
+					});
+				}, { rootMargin: '800px 0px' });
+			}
+			observer.disconnect();
+			rows.forEach(function (el) { observer.observe(el); });
+		}
+
+		function show(on) {
+			mark(on);
+			if (!on) {
+				if (observer) observer.disconnect();
+				rows.forEach(function (el) {
+					el.classList.remove('ayah-qcf');
+					if (window.QcfFont) QcfFont.clear(el);
+				});
+				return;
+			}
+			if (!window.QcfFont) return;
+			rows.forEach(function (el) {
+				var page = parseInt(el.getAttribute('data-page'), 10);
+				if (page && QcfFont.isLoaded(page)) {
+					QcfFont.apply(el, page);
+					el.classList.add('ayah-qcf');
+				}
+			});
+			observe();
+		}
+
+		window.toggleTajweedFont = function () {
+			var on = !QcfFont.isOn();
+			QcfFont.setOn(on);
+			show(on);
+		};
+
+		show(window.QcfFont ? QcfFont.isOn() : false);
+	})();
+
+	// Arriving from the verse page's theme pill (/theme/<id>?v=<surah>:<verse>):
+	// find the verse's row, jump the DataTable to that page, then paint the
+	// same short-lived highlight the mushaf page uses. Nothing is stored.
+	(function () {
+		var match = /[?&]v=(\d+):(\d+)/.exec(window.location.search);
+		if (!match) return;
+		var surah = +match[1], verse = +match[2];
+		var done = false, tries = 0;
+
+		function jump() {
+			if (done) return true;
+			var $table = window.jQuery && jQuery.fn && jQuery.fn.DataTable ? jQuery('#cur_table') : null;
+			if (!$table || !$table.length || !jQuery.fn.DataTable.isDataTable('#cur_table')) return false;
+			var api = $table.DataTable();
+
+			// Position of the verse among the rows in the table's current
+			// order/filter — that is the page index DataTables navigates by.
+			// search:'applied' is required: the default 'none' returns the
+			// master (original) order, ignoring any active search.
+			function displayPos() {
+				var nodes = api.rows({ order: 'current', search: 'applied' }).nodes();
+				for (var i = 0; i < nodes.length; i++) {
+					var n = nodes[i];
+					if (+n.getAttribute('data-surah') === surah && +n.getAttribute('data-verse') === verse) {
+						return i;
+					}
+				}
+				return -1;
+			}
+
+			var pos = displayPos();
+			if (pos < 0 && api.search()) {
+				// A saved search that excludes the verse would hide the row;
+				// drop the filter and try again.
+				api.search('').draw();
+				pos = displayPos();
+			}
+			if (pos < 0) return true; // verse not in this theme; nothing to highlight
+			var per = api.page.info().length || 25;
+			api.page(Math.floor(pos / per)).draw('page');
+
+			var row = document.querySelector('#cur_table tbody tr[data-surah="' + surah + '"][data-verse="' + verse + '"]');
+			if (!row) return false;
+			done = true;
+			row.scrollIntoView({ block: 'center', behavior: 'auto' });
+			row.classList.add('mushaf-row-jump');
+			window.setTimeout(function () {
+				document.querySelectorAll('.mushaf-row-jump').forEach(function (el) {
+					el.classList.remove('mushaf-row-jump');
+				});
+			}, 4000);
+			return true;
+		}
+
+		if (jump()) return;
+		var timer = window.setInterval(function () {
+			if (jump() || ++tries > 20) window.clearInterval(timer);
+		}, 150);
+	})();
+
+	// "Showing X–Y of Z verses about <Theme>" — kept in step with the
+	// table's paging and any active search filter. The table is initialised
+	// inside jQuery's .ready() (registered from the content block), which
+	// defers it past this script's DOMContentLoaded slot, so poll for it
+	// instead of bailing out silently.
+	(function () {
+		var label = document.getElementById('theme-page-count');
+		if (!label) return;
+		var themeName = {{ theme.name|tojson }};
+		var tries = 0;
+
+		function fmt(n) {
+			try { return Number(n).toLocaleString(); } catch (e) { return String(n); }
+		}
+
+		function setup() {
+			if (!window.jQuery || !jQuery.fn || !jQuery.fn.DataTable ||
+					!jQuery.fn.DataTable.isDataTable('#cur_table')) {
+				if (++tries > 40) return;
+				window.setTimeout(setup, 150);
+				return;
+			}
+			var $table = jQuery('#cur_table');
+			var api = $table.DataTable();
+
+			function update() {
+				var info = api.page.info();
+				var shown = info.recordsDisplay;
+				var total = info.recordsTotal;
+				if (!shown) {
+					label.textContent = 'No verses match the filter — ' + fmt(total) +
+						' verses about “' + themeName + '” in total.';
+					return;
+				}
+				var txt = 'Showing ' + fmt(info.start + 1) + '–' + fmt(info.end) +
+					' of ' + fmt(shown) + ' verses about “' + themeName + '”';
+				if (shown !== total) txt += ' (filtered from ' + fmt(total) + ')';
+				label.textContent = txt;
+			}
+
+			$table.on('draw.dt', update);
+			update();
+		}
+
+		setup();
+	})();
+
+	setValues(pages.COMP_THEME, {{ theme_id }});
+
+	// Title tap → theme picker popup (Fomantic, like the More Apps menu):
+	// the twelve themes then a separator and Home Page.
+	(function () {
+		if (!window.jQuery || !jQuery.fn || !jQuery.fn.popup) return;
+		var $btn = jQuery('#theme-menu-btn');
+		$btn.popup({
+			popup: jQuery('#theme-menu-popup'),
+			on: 'click',
+			position: 'bottom center',
+			lastResort: 'bottom center',
+			exclusive: true,
+			hoverable: false,
+			distanceAway: 8,
+			movePopup: false,
+			onShow: function () { $btn.attr('aria-expanded', 'true'); },
+			onHide: function () { $btn.attr('aria-expanded', 'false'); }
+		});
+		jQuery('#theme-menu-popup').on('click', 'a', function () {
+			$btn.popup('hide');
+		});
+		window.addEventListener('pageshow', function () {
+			if (jQuery.fn.popup) $btn.popup('hide');
+		});
+	})();
+
+{% endblock %}

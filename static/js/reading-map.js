@@ -87,45 +87,31 @@
 	var versePrev = document.getElementById('reading-map-verse-prev');
 	var verseNext = document.getElementById('reading-map-verse-next');
 	var translationEl = document.getElementById('reading-map-translation');
-	var translationToggle = document.getElementById('reading-map-translation-toggle');
 	var translationCache = {};
 	var translationKey = null;
 	var apiToken = (document.querySelector('meta[name="aayatun-api-token"]') || {}).content || '';
 
-	function resetTranslationExpand()
-	{
-		if (!translationEl || !translationToggle) return;
-		translationEl.classList.remove('is-expanded');
-		translationToggle.textContent = 'more';
-		translationToggle.setAttribute('aria-expanded', 'false');
-	}
+	// Translation always keeps its two-line box (empty when nothing is
+	// selected), so selecting a square never resizes the card.
 
+	// Clear the two-line translation box (keeps its reserved height).
 	function hideTranslation()
 	{
 		translationKey = null;
-		if (!translationEl) return;
-		translationEl.hidden = true;
-		translationEl.textContent = '';
-		resetTranslationExpand();
-		if (translationToggle) translationToggle.hidden = true;
+		if (translationEl) translationEl.textContent = '';
 	}
 
-	// Show the "more" toggle only when the two-line clamp hides text.
-	function syncTranslationToggle()
+	// Cross-fade a small text swap (translation / suggestion): drop the
+	// opacity, swap the text under cover of it, fade back in.
+	function fadeSwap(el, apply)
 	{
-		if (!translationEl || !translationToggle) return;
-		if (translationEl.classList.contains('is-expanded') || translationEl.hidden) {
-			translationToggle.hidden = translationEl.hidden;
-			return;
-		}
-		translationToggle.hidden = translationEl.scrollHeight <= translationEl.clientHeight + 1;
-	}
-
-	if (translationEl && translationToggle) {
-		translationToggle.addEventListener('click', function () {
-			var expanded = translationEl.classList.toggle('is-expanded');
-			translationToggle.textContent = expanded ? 'less' : 'more';
-			translationToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+		if (!el) { apply(); return; }
+		el.classList.add('is-fading');
+		window.requestAnimationFrame(function () {
+			window.requestAnimationFrame(function () {
+				apply();
+				el.classList.remove('is-fading');
+			});
 		});
 	}
 
@@ -135,17 +121,16 @@
 		var loc = locate(i);
 		var key = loc.s.no + ':' + loc.verse;
 		translationKey = key;
-		resetTranslationExpand();
-		translationEl.hidden = false;
-		if (translationToggle) translationToggle.hidden = true;
+		// The cached-verse path below fills it in synchronously; the fetch
+		// path shows a placeholder until the response lands.
 		if (Object.prototype.hasOwnProperty.call(translationCache, key)) {
-			translationEl.textContent = translationCache[key]
-				? '“' + translationCache[key] + '”' : '';
-			translationEl.hidden = !translationCache[key];
-			if (!translationEl.hidden) syncTranslationToggle();
+			var cached = translationCache[key];
+			fadeSwap(translationEl, function () {
+				translationEl.textContent = cached ? '“' + cached + '”' : '';
+			});
 			return;
 		}
-		translationEl.textContent = '…';
+		fadeSwap(translationEl, function () { translationEl.textContent = '…'; });
 		window.fetch('/api/v1/verse/' + loc.s.no + '/' + loc.verse, {
 			headers: { 'X-Aayatun-Token': apiToken }
 		}).then(function (resp) {
@@ -155,13 +140,15 @@
 			var t = (data && data.translation) || '';
 			translationCache[key] = t;
 			if (translationKey === key) {
-				translationEl.textContent = t ? '“' + t + '”' : '';
-				translationEl.hidden = !t;
-				if (!translationEl.hidden) syncTranslationToggle();
+				fadeSwap(translationEl, function () {
+					translationEl.textContent = t ? '“' + t + '”' : '';
+				});
 			}
 		}).catch(function () {
 			translationCache[key] = '';
-			if (translationKey === key) translationEl.hidden = true;
+			if (translationKey === key) {
+				fadeSwap(translationEl, function () { translationEl.textContent = ''; });
+			}
 		});
 	}
 	var shareBtn = document.getElementById('reading-map-share');
@@ -429,18 +416,34 @@
 		withThemeSwap(function () { applyThemeMode(on); });
 	}
 
+	// Show/hide with a gentle fade (jQuery). The hidden attribute is only
+	// applied at the end of the fade-out so layoutMap() can still measure
+	// the fading element.
+	function showFade(el, show)
+	{
+		if (!el) return;
+		if (show) {
+			el.removeAttribute('hidden');
+			jQuery(el).stop(true, true).fadeIn(180);
+		} else {
+			jQuery(el).stop(true, true).fadeOut(180, function () {
+				el.setAttribute('hidden', '');
+			});
+		}
+	}
+
 	function applyThemeMode(on)
 	{
 		themesOn = !!on;
 		if (grid) grid.classList.toggle('themes-on', themesOn);
 		if (readingLegend) readingLegend.classList.toggle('themes-on', themesOn);
-		if (legendRead) legendRead.hidden = !themesOn;
-		if (legendPage) legendPage.hidden = themesOn;
-		if (legendScale) legendScale.hidden = themesOn;
+		showFade(legendRead, themesOn);
+		showFade(legendPage, !themesOn);
+		showFade(legendScale, !themesOn);
 		if (themeSwitchInput) themeSwitchInput.checked = themesOn;
 		if (themeToggle) themeToggle.classList.toggle('is-on', themesOn);
-		if (themeLegend) themeLegend.hidden = !themesOn;
-		if (themeAttribution) themeAttribution.hidden = !themesOn;
+		showFade(themeLegend, themesOn);
+		showFade(themeAttribution, themesOn);
 		// The highlight is temporary, so leaving theme mode drops it.
 		if (!themesOn) clearThemeFocus();
 		try {
@@ -466,7 +469,7 @@
 		try { saved = localStorage.getItem('aayatun_read_map_themes_v1'); } catch (e) {}
 		applyThemeMode(saved === '1');
 		if (themeToggle && themeSwitchInput) {
-			themeToggle.hidden = false;
+			showFade(themeToggle, true);
 			themeSwitchInput.addEventListener('change', function () {
 				setThemes(themeSwitchInput.checked);
 			});
@@ -732,29 +735,31 @@
 			kind = 'deep';
 		}
 
-		nextBox.textContent = '';
-		if (idx < 0) return;
+		fadeSwap(nextBox, function () {
+			nextBox.textContent = '';
+			if (idx < 0) return;
 
-		var loc = locate(idx);
-		var label = loc.s.name + ' ' + loc.s.no + ':' + loc.verse;
-		var prefix = kind === 'none' ? 'Suggested next unread: '
-			: kind === 'light' ? 'Suggested next to study: ' : 'All verses opened — revisit ';
-		var a = document.createElement('a');
-		a.href = '/' + loc.s.no + '/' + loc.verse;
-		a.textContent = label;
-		nextBox.appendChild(document.createTextNode(prefix));
-		nextBox.appendChild(a);
-		if (kind === 'light') {
-			nextBox.appendChild(document.createTextNode(' (seen on a visited page)'));
-		}
+			var loc = locate(idx);
+			var label = loc.s.name + ' ' + loc.s.no + ':' + loc.verse;
+			var prefix = kind === 'none' ? 'Suggested next unread: '
+				: kind === 'light' ? 'Suggested next to study: ' : 'All verses opened — revisit ';
+			var a = document.createElement('a');
+			a.href = '/' + loc.s.no + '/' + loc.verse;
+			a.textContent = label;
+			nextBox.appendChild(document.createTextNode(prefix));
+			nextBox.appendChild(a);
+			if (kind === 'light') {
+				nextBox.appendChild(document.createTextNode(' (seen on a visited page)'));
+			}
+		});
 	}
 
 	function renderReadout(i)
 	{
 		if (!openLink || !hint) return;
 		if (!(i >= 0) || i >= VERSE_COUNT) {
-			openLink.hidden = true;
-			hint.hidden = false;
+			showFade(openLink, false);
+			showFade(hint, true);
 			return;
 		}
 		var loc = locate(i);
@@ -782,14 +787,14 @@
 				: state === 3 ? ' — opened twice'
 				: ' — opened 3+ times')));
 		openLink.href = '/' + loc.s.no + '/' + loc.verse;
-		openLink.hidden = false;
-		hint.hidden = true;
+		showFade(openLink, true);
+		showFade(hint, false);
 	}
 
 	function syncVerseNav()
 	{
 		var has = selected >= 0;
-		if (verseNav) verseNav.hidden = !has;
+		if (verseNav) showFade(verseNav, has);
 		if (has && versePrev && verseNext) {
 			versePrev.disabled = selected <= 0;
 			verseNext.disabled = selected >= VERSE_COUNT - 1;

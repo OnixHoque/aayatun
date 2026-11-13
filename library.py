@@ -1210,6 +1210,60 @@ def get_surah_themes(surah):
 	n = _surah_verse_count(surah)
 	return {'themes': data['themes'], 'verses': data['verses'][start:start + n]}
 
+
+@lru_cache(maxsize=12)
+def get_theme_page(theme_id):
+	"""Everything the /theme/<id> page needs for one theme.
+
+	Rows are in canonical mushaf order with Arabic text, English translation
+	and QCF page/glyphs, ready to be rendered as a flat table (no group header
+	rows, so DataTables stays valid). Also returns the prev/next theme ids
+	(rotated over the 12 themes). None when the theme database is missing or
+	the id is out of range, so the route can 404."""
+	if not isinstance(theme_id, int) or theme_id < 0 or theme_id > 11:
+		return None
+	data = get_ayah_themes()
+	if not data['verses']:
+		return None
+	themes = data['themes']
+	if theme_id >= len(themes):
+		return None
+	starts = surah_starts()
+	_qcf_load_cache()
+	rows = []
+	for surah in range(1, 115):
+		count = _surah_verse_count(surah)
+		base = starts[surah - 1]
+		flat = data['verses'][base:base + count]
+		if theme_id not in flat:
+			continue
+		name, arabic = get_full_arabic(surah)
+		_, translation = get_full_tranlation(surah)
+		short = name.split(' (')[0].strip()
+		ar = [t for _, t in arabic]
+		tr = [t for _, t in translation]
+		for verse in range(1, count + 1):
+			if flat[verse - 1] != theme_id:
+				continue
+			q = qcf_mem.get((surah, verse)) or (None, '')
+			rows.append({
+				'surah': surah,
+				'verse': verse,
+				'surah_name': short,
+				'arabic': ar[verse - 1] if verse - 1 < len(ar) else '',
+				'translation': tr[verse - 1] if verse - 1 < len(tr) else '',
+				'qcf_page': q[0] or '',
+				'codev2': q[1],
+			})
+	return {
+		'theme': themes[theme_id],
+		'all_themes': tuple(themes),
+		'count': len(rows),
+		'rows': tuple(rows),
+		'prev': (theme_id - 1) % len(themes),
+		'next': (theme_id + 1) % len(themes),
+	}
+
 # The text of every verse of a surah, for the swipe carousel: the client asks
 # once and then moves between verses without any further round trip. Kept
 # compact (arrays, no repeated keys) since Al-Baqarah alone is ~200 KB.

@@ -44,10 +44,17 @@
 
     #whole-surah-row {
         display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        margin-top: 8px;
+    }
+
+    .whole-surah-line {
+        display: flex;
         flex-wrap: wrap;
         justify-content: center;
         gap: 4px;
-        margin-top: 8px;
     }
 
     /* Jumping to a page ignores the surah picker, so the whole-surah row is
@@ -178,6 +185,11 @@
 
 {% block content2 %}
 	<div style="font-family: Open Sans;font-size: 95%;">
+		<style>
+			/* App-like: no text selection, except in form controls. */
+			body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+			body input, body textarea, body select, body [contenteditable="true"] { -webkit-user-select: text; user-select: text; }
+		</style>
 		<select class="ui search fluid dropdown" id="surah">
 		{% for s in surahs %}
 		  <option value="{{ s['surah_no'] }}" verse_count="{{ s['verse_count'] }}">{{ s['surah'] }}</option>
@@ -187,11 +199,15 @@
 			<div class="column" style="display: flex; flex-direction: column; justify-content: center; padding-top: 0;">
 				<div class="home-section-label" style="font-family: 'Open Sans';">Read the whole surah</div>
 				<div id="whole-surah-row">
-				  <button name="menuitem" class="circular ui tiny basic icon button" style="font-family: 'Open Sans'; font-size: 78%;">Arabic</button>
-				  <button name="menuitem" class="circular ui tiny basic icon button" style="font-family: 'Open Sans'; font-size: 78%;">Translation</button>
-				  <button name="menuitem" class="circular ui tiny basic icon button" style="font-family: 'Open Sans'; font-size: 78%;">Tafsir (Bn)</button>
-				  <button name="menuitem" class="circular ui tiny basic icon button" style="font-family: 'Open Sans'; font-size: 78%;">Tafsir (En)</button>
-				  <button id="btn-whole-mushaf" type="button" class="circular ui tiny basic icon button" style="font-family: 'Open Sans'; font-size: 78%;">Mushaf</button>
+				  <div class="whole-surah-line">
+				    <button name="menuitem" class="circular ui tiny basic icon button" style="font-family: 'Open Sans'; font-size: 78%;">Arabic</button>
+				    <button name="menuitem" class="circular ui tiny basic icon button" style="font-family: 'Open Sans'; font-size: 78%;">Translation</button>
+				    <button id="btn-whole-mushaf" type="button" class="circular ui tiny basic icon button" style="font-family: 'Open Sans'; font-size: 78%;">Mushaf</button>
+				  </div>
+				  <div class="whole-surah-line">
+				    <button name="menuitem" class="circular ui tiny basic icon button" style="font-family: 'Open Sans'; font-size: 78%;">Tafsir (English)</button>
+				    <button name="menuitem" class="circular ui tiny basic icon button" style="font-family: 'Open Sans'; font-size: 78%;">Tafsir (Bengali)</button>
+				  </div>
 				</div>
 			</div>
 
@@ -261,8 +277,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
 	let target_location = [	"{{ url_for('arabic_fulltext', surah=-1) }}",
 	"{{ url_for('translation', surah=-1) }}",
-	"{{ url_for('bn_tafsir', surah=-1) }}",
 	"{{ url_for('en_tafsir', surah=-1) }}",
+	"{{ url_for('bn_tafsir', surah=-1) }}",
 	"/search"];
 	// console.log(target_location[0]);
 	let options = document.querySelectorAll("[name='menuitem']");
@@ -649,6 +665,12 @@ document.addEventListener('DOMContentLoaded', function () {
 			case (pages.COMP_MUSHAF_PAGE):
 			{
 				let url = "{{ url_for('mushaf_page', page_no='-1') }}".replace("-1", location_);
+				page_title.href = url;
+				break;
+			}
+			case (pages.COMP_THEME):
+			{
+				let url = "{{ url_for('theme_page', theme_id='-1') }}".replace("-1", location_);
 				page_title.href = url;
 				break;
 			}

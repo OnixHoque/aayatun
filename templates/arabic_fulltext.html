@@ -57,7 +57,7 @@
 	function update_translation_visibility(e) {
 		var btn = e || document.getElementById('translation-toggle-btn');
 		translationsOn = !translationsOn;
-		$('.extra-translation').toggle(translationsOn);
+		$('.extra-translation').stop(true, true)[translationsOn ? 'fadeIn' : 'fadeOut'](180);
 		if (btn) {
 			btn.classList.toggle('active', translationsOn);
 			btn.setAttribute('aria-pressed', translationsOn ? 'true' : 'false');

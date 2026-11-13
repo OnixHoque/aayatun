@@ -122,9 +122,12 @@ html.dark-theme .ayah-tajweed .tj-g { color: #FFA352; }  /* ghunnah */
 {
 	display: none;
 	margin: 12px 0 18px;
+	transition: opacity .18s ease;
 }
 
-#tajweed-legend.show { display: block; }
+#tajweed-legend.is-fading {
+	opacity: 0;
+}
 
 #tajweed-legend-box {
 	box-sizing: border-box;
@@ -372,13 +375,29 @@ html.dark-theme .mushaf-zoom-sep {
 	vertical-align: middle;
 }
 
-/* Fomantic's `.ui.table td` rule outranks a bare class selector, so the
-   verse number kept inheriting the table's left alignment. */
+/* Small muted descriptor line under the heading on the reading views
+   (what the page shows, e.g. "English Translation of Surah X"). */
+.page-subtitle {
+	text-align: center;
+	color: gray;
+	font-size: 90%;
+	line-height: 1.35;
+	margin: 14px 0 0;
+}
+
+/* The mushaf page's subtitle acts as the secondary heading: larger type
+   and breathing room before the surah list below it. */
+.page-subtitle-lg {
+	font-size: 1.15rem;
+	line-height: 1.4;
+	margin: 0 0 16px;
+}
+
 .ui.table td.mushaf-verse-no {
 	cursor: pointer;
 	color: rgba(0, 0, 0, .55);
 	font-family: Lora;
-	font-size: 90%;
+	font-size: 110%;
 	text-align: center;
 	vertical-align: top;
 	padding-top: 2%;
@@ -674,4 +693,104 @@ html.dark-theme .more-apps-item:active {
 
 html.dark-theme .more-apps-icon {
 	color: #9CC4FF;
+}
+
+/* Theme page title → theme picker pointing popup. A compact vertical menu
+   with the twelve themes (current one marked), a separator and Home Page. */
+#theme-menu-popup.ui.popup {
+	padding: 6px;
+	border-radius: 12px;
+	max-width: calc(100vw - 24px);
+}
+
+.theme-menu {
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+	min-width: 220px;
+}
+
+.theme-menu-item {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 6px 12px;
+	border-radius: 8px;
+	color: rgba(0, 0, 0, .87);
+	text-decoration: none;
+	font-family: 'Open Sans';
+	font-size: 90%;
+	line-height: 1.35;
+}
+
+.theme-menu-item:hover,
+.theme-menu-item:focus-visible {
+	background: #eef4fc;
+	color: rgba(0, 0, 0, .87);
+}
+
+.theme-menu-item:active {
+	background: #e3edfa;
+}
+
+.theme-menu-item.active {
+	background: #eef4fc;
+	font-weight: 700;
+}
+
+.theme-menu-dot {
+	flex: none;
+	width: 1em;
+	margin: 0;
+	text-align: center;
+}
+
+.theme-menu-arrow {
+	flex: none;
+	width: 1em;
+	margin: 0;
+	text-align: center;
+	color: #4183C4;
+}
+
+.theme-menu-divider {
+	height: 1px;
+	background: rgba(0, 0, 0, .12);
+	margin: 5px 6px;
+}
+
+html.dark-theme #theme-menu-popup.ui.popup {
+	background: rgb(44, 44, 44);
+	color: rgba(255, 255, 255, .87);
+	border-color: rgba(80, 80, 80, .8);
+	box-shadow: 0 8px 24px rgba(0, 0, 0, .45);
+}
+
+html.dark-theme #theme-menu-popup.ui.popup:before {
+	background: rgb(44, 44, 44) !important;
+	border-color: rgba(80, 80, 80, .8) !important;
+	box-shadow: 1px 1px 0 0 rgba(80, 80, 80, .8) !important;
+}
+
+html.dark-theme .theme-menu-item {
+	color: rgba(255, 255, 255, .87);
+}
+
+html.dark-theme .theme-menu-item:hover,
+html.dark-theme .theme-menu-item:focus-visible {
+	background: rgb(58, 58, 58);
+	color: #fff;
+}
+
+html.dark-theme .theme-menu-item:active,
+html.dark-theme .theme-menu-item.active {
+	background: rgb(58, 58, 58);
+}
+
+html.dark-theme .theme-menu-arrow {
+	color: #9CC4FF;
+}
+
+html.dark-theme .theme-menu-divider {
+	background: rgba(255, 255, 255, .16);
 }

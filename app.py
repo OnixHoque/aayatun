@@ -260,6 +260,7 @@ def translation(surah):
 	share_card = [[surah, v, ar, tr] for (v, ar), (_, tr) in zip(arabic, b)][:5]
 	return render_template('translation.html', surah_name=a, surah_no=surah, verses=b,
 		share_card=share_card, share_more=len(b) > 5, prev=prev_, nxt=next_,
+		page_subtitle='English Translation of Surah %d' % surah,
 		surah_overview=lib.get_surah_overview(surah))
 
 @app.route('/tafsir/bn/<int:surah>', strict_slashes=False)
@@ -268,6 +269,7 @@ def bn_tafsir(surah):
 	prev_ = surah - 1 if surah != 1 else 114
 	next_ = surah + 1 if surah != 114 else 1
 	return render_template('bn_tafsir.html', surah_name=a, surah_no=surah, verses=b, prev=prev_, nxt=next_,
+		page_subtitle='Bangla Tafsir of Surah %d' % surah,
 		surah_overview=lib.get_surah_overview(surah))
 
 @app.route('/tafsir/en/<int:surah>', strict_slashes=False)
@@ -276,6 +278,7 @@ def en_tafsir(surah):
 	prev_ = surah - 1 if surah != 1 else 114
 	next_ = surah + 1 if surah != 114 else 1
 	return render_template('en_tafsir.html', surah_name=a, surah_no=surah, verses=b, prev=prev_, nxt=next_,
+		page_subtitle='Tafsir Ibn Kathir of Surah %d' % surah,
 		surah_overview=lib.get_surah_overview(surah))
 
 @app.route('/mushaf/<int:surah>', strict_slashes=False)
@@ -288,6 +291,7 @@ def arabic_fulltext(surah):
 	return render_template('arabic_fulltext.html', surah_name=a, surah_no=surah, verses=b,
 		translation=list(d), qcf=lib.get_surah_qcf(surah), share_card=share_card,
 		share_more=len(b) > 5, prev=prev_, nxt=next_, mushaf='1',
+		page_subtitle='Arabic Text of Surah %d' % surah,
 		surah_overview=lib.get_surah_overview(surah))
 
 @app.route('/page/<int:page_no>', strict_slashes=False)
@@ -321,6 +325,22 @@ def mushaf_page(page_no):
 	# The page is static and the swipe handler prefetches its two neighbours,
 	# so a short private cache makes the next/previous turn instant instead of
 	# waiting for another server round trip.
+	resp.headers['Cache-Control'] = 'private, max-age=300'
+	return resp
+
+@app.route('/theme/<int:theme_id>', strict_slashes=False)
+def theme_page(theme_id):
+	# Every verse tagged with one of the 12 AI-assisted themes, as a flat
+	# table like the reading views. Prev/next rotate through the themes.
+	data = lib.get_theme_page(theme_id)
+	if not data:
+		abort(404)
+	resp = make_response(render_template('theme.html',
+		theme=data['theme'], theme_id=theme_id, rows=data['rows'],
+		verse_count=data['count'], all_themes=data['all_themes'],
+		prev=data['prev'], nxt=data['next']))
+	# The content is static (the theme tagging is fixed), so a short private
+	# cache makes the theme prev/next arrows instant.
 	resp.headers['Cache-Control'] = 'private, max-age=300'
 	return resp
 

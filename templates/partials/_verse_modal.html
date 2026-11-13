@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		var frame = document.getElementById('verse_details_modal_content');
 		if (!frame) return;
 		try { dressFrame(frame); } catch (e) {}
-		$("#loadingdetails").hide();
+		$("#loadingdetails").fadeOut(150);
 		$("#verse_details_modal_content").fadeIn();
 	}
 

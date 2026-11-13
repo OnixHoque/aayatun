@@ -13,6 +13,17 @@
 
 {% block head_extra %}
 <style>
+    /* App-like: no text selection, except in form controls. */
+    body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+    body input, body textarea, body select, body [contenteditable="true"] { -webkit-user-select: text; user-select: text; }
+
+    [hidden] { display: none !important; }
+    #reading-map-verse-nav, #reading-map-open, #reading-map-hint,
+    .reading-map-legend-item, .rg-scale, #reading-map-themes,
+    #reading-map-theme-legend, .reading-map-theme-attribution {
+        transition: opacity .18s ease;
+    }
+
     .reading-map-cards {
         display: grid;
         grid-template-columns: minmax(0, 1fr);
@@ -37,6 +48,13 @@
         border-radius: 8px;
         background: #fff;
         box-shadow: 0 1px 2px rgba(0, 0, 0, .035);
+    }
+
+    /* The lead tile never changes height: every row keeps its line count
+       (readout 1, translation 2, suggestion 2) in both the empty and the
+       populated state. Any residual overflow is clipped, not grown. */
+    .reading-map-card-lead {
+        overflow: hidden;
     }
 
     .reading-map-card-label {
@@ -98,52 +116,35 @@
         min-height: 1.4em;
         font-size: 100%;
         line-height: 1.4;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     /* The selected verse's translation, shown above the suggestion:
-       a two-line glance, ellipsised and muted. */
+       a two-line glance, ellipsised and muted. The element always keeps
+       its two-line box so selecting a verse never resizes the card. */
     .reading-map-translation {
         margin: 0;
         font-size: 82%;
         font-style: italic;
         line-height: 1.4;
         opacity: .75;
+        min-height: 2.3em;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
 
-    .reading-map-translation.is-expanded {
-        display: block;
-        -webkit-line-clamp: unset;
-        overflow: visible;
+    .reading-map-translation,
+    #reading-map-next {
+        transition: opacity .16s ease;
     }
 
-    .reading-map-translation[hidden],
-    .reading-map-translation-toggle[hidden] {
-        display: none !important;
-    }
-
-    /* Expander shown only when the clamped two lines hide text. */
-    .reading-map-translation-toggle {
-        flex: none;
-        align-self: flex-start;
-        border: 0;
-        background: none;
-        padding: 0 2px 0 0;
-        margin: -3px 0 0;
-        font-family: inherit;
-        font-size: 74%;
-        line-height: 1.4;
-        color: #2185d0;
-        cursor: pointer;
-    }
-
-    .reading-map-translation-toggle:hover,
-    .reading-map-translation-toggle:focus-visible {
-        text-decoration: underline;
-        outline: none;
+    .reading-map-translation.is-fading,
+    #reading-map-next.is-fading {
+        opacity: 0 !important;
     }
 
     #reading-map-hint {
@@ -173,6 +174,11 @@
     .reading-map-next {
         font-size: 95%;
         line-height: 1.4;
+        min-height: 2.66em;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
     }
 
     .reading-map-next a {
@@ -979,10 +985,6 @@
         color: #ffb3b3;
     }
 
-    html.dark-theme .reading-map-translation-toggle {
-        color: #8cc8ff;
-    }
-
     html.dark-theme .reading-map-switch-track {
         background: rgba(255, 255, 255, .25);
     }
@@ -1048,8 +1050,7 @@
 						<span id="reading-map-hint">Hover or tap a square to see the verse.</span>
 						<a id="reading-map-open" href="#" hidden></a>
 					</div>
-					<p class="reading-map-translation" id="reading-map-translation" hidden></p>
-					<button type="button" class="reading-map-translation-toggle" id="reading-map-translation-toggle" aria-expanded="false" hidden>more</button>
+					<p class="reading-map-translation" id="reading-map-translation" aria-live="polite"></p>
 					<div id="reading-map-next" class="reading-map-next"></div>
 				</div>
 				<div class="reading-map-card reading-map-stats">

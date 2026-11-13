@@ -59,6 +59,7 @@
 
 	<div class="comprehensive-div mushaf-page" style="margin: 0px 10px">
 	<br>
+	<p class="page-subtitle page-subtitle-lg">Madani Mushaf Page {{ page_no }}</p>
 	<p class="mushaf-page-surahs">{% for g in groups %}{{ g.name }} {% if g.rows[0].verse == g.rows[-1].verse %}{{ g.rows[0].verse }}{% else %}{{ g.rows[0].verse }}-{{ g.rows[-1].verse }}{% endif %}{% if not loop.last %} &middot; {% endif %}{% endfor %}</p>
 
 	{% if overview %}
@@ -444,7 +445,7 @@
 
 	function applyTranslation(on)
 	{
-		$('.extra-translation').toggle(on);
+		$('.extra-translation').stop(true, true)[on ? 'fadeIn' : 'fadeOut'](180);
 		var btn = document.getElementById('translation-toggle-btn');
 		if (btn) {
 			btn.classList.toggle('active', on);
@@ -559,7 +560,10 @@
 		window.requestAnimationFrame(function () {
 			window.requestAnimationFrame(function () {
 				fitMushafLayout();
-				if (layoutView) layoutView.style.visibility = 'visible';
+				if (layoutView) {
+					layoutView.style.visibility = 'visible';
+					layoutView.style.opacity = '1';
+				}
 			});
 		});
 	}
@@ -618,24 +622,49 @@
 			layoutBtn.classList.toggle('active', layoutOn);
 			layoutBtn.setAttribute('aria-pressed', layoutOn ? 'true' : 'false');
 		}
-		if (layoutView) {
-			// Stay invisible until the glyph font is painted and fitted, so
-			// the fallback face never flashes PUA boxes.
-			if (layoutOn) layoutView.style.visibility = 'hidden';
-			layoutView.style.display = layoutOn ? 'block' : 'none';
+		var FADE = 170;
+		// Reveal the printed lines: they stay invisible until the glyph font
+		// is painted and fitted; fitAndRevealLayout() then eases the opacity.
+		var showLines = function () {
+			if (!layoutView) return;
+			layoutView.style.opacity = '0';
+			layoutView.style.transition = 'opacity .18s ease';
+			layoutView.style.visibility = 'hidden';
+			layoutView.style.display = 'block';
+		};
+		var paint = function () {
+			// The tajweed button stays available here: turning it off swaps the
+			// lines to plain Uthmani text without leaving the line layout.
+			if (layoutTajweedBtn) layoutTajweedBtn.style.display = '';
+			if (mushafTajweedOn && window.QcfFont && QcfFont.supports()) {
+				if (QcfFont.isLoaded(layoutPage)) paintMushafLayout();
+				else QcfFont.load(layoutPage).then(paintMushafLayout, paintLayoutPlain);
+			} else {
+				// Normal font (or no colored-font support): plain lines, still fitted.
+				paintMushafLayout();
+			}
+		};
+		if (layoutOn) {
+			if (layoutTranslationBtn) jQuery(layoutTranslationBtn).stop(true, true).fadeOut(FADE);
+			if (layoutTable) jQuery(layoutTable).stop(true, true).fadeOut(FADE, function () {
+				layoutTable.style.display = 'none';
+				showLines();
+				paint();
+			});
+			else { showLines(); paint(); }
+			return;
 		}
-		if (layoutTable) layoutTable.style.display = layoutOn ? 'none' : '';
-		// The tajweed button stays available here: turning it off swaps the
-		// lines to plain Uthmani text without leaving the line layout.
-		if (layoutTajweedBtn) layoutTajweedBtn.style.display = '';
-		if (layoutTranslationBtn) layoutTranslationBtn.style.display = layoutOn ? 'none' : '';
-		if (!layoutOn) return;
-		if (mushafTajweedOn && window.QcfFont && QcfFont.supports()) {
-			if (QcfFont.isLoaded(layoutPage)) paintMushafLayout();
-			else QcfFont.load(layoutPage).then(paintMushafLayout, paintLayoutPlain);
-		} else {
-			// Normal font (or no colored-font support): plain lines, still fitted.
-			paintMushafLayout();
+		if (layoutTranslationBtn) jQuery(layoutTranslationBtn).stop(true, true).fadeIn(FADE);
+		if (layoutView) jQuery(layoutView).stop(true, true).fadeOut(FADE, function () {
+			layoutView.style.display = 'none';
+			if (layoutTable) {
+				layoutTable.style.display = '';
+				jQuery(layoutTable).stop(true, true).fadeIn(FADE);
+			}
+		});
+		else if (layoutTable) {
+			layoutTable.style.display = '';
+			jQuery(layoutTable).stop(true, true).fadeIn(FADE);
 		}
 	}
 

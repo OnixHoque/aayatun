@@ -36,7 +36,10 @@
 
 	<div class="comprehensive-div" style="margin: 0px 10px">
 	<br>
-    <a href="{{ url_for('details', surah=surah_no, verse=1) }}"><h4 style="text-align: center; font-size: 150%; font-family: 'Merriweather', serif;"> {{ surah_name }} </h4></a> 
+    {% block content_heading %}
+    <a href="{{ url_for('details', surah=surah_no, verse=1) }}"><h4 style="text-align: center; font-size: 150%; font-family: 'Merriweather', serif;"> {{ surah_name }} </h4></a>
+    {% if page_subtitle %}<p class="page-subtitle">{{ page_subtitle }}</p>{% endif %}
+    {% endblock %}
     <br>
 
     <br>
@@ -58,11 +61,12 @@
     		
     	</thead>
     <tbody>
-    
+
+    {% block table_rows %}
     {% for x in verses %}
     	<tr style="padding: 1%"> 
     		<!-- <td class="two wide selectable" onclick="window.location.href='{{ url_for('details', surah=surah_no, verse=x[0]) }}';" style="font-family: Lora; font-size: 100%; text-align: center; vertical-align: top; padding-top: 2%; border-radius: 3px;"> {{ x[0] }} </td>  -->
-    		<td class="two wide selectable" onclick="showModal( {{ surah_no }} , {{ x[0] }} )" style="font-family: Lora; font-size: 100%; text-align: center; vertical-align: top; padding-top: 2%; border-radius: 3px;"> {{ x[0] }} </td> 
+    		<td class="two wide selectable" onclick="showModal( {{ surah_no }} , {{ x[0] }} )" style="font-family: Lora; font-size: 110%; text-align: center; vertical-align: top; padding-top: 2%; border-radius: 3px;"> {{ x[0] }} </td>
     		<td>
 	    		{% if mushaf %}
 	    		<div class="mushaf-ayah" data-page="{{ qcf[loop.index0][0] or '' }}">
@@ -75,7 +79,7 @@
 	    		{% endif %}
 
 	    		{% if mushaf %}
-	    			<div class="extra-translation" style="transition: display 1s ease-out; opacity: .7;">
+	    			<div class="extra-translation" style="opacity: .7;">
 		    			<!-- <br> -->
 		    			<p class="extra-translation-text" style="font-family: Open Sans;"> 
 		    				{{ translation[loop.index0][1] }} 
@@ -85,6 +89,7 @@
 	    	</td> 
     	</tr>
     {% endfor %}
+    {% endblock %}
 	</tbody>
 	</table>
 	<br>

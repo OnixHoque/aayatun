@@ -31,6 +31,15 @@
 		line-height: 1.2;
 		white-space: nowrap;
 		z-index: 1;
+		cursor: pointer;
+		text-decoration: none;
+	}
+	.theme-pill:hover {
+		border-color: #4183C4;
+	}
+	.theme-pill:focus-visible {
+		outline: 2px solid #4183C4;
+		outline-offset: 2px;
 	}
 	.theme-pill-dot {
 		width: 9px;
@@ -42,6 +51,9 @@
 	html.dark-theme .theme-pill {
 		border-color: rgba(255, 255, 255, .22);
 		background: rgba(255, 255, 255, .06);
+	}
+	html.dark-theme .theme-pill:hover {
+		border-color: #9CC4FF;
 	}
 </style>
 {% endblock head_extra %}
@@ -237,7 +249,7 @@
 	    		<button id="loop-btn" class="circular ui basic toggle icon button" style="vertical-align: middle;" onclick="document.querySelector('audio').loop = (document.querySelector('audio').loop ? false : true);">
 	    		<i class="icon undo" ></i>
 	    		</button>
-	    		<button id="close-btn" class="circular ui basic icon button" style="vertical-align: middle;" onclick="$('#mainaudio').trigger('pause'); $('#audio-box').hide(); $('#control-btns').fadeIn();">
+	    		<button id="close-btn" class="circular ui basic icon button" style="vertical-align: middle;" onclick="$('#mainaudio').trigger('pause'); $('#audio-box').fadeOut(180); $('#control-btns').fadeIn(180);">
 	    		<i class="icon close" ></i>
 	    		</button>
 			</div>
@@ -247,10 +259,10 @@
 			{% if surah_themes and surah_themes.verses %}
 			{% set _tid = surah_themes.verses[details['verse'] - 1] %}
 			{% set _theme = surah_themes.themes[_tid] %}
-			<span id="theme-pill" class="theme-pill" role="status" aria-live="polite" title="Theme (AI-assisted, Aayatun): {{ _theme['name'] }}">
+			<a id="theme-pill" class="theme-pill" role="status" aria-live="polite" href="{{ url_for('theme_page', theme_id=_tid) }}?v={{ details['surah'] }}:{{ details['verse'] }}" title="All “{{ _theme['name'] }}” verses (AI-assisted)" onclick="if (window.self !== window.top) { if (window.AayatunNav) { window.AayatunNav.go(this.href); } else { window.parent.location.href = this.href; } return false; }">
 				<i class="theme-pill-dot" aria-hidden="true" style="background: {{ _theme['color'] }}"></i>
 				<span id="theme-pill-name">{{ _theme['name'] }}</span>
-			</span>
+			</a>
 			<script>
 			// Keep the pill in step with the swipe carousel (no page reload).
 			(function () {
@@ -267,7 +279,10 @@
 					if (!theme) return;
 					nameEl.textContent = theme.name;
 					dotEl.style.background = theme.color;
-					pill.title = 'Theme (AI-assisted, Aayatun): ' + theme.name;
+					pill.title = 'All “' + theme.name + '” verses (AI-assisted)';
+					if (d.surah && d.verse) {
+						pill.href = '/theme/' + tid + '?v=' + d.surah + ':' + d.verse;
+					}
 				});
 			})();
 			</script>
@@ -288,11 +303,11 @@
 					<button id="surah-view-en" data-loading style="font-family: 'Open Sans' font-size: 90%; " class="circular ui tiny basic icon button" onclick="window.parent.location.href ='{{ url_for('en_tafsir', surah=details['surah']) }}'">
 						Tafsir (En)
 					</button>
-				<i class="icon close" style="cursor: pointer;" onclick="$('#more-controls').hide(); $('#more-btn').show(); $('#play-btn').show(); $('#share-btn').show(); $('#tajweed-toggle-btn').show(); $('#mushaf-jump-btn').show(); $('#theme-pill').show()"></i>
+				<i class="icon close" style="cursor: pointer;" onclick="$('#more-controls').fadeOut(180); ['#more-btn','#play-btn','#share-btn','#tajweed-toggle-btn','#mushaf-jump-btn','#theme-pill'].forEach(function(id){ $(id).fadeIn(180); })"></i>
 				</span>
 
     		</span>
-			<button id="more-btn" data-tooltip="Comprehensive Reading" class="circular ui basic icon button" onclick="$('#more-btn').hide(); $('#play-btn').hide(); $('#share-btn').hide(); $('#tajweed-toggle-btn').hide(); $('#mushaf-jump-btn').hide(); $('#theme-pill').hide(); $('#more-controls').fadeIn();">
+			<button id="more-btn" data-tooltip="Comprehensive Reading" class="circular ui basic icon button" onclick="['#more-btn','#play-btn','#share-btn','#tajweed-toggle-btn','#mushaf-jump-btn','#theme-pill'].forEach(function(id){ $(id).fadeOut(180); }); $('#more-controls').fadeIn(180);">
 			  <i class="icon ellipsis horizontal"></i>
 			</button>
 	    	<button id="share-btn" data-tooltip="Share this ayah" class="circular ui basic icon button" onclick="shareVerse()">
@@ -315,7 +330,7 @@
 	    	<button id="tajweed-toggle-btn" data-tooltip="Tajweed colors" class="circular ui basic icon button" onclick="toggleTajweed()">
 			  <i class="icon tint"></i>
 		</button>
-    	<button id="play-btn" class="circular ui basic icon button" onclick="$('#audio-box').fadeIn(); $('#control-btns').hide(); $('#mainaudio').trigger('play');">
+    	<button id="play-btn" class="circular ui basic icon button" onclick="$('#audio-box').fadeIn(180); $('#control-btns').fadeOut(180); $('#mainaudio').trigger('play');">
 			  <i class="icon play"></i>
 		</button>
 		</div>
@@ -351,7 +366,25 @@
     	// shared with the mushaf page and the surah arabic view.
     	function isOn() { return QcfFont.isOn(); }
     	function markBtn(on) { if (btn) btn.classList.toggle('tajweed-on', on); }
-    	function markStrip(on) { if (strip) strip.classList.toggle('show', on); }
+    	var stripTimer = null;
+    	function markStrip(on)
+    	{
+    		if (!strip) return;
+    		if (stripTimer) { window.clearTimeout(stripTimer); stripTimer = null; }
+    		if (on) {
+    			strip.style.display = 'block';
+    			strip.classList.add('is-fading');
+    			window.requestAnimationFrame(function () {
+    				window.requestAnimationFrame(function () { strip.classList.remove('is-fading'); });
+    			});
+    		} else {
+    			strip.classList.add('is-fading');
+    			stripTimer = window.setTimeout(function () {
+    				stripTimer = null;
+    				strip.style.display = 'none';
+    			}, 180);
+    		}
+    	}
     	function markCredit(show)
     	{
     		var c = document.getElementById('tajweed-markup-credit');
