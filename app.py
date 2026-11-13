@@ -398,7 +398,7 @@ def theme_page(theme_id):
 def prayer_time():
 	return send_from_directory(".", "prayer-time.html")
 
-# The daily counter is a standalone page like prayer-time.html, so it has to
+# The habit tracker (daily counter) is a standalone page like prayer-time.html, so it has to
 # stay at the repo root and is served verbatim.
 @app.route("/daily-counter")
 def daily_counter():

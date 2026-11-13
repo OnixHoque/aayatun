@@ -14,22 +14,28 @@
 <script>window.AAYATUN_SURAH_THEMES = {{ surah_themes|tojson }};</script>
 <script>window.AAYATUN_QUIZ_BANK = "{{ quiz_bank }}";</script>
 <style>
+	#control-btns {
+		position: relative;
+		/* Legend-style pill straddles this hairline so it never sits on the buttons. */
+		border-top: 1px solid rgba(34, 36, 38, .18);
+		margin-top: 22px;
+	}
 	.theme-pill {
 		position: absolute;
-		left: 2px;
-		top: 50%;
+		left: 8px;
+		top: 0;
 		transform: translateY(-50%);
 		display: inline-flex;
 		align-items: center;
-		gap: 6px;
-		padding: 5px 10px;
+		gap: 5px;
+		padding: 2px 8px;
 		border: 1px solid rgba(34, 36, 38, .18);
 		border-radius: 999px;
-		background: rgba(34, 36, 38, .04);
+		background: #fff;
 		color: inherit;
-		font-size: 76%;
+		font-size: 64%;
 		font-family: 'Open Sans';
-		line-height: 1.2;
+		line-height: 1.15;
 		white-space: nowrap;
 		z-index: 1;
 		cursor: pointer;
@@ -43,15 +49,18 @@
 		outline-offset: 2px;
 	}
 	.theme-pill-dot {
-		width: 9px;
-		height: 9px;
+		width: 7px;
+		height: 7px;
 		border-radius: 50%;
 		flex: 0 0 auto;
 		box-shadow: 0 0 0 1px rgba(0, 0, 0, .18);
 	}
+	html.dark-theme #control-btns {
+		border-top-color: rgba(255, 255, 255, .16);
+	}
 	html.dark-theme .theme-pill {
 		border-color: rgba(255, 255, 255, .22);
-		background: rgba(255, 255, 255, .06);
+		background: rgb(27, 28, 29);
 	}
 	html.dark-theme .theme-pill:hover {
 		border-color: #9CC4FF;
