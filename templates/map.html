@@ -52,9 +52,9 @@
 
     /* The lead tile never changes height: every row keeps its line count
        (readout 1, translation 2, suggestion 2) in both the empty and the
-       populated state. Any residual overflow is clipped, not grown. */
+       populated state. Row content is clamped below; the card only grows
+       when the user explicitly expands the translation. */
     .reading-map-card-lead {
-        overflow: hidden;
     }
 
     .reading-map-card-label {
@@ -137,6 +137,13 @@
         overflow: hidden;
     }
 
+    .reading-map-translation.is-expanded {
+        display: block;
+        -webkit-line-clamp: unset;
+        overflow: visible;
+        min-height: 1.4em;
+    }
+
     .reading-map-translation,
     #reading-map-next {
         transition: opacity .16s ease;
@@ -145,6 +152,27 @@
     .reading-map-translation.is-fading,
     #reading-map-next.is-fading {
         opacity: 0 !important;
+    }
+
+    /* Expander shown only when the two-line clamp hides text. */
+    .reading-map-translation-toggle {
+        flex: none;
+        align-self: flex-start;
+        border: 0;
+        background: none;
+        padding: 0 2px 0 0;
+        margin: -3px 0 0;
+        font-family: inherit;
+        font-size: 74%;
+        line-height: 1.4;
+        color: #2185d0;
+        cursor: pointer;
+    }
+
+    .reading-map-translation-toggle:hover,
+    .reading-map-translation-toggle:focus-visible {
+        text-decoration: underline;
+        outline: none;
     }
 
     #reading-map-hint {
@@ -975,6 +1003,10 @@
         background: #8cc8ff;
     }
 
+    html.dark-theme .reading-map-translation-toggle {
+        color: #8cc8ff;
+    }
+
     html.dark-theme #reading-map-clear {
         color: #ff8a8a;
         box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .3);
@@ -1051,6 +1083,7 @@
 						<a id="reading-map-open" href="#" hidden></a>
 					</div>
 					<p class="reading-map-translation" id="reading-map-translation" aria-live="polite"></p>
+					<button type="button" class="reading-map-translation-toggle" id="reading-map-translation-toggle" aria-expanded="false" hidden>more</button>
 					<div id="reading-map-next" class="reading-map-next"></div>
 				</div>
 				<div class="reading-map-card reading-map-stats">

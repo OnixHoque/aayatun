@@ -87,18 +87,50 @@
 	var versePrev = document.getElementById('reading-map-verse-prev');
 	var verseNext = document.getElementById('reading-map-verse-next');
 	var translationEl = document.getElementById('reading-map-translation');
+	var translationToggle = document.getElementById('reading-map-translation-toggle');
 	var translationCache = {};
 	var translationKey = null;
 	var apiToken = (document.querySelector('meta[name="aayatun-api-token"]') || {}).content || '';
 
-	// Translation always keeps its two-line box (empty when nothing is
-	// selected), so selecting a square never resizes the card.
+	// The translation row keeps its reserved two-line box, so selecting a
+	// verse never resizes the tile. The "more" button appears only when the
+	// two-line clamp actually hides text; the tile grows only on expand.
+
+	function resetTranslationExpand()
+	{
+		if (!translationEl || !translationToggle) return;
+		translationEl.classList.remove('is-expanded');
+		translationToggle.textContent = 'more';
+		translationToggle.setAttribute('aria-expanded', 'false');
+	}
+
+	function syncTranslationToggle()
+	{
+		if (!translationEl || !translationToggle) return;
+		var expanded = translationEl.classList.contains('is-expanded');
+		var hasText = (translationEl.textContent || '').length > 0;
+		translationToggle.hidden = expanded || !hasText ||
+			translationEl.scrollHeight <= translationEl.clientHeight + 1;
+	}
+
+	if (translationEl && translationToggle) {
+		translationToggle.addEventListener('click', function (evt) {
+			evt.preventDefault();
+			evt.stopPropagation();
+			var expanded = translationEl.classList.toggle('is-expanded');
+			translationToggle.textContent = expanded ? 'less' : 'more';
+			translationToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+			if (!expanded) syncTranslationToggle();
+		});
+	}
 
 	// Clear the two-line translation box (keeps its reserved height).
 	function hideTranslation()
 	{
 		translationKey = null;
 		if (translationEl) translationEl.textContent = '';
+		resetTranslationExpand();
+		if (translationToggle) translationToggle.hidden = true;
 	}
 
 	// Cross-fade a small text swap (translation / suggestion): drop the
@@ -125,12 +157,17 @@
 		// path shows a placeholder until the response lands.
 		if (Object.prototype.hasOwnProperty.call(translationCache, key)) {
 			var cached = translationCache[key];
+			resetTranslationExpand();
 			fadeSwap(translationEl, function () {
 				translationEl.textContent = cached ? '“' + cached + '”' : '';
+				syncTranslationToggle();
 			});
 			return;
 		}
-		fadeSwap(translationEl, function () { translationEl.textContent = '…'; });
+		fadeSwap(translationEl, function () {
+			translationEl.textContent = '…';
+			if (translationToggle) translationToggle.hidden = true;
+		});
 		window.fetch('/api/v1/verse/' + loc.s.no + '/' + loc.verse, {
 			headers: { 'X-Aayatun-Token': apiToken }
 		}).then(function (resp) {
@@ -140,14 +177,20 @@
 			var t = (data && data.translation) || '';
 			translationCache[key] = t;
 			if (translationKey === key) {
+				resetTranslationExpand();
 				fadeSwap(translationEl, function () {
 					translationEl.textContent = t ? '“' + t + '”' : '';
+					syncTranslationToggle();
 				});
 			}
 		}).catch(function () {
 			translationCache[key] = '';
 			if (translationKey === key) {
-				fadeSwap(translationEl, function () { translationEl.textContent = ''; });
+				resetTranslationExpand();
+				fadeSwap(translationEl, function () {
+					translationEl.textContent = '';
+					syncTranslationToggle();
+				});
 			}
 		});
 	}
