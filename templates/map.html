@@ -763,6 +763,10 @@
         transform: rotate(-45deg);
     }
 
+    /* Quiz-attendance legend: filled blue square matches the map's attended cells. */
+    .rg-swatch-quiz { background: #4183C4; box-shadow: none; }
+    html.dark-theme .rg-swatch-quiz { background: #58a6ff; }
+
     html.dark-theme .reading-map-legend.themes-on .rg-swatch:not(.rg-swatch-tick) {
         background: #21262d;
         box-shadow: inset 0 0 0 1px #30363d;
@@ -1183,7 +1187,7 @@
 				<div class="reading-map-legend">
 					<span class="reading-map-legend-item" id="reading-map-legend-unattended" hidden><i class="rg-swatch"></i>Not attended</span>
 					<span class="reading-map-legend-item" id="reading-map-legend-unread"><i class="rg-swatch"></i>Unread</span>
-					<span class="reading-map-legend-item" id="reading-map-legend-attended" hidden><i class="rg-swatch rg-swatch-tick"></i>Attended</span>
+					<span class="reading-map-legend-item" id="reading-map-legend-attended" hidden><i class="rg-swatch rg-swatch-quiz"></i>Attended</span>
 					<span class="reading-map-legend-item" id="reading-map-legend-read" hidden><i class="rg-swatch rg-swatch-tick"></i>Read</span>
 					<span class="reading-map-legend-item" id="reading-map-legend-page"><i class="rg-swatch light"></i>Page visited</span>
 					<span class="rg-scale" id="reading-map-legend-scale" title="Opened once, twice, 3+ times"><span>Less</span><i class="rg-swatch deep-1"></i><i class="rg-swatch deep-2"></i><i class="rg-swatch deep-3"></i><span>More</span></span>
