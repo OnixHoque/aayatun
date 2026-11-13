@@ -243,7 +243,7 @@
 			hud.classList.remove('bump');
 			void hud.offsetWidth;
 			hud.classList.add('bump');
-			setTimeout(function () { hud.classList.remove('bump'); }, 500);
+			setTimeout(function () { hud.classList.remove('bump'); }, 1200);
 		}
 	}
 
@@ -418,7 +418,7 @@
 		// feedback popup slides in on top of it.
 		setTimeout(function () {
 			showFeedback(ok ? 'Correct!' : 'Not quite.', index);
-		}, 500);
+		}, 1200);
 		state.stepAnswers.push({
 			prompt: q.prompt,
 			aspect: q.aspect,
@@ -441,7 +441,7 @@
 		lockAndMark(null);
 		setTimeout(function () {
 			showFeedback('Time’s up!', null);
-		}, 500);
+		}, 1200);
 		state.stepAnswers.push({
 			prompt: q.prompt,
 			aspect: q.aspect,

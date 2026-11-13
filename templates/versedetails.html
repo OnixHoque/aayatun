@@ -12,7 +12,7 @@
 <meta name="aayatun-read-index" content="{{ read_index }}">
 <script>window.AAYATUN_SURAH_STARTS = {{ surah_starts|tojson }};</script>
 <script>window.AAYATUN_SURAH_THEMES = {{ surah_themes|tojson }};</script>
-<script>window.AAYATUN_SURAH_QUIZ = {{ surah_quiz|tojson }};</script>
+<script>window.AAYATUN_QUIZ_BANK = "{{ quiz_bank }}";</script>
 <style>
 	.theme-pill {
 		position: absolute;
@@ -320,22 +320,41 @@
 		</button>
 		<script>
 		(function () {
-			var data = window.AAYATUN_SURAH_QUIZ;
+			var starts = Array.isArray(window.AAYATUN_SURAH_STARTS)
+				? window.AAYATUN_SURAH_STARTS : [];
+			var bits = null;
+			try {
+				var raw = atob(window.AAYATUN_QUIZ_BANK || '');
+				bits = new Uint8Array(raw.length);
+				for (var i = 0; i < raw.length; i++) bits[i] = raw.charCodeAt(i);
+			} catch (e) {}
 			var btn = document.getElementById('verse-quiz-btn');
 			if (!btn) return;
 			// Inside the shared verse modal there is no sense replacing the
 			// reading page, so the button is hidden there entirely.
 			if (window.self !== window.top) { btn.remove(); return; }
+			var initialSurah = {{ details['surah'] }};
 			var initialVerse = {{ details['verse'] }};
-			function updateQuizBtn(verse) {
-				var i = ((verse | 0) || 1) - 1;
-				var ok = Array.isArray(data) && i >= 0 && i < data.length && !!data[i];
-				btn.style.display = ok ? '' : 'none';
+			function indexFor(surah, verse) {
+				surah = ((surah | 0) || 1) - 1;
+				verse = (verse | 0) || 1;
+				if (surah < 0 || surah >= starts.length) return -1;
+				return starts[surah] + verse - 1;
 			}
-			updateQuizBtn(initialVerse);
+			function hasBank(surah, verse) {
+				if (!bits) return false;
+				var i = indexFor(surah, verse);
+				return i >= 0 && (bits[i >> 3] >> (i & 7)) & 1;
+			}
+			function updateQuizBtn(surah, verse) {
+				btn.style.display = hasBank(surah, verse) ? '' : 'none';
+			}
+			updateQuizBtn(initialSurah, initialVerse);
 			document.addEventListener('aayatun:verse', function (evt) {
 				var d = evt.detail || {};
-				updateQuizBtn(d.verse || initialVerse);
+				var s = d.surah || initialSurah;
+				var v = d.verse || initialVerse;
+				updateQuizBtn(s, v);
 				if (d.surah && d.verse) {
 					btn.onclick = function () {
 						var url = '/quiz?verse=' + d.surah + ':' + d.verse;

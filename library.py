@@ -1132,6 +1132,18 @@ def _surah_verse_count(surah):
 	return int(quran_stat()['Verses'].loc[int(surah)])
 
 @lru_cache(maxsize=1)
+def quiz_bank_bitset():
+	"""Base64 of a 6,236-bit set: bit i = 1 when verse (i+1 in mushaf order)
+	has a complete quiz bank. Used by the verse page to show/hide #verse-quiz-btn."""
+	idx = _bank_index()
+	bits = bytearray((6236 + 7) // 8)
+	if not idx:
+		return base64.b64encode(bytes(bits)).decode()
+	for i in idx:
+		if i >= 0 and i < 6236:
+			bits[i >> 3] |= 1 << (i & 7)
+	return base64.b64encode(bytes(bits)).decode()
+
 def surah_starts():
 	"""Flat 0-based index of every surah's first verse (114 entries)."""
 	x = quran_stat()
