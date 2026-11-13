@@ -385,6 +385,16 @@ html.dark-theme .mushaf-zoom-sep {
 	margin: 14px 0 0;
 }
 
+/* Hint that the left column opens the verse details — shown once per page. */
+.page-hint {
+	text-align: center;
+	color: gray;
+	opacity: .75;
+	font-size: 78%;
+	line-height: 1.35;
+	margin: 2px 0 10px;
+}
+
 /* The mushaf page's subtitle acts as the secondary heading: larger type
    and breathing room before the surah list below it. */
 .page-subtitle-lg {

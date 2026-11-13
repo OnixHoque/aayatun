@@ -39,6 +39,7 @@
     {% block content_heading %}
     <a href="{{ url_for('details', surah=surah_no, verse=1) }}"><h4 style="text-align: center; font-size: 150%; font-family: 'Merriweather', serif;"> {{ surah_name }} </h4></a>
     {% if page_subtitle %}<p class="page-subtitle">{{ page_subtitle }}</p>{% endif %}
+    <p class="page-hint">Click on the left column (verse or surah:verse) to open verse details for the corresponding verse.</p>
     {% endblock %}
     <br>
 

@@ -60,6 +60,7 @@
 	<div class="comprehensive-div mushaf-page" style="margin: 0px 10px">
 	<br>
 	<p class="page-subtitle page-subtitle-lg">Madani Mushaf Page {{ page_no }}</p>
+	<p class="page-hint">Click on the left column (verse or surah:verse) to open verse details for the corresponding verse.</p>
 	<p class="mushaf-page-surahs">{% for g in groups %}{{ g.name }} {% if g.rows[0].verse == g.rows[-1].verse %}{{ g.rows[0].verse }}{% else %}{{ g.rows[0].verse }}-{{ g.rows[-1].verse }}{% endif %}{% if not loop.last %} &middot; {% endif %}{% endfor %}</p>
 
 	{% if overview %}
