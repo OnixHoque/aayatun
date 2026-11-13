@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aayatun-v106';
+const CACHE_NAME = 'aayatun-v122';
 
 // Prayer Time's sunrise/sunset/midnight pills use Material Symbols. The CSS
 // is precached with the shell, and install then caches every font file it
@@ -9,6 +9,7 @@ const MATERIAL_SYMBOLS_CSS =
 const CORE_ASSETS = [
   '/',
   '/map',
+  '/quiz',
   '/prayer-time',
   '/daily-counter',
   '/static/offline.html',
@@ -16,6 +17,8 @@ const CORE_ASSETS = [
   '/static/js/recent.js',
   '/static/js/share.js',
   '/static/js/reading-map.js',
+  '/static/js/quiz.js',
+  '/static/css/quiz.css',
   '/static/js/verse-nav.js',
   '/static/js/qcf-font.js',
   '/static/js/mushaf-zoom.js',

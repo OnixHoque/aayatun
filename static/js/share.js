@@ -122,6 +122,12 @@
 			'\n' + HASHTAG;
 	}
 
+	function quizText(o) {
+		return 'I scored ' + o.score + '/' + o.total +
+			' on the Aayatun Quran Quiz. Can you beat me?\n\n' + o.url +
+			'\n' + HASHTAG;
+	}
+
 	function parseVerses(raw) {
 		if (!raw) return null;
 		try {
@@ -291,6 +297,13 @@
 			card.pages = payload.pages || 0;
 			card.starts = payload.starts || [];
 			card.message = mapMessage();
+			return card;
+		} else if (payload.card === 'quiz') {
+			card.kind = 'quiz';
+			card.title = 'Quran Quiz';
+			card.score = payload.score || 0;
+			card.total = payload.total || 5;
+			card.subtitle = todayLabel();
 			return card;
 		} else {
 			return null;
@@ -594,8 +607,99 @@
 		return out;
 	}
 
+	// Quran Quiz card: a square-ish score card — kicker, title, big ring
+	// with the score inside, date, and the brand band.
+	var QUIZ_H = 400;
+
+	function drawQuizCard(card) {
+		var dark = isDark();
+		var W = CARD_W;
+		var H = QUIZ_H;
+
+		var out = document.createElement('canvas');
+		out.width = OUTPUT_W;
+		out.height = Math.round(H * (OUTPUT_W / W));
+		var ctx = out.getContext('2d');
+		ctx.scale(OUTPUT_W / W, OUTPUT_W / W);
+		ctx.textBaseline = 'middle';
+
+		ctx.fillStyle = dark ? '#1b1c1d' : '#ffffff';
+		ctx.fillRect(0, 0, W, H);
+
+		var titleColor = dark ? '#9CC4FF' : '#4183C4';
+		var body = dark ? 'rgba(255,255,255,.92)' : 'rgba(0,0,0,.82)';
+		var muted = dark ? 'rgba(255,255,255,.55)' : 'rgba(0,0,0,.48)';
+		var track = dark ? 'rgba(255,255,255,.14)' : 'rgba(0,0,0,.09)';
+
+		var total = card.total || 5;
+		var pct = total ? Math.min(1, (card.score || 0) / total) : 0;
+		var ringColor = pct >= 0.7 ? '#16a34a' : (pct >= 0.4 ? '#d97706' : '#dc2626');
+
+		ctx.textAlign = 'center';
+
+		// Kicker.
+		try { ctx.letterSpacing = '4px'; } catch (e) {}
+		ctx.fillStyle = muted;
+		ctx.font = "700 12px 'Open Sans', system-ui, sans-serif";
+		ctx.fillText('QURAN QUIZ', W / 2, 54);
+		try { ctx.letterSpacing = '0px'; } catch (e) {}
+
+		// Title.
+		ctx.fillStyle = titleColor;
+		ctx.font = "700 26px Merriweather, Georgia, serif";
+		ctx.fillText('Quran Quiz', W / 2, 96);
+
+		// Score ring.
+		var cx = W / 2, cy = 212, r = 56;
+		ctx.lineWidth = 13;
+		ctx.lineCap = 'round';
+		ctx.strokeStyle = track;
+		ctx.beginPath();
+		ctx.arc(cx, cy, r, 0, Math.PI * 2);
+		ctx.stroke();
+		ctx.strokeStyle = ringColor;
+		ctx.beginPath();
+		ctx.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * pct);
+		ctx.stroke();
+
+		ctx.fillStyle = body;
+		ctx.font = "700 38px Merriweather, Georgia, serif";
+		ctx.fillText(card.score + '/' + total, cx, cy - 8);
+		ctx.fillStyle = muted;
+		ctx.font = "400 13px 'Open Sans', system-ui, sans-serif";
+		ctx.fillText(Math.round(pct * 100) + '%', cx, cy + 22);
+
+		// Meta line under the ring.
+		ctx.fillStyle = muted;
+		ctx.font = "400 12.5px 'Open Sans', system-ui, sans-serif";
+		ctx.fillText((card.subtitle || '') + '  ·  ' + total +
+			' questions · 30 seconds each', W / 2, 324);
+
+		/* Brand band. */
+		var bandTop = H - BAND;
+		ctx.fillStyle = dark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.045)';
+		ctx.fillRect(0, bandTop, W, BAND);
+		ctx.fillStyle = dark ? 'rgba(255,255,255,.86)' : 'rgba(0,0,0,.72)';
+		ctx.font = "600 16px 'Open Sans', system-ui, sans-serif";
+		ctx.fillText('aayatun.com', W / 2, bandTop + BAND * 0.36);
+
+		var label = String(card.url || '');
+		var size = 12;
+		var bandMax = W - PAD * 2;
+		ctx.fillStyle = dark ? 'rgba(255,255,255,.58)' : 'rgba(0,0,0,.46)';
+		ctx.font = "400 " + size + "px 'Open Sans', system-ui, sans-serif";
+		while (label && ctx.measureText(label).width > bandMax && size > 9) {
+			size -= 0.5;
+			ctx.font = "400 " + size + "px 'Open Sans', system-ui, sans-serif";
+		}
+		ctx.fillText(label, W / 2, bandTop + BAND * 0.72);
+
+		return out;
+	}
+
 	function drawCard(card) {
 		if (card.kind === 'map') return drawMapCard(card);
+		if (card.kind === 'quiz') return drawQuizCard(card);
 		var maxW = CARD_W - PAD * 2;
 		var dark = isDark();
 
@@ -896,6 +1000,20 @@
 		mapShare = { key: key, payload: payload, file: file };
 	}
 
+	function shareQuiz(o, btn) {
+		var url = pageUrl('/quiz');
+		return share({
+			kind: 'quiz',
+			card: 'quiz',
+			ref: 'quiz-result',
+			title: 'My Aayatun Quran Quiz score — Aayatun',
+			text: quizText({ score: o.score, total: o.total, url: url }),
+			url: url,
+			score: o.score,
+			total: o.total
+		}, btn || byId('quiz-share-btn'));
+	}
+
 	function shareMap(o, btn) {
 		var key = mapKey(o);
 		if (mapShare.key !== key) warmMapShare(o);
@@ -917,6 +1035,7 @@
 		fromButton: fromButton,
 		shareVerse: shareVerse,
 		shareMap: shareMap,
+		shareQuiz: shareQuiz,
 		warmMapShare: warmMapShare,
 		payloadFromButton: payloadFromButton,
 		cardFor: cardFor,

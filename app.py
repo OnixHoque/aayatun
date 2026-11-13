@@ -136,6 +136,10 @@ def reading_map():
 		page_bounds=lib.get_page_bounds(), theme_data=lib.get_ayah_themes(),
 		api_token=api_token())
 
+@app.route('/quiz')
+def quiz():
+	return render_template('quiz.html', api_token=api_token(), bank_size=lib.quiz_session_count())
+
 @app.route('/<int:surah>/', strict_slashes=False)
 def details2(surah):
 	return private_page(make_response(render_template('versedetails.html',
@@ -222,6 +226,17 @@ def surah_api(surah):
 	if gz:
 		resp.headers['Content-Encoding'] = 'gzip'
 	return resp
+
+# One random verse's five-question quiz session for /quiz: public text, so
+# no cache ever holds a copy, and the token binds it to this site's sessions
+# (like the verse API).
+@app.route('/api/v1/quiz/session', strict_slashes=False)
+def quiz_api():
+	require_api_token()
+	session = lib.get_random_session()
+	if session is None:
+		return no_store(jsonify({'error': 'bank-unavailable'}))
+	return no_store(jsonify(session))
 
 # Server-rendered accordion content, so the markup has a single source of truth
 # (the Jinja partials) instead of being rebuilt in JavaScript.

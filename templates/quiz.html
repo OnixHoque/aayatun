@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+
+{% block title %} Quran Quiz : Aayatun - An Ayah a Day {% endblock %}
+{% block meta_description %}Test your understanding of Quran verses — five multiple-choice questions on the meaning, words and statements of the verses themselves. English only.{% endblock %}
+{% block og_title %}Quran Quiz{% endblock %}
+{% block og_description %}Five multiple-choice questions on what the verses actually say. English only.{% endblock %}
+
+{% block menu %}
+<div class="ui header three wide item" style="font-size: 200%; display: inline-block; text-align: middle;">
+	<a href="{{ url_for('index') }}" style="font-family: Merriweather;">Quran Quiz</a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="quiz-page">
+
+	<!-- ======================= start screen ======================= -->
+	<div id="quiz-start" class="quiz-view quiz-start">
+		<h1 class="sr-only">Quran Quiz</h1>
+		<p class="quiz-sub">One verse at a time. Five questions on what it says — translation, word meaning, grammar, tafsir and context. 30 seconds each.</p>
+
+		<div class="quiz-stats" role="group" aria-label="Your quiz stats">
+			<div class="quiz-stat">
+				<div class="quiz-stat-value" id="quiz-best">–</div>
+				<div class="quiz-stat-label">Best</div>
+			</div>
+			<div class="quiz-stat">
+				<div class="quiz-stat-value" id="quiz-attempts">0</div>
+				<div class="quiz-stat-label">Attempts</div>
+			</div>
+			<div class="quiz-stat">
+				<div class="quiz-stat-value" id="quiz-bank">{{ bank_size }}</div>
+				<div class="quiz-stat-label">Verses</div>
+			</div>
+		</div>
+
+		<button id="quiz-start-btn" class="quiz-btn quiz-btn-primary" type="button"{% if bank_size == 0 %} disabled{% endif %}>Start quiz</button>
+		{% if bank_size == 0 %}
+		<p class="quiz-start-note" id="quiz-start-note">The quiz bank is still being generated — please check back later.</p>
+		{% else %}
+		<p class="quiz-start-note" id="quiz-start-note">Questions are drawn at random; your history is stored only on this device.</p>
+		{% endif %}
+
+		<div class="quiz-history" id="quiz-history" hidden>
+			<div class="quiz-history-head">
+				<span>Your history</span>
+				<button id="quiz-clear-history" type="button">Clear</button>
+			</div>
+			<div class="quiz-history-list" id="quiz-history-list"></div>
+		</div>
+		<div class="quiz-ai">{% include 'partials/_ai_notice.html' %}</div>
+	</div>
+
+	<!-- ======================= a round ======================= -->
+	<div id="quiz-round" class="quiz-view" hidden>
+		<div class="quiz-topbar">
+			<span class="quiz-score" id="quiz-score-hud" hidden aria-label="Score">
+				<i class="star icon" aria-hidden="true"></i><span class="quiz-score-num" id="quiz-score-num">0</span>
+			</span>
+			<div class="quiz-dots" id="quiz-dots" aria-hidden="true"></div>
+			<span class="quiz-timer" id="quiz-timer"><i class="clock outline icon" aria-hidden="true"></i><span id="quiz-timer-text">30s</span></span>
+		</div>
+		<div class="quiz-timer-track" aria-hidden="true"><div class="quiz-timer-bar" id="quiz-timer-bar" style="width: 100%"></div></div>
+
+		<p class="quiz-arabic" id="quiz-arabic" lang="ar" dir="rtl"></p>
+		<p class="quiz-translation" id="quiz-translation"></p>
+		<p class="quiz-ref" id="quiz-ref"></p>
+
+		<h2 class="quiz-prompt" id="quiz-prompt"></h2>
+
+		<button id="quiz-hint-btn" class="quiz-hint-btn" type="button">Hint</button>
+		<div class="quiz-hint" id="quiz-hint" hidden></div>
+
+		<div class="quiz-lifelines" role="group" aria-label="One-time lifelines for this session">
+			<button id="quiz-add-time" class="quiz-lifeline" type="button" title="Add 30 seconds — one use per session" aria-label="Add 30 seconds to the timer — one use per session">
+				<i class="clock outline icon" aria-hidden="true"></i><span>+30s</span>
+			</button>
+			<button id="quiz-fifty-fifty" class="quiz-lifeline" type="button" title="Remove two wrong choices — one use per session" aria-label="Remove two wrong choices — one use per session">
+				<i class="balance scale icon" aria-hidden="true"></i><span>50/50</span>
+			</button>
+		</div>
+
+		<div class="quiz-options" id="quiz-options" role="group" aria-label="Answer choices"></div>
+
+		<div class="quiz-meta">
+			<span class="quiz-aspect" id="quiz-aspect">Translation</span>
+			<span class="quiz-progress" id="quiz-progress">Question 1 of 5</span>
+			<span class="quiz-difficulty" id="quiz-difficulty">medium</span>
+		</div>
+
+	</div>
+
+	<!-- ======================= result ======================= -->
+	<div id="quiz-result" class="quiz-view quiz-result" hidden>
+		<h2 class="quiz-result-title">Result</h2>
+		<div class="quiz-ring-wrap">
+			<svg class="quiz-ring" viewBox="0 0 120 120" width="180" height="180" role="img" aria-label="Quiz score">
+				<circle class="quiz-ring-bg" cx="60" cy="60" r="52" stroke-width="9" fill="none"></circle>
+				<circle class="quiz-ring-fg" id="quiz-ring" cx="60" cy="60" r="52" stroke-width="9" fill="none"
+					stroke-dasharray="326.7" stroke-dashoffset="326.7"></circle>
+			</svg>
+			<div class="quiz-ring-label">
+				<div class="quiz-ring-score" id="quiz-final-score">0/5</div>
+				<div class="quiz-ring-pct" id="quiz-final-pct">0%</div>
+			</div>
+		</div>
+		<p class="quiz-result-tag" id="quiz-result-tag"></p>
+		<p class="quiz-result-points"><strong id="quiz-points">0</strong> points this session · max 1,000</p>
+
+		<div class="quiz-review" id="quiz-review"></div>
+
+		<button id="quiz-share-btn" class="quiz-btn quiz-btn-primary quiz-btn-fluid" type="button">
+			<i class="share alternate icon" aria-hidden="true"></i> Share result
+		</button>
+		<button id="quiz-again-btn" class="quiz-btn quiz-btn-ghost quiz-btn-fluid" type="button">Play again</button>
+		<p class="quiz-result-home"><a href="{{ url_for('index') }}">← Back to the home page</a></p>
+	</div>
+
+</div>
+
+<!-- Answer feedback overlay: a soft floating card like the counter page's install help sheet -->
+<div class="quiz-feedback" id="quiz-feedback" hidden>
+	<div class="quiz-feedback-card" role="dialog" aria-modal="true" aria-labelledby="quiz-feedback-verdict" tabindex="-1">
+		<div class="quiz-feedback-verdict"><span id="quiz-feedback-icon" class="quiz-feedback-icon" aria-hidden="true">✓</span><span id="quiz-feedback-verdict">Correct!</span></div>
+		<p class="quiz-feedback-explanation" id="quiz-feedback-explanation"></p>
+		<div class="quiz-feedback-answers" id="quiz-feedback-answers" hidden>
+			<div class="quiz-feedback-answer wrong"><span class="af-label">Your answer</span><span class="af-value" id="quiz-answer-yours"></span></div>
+			<div class="quiz-feedback-answer right"><span class="af-label">Correct answer</span><span class="af-value" id="quiz-answer-right"></span></div>
+		</div>
+		<button id="quiz-next" class="quiz-feedback-btn" type="button">Next <i class="right arrow icon" aria-hidden="true"></i></button>
+	</div>
+</div>
+
+<!-- Clear history confirmation -->
+<div class="ui tiny modal" id="quiz-clear-modal">
+	<div class="header">Clear quiz history?</div>
+	<div class="content">
+		<p>This removes your attempts and your best score from this device. It cannot be undone.</p>
+	</div>
+	<div class="actions">
+		<div class="ui basic cancel button" id="quiz-clear-cancel">Keep history</div>
+		<div class="ui red ok button" id="quiz-clear-confirm">Clear</div>
+	</div>
+</div>
+{% endblock content %}
+
+{% block js %}
+<meta name="aayatun-api-token" content="{{ api_token }}">
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/quiz.css') }}">
+<script defer src="{{ url_for('static', filename='js/quiz.js') }}"></script>
+{% endblock js %}
+
+{% block scriptcontent %}
+	// Standalone page: the floating search button would sit on top of the
+	// content, so hide it here (like the map and search pages).
+	$('#search-btn').hide();
+	$('#menubar').removeClass('three').addClass('one');
+
+	$('#quiz-clear-modal').modal({ allowMultiple: true });
+	$('#quiz-clear-cancel').click(function () {
+		$('#quiz-clear-modal').modal('hide');
+	});
+	$('#quiz-clear-confirm').click(function () {
+		if (window.AayatunQuiz && window.AayatunQuiz.clearHistory) window.AayatunQuiz.clearHistory();
+		$('#quiz-clear-modal').modal('hide');
+	});
+{% endblock %}
