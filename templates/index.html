@@ -57,6 +57,24 @@
         gap: 4px;
     }
 
+    /* The footer toggle buttons look like the footer's link text. */
+    .footer-link {
+        background: transparent;
+        border: 0;
+        padding: 0;
+        margin: 0;
+        font: inherit;
+        color: #4183C4;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    .footer-link:hover,
+    .footer-link:focus-visible {
+        text-decoration: underline;
+        outline: none;
+    }
+
     /* Jumping to a page ignores the surah picker, so the whole-surah row is
        disabled along with it (set by updateJumpMode). */
     #whole-surah-row.is-disabled,
@@ -477,13 +495,9 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	});
 
-	// More Apps is a toggle (href="javascript:void(0)"), not a navigation.
-	// The preventDefault handler must be registered BEFORE .popup() so it
-	// runs before Fomantic's own click handler (jQuery runs same-element
-	// handlers in registration order) and the page never "jumps".
-	$('#more-apps-btn').on('click', function (evt) {
-		evt.preventDefault();
-	}).popup({
+	// More Apps is a toggle button (not a link), so tapping it does not
+	// trigger the browser's focus/scroll behaviour for anchors.
+	$('#more-apps-btn').popup({
 		popup: $('#more-apps-popup'),
 		on: 'click',
 		position: 'top center',
@@ -517,7 +531,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 {% block end_ %}
 <div class="ui text container" style="font-family: 'Open Sans'; display: flex; flex: 0 0 auto; flex-direction: column-reverse;">
-		<p style="text-align: center; color: gray; opacity: 90%; padding-top: 2%; font-size: 70%;"><a href="https://github.com/OnixHoque/aayatun/tree/deploy" target="_blank" rel="noopener">Aayatun v2.0</a> | <a href="javascript:void(0)" id="change-theme">Dark Theme</a> | <a href="javascript:void(0)" id="more-apps-btn" role="button">More Apps</a> </p>
+		<p style="text-align: center; color: gray; opacity: 90%; padding-top: 2%; font-size: 70%;"><a href="https://github.com/OnixHoque/aayatun/tree/deploy" target="_blank" rel="noopener">Aayatun v2.0</a> | <a href="javascript:void(0)" id="change-theme">Dark Theme</a> | <button type="button" id="more-apps-btn" class="footer-link">More Apps</button> </p>
 		<div id="install-banner" class="ui mini message" style="display: none; color: gray">
 		    <i class="close icon" id="install-close" role="button" aria-label="Dismiss" tabindex="0"></i>
 		    <div class="header" id="install-header">
