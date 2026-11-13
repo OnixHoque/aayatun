@@ -623,23 +623,12 @@ html.dark-theme .mushaf-row-jump td {
 
 /* Index footer → More Apps pointing popup. A compact vertical menu instead
    of a modal: two rows with an icon, title and one-line description. The
-   popup is positioned with position: fixed (measured coordinates) and shown
-   via .is-open, because Fomantic's popup grows the page on some devices. */
+   popup is Fomantic's, positioned above the trigger via position: 'top
+   center'. */
 #more-apps-popup.ui.popup {
-	position: fixed !important;
-	display: none !important;
-	z-index: 1901;
-	margin: 0;
 	padding: 8px;
 	border-radius: 12px;
 	max-width: calc(100vw - 24px);
-	transition: opacity .18s ease;
-	opacity: 0;
-}
-
-#more-apps-popup.is-open {
-	display: block !important;
-	opacity: 1;
 }
 
 .more-apps-menu {
