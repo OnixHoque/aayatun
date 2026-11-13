@@ -1200,7 +1200,19 @@ def get_ayah_themes():
 	return {'themes': themes, 'verses': verses}
 
 
-@lru_cache(maxsize=4)
+@lru_cache(maxsize=115)
+def get_surah_quiz(surah):
+	"""Boolean per verse: True when the quiz bank carries a complete
+	five-question session for that verse (used by the verse page's quiz button)."""
+	idx = _bank_index()
+	if idx is None:
+		return []
+	starts = surah_starts()
+	start = starts[surah - 1]
+	n = _surah_verse_count(surah)
+	return [bool((start + i) in idx) for i in range(n)]
+
+@lru_cache(maxsize=114)
 def get_surah_themes(surah):
 	"""The theme palette plus a verse -> theme id array for one surah, for
 	the verse page's theme pill. Returns empty lists when the theme database

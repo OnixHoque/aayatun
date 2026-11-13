@@ -12,6 +12,7 @@
 <meta name="aayatun-read-index" content="{{ read_index }}">
 <script>window.AAYATUN_SURAH_STARTS = {{ surah_starts|tojson }};</script>
 <script>window.AAYATUN_SURAH_THEMES = {{ surah_themes|tojson }};</script>
+<script>window.AAYATUN_SURAH_QUIZ = {{ surah_quiz|tojson }};</script>
 <style>
 	.theme-pill {
 		position: absolute;
@@ -330,20 +331,38 @@
 	    	<button id="tajweed-toggle-btn" data-tooltip="Tajweed colors" class="circular ui basic icon button" onclick="toggleTajweed()">
 			  <i class="icon tint"></i>
 		</button>
-		{% if verse_quiz %}
-	    	<button id="verse-quiz-btn" data-loading data-tooltip="Take the quiz on this verse" title="Take the quiz on this verse" aria-label="Take the quiz on this verse" class="circular ui basic icon button" onclick="if (window.AayatunNav) { window.AayatunNav.go('/quiz?verse={{ details['surah'] }}:{{ details['verse'] }}'); } else { window.location.href = '/quiz?verse={{ details['surah'] }}:{{ details['verse'] }}'; }">
+		{% set _vref = details['surah']|string + ':' + details['verse']|string %}
+	    	<button id="verse-quiz-btn" data-loading data-tooltip="Take the quiz on this verse" title="Take the quiz on this verse" aria-label="Take the quiz on this verse" class="circular ui basic icon button" style="display: none;" onclick="if (window.AayatunNav) { window.AayatunNav.go('/quiz?verse={{ _vref }}'); } else { window.location.href = '/quiz?verse={{ _vref }}'; }">
 		  <i class="icon graduation cap"></i>
 		</button>
 		<script>
-		// The quiz would replace the reading page; inside the shared verse
-		// modal there is no point navigating the parent out of the modal,
-		// so the button only exists on the standalone verse page.
-		if (window.self !== window.top) {
-			var quizBtn = document.getElementById('verse-quiz-btn');
-			if (quizBtn) quizBtn.remove();
-		}
+		(function () {
+			var data = window.AAYATUN_SURAH_QUIZ;
+			var btn = document.getElementById('verse-quiz-btn');
+			if (!btn) return;
+			// Inside the shared verse modal there is no sense replacing the
+			// reading page, so the button is hidden there entirely.
+			if (window.self !== window.top) { btn.remove(); return; }
+			var initialVerse = {{ details['verse'] }};
+			function updateQuizBtn(verse) {
+				var i = ((verse | 0) || 1) - 1;
+				var ok = Array.isArray(data) && i >= 0 && i < data.length && !!data[i];
+				btn.style.display = ok ? '' : 'none';
+			}
+			updateQuizBtn(initialVerse);
+			document.addEventListener('aayatun:verse', function (evt) {
+				var d = evt.detail || {};
+				updateQuizBtn(d.verse || initialVerse);
+				if (d.surah && d.verse) {
+					btn.onclick = function () {
+						var url = '/quiz?verse=' + d.surah + ':' + d.verse;
+						if (window.AayatunNav) window.AayatunNav.go(url);
+						else window.location.href = url;
+					};
+				}
+			});
+		})();
 		</script>
-		{% endif %}
     	<button id="play-btn" class="circular ui basic icon button" onclick="$('#audio-box').fadeIn(180); $('#control-btns').fadeOut(180); $('#mainaudio').trigger('play');">
 			  <i class="icon play"></i>
 		</button>
