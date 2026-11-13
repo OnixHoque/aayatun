@@ -138,7 +138,8 @@ def reading_map():
 
 @app.route('/quiz')
 def quiz():
-	return render_template('quiz.html', api_token=api_token(), bank_size=lib.quiz_session_count())
+	return render_template('quiz.html', api_token=api_token(), bank_size=lib.quiz_session_count(),
+		page_bounds=lib.get_page_bounds())
 
 @app.route('/quiz/stats')
 def quiz_stats():
@@ -247,7 +248,12 @@ def quiz_api():
 		seen = [str(s)[:80] for s in seen[:2000]]
 	else:
 		seen = []
-	session = lib.get_random_session(exclude=seen)
+	session = lib.get_random_session(
+		exclude=seen,
+		explored=body.get('explored'),
+		done=body.get('done'),
+		retake_ids=body.get('ids') if isinstance(body.get('ids'), list) else (),
+	)
 	if session is None:
 		return no_store(jsonify({'error': 'bank-unavailable'}))
 	return no_store(jsonify(session))

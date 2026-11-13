@@ -4,6 +4,7 @@ from werkzeug.exceptions import abort
 import sqlite3
 from flask import Markup
 import pickle
+import base64
 import random
 import re
 import json
@@ -1317,32 +1318,94 @@ def _short_surah_name(full):
 	name = re.sub(r'\s*\([^)]*\)\s*$', '', str(full or '')).strip()
 	return name
 
-def quiz_question_id(surah, verse, aspect, prompt):
-	"""Stable question identity: surah:verse:aspect:prompt-hash. Reused across
-	sessions for repeat avoidance; changes only if the question text changes."""
-	h = hashlib.md5(str(prompt).encode('utf-8')).hexdigest()[:12]
-	return f'{int(surah)}:{int(verse)}:{aspect}:{h}'
+_bank_cache = {}
+_bank_mtime = [None]
+_id_cache = {}
 
-def get_random_session(exclude=()):
-	"""One random verse's five-question session, or None if the bank is empty.
-
-	The verse must carry at least five questions; five are picked at random
-	when more are stored. Questions whose IDs are in `exclude` are skipped
-	unless the verse only has been-seen questions left (then it recycles).
-	Aspect order is re-imposed for display. Choices are shuffled per
-	question; Arabic/translation are joined live from the pickle."""
-	if not os.path.exists(QUIZ_DB):
+def _bit_bytes(b64):
+	"""Decode the 6,236-bit set (780 bytes) or None."""
+	if not b64:
 		return None
+	try:
+		raw = base64.b64decode(b64)
+		return raw if len(raw) >= 780 else None
+	except Exception:
+		return None
+
+def _has_bit(bits, i):
+	return bits is not None and i >> 3 < len(bits) and (bits[i >> 3] >> (i & 7)) & 1
+
+def _bank_index():
+	"""Verse index -> (surah, verse, questions-json). Rebuilt when the DB file changes."""
+	try:
+		mtime = os.path.getmtime(QUIZ_DB) if os.path.exists(QUIZ_DB) else None
+	except OSError:
+		mtime = None
+	if _bank_mtime[0] == mtime and _bank_cache:
+		return _bank_cache
+	if mtime is None:
+		return None
+	starts = surah_starts()
 	conn = sqlite3.connect(QUIZ_DB)
 	try:
 		rows = conn.execute(
-			'SELECT surah, verse, questions FROM verse_quizzes '
-			'WHERE count >= 5 ORDER BY RANDOM() LIMIT 1').fetchall()
+			'SELECT surah, verse, questions FROM verse_quizzes WHERE count >= 5').fetchall()
 	finally:
 		conn.close()
-	if not rows:
+	idx = {}
+	for surah, verse, questions in rows:
+		i = starts[int(surah) - 1] + int(verse) - 1
+		idx[i] = (int(surah), int(verse), questions)
+	_bank_cache.clear()
+	_bank_cache.update(idx)
+	_bank_mtime[0] = mtime
+	_id_cache.clear()
+	return _bank_cache
+
+def _id_index():
+	"""Question id -> (verse index, question dict). Rebuilt with the bank."""
+	if _id_cache:
+		return _id_cache
+	idx = _bank_index()
+	if idx is None:
 		return None
-	surah, verse, questions = rows[0]
+	for i, (surah, verse, questions) in idx.items():
+		try:
+			bank = json.loads(questions)
+		except Exception:
+			continue
+		for q in bank:
+			_id_cache[quiz_question_id(surah, verse, q.get('aspect'), q.get('prompt'))] = (i, q)
+	return _id_cache
+
+def _pick_tier(idx, explored, done):
+	"""Prefer explored-but-unquizzed verses, then fresh unquizzed, then
+	explored-but-quizzed, then unexplored-but-quizzed (recycles)."""
+	tiers = [[], [], [], []]
+	for i in idx:
+		e = _has_bit(explored, i)
+		d = _has_bit(done, i)
+		if e and not d:
+			tiers[0].append(i)
+		elif not e and not d:
+			tiers[1].append(i)
+		elif e and d:
+			tiers[2].append(i)
+		else:
+			tiers[3].append(i)
+	for t in tiers:
+		if t:
+			return random.choice(t)
+	return None
+
+def _shuffle_choices(q):
+	choices = list(q['choices'])
+	answer_text = choices[int(q['answer'])]
+	random.shuffle(choices)
+	return dict(q, choices=choices, answer=int(choices.index(answer_text)))
+
+def _bank_questions(surah, verse, questions, exclude):
+	"""Load a bank, drop seen questions when possible, shuffle choices."""
 	try:
 		bank = json.loads(questions)
 	except Exception:
@@ -1365,38 +1428,84 @@ def get_random_session(exclude=()):
 		bank = random.sample(bank, 5)
 	bank = sorted(bank, key=lambda q: order.index(q.get('aspect'))
 		if q.get('aspect') in order else 99)
+	return bank
+
+def _payload(surah, verse, bank, verse_index):
+	"""Shape the shared session payload."""
 	try:
-		pickle = get_verse_pickle
-		data = pickle(int(surah), int(verse))
+		data = get_verse_pickle(int(surah), int(verse))
 	except Exception as e:
 		print('get_random_session:', e)
 		return None
-	out_questions = []
-	for q in bank:
-		try:
-			choices = list(q['choices'])
-			answer_text = choices[int(q['answer'])]
-			random.shuffle(choices)
-			out_questions.append({
-				'id': q.get('id'),
-				'aspect': q.get('aspect'),
-				'difficulty': q.get('difficulty', 'easy'),
-				'prompt': q['prompt'],
-				'choices': choices,
-				'answer': int(choices.index(answer_text)),
-				'hint': q.get('hint', ''),
-				'explanation': q.get('explanation', ''),
-			})
-		except Exception:
-			return None
+	out_questions = [_shuffle_choices(q) for q in bank]
 	return {
 		'surah': int(surah),
 		'verse': int(verse),
 		'surah_name': _short_surah_name(data.get('surah_name')),
 		'arabic': (data.get('ayah') or '').strip(),
 		'translation': data.get('translation') or '',
+		'index': int(verse_index),
 		'questions': out_questions,
 	}
+
+def quiz_question_id(surah, verse, aspect, prompt):
+	"""Stable question identity: surah:verse:aspect:prompt-hash. Reused across
+	sessions for repeat avoidance; changes only if the question text changes."""
+	h = hashlib.md5(str(prompt).encode('utf-8')).hexdigest()[:12]
+	return f'{int(surah)}:{int(verse)}:{aspect}:{h}'
+
+def get_random_session(exclude=(), explored=None, done=None, retake_ids=()):
+	"""One verse's five-question session, or None if the bank is empty.
+
+	Retake (retake_ids non-empty): serve exactly those question IDs, bypassing
+	the tier preference and the seen-exclusion. Otherwise pick a verse with
+	count >= 5, preferring explored-but-unquizzed verses (explored = opened on
+	the map or sitting on a visited page), then fresh unquizzed verses, then
+	explored-but-quizzed, then unexplored-but-quizzed (recycles). Choices are
+	shuffled and the answer index remapped; aspect order is re-imposed."""
+	if not os.path.exists(QUIZ_DB):
+		return None
+	bank_idx = _bank_index()
+	if not bank_idx:
+		return None
+
+	if retake_ids:
+		ids_map = _id_index()
+		order = list(QUIZ_ASPECT_ORDER)
+		found = []
+		for x in retake_ids:
+			hit = ids_map.get(str(x)) if ids_map else None
+			if not hit:
+				# A stored id no longer resolves (bank regenerated) — refuse
+				# rather than serve half a retake the user didn't ask for.
+				return None
+			found.append(hit)
+		verse_of = found[0][0]
+		if any(f[0] != verse_of for f in found):
+			return None
+		coords = next(((s, v) for i, (s, v, _q) in bank_idx.items() if i == verse_of), None)
+		if coords is None:
+			return None
+		si, qi = coords
+		bank = []
+		for _, q in found:
+			nq = dict(q)
+			nq['id'] = quiz_question_id(si, qi, nq.get('aspect'), nq.get('prompt'))
+			bank.append(nq)
+		bank = sorted(bank, key=lambda q: order.index(q.get('aspect'))
+			if q.get('aspect') in order else 99)
+		return _payload(si, qi, bank, verse_of)
+
+	expl, dn = _bit_bytes(explored), _bit_bytes(done)
+	tre = _pick_tier(bank_idx, expl, dn)
+	if tre is None:
+		# Fall back to a uniform random row from the bank.
+		tre = random.choice(list(bank_idx.keys()))
+	surah, verse, questions = bank_idx[tre]
+	bank = _bank_questions(surah, verse, questions, exclude)
+	if bank is None:
+		return None
+	return _payload(surah, verse, bank, tre)
 
 def quiz_session_count():
 	"""Number of verses with a complete five-question session bank."""

@@ -81,7 +81,10 @@
 	function clearHistory() {
 		try {
 			localStorage.removeItem(HISTORY_KEY);
-			localStorage.removeItem('aayatun_quiz_seen_v1');
+			localStorage.removeItem(SEEN_KEY);
+			if (window.AayatunQuizAttend && window.AayatunQuizAttend.clear) {
+				window.AayatunQuizAttend.clear();
+			}
 		} catch (e) {}
 		renderStats();
 	}
@@ -113,14 +116,32 @@
 		wrap.hidden = false;
 		list.innerHTML = '';
 		var visible = state.historyExpanded ? history.slice(0, MAX_HISTORY) : history.slice(0, 5);
-		visible.forEach(function (entry) {
+		visible.forEach(function (entry, visibleIndex) {
 			var row = document.createElement('div');
 			row.className = 'quiz-history-row';
 
+			var scoreWrap = document.createElement('div');
+			scoreWrap.className = 'quiz-history-score-wrap';
 			var score = document.createElement('div');
 			score.className = 'quiz-history-score';
 			score.textContent = (entry.score || 0) + '/' + (entry.total || total);
-			row.appendChild(score);
+			scoreWrap.appendChild(score);
+			// The five most recent attempts get a tiny retake link next to
+			// the score; older entries are read-only (we don't store their ids).
+			if (visibleIndex < 5 && Array.isArray(entry.qids) && entry.qids.length) {
+				var retake = document.createElement('button');
+				retake.type = 'button';
+				retake.className = 'quiz-history-retake';
+				retake.textContent = 'Retake';
+				retake.title = 'Retake this verse’s quiz';
+				retake.setAttribute('aria-label', 'Retake this verse’s quiz');
+				retake.addEventListener('click', function (evt) {
+					evt.preventDefault();
+					startQuiz({ retake: true, ids: entry.qids.slice() });
+				});
+				scoreWrap.appendChild(retake);
+			}
+			row.appendChild(scoreWrap);
 
 			var meta = document.createElement('div');
 			meta.className = 'quiz-history-meta';
@@ -397,6 +418,7 @@
 		state.stepAnswers.push({
 			prompt: q.prompt,
 			aspect: q.aspect,
+			qid: q.id,
 			ok: ok,
 			chosen: ok ? null : q.choices[index],
 			correct: q.choices[q.answer],
@@ -417,6 +439,7 @@
 		state.stepAnswers.push({
 			prompt: q.prompt,
 			aspect: q.aspect,
+			qid: q.id,
 			ok: false,
 			chosen: null,
 			correct: q.choices[q.answer],
@@ -503,8 +526,16 @@
 		var aspects = state.stepAnswers.map(function (a) { return a.aspect; });
 		var hints = state.stepAnswers.map(function (a) { return !!a.hintUsed; });
 		var correct = state.stepAnswers.map(function (a) { return a.ok; });
+		var qids = state.stepAnswers.map(function (a) { return a.qid; });
 		var points = byId('quiz-points');
 		if (points) points.textContent = String(state.points);
+		// Mark the verse attended (round is finished, answered or timed out).
+		try {
+			if (state.session && typeof state.session.index === 'number' &&
+				window.AayatunQuizAttend && window.AayatunQuizAttend.mark) {
+				window.AayatunQuizAttend.mark(state.session.index);
+			}
+		} catch (e) {}
 		var history = loadHistory();
 		history.unshift({
 			score: state.score,
@@ -515,7 +546,8 @@
 			aspects: aspects,
 			hints: hints,
 			correct: correct,
-			points: state.points
+			points: state.points,
+			qids: qids
 		});
 		saveHistory(history);
 
@@ -633,22 +665,75 @@
 		} catch (e) { /* quota full: history just won't grow */ }
 	}
 
-	function fetchSession() {
+	/* The server prefers verses you explored on the Quran Exploration Map
+	   (verse opened, or sitting on a visited page) that you have not yet
+	   quizzed, then unexplored unquizzed verses. The client and the map
+	   already keep the bits; this rebuilds the same 6,236-bit set from
+	   localStorage on every request. */
+	function attendedB64() {
+		if (window.AayatunQuizAttend && window.AayatunQuizAttend.b64) {
+			return window.AayatunQuizAttend.b64();
+		}
+		return null;
+	}
+
+	function exploredB64() {
+		var bytes = new Uint8Array(Math.ceil(6236 / 8));
+		try {
+			if (window.AayatunRecent && window.AayatunRecent.map) {
+				var m = window.AayatunRecent.map();
+				// Verse sits on a visited page? Only if the page map is available.
+				var pageOf = exploredPageOf();
+				for (var i = 0; i < 6236; i++) {
+					if (m.level[i] > 0 || (pageOf && pageOf[i] >= 0 && m.p[pageOf[i] >> 3] & (1 << (pageOf[i] & 7)))) {
+						bytes[i >> 3] |= (1 << (i & 7));
+					}
+				}
+			}
+		} catch (e) {}
+		return (typeof btoa === 'function') ? btoa(String.fromCharCode.apply(null, bytes)) : null;
+	}
+
+	var exploredPageOfCache = null;
+	function exploredPageOf() {
+		if (exploredPageOfCache) return exploredPageOfCache;
+		var bounds = Array.isArray(window.AAYATUN_PAGE_BOUNDS) ? window.AAYATUN_PAGE_BOUNDS : null;
+		if (!bounds || bounds.length !== 604) return null;
+		var pageOf = new Int16Array(6236).fill(-1);
+		for (var p = 0; p < 604; p++) {
+			var end = p + 1 < 604 ? bounds[p + 1] : 6236;
+			for (var i = bounds[p]; i < end && i < 6236; i++) pageOf[i] = p;
+		}
+		exploredPageOfCache = pageOf;
+		return pageOf;
+	}
+
+	function fetchSession(opts) {
+		opts = opts || {};
+		var body = {
+			seen: readSeenIds(),
+			explored: exploredB64(),
+			done: attendedB64()
+		};
+		if (opts.retake && opts.ids && opts.ids.length) {
+			body = { retake: true, ids: opts.ids.slice() };
+		}
 		return fetch('/api/v1/quiz/session', {
 			method: 'POST',
 			credentials: 'same-origin',
 			headers: Object.assign(
 				{ 'Content-Type': 'application/json' },
 				token ? { 'X-Aayatun-Token': token } : {}),
-			body: JSON.stringify({ seen: readSeenIds() })
+			body: JSON.stringify(body)
 		}).then(function (res) {
 			if (!res.ok) throw new Error('HTTP ' + res.status);
 			return res.json();
 		});
 	}
 
-	function startQuiz() {
-		fetchSession().then(function (session) {
+	function startQuiz(opts) {
+		opts = opts || {};
+		fetchSession(opts).then(function (session) {
 			var questions = session && Array.isArray(session.questions) ? session.questions : [];
 			if (questions.length !== 5) {
 				if (byId('quiz-start-note')) {

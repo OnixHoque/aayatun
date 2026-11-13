@@ -148,6 +148,7 @@
 {% endblock content %}
 
 {% block js %}
+<script>window.AAYATUN_PAGE_BOUNDS = {{ page_bounds|tojson }};</script>
 <meta name="aayatun-api-token" content="{{ api_token }}">
 <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/quiz.css') }}">
 <script defer src="{{ url_for('static', filename='js/quiz.js') }}"></script>

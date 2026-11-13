@@ -29,6 +29,7 @@
 	var hasThemes = themes.length === 12 && themeVerse.length === VERSE_COUNT;
 	var themesOn = false;
 	var themeFocus = null;
+	var quizOn = false;
 
 	// Capture the surah table before the dropdown plugin touches the select.
 	var surahs = [];
@@ -206,6 +207,11 @@
 	var themeSwitchInput = themeToggle ? themeToggle.querySelector('input') : null;
 	var themeLegend = document.getElementById('reading-map-theme-legend');
 	var themeAttribution = document.getElementById('reading-map-theme-attribution');
+	var quizToggle = document.getElementById('reading-map-attendance');
+	var quizSwitchInput = quizToggle ? quizToggle.querySelector('input') : null;
+	var legendUnattended = document.getElementById('reading-map-legend-unattended');
+	var legendAttended = document.getElementById('reading-map-legend-attended');
+	var legendUnread = document.getElementById('reading-map-legend-unread');
 	var readingLegend = document.querySelector('.reading-map-legend');
 	var legendRead = document.getElementById('reading-map-legend-read');
 	var legendPage = document.getElementById('reading-map-legend-page');
@@ -214,6 +220,7 @@
 	if (!grid || surahs.length !== 114) return;
 
 	initThemes();
+	initQuiz();
 
 	var built = false;
 	var currentMap = null;
@@ -305,6 +312,9 @@
 	{
 		currentMap = (window.AayatunRecent && window.AayatunRecent.map)
 			? window.AayatunRecent.map() : null;
+		var quizBits = (quizOn && window.AayatunQuizAttend && window.AayatunQuizAttend.load)
+			? window.AayatunQuizAttend.load() : null;
+		var attended = 0;
 		var deep = 0;
 		var children = grid.children;
 		for (var n = 0; n < children.length; n++) {
@@ -312,6 +322,14 @@
 			var raw = cell.getAttribute('data-i');
 			if (raw === null) continue;
 			var i = +raw;
+			if (quizOn) {
+				var on = quizBits && window.AayatunQuizAttend && window.AayatunQuizAttend.isSet(quizBits, i);
+				if (on) attended++;
+				cell.className = 'rg-cell' +
+					(on ? ' is-attended' : '') +
+					(i === selected ? ' is-selected' : '');
+				continue;
+			}
 			var state = stateOf(currentMap, i);
 			if (state > 1) deep++;
 			cell.className = 'rg-cell' +
@@ -328,8 +346,9 @@
 			}
 		}
 
-		grid.setAttribute('aria-label', 'Quran Exploration Map: ' + deep +
-			' of 6,236 verses studied, ' + pages + ' of 604 pages visited.');
+		grid.setAttribute('aria-label', quizOn
+			? 'Quran Quiz attendance: ' + attended + ' of 6,236 verses attended.'
+			: 'Quran Exploration Map: ' + deep + ' of 6,236 verses studied, ' + pages + ' of 604 pages visited.');
 		stats.deep = deep;
 		stats.pages = pages;
 
@@ -497,6 +516,60 @@
 		// the grid so the frame, both legends and the attribution stay above
 		// the fold. While the modal is hidden the rect is zero, so skip.
 		if (grid && grid.getBoundingClientRect().width > 0) layoutMap();
+	}
+
+	/* Quiz-attendance mode: the takeaway twin of theme mode — the cell fill
+	   carries whether the verse's quiz has been attended (bit set on round
+	   completion in the quiz), the legend collapses to the two attendance
+	   rows and the theme switch hides. Remembered per device, mutually
+	   exclusive with theme mode. */
+	function applyQuizMode(on, immediate)
+	{
+		quizOn = !!on;
+		// Quiz mode wins: theme mode switches itself off.
+		if (quizOn && themesOn) applyThemeMode(false);
+		if (grid) grid.classList.toggle('quiz-on', quizOn);
+		if (readingLegend) readingLegend.classList.toggle('quiz-on', quizOn);
+		if (quizSwitchInput) quizSwitchInput.checked = quizOn;
+		if (quizToggle) {
+			quizToggle.classList.toggle('is-on', quizOn);
+			quizToggle.removeAttribute('hidden');
+		}
+		showFade(legendUnattended, quizOn);
+		showFade(legendAttended, quizOn);
+		showFade(legendUnread, !quizOn);
+		showFade(legendRead, !quizOn && themesOn);
+		showFade(legendPage, !quizOn && !themesOn);
+		showFade(legendScale, !quizOn && !themesOn);
+		showFade(themeToggle, !quizOn);
+		if (quizOn) {
+			showFade(themeLegend, false);
+			showFade(themeAttribution, false);
+		}
+		try {
+			localStorage.setItem('aayatun_quiz_attend_map_v1', quizOn ? '1' : '0');
+		} catch (e) {}
+		if (grid && grid.getBoundingClientRect().width > 0) layoutMap();
+		if (typeof built !== 'undefined' && built) paint();
+	}
+
+	function setQuiz(on)
+	{
+		withThemeSwap(function () { applyQuizMode(on); });
+	}
+
+	function initQuiz()
+	{
+		if (!quizToggle) return;
+		var saved = null;
+		try { saved = localStorage.getItem('aayatun_quiz_attend_map_v1'); } catch (e) {}
+		if (saved === '1') applyQuizMode(true, true);
+		quizToggle.removeAttribute('hidden');
+		if (quizSwitchInput) {
+			quizSwitchInput.addEventListener('change', function () {
+				setQuiz(quizSwitchInput.checked);
+			});
+		}
 	}
 
 	function initThemes()
