@@ -414,7 +414,11 @@
 		}
 
 		lockAndMark(index);
-		showFeedback(ok ? 'Correct!' : 'Not quite.', index);
+		// Give the correct/wrong animation a beat to finish its read before the
+		// feedback popup slides in on top of it.
+		setTimeout(function () {
+			showFeedback(ok ? 'Correct!' : 'Not quite.', index);
+		}, 500);
 		state.stepAnswers.push({
 			prompt: q.prompt,
 			aspect: q.aspect,
@@ -435,7 +439,9 @@
 		updateLifelines();
 		var q = currentQuestion();
 		lockAndMark(null);
-		showFeedback('Time’s up!', null);
+		setTimeout(function () {
+			showFeedback('Time’s up!', null);
+		}, 500);
 		state.stepAnswers.push({
 			prompt: q.prompt,
 			aspect: q.aspect,
