@@ -717,6 +717,8 @@
 		};
 		if (opts.retake && opts.ids && opts.ids.length) {
 			body = { retake: true, ids: opts.ids.slice() };
+		} else if (opts.verse) {
+			body.verse = opts.verse;
 		}
 		return fetch('/api/v1/quiz/session', {
 			method: 'POST',
@@ -842,4 +844,23 @@
 
 	showView('start');
 	renderStats();
+
+	// The verse page links straight to /quiz?verse=N:V when the verse has a
+	// bank. Auto-start it on landing; a refresh afterwards gets a random
+	// quiz instead (the forced link vanishes with the first navigation).
+	var forcedVerse = window.AAYATUN_FORCED_VERSE || null;
+	var forcedOk = !!window.AAYATUN_FORCED_OK;
+	if (forcedVerse && forcedOk) {
+		try {
+			window.history.replaceState(null, '', '/quiz');
+		} catch (e) {}
+		startQuiz({ verse: forcedVerse });
+	} else if (forcedVerse && !forcedOk) {
+		var note = byId('quiz-start-note');
+		if (note) {
+			var parts = String(forcedVerse).split(':');
+			note.textContent = 'No quiz yet for verse ' + forcedVerse +
+				' — press Start quiz for a random one.';
+		}
+	}
 })();

@@ -1454,7 +1454,26 @@ def quiz_question_id(surah, verse, aspect, prompt):
 	h = hashlib.md5(str(prompt).encode('utf-8')).hexdigest()[:12]
 	return f'{int(surah)}:{int(verse)}:{aspect}:{h}'
 
-def get_random_session(exclude=(), explored=None, done=None, retake_ids=()):
+def quiz_bank_verse_available(surah, verse):
+	"""True when the quiz bank carries at least a full session for this verse."""
+	try:
+		surah = int(surah)
+		verse = int(verse)
+	except (TypeError, ValueError):
+		return False
+	if not (1 <= surah <= 114):
+		return False
+	idx = _bank_index()
+	if idx is None:
+		return False
+	starts = surah_starts()
+	cap = int(quran_stat()['Verses'].loc[int(surah)])
+	if not (1 <= verse <= cap):
+		return False
+	i = starts[surah - 1] + verse - 1
+	return i in idx
+
+def get_random_session(exclude=(), explored=None, done=None, retake_ids=(), forced_verse=None):
 	"""One verse's five-question session, or None if the bank is empty.
 
 	Retake (retake_ids non-empty): serve exactly those question IDs, bypassing
@@ -1468,6 +1487,21 @@ def get_random_session(exclude=(), explored=None, done=None, retake_ids=()):
 	bank_idx = _bank_index()
 	if not bank_idx:
 		return None
+
+	if forced_verse:
+		try:
+			fs, fv = int(forced_verse[0]), int(forced_verse[1])
+		except (TypeError, ValueError, IndexError):
+			fs = fv = None
+		if fs and 1 <= fs <= 114:
+			fstarts = surah_starts()
+			i = fstarts[fs - 1] + fv - 1
+			entry = bank_idx.get(i)
+			if entry:
+				fs_, fv_, qjson = entry
+				bank = _bank_questions(fs_, fv_, qjson, exclude=())
+				if bank:
+					return _payload(fs_, fv_, bank, i)
 
 	if retake_ids:
 		ids_map = _id_index()

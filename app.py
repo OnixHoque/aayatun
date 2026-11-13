@@ -136,10 +136,22 @@ def reading_map():
 		page_bounds=lib.get_page_bounds(), theme_data=lib.get_ayah_themes(),
 		api_token=api_token())
 
+def _forced_verse(value):
+	m = re.match(r'^\s*(\d{1,3})[:/.\-](\d{1,3})\s*$', str(value or ''))
+	if not m:
+		return None
+	try:
+		return int(m.group(1)), int(m.group(2))
+	except ValueError:
+		return None
+
 @app.route('/quiz')
 def quiz():
+	forced = _forced_verse(request.args.get('verse'))
+	forced_ok = bool(forced and lib.quiz_bank_verse_available(*forced))
 	return render_template('quiz.html', api_token=api_token(), bank_size=lib.quiz_session_count(),
-		page_bounds=lib.get_page_bounds())
+		page_bounds=lib.get_page_bounds(), forced_verse=('%d:%d' % forced if forced else None),
+		forced_ok=forced_ok)
 
 @app.route('/quiz/stats')
 def quiz_stats():
@@ -203,7 +215,7 @@ def details(surah, verse):
 	return private_page(make_response(render_template('versedetails.html',
 		details=lib.get_verse_core(surah, verse), read_index=lib.verse_index(surah, verse),
 		surah_starts=lib.surah_starts(), api_token=api_token(),
-		surah_themes=lib.get_surah_themes(surah))))
+		surah_themes=lib.get_surah_themes(surah), verse_quiz=lib.quiz_bank_verse_available(surah, verse))))
 
 # Lightweight payload used by next/prev navigation. Only the parts that change
 # on screen are sent; accordion sections are fetched on demand.
@@ -253,6 +265,7 @@ def quiz_api():
 		explored=body.get('explored'),
 		done=body.get('done'),
 		retake_ids=body.get('ids') if isinstance(body.get('ids'), list) else (),
+		forced_verse=_forced_verse(body.get('verse')),
 	)
 	if session is None:
 		return no_store(jsonify({'error': 'bank-unavailable'}))

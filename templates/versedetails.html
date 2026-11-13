@@ -303,11 +303,11 @@
 					<button id="surah-view-en" data-loading style="font-family: 'Open Sans' font-size: 90%; " class="circular ui tiny basic icon button" onclick="window.parent.location.href ='{{ url_for('en_tafsir', surah=details['surah']) }}'">
 						Tafsir (En)
 					</button>
-				<i class="icon close" style="cursor: pointer;" onclick="$('#more-controls').fadeOut(180); ['#more-btn','#play-btn','#share-btn','#tajweed-toggle-btn','#mushaf-jump-btn','#theme-pill'].forEach(function(id){ $(id).fadeIn(180); })"></i>
+				<i class="icon close" style="cursor: pointer;" onclick="$('#more-controls').fadeOut(180); ['#more-btn','#play-btn','#share-btn','#tajweed-toggle-btn','#mushaf-jump-btn','#verse-quiz-btn','#theme-pill'].forEach(function(id){ $(id).fadeIn(180); })"></i>
 				</span>
 
     		</span>
-			<button id="more-btn" data-tooltip="Comprehensive Reading" class="circular ui basic icon button" onclick="['#more-btn','#play-btn','#share-btn','#tajweed-toggle-btn','#mushaf-jump-btn','#theme-pill'].forEach(function(id){ $(id).fadeOut(180); }); $('#more-controls').fadeIn(180);">
+			<button id="more-btn" data-tooltip="Comprehensive Reading" class="circular ui basic icon button" onclick="['#more-btn','#play-btn','#share-btn','#tajweed-toggle-btn','#mushaf-jump-btn','#verse-quiz-btn','#theme-pill'].forEach(function(id){ $(id).fadeOut(180); }); $('#more-controls').fadeIn(180);">
 			  <i class="icon ellipsis horizontal"></i>
 			</button>
 	    	<button id="share-btn" data-tooltip="Share this ayah" class="circular ui basic icon button" onclick="shareVerse()">
@@ -330,6 +330,20 @@
 	    	<button id="tajweed-toggle-btn" data-tooltip="Tajweed colors" class="circular ui basic icon button" onclick="toggleTajweed()">
 			  <i class="icon tint"></i>
 		</button>
+		{% if verse_quiz %}
+	    	<button id="verse-quiz-btn" data-loading data-tooltip="Take the quiz on this verse" title="Take the quiz on this verse" aria-label="Take the quiz on this verse" class="circular ui basic icon button" onclick="if (window.AayatunNav) { window.AayatunNav.go('/quiz?verse={{ details['surah'] }}:{{ details['verse'] }}'); } else { window.location.href = '/quiz?verse={{ details['surah'] }}:{{ details['verse'] }}'; }">
+		  <i class="icon graduation cap"></i>
+		</button>
+		<script>
+		// The quiz would replace the reading page; inside the shared verse
+		// modal there is no point navigating the parent out of the modal,
+		// so the button only exists on the standalone verse page.
+		if (window.self !== window.top) {
+			var quizBtn = document.getElementById('verse-quiz-btn');
+			if (quizBtn) quizBtn.remove();
+		}
+		</script>
+		{% endif %}
     	<button id="play-btn" class="circular ui basic icon button" onclick="$('#audio-box').fadeIn(180); $('#control-btns').fadeOut(180); $('#mainaudio').trigger('play');">
 			  <i class="icon play"></i>
 		</button>
