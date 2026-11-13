@@ -496,8 +496,16 @@ document.addEventListener('DOMContentLoaded', function () {
 	});
 
 	// More Apps is a toggle button (not a link), so tapping it does not
-	// trigger the browser's focus/scroll behaviour for anchors.
-	$('#more-apps-btn').popup({
+	// trigger the browser's focus/scroll behaviour for anchors. Register a
+	// full preventDefault before .popup() (jQuery runs same-element handlers
+	// in registration order) so no default action or focus-scroll can move
+	// the page, and blur the button so Android Chrome does not scroll the
+	// focused element into view.
+	$('#more-apps-btn').on('click', function (evt) {
+		evt.preventDefault();
+		evt.stopPropagation();
+		this.blur();
+	}).popup({
 		popup: $('#more-apps-popup'),
 		on: 'click',
 		position: 'top center',
