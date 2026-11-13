@@ -1362,7 +1362,7 @@ The dark theme and the menu work even if later CDN scripts fail.
 
 `static/service-worker.js` is served at `/service-worker.js` (root scope).
 `index.html` and both standalone pages register it. `CACHE_NAME` is
-**`aayatun-v104`**; bump it whenever the precache list or the caching logic
+**`aayatun-v105`**; bump it whenever the precache list or the caching logic
 changes.
 
 ```mermaid
@@ -1478,7 +1478,7 @@ flowchart LR
 | SQLite | Host | `tajweed_cache.db`, `qcf_cache.db` | permanent |
 | Disk files | Host | `db/fonts/v4-pN.woff2` | permanent |
 | HTTP | Browser/proxy | `private_page` (pages with token), `no-store` (API), `private, max-age=300` (mushaf + theme pages), `immutable` (fonts) | per header |
-| Service worker | Browser | app shell, same-origin assets, CDN assets | `aayatun-v104` until bumped |
+| Service worker | Browser | app shell, same-origin assets, CDN assets | `aayatun-v105` until bumped |
 | `localStorage` | Browser | prefs, offline verse, recent reads, map | until cleared |
 
 **localStorage / sessionStorage keys**
