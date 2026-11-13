@@ -314,24 +314,7 @@
 	    	<button id="share-btn" data-tooltip="Share this ayah" class="circular ui basic icon button" onclick="shareVerse()">
 			  <i class="icon share alternate"></i>
 			</button>
-			{% if details['qcf_page'] %}
-	    	<button id="mushaf-jump-btn" data-loading data-tooltip="Open on the mushaf page" title="Open on the mushaf page" aria-label="Open on the mushaf page" class="circular ui basic icon button" onclick="window.parent.location.href ='{{ url_for('mushaf_page', page_no=details['qcf_page']) }}?v={{ details['surah'] }}:{{ details['verse'] }}'">
-			  <i class="icon book"></i>
-			</button>
-			<script>
-			// Inside the verse modal the parent is the reading page, so a jump
-			// link would navigate away from the open modal. The button only
-			// makes sense on the full verse page.
-			if (window.self !== window.top) {
-				var mushafJumpBtn = document.getElementById('mushaf-jump-btn');
-				if (mushafJumpBtn) mushafJumpBtn.remove();
-			}
-			</script>
-			{% endif %}
-	    	<button id="tajweed-toggle-btn" data-tooltip="Tajweed colors" class="circular ui basic icon button" onclick="toggleTajweed()">
-			  <i class="icon tint"></i>
-		</button>
-		{% set _vref = details['surah']|string + ':' + details['verse']|string %}
+{% set _vref = details['surah']|string + ':' + details['verse']|string %}
 	    	<button id="verse-quiz-btn" data-loading data-tooltip="Take the quiz on this verse" title="Take the quiz on this verse" aria-label="Take the quiz on this verse" class="circular ui basic icon button" style="display: none;" onclick="if (window.AayatunNav) { window.AayatunNav.go('/quiz?verse={{ _vref }}'); } else { window.location.href = '/quiz?verse={{ _vref }}'; }">
 		  <i class="icon graduation cap"></i>
 		</button>
@@ -363,7 +346,25 @@
 			});
 		})();
 		</script>
-    	<button id="play-btn" class="circular ui basic icon button" onclick="$('#audio-box').fadeIn(180); $('#control-btns').fadeOut(180); $('#mainaudio').trigger('play');">
+    	
+			{% if details['qcf_page'] %}
+	    	<button id="mushaf-jump-btn" data-loading data-tooltip="Open on the mushaf page" title="Open on the mushaf page" aria-label="Open on the mushaf page" class="circular ui basic icon button" onclick="window.parent.location.href ='{{ url_for('mushaf_page', page_no=details['qcf_page']) }}?v={{ details['surah'] }}:{{ details['verse'] }}'">
+			  <i class="icon book"></i>
+			</button>
+			<script>
+			// Inside the verse modal the parent is the reading page, so a jump
+			// link would navigate away from the open modal. The button only
+			// makes sense on the full verse page.
+			if (window.self !== window.top) {
+				var mushafJumpBtn = document.getElementById('mushaf-jump-btn');
+				if (mushafJumpBtn) mushafJumpBtn.remove();
+			}
+			</script>
+			{% endif %}
+	    	<button id="tajweed-toggle-btn" data-tooltip="Tajweed colors" class="circular ui basic icon button" onclick="toggleTajweed()">
+			  <i class="icon tint"></i>
+		</button>
+		<button id="play-btn" class="circular ui basic icon button" onclick="$('#audio-box').fadeIn(180); $('#control-btns').fadeOut(180); $('#mainaudio').trigger('play');">
 			  <i class="icon play"></i>
 		</button>
 		</div>
