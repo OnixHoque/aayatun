@@ -769,8 +769,10 @@
     }
 
     /* Rounded switch for theme mode, in the legend row. */
+    /* Both switches live in one right-pinned group so they stay adjacent. */
+    .reading-map-switch-group { margin-left: auto; flex: none; display: inline-flex; align-items: center; gap: 16px; }
+    .reading-map-switch-group[hidden] { display: none !important; }
     .reading-map-switch {
-        margin-left: auto;
         flex: none;
         position: relative;
         display: inline-flex;
@@ -1186,16 +1188,18 @@
 					<span class="reading-map-legend-item" id="reading-map-legend-page"><i class="rg-swatch light"></i>Page visited</span>
 					<span class="rg-scale" id="reading-map-legend-scale" title="Opened once, twice, 3+ times"><span>Less</span><i class="rg-swatch deep-1"></i><i class="rg-swatch deep-2"></i><i class="rg-swatch deep-3"></i><span>More</span></span>
 					<span class="mushaf-zoom-sep" aria-hidden="true"></span>
-					<label class="reading-map-switch" id="reading-map-themes" hidden>
-						<input type="checkbox" id="reading-map-themes-input">
-						<span class="reading-map-switch-track" aria-hidden="true"><span class="reading-map-switch-thumb"></span></span>
-						<span class="reading-map-switch-label">Show Verse Themes</span>
-					</label>
-					<label class="reading-map-switch" id="reading-map-attendance" hidden>
-						<input type="checkbox" id="reading-map-attendance-input">
-						<span class="reading-map-switch-track" aria-hidden="true"><span class="reading-map-switch-thumb"></span></span>
-						<span class="reading-map-switch-label">Quiz Attendance</span>
-					</label>
+					<span class="reading-map-switch-group">
+						<label class="reading-map-switch" id="reading-map-themes" hidden>
+							<input type="checkbox" id="reading-map-themes-input">
+							<span class="reading-map-switch-track" aria-hidden="true"><span class="reading-map-switch-thumb"></span></span>
+							<span class="reading-map-switch-label">Show Verse Themes</span>
+						</label>
+						<label class="reading-map-switch" id="reading-map-attendance" hidden>
+							<input type="checkbox" id="reading-map-attendance-input">
+							<span class="reading-map-switch-track" aria-hidden="true"><span class="reading-map-switch-thumb"></span></span>
+							<span class="reading-map-switch-label">Quiz Attendance</span>
+						</label>
+					</span>
 				</div>
 				<div id="reading-map-theme-legend" class="reading-map-theme-legend" hidden></div>
 			</div>
