@@ -150,7 +150,8 @@ def quiz():
 	forced = _forced_verse(request.args.get('verse'))
 	forced_ok = bool(forced and lib.quiz_bank_verse_available(*forced))
 	return render_template('quiz.html', api_token=api_token(), bank_size=lib.quiz_session_count(),
-		page_bounds=lib.get_page_bounds(), forced_verse=('%d:%d' % forced if forced else None),
+		page_bounds=lib.get_page_bounds(), surah_starts=lib.surah_starts(),
+		forced_verse=('%d:%d' % forced if forced else None),
 		forced_ok=forced_ok)
 
 @app.route('/quiz/stats')

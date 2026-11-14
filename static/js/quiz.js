@@ -685,6 +685,61 @@
 		} catch (e) { /* quota full: history just won't grow */ }
 	}
 
+	/* One-time recovery for rounds completed before the attendance bitset
+	   existed (or bits lost to a partial write): a history entry only exists
+	   for a round that was finished, and its qids name the verse, so those
+	   are exact. The seen list marks any verse at least one question was
+	   shown for — lossy, but it is the only older record left. Runs once per
+	   device, persists into the same bitset the map's attendance view reads,
+	   and is idempotent. */
+	var BACKFILL_KEY = 'aayatun_quiz_attend_backfill_v1';
+
+	function verseIndexOf(starts, surah, verse) {
+		var s = surah | 0, v = verse | 0;
+		if (!(s >= 1 && s <= 114) || v < 1) return null;
+		var lo = starts[s - 1];
+		var hi = s < 114 ? starts[s] : 6236;
+		var i = lo + v - 1;
+		return i < hi ? i : null;
+	}
+
+	function qidVerseIndex(starts, qid) {
+		var m = /^(\d{1,3}):(\d{1,3}):/.exec(String(qid || ''));
+		return m ? verseIndexOf(starts, +m[1], +m[2]) : null;
+	}
+
+	function backfillAttendance() {
+		try {
+			if (localStorage.getItem(BACKFILL_KEY) === '1') return;
+			var A = window.AayatunQuizAttend;
+			var starts = Array.isArray(window.AAYATUN_SURAH_STARTS) ? window.AAYATUN_SURAH_STARTS : null;
+			if (!A || !A.load || !A.isSet || !A.set || !A.save || !starts || starts.length !== 114) {
+				// Nothing to persist into — retry on the next load.
+				return;
+			}
+			var verses = {};
+			function add(qid) {
+				var i = qidVerseIndex(starts, qid);
+				if (i !== null) verses[i] = true;
+			}
+			loadHistory().forEach(function (entry) {
+				(entry.qids || []).forEach(add);
+			});
+			try {
+				var seen = JSON.parse(localStorage.getItem(SEEN_KEY) || '[]');
+				if (Array.isArray(seen)) for (var k = 0; k < seen.length; k++) add(seen[k]);
+			} catch (e) {}
+			var bits = A.load();
+			var changed = false;
+			Object.keys(verses).forEach(function (k) {
+				var i = +k;
+				if (!A.isSet(bits, i)) { A.set(bits, i); changed = true; }
+			});
+			if (changed) A.save(bits);
+			try { localStorage.setItem(BACKFILL_KEY, '1'); } catch (e) {}
+		} catch (e) {}
+	}
+
 	/* The server prefers verses you explored on the Quran Exploration Map
 	   (verse opened, or sitting on a visited page) that you have not yet
 	   quizzed, then unexplored unquizzed verses. The client and the map
@@ -863,6 +918,7 @@
 	window.AayatunQuiz = { clearHistory: clearHistory };
 
 	showView('start');
+	backfillAttendance();
 	renderStats();
 
 	// The verse page links straight to /quiz?verse=N:V when the verse has a

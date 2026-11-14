@@ -149,6 +149,7 @@
 {% endblock content %}
 
 {% block js %}
+<script>window.AAYATUN_SURAH_STARTS = {{ surah_starts|tojson }};</script>
 <script>window.AAYATUN_PAGE_BOUNDS = {{ page_bounds|tojson }};</script>
 <script>window.AAYATUN_FORCED_VERSE = {{ forced_verse|tojson }};</script>
 <script>window.AAYATUN_FORCED_OK = {{ forced_ok|tojson }};</script>
