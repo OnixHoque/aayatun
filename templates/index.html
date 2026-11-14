@@ -351,11 +351,30 @@
 
     @media (max-width: 767.98px) {
         #home-or-h {
-            display: table !important;
+            display: flex !important;
+            align-items: center;
+            gap: .9em;
             /* inset the element so the two rules either side of "or" are shorter */
             padding-left: 3rem;
             padding-right: 3rem;
         }
+        /* Fomantic uses position:relative;top:50% table cells with a PNG
+           background, which renders the lines off-center in Safari — replace
+           with real flex children centered on the cross axis. */
+        #home-or-h::before,
+        #home-or-h::after {
+            content: '';
+            display: block;
+            position: static;
+            top: auto;
+            flex: 1 1 0;
+            width: auto !important;
+            height: 1px;
+            background-image: none !important;
+            background: rgba(34, 36, 38, .15);
+        }
+        html.dark-theme #home-or-h::before,
+        html.dark-theme #home-or-h::after { background: rgba(255, 255, 255, .16); }
     }
 </style>
     <h2 class="home-tagline" style="font-family: 'Open Sans';"> Let's explore the Quran! </h2>
