@@ -54,6 +54,82 @@
         border-top: 1px solid rgba(255, 255, 255, .03);
     }
 
+    /* Footer version label popup: share the app, or see the code. Theme-aware like the rest of the page. */
+    .about-popup {
+        position: fixed;
+        inset: 0;
+        z-index: 1902;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background: rgba(0, 0, 0, .4);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+    }
+    .about-popup[hidden] { display: none; }
+    .about-card {
+        position: relative;
+        width: min(100%, 360px);
+        background: #fff;
+        color: rgba(0, 0, 0, .87);
+        border: 1px solid rgba(34, 36, 38, .12);
+        border-radius: 18px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, .3);
+        padding: 22px 20px 18px;
+        font-family: 'Open Sans', sans-serif;
+        outline: none;
+    }
+    html.dark-theme .about-card {
+        background: rgb(44, 44, 44);
+        color: rgba(255, 255, 255, .87);
+        border-color: rgba(80, 80, 80, .8);
+        box-shadow: 0 16px 60px rgba(0, 0, 0, .5);
+    }
+    .about-close {
+        position: absolute;
+        top: 8px;
+        right: 10px;
+        width: 34px;
+        height: 34px;
+        min-height: 0;
+        padding: 0;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        color: inherit;
+        font-size: 1.4rem;
+        line-height: 1;
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        opacity: .6;
+    }
+    .about-close:hover, .about-close:focus-visible { opacity: 1; background: rgba(34, 36, 38, .06); }
+    html.dark-theme .about-close:hover, html.dark-theme .about-close:focus-visible { background: rgba(255, 255, 255, .08); }
+    .about-title { font-family: 'Merriweather', serif; font-size: 1.5rem; margin: 0 30px 2px 0; }
+    .about-sub { color: rgba(0, 0, 0, .55); margin: 0 0 14px; font-size: .85rem; }
+    html.dark-theme .about-sub { color: rgba(255, 255, 255, .55); }
+    .about-section { border: 1px solid rgba(34, 36, 38, .12); border-radius: 14px; padding: 12px; margin-top: 10px; background: rgba(34, 36, 38, .03); }
+    html.dark-theme .about-section { border-color: rgba(255, 255, 255, .15); background: rgba(255, 255, 255, .04); }
+    .about-head { font-weight: 700; margin: 0 0 8px; font-size: .92rem; }
+    .about-share-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .about-link { font-size: .95rem; font-weight: 700; color: #4183C4; }
+    html.dark-theme .about-link { color: #9CC4FF; }
+    .about-share-actions { display: flex; gap: 8px; align-items: center; }
+    .about-copy-btn { width: 34px; height: 34px; min-height: 0; padding: 0; display: grid; place-items: center; border: 1px solid rgba(34, 36, 38, .18); border-radius: 50%; background: transparent; color: inherit; cursor: pointer; box-shadow: none; }
+    .about-copy-btn:hover, .about-copy-btn:focus-visible { border-color: #4183C4; color: #4183C4; }
+    html.dark-theme .about-copy-btn { border-color: rgba(255, 255, 255, .25); }
+    html.dark-theme .about-copy-btn:hover, html.dark-theme .about-copy-btn:focus-visible { border-color: #9CC4FF; color: #9CC4FF; }
+    .about-copy-btn.is-copied { color: #2e7d32; border-color: #2e7d32; }
+    html.dark-theme .about-copy-btn.is-copied { color: #81c784; border-color: #81c784; }
+    .about-share-btn { display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 999px; padding: 9px 16px; background: #4183C4; color: #fff; font: 700 .9rem/1 'Open Sans', sans-serif; cursor: pointer; white-space: nowrap; }
+    .about-share-btn:hover, .about-share-btn:focus-visible { background: #3570a8; }
+    html.dark-theme .about-share-btn:hover, html.dark-theme .about-share-btn:focus-visible { background: #4f8fca; }
+    .about-github { display: inline-flex; align-items: center; gap: 6px; color: #4183C4; font-weight: 600; text-decoration: none; font-size: .9rem; word-break: break-all; }
+    .about-github:hover, .about-github:focus-visible { text-decoration: underline; }
+    html.dark-theme .about-github { color: #9CC4FF; }
+
     .home-tagline {
         text-align: center;
         font-weight: 300;
@@ -604,6 +680,93 @@ document.addEventListener('DOMContentLoaded', function () {
 		window.addEventListener('resize', function () { if (isOpen()) place(); });
 		window.addEventListener('scroll', function () { if (isOpen()) place(); }, { passive: true });
 	})();
+	// About popup: share Aayatun, copy the link, link to the source.
+	(function () {
+		var btn = document.getElementById('about-btn');
+		var pop = document.getElementById('about-popup');
+		if (!btn || !pop) return;
+		var card = pop.querySelector('.about-card');
+		var closeBtn = document.getElementById('about-close');
+		var copyBtn = document.getElementById('about-copy-btn');
+		var shareBtn = document.getElementById('about-share-btn');
+		var APP_URL = 'https://www.aayatun.com/';
+		var SHARE_TEXT = 'Read one ayah of the Quran a day with Aayatun — https://www.aayatun.com/';
+
+		function isOpen() { return !pop.hidden; }
+		function open() {
+			pop.hidden = false;
+			btn.setAttribute('aria-expanded', 'true');
+			card.focus();
+		}
+		function close() {
+			pop.hidden = true;
+			btn.setAttribute('aria-expanded', 'false');
+			btn.focus();
+		}
+		btn.addEventListener('click', function (evt) {
+			evt.preventDefault();
+			if (isOpen()) close(); else open();
+		});
+		closeBtn.addEventListener('click', close);
+		document.addEventListener('mousedown', function (evt) {
+			if (isOpen() && !pop.contains(evt.target) && !btn.contains(evt.target)) close();
+		}, true);
+		document.addEventListener('keydown', function (evt) {
+			if (evt.key === 'Escape') close();
+		});
+		pop.addEventListener('click', function (evt) {
+			if (evt.target === pop) close();
+		});
+
+		function copyText(text, done) {
+			var txt = String(text);
+			if (navigator.clipboard && navigator.clipboard.writeText) {
+				navigator.clipboard.writeText(txt).then(function () { done(true); }, function () { done(false); });
+				return;
+			}
+			try {
+				var ta = document.createElement('textarea');
+				ta.value = txt;
+				ta.setAttribute('readonly', '');
+				ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+				document.body.appendChild(ta);
+				ta.select();
+				var ok = document.execCommand('copy');
+				document.body.removeChild(ta);
+				done(!!ok);
+			} catch (e) {
+				done(false);
+			}
+		}
+
+		var copyHTML = copyBtn.innerHTML;
+		copyBtn.addEventListener('click', function () {
+			copyText(APP_URL, function (ok) {
+				if (!ok) return;
+				copyBtn.classList.add('is-copied');
+				copyBtn.innerHTML = '<i class="icon check" aria-hidden="true"></i>';
+				copyBtn.setAttribute('aria-label', 'Copied!');
+				setTimeout(function () {
+					copyBtn.classList.remove('is-copied');
+					copyBtn.innerHTML = copyHTML;
+					copyBtn.setAttribute('aria-label', 'Copy aayatun.com to clipboard');
+				}, 1600);
+			});
+		});
+
+		var shareHTML = shareBtn.innerHTML;
+		shareBtn.addEventListener('click', function () {
+			if (navigator.share) {
+				navigator.share({ title: 'Aayatun — An Ayah a Day', text: SHARE_TEXT }).catch(function () {});
+				return;
+			}
+			copyText(SHARE_TEXT, function (ok) {
+				if (!ok) return;
+				shareBtn.innerHTML = '<i class="icon check" aria-hidden="true"></i>Copied!';
+				setTimeout(function () { shareBtn.innerHTML = shareHTML; }, 1600);
+			});
+		});
+	})();
     if('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register("/service-worker.js", { scope: '/' })
@@ -621,7 +784,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 {% block end_ %}
 <div class="ui text container" style="font-family: 'Open Sans'; display: flex; flex: 0 0 auto; flex-direction: column-reverse;">
-		<div class="app-footer-bar"><p style="text-align: center; color: gray; opacity: 90%; font-size: 70%;"><a href="https://github.com/OnixHoque/aayatun/tree/deploy" target="_blank" rel="noopener">Aayatun v2.0</a> | <a href="javascript:void(0)" id="change-theme">Dark Theme</a> | <a href="#" id="more-apps-btn" class="footer-link" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false" aria-controls="more-apps-popup">More Apps</a> </p></div>
+		<div class="app-footer-bar"><p style="text-align: center; color: gray; opacity: 90%; font-size: 70%;"><a href="#" id="about-btn" class="footer-link" role="button" tabindex="0" aria-haspopup="dialog" aria-expanded="false" aria-controls="about-popup">Aayatun v2.0</a> | <a href="javascript:void(0)" id="change-theme">Dark Theme</a> | <a href="#" id="more-apps-btn" class="footer-link" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false" aria-controls="more-apps-popup">More Apps</a> </p></div>
 		<div id="install-banner" class="ui mini message" style="display: none; color: gray">
 		    <i class="close icon" id="install-close" role="button" aria-label="Dismiss" tabindex="0"></i>
 		    <div class="header" id="install-header">
@@ -669,6 +832,27 @@ document.addEventListener('DOMContentLoaded', function () {
 						<span class="more-apps-text">A daily habit tracker with history and a focus mode.</span>
 					</span>
 				</a>
+			</div>
+		</div>
+		<div id="about-popup" class="about-popup" role="dialog" aria-modal="true" aria-labelledby="about-title" hidden>
+			<div class="about-card" tabindex="-1">
+				<button type="button" class="about-close" id="about-close" aria-label="Close">&times;</button>
+				<h2 class="about-title" id="about-title">Aayatun</h2>
+				<p class="about-sub">An Ayah a Day — read the Quran, one verse at a time.</p>
+				<div class="about-section">
+					<p class="about-head">Please share Aayatun with your friends</p>
+					<div class="about-share-row">
+						<code class="about-link" id="about-link">aayatun.com</code>
+						<div class="about-share-actions">
+							<button type="button" class="about-copy-btn" id="about-copy-btn" title="Copy aayatun.com" aria-label="Copy aayatun.com to clipboard"><i class="icon copy outline" aria-hidden="true"></i></button>
+							<button type="button" class="about-share-btn" id="about-share-btn"><i class="icon share alternate" aria-hidden="true"></i>Share</button>
+						</div>
+					</div>
+				</div>
+				<div class="about-section">
+					<p class="about-head">Aayatun is open source</p>
+					<a class="about-github" href="https://github.com/OnixHoque/aayatun/tree/deploy" target="_blank" rel="noopener">github.com/OnixHoque/aayatun<i class="icon external alternate" aria-hidden="true"></i></a>
+				</div>
 			</div>
 		</div>
 		<div id="suggestion" class="ui mini message" style="display: none; color: gray">
