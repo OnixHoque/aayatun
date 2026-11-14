@@ -60,7 +60,7 @@
 	<div class="comprehensive-div mushaf-page" style="margin: 0px 10px">
 	<br>
 	<p class="page-subtitle page-subtitle-lg">Madani Mushaf Page {{ page_no }}</p>
-	<p class="page-hint">Click on the left column (surah:verse) to open verse details for the corresponding verse.</p>
+	<p class="page-hint" id="mushaf-page-hint">Click on the left column (surah:verse) to open verse details for the corresponding verse.</p>
 	<p class="mushaf-page-surahs">{% for g in groups %}{{ g.name }} {% if g.rows[0].verse == g.rows[-1].verse %}{{ g.rows[0].verse }}{% else %}{{ g.rows[0].verse }}-{{ g.rows[-1].verse }}{% endif %}{% if not loop.last %} &middot; {% endif %}{% endfor %}</p>
 
 	{% if overview %}
@@ -485,6 +485,9 @@
 	var layoutLines = layoutView ? Array.prototype.slice.call(layoutView.querySelectorAll('.mushaf-line')) : [];
 	var layoutOn = false;
 	var layoutResizeTimer = null;
+	var hintEl = document.getElementById('mushaf-page-hint');
+	var HINT_TABLE = 'Click on the left column (surah:verse) to open verse details for the corresponding verse.';
+	var HINT_LAYOUT = 'Click a line to open verse details for the corresponding verse.';
 
 	function layoutTextWidth(el)
 	{
@@ -619,6 +622,7 @@
 		// The early head script hides the table before first paint when the
 		// line layout is the default; from here the normal branches own it.
 		document.documentElement.classList.remove('mushaf-layout-pending');
+		if (hintEl) hintEl.textContent = layoutOn ? HINT_LAYOUT : HINT_TABLE;
 		if (layoutBtn) {
 			layoutBtn.classList.toggle('active', layoutOn);
 			layoutBtn.setAttribute('aria-pressed', layoutOn ? 'true' : 'false');

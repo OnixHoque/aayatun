@@ -5,12 +5,19 @@
   <meta name="theme-color" content="#eeeeee">
   <meta name="color-scheme" content="light dark">
   <meta charset="utf-8">
-  {% block viewport_meta %}<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">{% endblock %}
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1, user-scalable=no">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Aayatun">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <script>
+    // iOS Safari ignores user-scalable=no in the viewport meta since iOS 10;
+    // block its proprietary pinch gestures too. Applies to every page.
+    ['gesturestart', 'gesturechange'].forEach(function (type) {
+      document.addEventListener(type, function (e) { e.preventDefault(); }, { passive: false });
+    });
+  </script>
   <script>
     (function () {
       try {

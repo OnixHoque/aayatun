@@ -2,7 +2,13 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1, user-scalable=no">
+		<script>
+			/* iOS Safari ignores user-scalable=no; block its pinch gestures too. */
+			['gesturestart', 'gesturechange'].forEach(function (type) {
+				document.addEventListener(type, function (e) { e.preventDefault(); }, { passive: false });
+			});
+		</script>
 		<title>Network not available</title>
 		<style>
 			* {

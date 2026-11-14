@@ -2,7 +2,7 @@
 <html lang="en" data-size="fit">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1, user-scalable=no">
 <title>Prayer times by zip code</title>
 <link rel="manifest" href="/static/manifest-prayer.json">
 <meta name="theme-color" content="#0f1b33">
@@ -12,6 +12,12 @@
 <meta name="apple-mobile-web-app-title" content="Prayer Time">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" sizes="180x180" href="/static/images/apple-touch-icon.png">
+<script>
+	/* iOS Safari ignores user-scalable=no; block its pinch gestures too. */
+	['gesturestart', 'gesturechange'].forEach(function (type) {
+		document.addEventListener(type, function (e) { e.preventDefault(); }, { passive: false });
+	});
+</script>
 <script>
   // Loading bar: mirrors base.html. The flag in sessionStorage lets the
   // destination page paint the bar from its first frame.
