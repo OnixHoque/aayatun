@@ -322,6 +322,10 @@
 			var raw = cell.getAttribute('data-i');
 			if (raw === null) continue;
 			var i = +raw;
+			// The reading tally (verses studied) must not move in quiz
+			// attendance mode — count it before the attendance branch.
+			var state = stateOf(currentMap, i);
+			if (state > 1) deep++;
 			if (quizOn) {
 				var on = quizBits && window.AayatunQuizAttend && window.AayatunQuizAttend.isSet(quizBits, i);
 				if (on) attended++;
@@ -330,8 +334,6 @@
 					(i === selected ? ' is-selected' : '');
 				continue;
 			}
-			var state = stateOf(currentMap, i);
-			if (state > 1) deep++;
 			cell.className = 'rg-cell' +
 				(hasThemes ? ' t' + themeVerse[i] : '') +
 				(state > 0 ? ' is-read' : '') +
