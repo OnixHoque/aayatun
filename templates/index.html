@@ -129,8 +129,8 @@
     .about-share-btn { width: 34px; height: 34px; min-height: 0; padding: 0; display: grid; place-items: center; border: 0; border-radius: 50%; background: #4183C4; color: #fff; cursor: pointer; box-shadow: none; }
     .about-copy-btn .icon, .about-share-btn .icon { margin: 0 !important; } /* Fomantic's button-icon rule shifts the glyph off-center */
     .about-share-btn:hover, .about-share-btn:focus-visible { background: #3570a8; }
-    .about-report { display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 999px; padding: 9px 18px; background: #f2711c; color: #fff; font: 700 .85rem/1 'Open Sans', sans-serif; text-decoration: none; white-space: nowrap; }
-    .about-report:hover, .about-report:focus-visible { background: #d6630f; }
+    .about-inline-link { color: #4183C4; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+    html.dark-theme .about-inline-link { color: #9CC4FF; }
     html.dark-theme .about-share-btn:hover, html.dark-theme .about-share-btn:focus-visible { background: #4f8fca; }
     .about-github { display: inline-flex; align-items: center; gap: 6px; color: #4183C4; font-weight: 600; text-decoration: none; font-size: .9rem; word-break: break-all; }
     .about-github:hover, .about-github:focus-visible { text-decoration: underline; }
@@ -867,8 +867,7 @@ document.addEventListener('DOMContentLoaded', function () {
 					<a class="about-github" href="https://github.com/OnixHoque/aayatun/tree/deploy" target="_blank" rel="noopener">https://github.com/OnixHoque/aayatun</a>
 				</div>
 				<div class="about-section">
-					<p class="about-head about-oss-line">Some of Aayatun's content is AI-assisted. If you spot a mistake or anything that feels off, please let us know:</p>
-					<a class="about-report" href="https://forms.gle/thSyKchKUQPn6wiDA" target="_blank" rel="noopener"><i class="icon flag outline" aria-hidden="true"></i>Report an issue</a>
+					<p class="about-head about-oss-line">Some of Aayatun's content is AI-assisted. If you notice any misleading information, please report it <a class="about-inline-link" href="https://forms.gle/thSyKchKUQPn6wiDA" target="_blank" rel="noopener">here</a>.</p>
 				</div>
 			</div>
 		</div>
