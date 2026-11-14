@@ -154,6 +154,9 @@
 				if (typeof old.last === 'number' && old.last >= 0 && old.last < VERSE_BITS)
 					out.last = old.last;
 				save(out);
+				// Carried over; the legacy key would otherwise sit in
+				// storage forever with nothing reading it.
+				try { localStorage.removeItem(OLD_MAP_KEY); } catch (e) {}
 			}
 		} catch (e) {}
 		return out;

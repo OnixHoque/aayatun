@@ -11,57 +11,66 @@ const pages = {
 
 function set_dark_theme(val)
 {
-	if(typeof(Storage) !== "undefined") {
+	try {
 		localStorage.setItem("darktheme", val);
 		return true;
 	}
-	else
+	catch (e) {
+		// Quota exhausted or storage blocked (private mode) — the theme
+		// just won't persist across loads.
 		return false;
+	}
 }
 function is_dark_theme()
 {
-	if(typeof(Storage) !== "undefined") {
+	try {
 		let tmp = localStorage.getItem("darktheme");
 		if (tmp !== null)
 			return tmp;
 		else
 			return false;
 	}
-	else
+	catch (e) {
 		return false;
+	}
 }
 
 function setValues(pageType, location)
 {
-	if(typeof(Storage) !== "undefined") {
-    	localStorage.setItem("pageType", pageType);
+	try {
+		localStorage.setItem("pageType", pageType);
 		localStorage.setItem("location", location);
 		return 1;
 	}
-	else
+	catch (e) {
 		return -1;
+	}
 }
 
 function getPageType()
 {
-	if(typeof(Storage) !== "undefined") {
+	try {
 		let tmp = localStorage.getItem("pageType");
 		if (tmp !== null)
 			return tmp;
 		else
 			return -1;
 	}
-	return -1;
+	catch (e) {
+		return -1;
+	}
 }
 
 function getLocation()
 {
-	if(typeof(Storage) !== "undefined") {
+	try {
 		let tmp = localStorage.getItem("location");
 		if (tmp !== null)
 			return tmp;
 		else
 			return -1;
 	}
-	return -1;
+	catch (e) {
+		return -1;
+	}
 }
