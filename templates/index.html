@@ -126,7 +126,7 @@
     html.dark-theme .about-copy-btn:hover, html.dark-theme .about-copy-btn:focus-visible { border-color: #9CC4FF; color: #9CC4FF; }
     .about-copy-btn.is-copied { color: #2e7d32; border-color: #2e7d32; }
     html.dark-theme .about-copy-btn.is-copied { color: #81c784; border-color: #81c784; }
-    .about-share-btn { display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 999px; padding: 9px 16px; background: #4183C4; color: #fff; font: 700 .9rem/1 'Open Sans', sans-serif; cursor: pointer; white-space: nowrap; }
+    .about-share-btn { width: 34px; height: 34px; min-height: 0; padding: 0; display: grid; place-items: center; border: 0; border-radius: 50%; background: #4183C4; color: #fff; cursor: pointer; box-shadow: none; }
     .about-share-btn:hover, .about-share-btn:focus-visible { background: #3570a8; }
     html.dark-theme .about-share-btn:hover, html.dark-theme .about-share-btn:focus-visible { background: #4f8fca; }
     .about-github { display: inline-flex; align-items: center; gap: 6px; color: #4183C4; font-weight: 600; text-decoration: none; font-size: .9rem; word-break: break-all; }
@@ -771,8 +771,9 @@ document.addEventListener('DOMContentLoaded', function () {
 			}
 			copyText(SHARE_TEXT, function (ok) {
 				if (!ok) return;
-				shareBtn.innerHTML = '<i class="icon check" aria-hidden="true"></i>Copied!';
-				setTimeout(function () { shareBtn.innerHTML = shareHTML; }, 1600);
+				shareBtn.innerHTML = '<i class="icon check" aria-hidden="true"></i>';
+				shareBtn.setAttribute('aria-label', 'Copied!');
+				setTimeout(function () { shareBtn.innerHTML = shareHTML; shareBtn.setAttribute('aria-label', 'Share Aayatun'); shareBtn.setAttribute('title', 'Share Aayatun'); }, 1600);
 			});
 		});
 	})();
@@ -854,7 +855,7 @@ document.addEventListener('DOMContentLoaded', function () {
 						<input type="text" class="about-link" id="about-link" value="https://www.aayatun.com/" readonly aria-label="Aayatun website URL">
 						<div class="about-share-actions">
 							<button type="button" class="about-copy-btn" id="about-copy-btn" title="Copy aayatun.com" aria-label="Copy aayatun.com to clipboard"><i class="icon copy outline" aria-hidden="true"></i></button>
-							<button type="button" class="about-share-btn" id="about-share-btn"><i class="icon share alternate" aria-hidden="true"></i>Share</button>
+							<button type="button" class="about-share-btn" id="about-share-btn" aria-label="Share Aayatun" title="Share Aayatun"><i class="icon share alternate" aria-hidden="true"></i></button>
 						</div>
 					</div>
 				</div>
