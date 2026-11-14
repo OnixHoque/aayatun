@@ -148,29 +148,32 @@
         outline-offset: 2px;
     }
 
-    /* Second line of surah options stays folded behind a More toggle */
+    /* Folded Tafsir row behind an inline ellipsis toggle — deliberately a different palette: a soft ghost fill, not the outlined option buttons */
     .whole-surah-toggle {
         border: 0;
-        background: transparent;
+        border-radius: 999px;
+        background: rgba(34, 36, 38, .06);
         color: inherit;
-        opacity: .7;
-        font-size: 78%;
-        font-family: 'Open Sans';
-        padding: 6px 12px;
+        opacity: .65;
+        width: 28px;
+        height: 28px;
         min-height: 0;
+        min-width: 0;
+        padding: 0;
+        margin: 0;
         display: inline-flex;
         align-items: center;
-        gap: 3px;
+        justify-content: center;
         cursor: pointer;
-        border-radius: 999px;
+        flex: none;
     }
-    .whole-surah-toggle:hover, .whole-surah-toggle:focus-visible { opacity: 1; }
-    .whole-surah-toggle .icon { margin: 0; font-size: .9em; transition: transform .18s ease; }
-    .whole-surah-toggle[aria-expanded="true"] .icon { transform: rotate(180deg); }
+    .whole-surah-toggle:hover, .whole-surah-toggle:focus-visible { opacity: 1; background: rgba(34, 36, 38, .12); }
+    html.dark-theme .whole-surah-toggle { background: rgba(255, 255, 255, .08); }
+    html.dark-theme .whole-surah-toggle:hover, html.dark-theme .whole-surah-toggle:focus-visible { background: rgba(255, 255, 255, .15); }
+    .whole-surah-toggle .icon { margin: 0; font-size: .95rem; }
     #whole-surah-more:not([hidden]) { animation: surahMoreIn .18s ease; }
     @keyframes surahMoreIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
     @media (prefers-reduced-motion: reduce) {
-        .whole-surah-toggle .icon { transition: none; }
         #whole-surah-more:not([hidden]) { animation: none; }
     }
     #whole-surah-row {
@@ -368,6 +371,7 @@
 				    <button name="menuitem" class="circular ui tiny basic icon button" style="font-family: 'Open Sans'; font-size: 78%;">Arabic</button>
 				    <button name="menuitem" class="circular ui tiny basic icon button" style="font-family: 'Open Sans'; font-size: 78%;">Translation</button>
 				    <button id="btn-whole-mushaf" type="button" class="circular ui tiny basic icon button" style="font-family: 'Open Sans'; font-size: 78%;">Mushaf</button>
+				    <button type="button" id="whole-surah-toggle" class="whole-surah-toggle" aria-expanded="false" aria-controls="whole-surah-more" aria-label="Show more reading options" title="More options"><i class="icon ellipsis horizontal" aria-hidden="true"></i></button>
 				  </div>
 				  <div id="whole-surah-more" hidden>
 				    <div class="whole-surah-line">
@@ -375,9 +379,6 @@
 				      <button name="menuitem" class="circular ui tiny basic icon button" style="font-family: 'Open Sans'; font-size: 78%;">Tafsir (Bengali)</button>
 				    </div>
 				  </div>
-				  <button type="button" id="whole-surah-toggle" class="whole-surah-toggle" aria-expanded="false" aria-controls="whole-surah-more">
-				    <i class="chevron down icon" aria-hidden="true"></i><span class="whole-surah-toggle-text">More</span>
-				  </button>
 				</div>
 			</div>
 
@@ -535,12 +536,12 @@ document.addEventListener('DOMContentLoaded', function () {
 	(function () {
 		var toggle = document.getElementById('whole-surah-toggle');
 		var more = document.getElementById('whole-surah-more');
-		var label = toggle && toggle.querySelector('.whole-surah-toggle-text');
 		if (!toggle || !more) return;
 		toggle.addEventListener('click', function () {
 			var open = toggle.getAttribute('aria-expanded') === 'true';
 			toggle.setAttribute('aria-expanded', open ? 'false' : 'true');
-			if (label) label.textContent = open ? 'More' : 'Less';
+			toggle.setAttribute('aria-label', open ? 'Show more reading options' : 'Show fewer reading options');
+			toggle.setAttribute('title', open ? 'More options' : 'Fewer options');
 			more.hidden = open;
 		});
 	})();
