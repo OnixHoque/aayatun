@@ -566,6 +566,9 @@
        row is visible and the verses advance column by column to the right.
        The height is set from the space left in the viewport when it opens,
        and the native scrollbar is hidden in favour of the thumb below. */
+    /* Desktop shows the same thin native scrollbar as the Recently Read
+       strip (track click and thumb drag come for free); touch keeps it
+       hidden and uses the custom draggable bar below the grid. */
     .reading-map-scroll {
         position: relative;
         height: 260px;
@@ -574,14 +577,36 @@
         overscroll-behavior-x: contain;
         touch-action: pan-x pan-y;
         -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(34, 36, 38, .35) transparent;
         padding: 4px;
         border-radius: 3px;
         background: #e8ecf0;
     }
 
     .reading-map-scroll::-webkit-scrollbar {
-        display: none;
+        height: 8px;
+    }
+    .reading-map-scroll::-webkit-scrollbar-thumb {
+        background: rgba(34, 36, 38, .3);
+        border-radius: 4px;
+    }
+    .reading-map-scroll::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    html.dark-theme .reading-map-scroll {
+        scrollbar-color: rgba(255, 255, 255, .3) transparent;
+    }
+    html.dark-theme .reading-map-scroll::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, .28);
+    }
+
+    @media (hover: none) and (pointer: coarse) {
+        .reading-map-scroll { scrollbar-width: none; scrollbar-color: auto; }
+        .reading-map-scroll::-webkit-scrollbar { display: none; }
+    }
+    @media (hover: hover) and (pointer: fine) {
+        .reading-map-scrollbar { display: none !important; }
     }
 
     /* Sparse page ticks above the columns, the way GitHub labels months:
