@@ -61,8 +61,12 @@
 	font-family: 'Open Sans'; font-size: 82%; font-weight: 700; color: #4183C4; opacity: .85;
 	border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;
 	border-top: 1px solid rgba(0,0,0,.07);
+	-webkit-tap-highlight-color: transparent;
 }
 .quiz-history-more:hover { opacity: 1; background: rgba(65,131,196,.08); }
+.quiz-history-more:active { background: none; }
+.quiz-history-more:focus { outline: none; }
+.quiz-history-more:focus-visible { outline: 2px solid #4183C4; outline-offset: -2px; }
 html.dark-theme .quiz-history-more { color: #9CC4FF; border-top-color: rgba(255,255,255,.08); }
 html.dark-theme .quiz-history-more:hover { background: rgba(156,196,255,.08); }
 .quiz-history-empty { padding: 14px 2px; opacity: .45; font-family: 'Open Sans'; font-size: 85%; text-align: center; }

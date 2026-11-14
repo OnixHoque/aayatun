@@ -106,6 +106,20 @@
 		byId('quiz-attempts').textContent = String(history.length);
 		byId('quiz-best').textContent = history.length ? best + '/' + total : '–';
 
+		// "Explored" = verses you've attempted in the quiz — the attendance
+		// bitset (aayatun_quiz_done_v1), the same data the Exploration Map
+		// uses for its quiz-attendance view.
+		var exploredEl = byId('quiz-explored');
+		if (exploredEl) {
+			var explored = 0;
+			try {
+				if (window.AayatunQuizAttend && window.AayatunQuizAttend.count) {
+					explored = window.AayatunQuizAttend.count();
+				}
+			} catch (e) {}
+			exploredEl.textContent = String(explored);
+		}
+
 		var wrap = byId('quiz-history');
 		var list = byId('quiz-history-list');
 		var moreBtn = byId('quiz-history-more');

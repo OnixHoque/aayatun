@@ -2,6 +2,8 @@
 
 {% block title %} Aayatun - An Ayah a Day {% endblock %}
 
+{% block viewport_meta %}<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1, user-scalable=no">{% endblock %}
+
 {% block js %}
 <script>window.AAYATUN_PAGE_BOUNDS = {{ page_bounds|tojson }};</script>
 {% endblock %}
@@ -160,6 +162,18 @@
     @media (prefers-reduced-motion: reduce) {
         #whole-surah-more:not([hidden]) { animation: none; }
     }
+    /* Mobile keeps a tight stack; desktop tightens the label→chicklet-row
+       gap. The air below the row comes from .home-separator. */
+    .whole-surah-col { padding-top: 0 !important; padding-bottom: 0 !important; }
+    /* Mobile stacks the two columns; keep the spacing around the horizontal
+       "or" divider symmetric (divider has 1rem top/bottom margins). */
+    @media (max-width: 767.98px) {
+        .jump-col { padding-top: 0 !important; }
+    }
+    @media (min-width: 768px) {
+        .whole-surah-col .home-section-label { margin-bottom: 2px; }
+        .whole-surah-col #whole-surah-row { margin-top: 2px; }
+    }
     #whole-surah-row {
         display: flex;
         flex-direction: column;
@@ -198,17 +212,28 @@
     /* Jumping to a page ignores the surah picker, so the whole-surah row is
        disabled along with it (set by updateJumpMode). */
     #whole-surah-row.is-disabled,
-    .home-section-label.is-disabled {
+    .home-section-label.is-disabled,
+    #home-or-v.is-disabled,
+    #home-or-h.is-disabled {
         opacity: .45;
     }
 
     /* The two home actions share one row; the labels stay readable down to
        the narrowest phone width. */
+    /* Hairline separator between the jump row and the action buttons, with
+       equal breathing room above and below. */
+    .home-separator {
+        height: 1px;
+        background: rgba(0, 0, 0, .12);
+        margin: 20px 0;
+    }
+    html.dark-theme .home-separator { background: rgba(255, 255, 255, .16); }
+
     .home-actions-row {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 10px;
-        margin-top: 18px;
+        margin-top: 0;
     }
 
     .home-actions-row .ui.button {
@@ -329,6 +354,9 @@
     @media (max-width: 767.98px) {
         #home-or-h {
             display: table !important;
+            /* inset the element so the two rules either side of "or" are shorter */
+            padding-left: 3rem;
+            padding-right: 3rem;
         }
     }
 </style>
@@ -337,18 +365,14 @@
 
 {% block content2 %}
 	<div style="font-family: Open Sans;font-size: 95%;">
-		<style>
-			/* App-like: no text selection, except in form controls. */
-			body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
-			body input, body textarea, body select, body [contenteditable="true"] { -webkit-user-select: text; user-select: text; }
-		</style>
+		{% include 'partials/_noselect.html' %}
 		<select class="ui search fluid dropdown" id="surah">
 		{% for s in surahs %}
 		  <option value="{{ s['surah_no'] }}" verse_count="{{ s['verse_count'] }}">{{ s['surah'] }}</option>
 		{% endfor %}
 		</select>
 		<div class="ui two column stackable grid" style="margin: 0; position: relative;">
-			<div class="column" style="display: flex; flex-direction: column; justify-content: center; padding-top: 0;">
+			<div class="column whole-surah-col" style="display: flex; flex-direction: column; justify-content: center;">
 				<div class="home-section-label" style="font-family: 'Open Sans';">Read the whole surah</div>
 				<div id="whole-surah-row">
 				  <div class="whole-surah-line">
@@ -369,7 +393,7 @@
 			<div class="ui vertical divider" id="home-or-v" style="left: 50%;">or</div>
 			<div class="ui horizontal divider" id="home-or-h" style="width: 100%; flex: 0 0 100%;">or</div>
 
-			<div class="column" style="display: flex; flex-direction: column; justify-content: center;">
+			<div class="column jump-col" style="display: flex; flex-direction: column; justify-content: center;">
 				<div id="verserow" style="display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">
 					<div style="font-family: 'Open Sans'; white-space: nowrap; display: flex; align-items: center; gap: 4px;">
 						<span>Jump to</span>
@@ -391,6 +415,8 @@
 				</div>
 			</div>
 		</div>
+
+		<div class="home-separator" role="separator" aria-hidden="true"></div>
 
 		<div class="home-actions-row">
 			<button class="ui basic fluid button" id='btnSurprise'> Surprise me! </button>
@@ -591,6 +617,8 @@ document.addEventListener('DOMContentLoaded', function () {
 			.attr('aria-disabled', pageMode ? 'true' : 'false')
 			.find('button').prop('disabled', pageMode);
 		whole.prev('.home-section-label').toggleClass('is-disabled', pageMode);
+		// The "or" separator belongs to the same choice — dim it too.
+		$('#home-or-v, #home-or-h').toggleClass('is-disabled', pageMode);
 	}
 
 

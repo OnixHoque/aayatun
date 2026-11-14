@@ -5,6 +5,8 @@
 {% block og_title %}Quran Exploration Map{% endblock %}
 {% block og_description %}Chart the verses and mushaf pages you have read on Aayatun — every square is one verse of the Quran.{% endblock %}
 
+{% block viewport_meta %}<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1, user-scalable=no">{% endblock %}
+
 {% block menu %}
 <div class="ui header three wide item" style="font-size: 200%; display: inline-block; text-align: middle;">
 	<a href="{{ url_for('index') }}" style="font-family: Merriweather;">Quran Explorer</a>
@@ -12,11 +14,8 @@
 {% endblock %}
 
 {% block head_extra %}
+{% include 'partials/_noselect.html' %}
 <style>
-    /* App-like: no text selection, except in form controls. */
-    body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
-    body input, body textarea, body select, body [contenteditable="true"] { -webkit-user-select: text; user-select: text; }
-
     [hidden] { display: none !important; }
     #reading-map-verse-nav, #reading-map-open, #reading-map-hint,
     .reading-map-legend-item, .rg-scale, #reading-map-themes,

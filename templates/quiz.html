@@ -5,6 +5,8 @@
 {% block og_title %}Quran Quiz{% endblock %}
 {% block og_description %}Five multiple-choice questions on what the verses actually say. English only.{% endblock %}
 
+{% block viewport_meta %}<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1, user-scalable=no">{% endblock %}
+
 {% block menu %}
 <div class="ui header three wide item" style="font-size: 200%; display: inline-block; text-align: middle;">
 	<a href="{{ url_for('index') }}" style="font-family: Merriweather;">Quran Quiz</a>
@@ -12,6 +14,7 @@
 {% endblock %}
 
 {% block content %}
+{% include 'partials/_noselect.html' %}
 <div class="quiz-page">
 
 	<!-- ======================= start screen ======================= -->
@@ -29,8 +32,8 @@
 				<div class="quiz-stat-label">Attempts</div>
 			</div>
 			<div class="quiz-stat">
-				<div class="quiz-stat-value" id="quiz-bank">{{ bank_size }}</div>
-				<div class="quiz-stat-label">Verses</div>
+				<div class="quiz-stat-value" id="quiz-explored">0</div>
+				<div class="quiz-stat-label">Explored</div>
 			</div>
 		</div>
 

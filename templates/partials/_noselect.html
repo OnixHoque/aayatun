@@ -1,0 +1,15 @@
+{# App-like lock: no text/object selection, no iOS callout or drag,
+   and iOS pinch gestures blocked (the index/quiz/map pages ship with a
+   viewport_meta override adding maximum-scale=1, user-scalable=no —
+   iOS Safari ignores that flag since iOS 10, hence the gesture blocker). #}
+<style>
+	/* App-like: no text selection anywhere on the page. */
+	body, body * { -webkit-user-select: none !important; user-select: none !important; }
+	body { -webkit-touch-callout: none; }
+	img, a, button { -webkit-user-drag: none; }
+</style>
+<script>
+	['gesturestart', 'gesturechange'].forEach(function (type) {
+		document.addEventListener(type, function (e) { e.preventDefault(); }, { passive: false });
+	});
+</script>
