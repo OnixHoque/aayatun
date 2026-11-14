@@ -114,8 +114,9 @@
     html.dark-theme .about-section { border-color: rgba(255, 255, 255, .15); background: rgba(255, 255, 255, .04); }
     .about-head { font-weight: 700; margin: 0 0 8px; font-size: .92rem; }
     .about-share-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-    .about-link { font-size: .95rem; font-weight: 700; color: #4183C4; }
-    html.dark-theme .about-link { color: #9CC4FF; }
+    .about-link { flex: 1; min-width: 0; border: 1px solid rgba(34, 36, 38, .18); background: rgba(34, 36, 38, .05); border-radius: 10px; padding: 10px; font: 600 .8rem/1 'Open Sans', sans-serif; color: #4183C4; text-align: center; cursor: pointer; }
+    html.dark-theme .about-link { border-color: rgba(255, 255, 255, .22); background: rgba(255, 255, 255, .06); color: #9CC4FF; }
+    .about-link:focus-visible { outline: 2px solid #4183C4; outline-offset: 1px; }
     .about-share-actions { display: flex; gap: 8px; align-items: center; }
     .about-copy-btn { width: 34px; height: 34px; min-height: 0; padding: 0; display: grid; place-items: center; border: 1px solid rgba(34, 36, 38, .18); border-radius: 50%; background: transparent; color: inherit; cursor: pointer; box-shadow: none; }
     .about-copy-btn:hover, .about-copy-btn:focus-visible { border-color: #4183C4; color: #4183C4; }
@@ -739,9 +740,15 @@ document.addEventListener('DOMContentLoaded', function () {
 			}
 		}
 
+		var linkInput = document.getElementById('about-link');
+		if (linkInput) {
+			linkInput.addEventListener('click', function () { this.select(); });
+			linkInput.addEventListener('focus', function () { this.select(); });
+		}
+
 		var copyHTML = copyBtn.innerHTML;
 		copyBtn.addEventListener('click', function () {
-			copyText(APP_URL, function (ok) {
+			copyText(linkInput ? linkInput.value : APP_URL, function (ok) {
 				if (!ok) return;
 				copyBtn.classList.add('is-copied');
 				copyBtn.innerHTML = '<i class="icon check" aria-hidden="true"></i>';
@@ -842,7 +849,7 @@ document.addEventListener('DOMContentLoaded', function () {
 				<div class="about-section">
 					<p class="about-head">Please share Aayatun with your friends</p>
 					<div class="about-share-row">
-						<code class="about-link" id="about-link">aayatun.com</code>
+						<input type="text" class="about-link" id="about-link" value="https://www.aayatun.com/" readonly aria-label="Aayatun website URL">
 						<div class="about-share-actions">
 							<button type="button" class="about-copy-btn" id="about-copy-btn" title="Copy aayatun.com" aria-label="Copy aayatun.com to clipboard"><i class="icon copy outline" aria-hidden="true"></i></button>
 							<button type="button" class="about-share-btn" id="about-share-btn"><i class="icon share alternate" aria-hidden="true"></i>Share</button>
