@@ -34,6 +34,28 @@
     /* Home is meant to sit inside one viewport: no 60px body margin pushing the footer out. */
     body { margin-bottom: 0; }
 
+    /* Footer bar pinned to the viewport bottom. The popup is a sibling of this
+       bar (not a child) so backdrop-filter here cannot trap it. */
+    .app-footer-bar {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1050;
+        padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+        background: rgba(255, 255, 255, .92);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border-top: 1px solid rgba(34, 36, 38, .08);
+        text-align: center;
+    }
+    .app-footer-bar p { margin: 0; padding-top: 0; }
+    .app-footer-spacer { flex: 0 0 auto; height: calc(46px + env(safe-area-inset-bottom, 0px)); }
+    html.dark-theme .app-footer-bar {
+        background: rgba(27, 28, 29, .92);
+        border-top-color: rgba(255, 255, 255, .08);
+    }
+
     .home-tagline {
         text-align: center;
         font-weight: 300;
@@ -136,6 +158,7 @@
         margin-bottom: 8px;
     }
 
+    /* Thin scrollbar on pointer devices; hidden on touch to save the chrome. */
     #recent-list {
         display: flex;
         flex-wrap: nowrap;
@@ -143,10 +166,17 @@
         gap: 6px;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-        padding: 2px 4px 6px;
+        scrollbar-width: thin;
+        padding: 2px 4px 8px;
     }
-    #recent-list::-webkit-scrollbar { display: none; }
+    #recent-list::-webkit-scrollbar { height: 6px; }
+    #recent-list::-webkit-scrollbar-thumb { background: rgba(34, 36, 38, .25); border-radius: 3px; }
+    #recent-list::-webkit-scrollbar-track { background: transparent; }
+    html.dark-theme #recent-list::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .28); }
+    @media (hover: none) and (pointer: coarse) {
+        #recent-list { scrollbar-width: none; padding-bottom: 6px; }
+        #recent-list::-webkit-scrollbar { display: none; }
+    }
 
     .recent-item {
         display: inline-flex;
@@ -593,7 +623,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 {% block end_ %}
 <div class="ui text container" style="font-family: 'Open Sans'; display: flex; flex: 0 0 auto; flex-direction: column-reverse;">
-		<p style="text-align: center; color: gray; opacity: 90%; padding-top: 2%; font-size: 70%;"><a href="https://github.com/OnixHoque/aayatun/tree/deploy" target="_blank" rel="noopener">Aayatun v2.0</a> | <a href="javascript:void(0)" id="change-theme">Dark Theme</a> | <a href="#" id="more-apps-btn" class="footer-link" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false" aria-controls="more-apps-popup">More Apps</a> </p>
+		<div class="app-footer-bar"><p style="text-align: center; color: gray; opacity: 90%; font-size: 70%;"><a href="https://github.com/OnixHoque/aayatun/tree/deploy" target="_blank" rel="noopener">Aayatun v2.0</a> | <a href="javascript:void(0)" id="change-theme">Dark Theme</a> | <a href="#" id="more-apps-btn" class="footer-link" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false" aria-controls="more-apps-popup">More Apps</a> </p></div>
 		<div id="install-banner" class="ui mini message" style="display: none; color: gray">
 		    <i class="close icon" id="install-close" role="button" aria-label="Dismiss" tabindex="0"></i>
 		    <div class="header" id="install-header">
@@ -655,6 +685,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 </div>
+<div class="app-footer-spacer" aria-hidden="true"></div>
 <!-- close the min-height flex wrapper opened in block start -->
 </div>
 {% endblock end_ %}
