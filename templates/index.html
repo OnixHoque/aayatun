@@ -27,8 +27,12 @@
         flex: 1;
         display: flex;
         flex-direction: column;
-        justify-content: center;
+        justify-content: flex-start;
+        padding-top: clamp(12px, 4vh, 48px);
     }
+
+    /* Home is meant to sit inside one viewport: no 60px body margin pushing the footer out. */
+    body { margin-bottom: 0; }
 
     .home-tagline {
         text-align: center;
@@ -134,14 +138,20 @@
 
     #recent-list {
         display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
         gap: 6px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding: 2px 4px 6px;
     }
+    #recent-list::-webkit-scrollbar { display: none; }
 
     .recent-item {
         display: inline-flex;
         align-items: center;
+        flex: 0 0 auto;
         gap: 5px;
         max-width: 100%;
         padding: 4px 10px;
