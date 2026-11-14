@@ -356,6 +356,18 @@
         color: #e74c3c;
     }
 
+    /* Dark theme: a solid red button so the destructive action is unmistakable. */
+    html.dark-theme #reading-map-clear {
+        background: #db2828;
+        color: #fff;
+        box-shadow: none;
+    }
+    html.dark-theme #reading-map-clear:hover,
+    html.dark-theme #reading-map-clear:focus-visible {
+        background: #e0393e;
+        color: #fff;
+    }
+
     @media (min-width: 560px) {
         .reading-map-cards {
             grid-template-columns: repeat(2, minmax(0, 1fr));
