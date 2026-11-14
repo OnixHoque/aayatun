@@ -761,6 +761,9 @@ $('ioImportBtn').addEventListener('click',()=>{
 $('ioCancelImport').addEventListener('click',()=>{ pendingPlan=null; $('ioConfirm').hidden=true; $('ioMain').hidden=false });
 $('ioConfirmImport').addEventListener('click',()=>{
   if(!pendingPlan) return;
+  // Bound the undo copy to the same 20-week window — `save()` would do
+  // the same moments later. Older days fold into `older`; totals survive.
+  for(const c of counters)prune(c);
   try{ localStorage.setItem(BAK_KEY, JSON.stringify(counters)) }catch(e){}
   let created=0, updated=0, written=0;
   for(const { inc, target } of pendingPlan.entries){
