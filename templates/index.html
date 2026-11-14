@@ -148,29 +148,12 @@
         outline-offset: 2px;
     }
 
-    /* Folded Tafsir row behind an inline ellipsis toggle — deliberately a different palette: a soft ghost fill, not the outlined option buttons */
+    /* Inline ellipsis toggle: identical outlined palette to the option buttons */
     .whole-surah-toggle {
-        border: 0;
-        border-radius: 999px;
-        background: rgba(34, 36, 38, .06);
-        color: inherit;
-        opacity: .65;
-        width: 28px;
-        height: 28px;
-        min-height: 0;
-        min-width: 0;
-        padding: 0;
         margin: 0;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        flex: none;
+        flex: 0 0 auto;
     }
-    .whole-surah-toggle:hover, .whole-surah-toggle:focus-visible { opacity: 1; background: rgba(34, 36, 38, .12); }
-    html.dark-theme .whole-surah-toggle { background: rgba(255, 255, 255, .08); }
-    html.dark-theme .whole-surah-toggle:hover, html.dark-theme .whole-surah-toggle:focus-visible { background: rgba(255, 255, 255, .15); }
-    .whole-surah-toggle .icon { margin: 0; font-size: .95rem; }
+    .whole-surah-toggle .icon { margin: 0 !important; }
     #whole-surah-more:not([hidden]) { animation: surahMoreIn .18s ease; }
     @keyframes surahMoreIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
     @media (prefers-reduced-motion: reduce) {
@@ -371,7 +354,7 @@
 				    <button name="menuitem" class="circular ui tiny basic icon button" style="font-family: 'Open Sans'; font-size: 78%;">Arabic</button>
 				    <button name="menuitem" class="circular ui tiny basic icon button" style="font-family: 'Open Sans'; font-size: 78%;">Translation</button>
 				    <button id="btn-whole-mushaf" type="button" class="circular ui tiny basic icon button" style="font-family: 'Open Sans'; font-size: 78%;">Mushaf</button>
-				    <button type="button" id="whole-surah-toggle" class="whole-surah-toggle" aria-expanded="false" aria-controls="whole-surah-more" aria-label="Show more reading options" title="More options"><i class="icon ellipsis horizontal" aria-hidden="true"></i></button>
+				    <button id="whole-surah-toggle" type="button" class="circular ui tiny basic icon button whole-surah-toggle" style="font-family: 'Open Sans'; font-size: 78%;" aria-expanded="false" aria-controls="whole-surah-more" aria-label="Show more reading options" title="More options"><i class="icon ellipsis horizontal" aria-hidden="true"></i></button>
 				  </div>
 				  <div id="whole-surah-more" hidden>
 				    <div class="whole-surah-line">
