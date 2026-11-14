@@ -354,7 +354,7 @@
 				    <button name="menuitem" class="circular ui tiny basic icon button" style="font-family: 'Open Sans'; font-size: 78%;">Arabic</button>
 				    <button name="menuitem" class="circular ui tiny basic icon button" style="font-family: 'Open Sans'; font-size: 78%;">Translation</button>
 				    <button id="btn-whole-mushaf" type="button" class="circular ui tiny basic icon button" style="font-family: 'Open Sans'; font-size: 78%;">Mushaf</button>
-				    <button id="whole-surah-toggle" type="button" class="circular ui tiny basic icon button whole-surah-toggle" style="font-family: 'Open Sans'; font-size: 78%;" aria-expanded="false" aria-controls="whole-surah-more" aria-label="Show more reading options" title="More options"><i class="icon ellipsis horizontal" aria-hidden="true"></i></button>
+				    <button id="whole-surah-toggle" type="button" class="circular ui tiny basic icon button whole-surah-toggle" style="font-family: 'Open Sans'; font-size: 78%;" aria-controls="whole-surah-more" aria-label="Show more reading options" title="More options"><i class="icon ellipsis horizontal" aria-hidden="true"></i></button>
 				  </div>
 				  <div id="whole-surah-more" hidden>
 				    <div class="whole-surah-line">
@@ -515,17 +515,17 @@ document.addEventListener('DOMContentLoaded', function () {
 		return base_url + '/' + {{ rand_surah[0] }} + '/' + {{ rand_surah[1] }};
 	}
 
-	// Fold/unfold the second line of surah options
+	// One-way reveal of the Tafsir line; the toggle disappears until reload
 	(function () {
 		var toggle = document.getElementById('whole-surah-toggle');
 		var more = document.getElementById('whole-surah-more');
 		if (!toggle || !more) return;
 		toggle.addEventListener('click', function () {
-			var open = toggle.getAttribute('aria-expanded') === 'true';
-			toggle.setAttribute('aria-expanded', open ? 'false' : 'true');
-			toggle.setAttribute('aria-label', open ? 'Show more reading options' : 'Show fewer reading options');
-			toggle.setAttribute('title', open ? 'More options' : 'Fewer options');
-			more.hidden = open;
+			more.hidden = false;
+			toggle.hidden = true;
+			toggle.setAttribute('aria-hidden', 'true');
+			var first = more.querySelector('button');
+			if (first) first.focus();
 		});
 	})();
 
