@@ -3,6 +3,7 @@
 <head>
   <!-- Required meta tags -->
   <meta name="theme-color" content="#eeeeee">
+  <meta name="color-scheme" content="light dark">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
@@ -27,6 +28,10 @@
     })();
   </script>
   <style>
+    /* Light is the authored default: declaring color-scheme stops Chrome's
+       Auto Dark algorithm from washing the palette (it only respects dark
+       when the page opts in, i.e. the site's own dark theme below). */
+    html { color-scheme: light; }
     html.dark-theme { color-scheme: dark; background-color: rgb(27, 28, 29); }
     html.dark-theme body { background-color: rgb(27, 28, 29) !important; color: rgba(255, 255, 255, .87); }
     html.dark-theme #menubar { background-color: rgb(44, 44, 44) !important; border-bottom: 1px solid rgba(80, 80, 80, .8); }
