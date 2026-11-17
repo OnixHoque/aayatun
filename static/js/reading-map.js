@@ -205,15 +205,20 @@
 	var versesNote = document.getElementById('reading-map-verses-note');
 	var themeToggle = document.getElementById('reading-map-themes');
 	var themeSwitchInput = themeToggle ? themeToggle.querySelector('input') : null;
+	// The popup carries its own copy of the theme switch: it stays visible
+	// and enabled in every mode, even when quiz attendance hides the main
+	// page's switch (quiz and theme mode are mutually exclusive).
+	var fsThemes = document.getElementById('map-fs-themes');
+	var fsThemesInput = fsThemes ? fsThemes.querySelector('input') : null;
 	var themeLegend = document.getElementById('reading-map-theme-legend');
 	var themeAttribution = document.getElementById('reading-map-theme-attribution');
 	var quizToggle = document.getElementById('reading-map-attendance');
 	var quizSwitchInput = quizToggle ? quizToggle.querySelector('input') : null;
 	var legendUnattended = document.getElementById('reading-map-legend-unattended');
 	var legendAttended = document.getElementById('reading-map-legend-attended');
+	var visitedKey = document.getElementById('map-fs-visited-key');
 	var legendUnread = document.getElementById('reading-map-legend-unread');
 	var readingLegend = document.querySelector('.reading-map-legend');
-	var legendRead = document.getElementById('reading-map-legend-read');
 	var legendPage = document.getElementById('reading-map-legend-page');
 	var legendScale = document.getElementById('reading-map-legend-scale');
 
@@ -336,7 +341,6 @@
 			}
 			cell.className = 'rg-cell' +
 				(hasThemes ? ' t' + themeVerse[i] : '') +
-				(state > 0 ? ' is-read' : '') +
 				(state ? ' is-' + STATE_CLASS[state] : '') +
 				(i === selected ? ' is-selected' : '');
 		}
@@ -500,13 +504,18 @@
 	function applyThemeMode(on)
 	{
 		themesOn = !!on;
+		// Theme mode and quiz attendance are mutually exclusive: turning
+		// themes on switches the quiz map back off (the main page hides
+		// its theme switch in quiz mode; the popup's switch always works).
+		if (themesOn && quizOn) applyQuizMode(false);
 		if (grid) grid.classList.toggle('themes-on', themesOn);
 		if (readingLegend) readingLegend.classList.toggle('themes-on', themesOn);
-		showFade(legendRead, themesOn);
 		showFade(legendPage, !themesOn);
 		showFade(legendScale, !themesOn);
 		if (themeSwitchInput) themeSwitchInput.checked = themesOn;
 		if (themeToggle) themeToggle.classList.toggle('is-on', themesOn);
+		if (fsThemesInput) fsThemesInput.checked = themesOn;
+		if (fsThemes) fsThemes.classList.toggle('is-on', themesOn);
 		showFade(themeLegend, themesOn);
 		showFade(themeAttribution, themesOn);
 		// The highlight is temporary, so leaving theme mode drops it.
@@ -514,9 +523,8 @@
 		try {
 			localStorage.setItem('aayatun_read_map_themes_v1', themesOn ? '1' : '0');
 		} catch (e) {}
-		// Toggling theme mode frees or forfeits the theme-legend space; re-fit
-		// the grid so the frame, both legends and the attribution stay above
-		// the fold. While the modal is hidden the rect is zero, so skip.
+		// The visited key shows only in plain reading mode.
+		if (visitedKey) showFade(visitedKey, !themesOn && !quizOn);
 		if (grid && grid.getBoundingClientRect().width > 0) layoutMap();
 	}
 
@@ -540,9 +548,9 @@
 		showFade(legendUnattended, quizOn);
 		showFade(legendAttended, quizOn);
 		showFade(legendUnread, !quizOn);
-		showFade(legendRead, !quizOn && themesOn);
 		showFade(legendPage, !quizOn && !themesOn);
 		showFade(legendScale, !quizOn && !themesOn);
+		showFade(visitedKey, !quizOn && !themesOn);
 		showFade(themeToggle, !quizOn);
 		if (quizOn) {
 			showFade(themeLegend, false);
@@ -578,7 +586,6 @@
 	{
 		if (!hasThemes) {
 			if (themeToggle) themeToggle.hidden = true;
-			if (legendRead) legendRead.hidden = true;
 			if (themeLegend) themeLegend.hidden = true;
 			if (themeAttribution) themeAttribution.hidden = true;
 			return;
@@ -672,6 +679,15 @@
 	function layoutMap()
 	{
 		if (!grid || !scroll) return;
+		// The fullscreen popup refits the same grid bitmap-style to one
+		// screen; the main one-way scroll fit doesn't apply there.
+		if (fsOpen) {
+			layoutFullscreen();
+			// Theme/quiz switches fade the legend in or out; re-fit
+			// once the fade settles.
+			window.setTimeout(layoutFullscreen, 240);
+			return;
+		}
 		var top = scroll.getBoundingClientRect().top;
 		var zoom = mapZoomFactor();
 		// Leave room for the page ticks, the reading legend, the theme
@@ -743,6 +759,7 @@
 	// affordance: the native one is hidden because phones never show it.
 	function syncX()
 	{
+		if (fsOpen) return;
 		if (!scroll || !xBar || !xThumb) return;
 		var max = Math.max(0, scroll.scrollWidth - scroll.clientWidth);
 		if (max <= 1) {
@@ -825,6 +842,122 @@
 			fixedFrameH = 0;
 			layoutMap();
 			syncX();
+		});
+	}
+
+	// Fullscreen overview mode: the same grid, bitmap-fitted to one screen
+	// inside the #map-fullscreen-modal popup. Opened by the fullscreen
+	// button next to the zoom stepper. The grid goes inert (viewing only);
+	// the two switches and the theme legend move into the popup so their
+	// state stays shared with the main page.
+	var fsOpen = false;
+	var fsMoved = [];
+	var fsModalEl = document.getElementById('map-fullscreen-modal');
+	var fsStage = document.getElementById('map-fs-stage');
+	var fsLegendRow = document.getElementById('map-fs-legend-row');
+	var fullscreenBtn = document.getElementById('map-fullscreen');
+	var fsKey = document.getElementById('map-fs-key');
+
+	// Fit the whole map (verses + surah breaks) into one screen with no
+	// scroll and no gap: square whole-pixel cells in the same column-major
+	// flow. Largest whole-pixel cell that fits, capped so 4K screens don't
+	// inflate the squares absurdly; anything smaller than 1 px clips.
+	function layoutFullscreen()
+	{
+		if (!grid || !fsStage) return;
+		// The map is a 10:6 landscape rectangle filling the popup's inner
+		// width; height follows the 10:6 ratio. Fractional cells, no gap.
+		var mapW = Math.max(150, Math.min(
+			Math.min(window.innerWidth * 0.94, 440) - 40,
+			(window.innerHeight - 260) * 10 / 6
+		));
+		var mapH = Math.round(mapW * 6 / 10);
+		fsStage.style.height = (mapH + 26) + 'px';
+		var N = grid.childElementCount || (VERSE_COUNT + 113);
+		var rows = Math.ceil(Math.sqrt(N * 6 / 10));
+		var cols = Math.ceil(N / rows);
+		var cell = mapW / cols;
+		grid.style.setProperty('--map-cell', cell + 'px');
+		grid.style.setProperty('--map-rows', String(rows));
+	}
+
+	function fsRememberMove(node, target)
+	{
+		if (!node || !target) return;
+		fsMoved.push({ node: node, parent: node.parentNode, next: node.nextSibling });
+		target.appendChild(node);
+	}
+
+	function fsRestoreMoved()
+	{
+		for (var i = fsMoved.length - 1; i >= 0; i--) {
+			var m = fsMoved[i];
+			if (m.next && m.next.parentNode === m.parent) {
+				m.parent.insertBefore(m.node, m.next);
+			} else {
+				m.parent.appendChild(m.node);
+			}
+		}
+		fsMoved = [];
+	}
+
+	// The popup initializes itself on first open (Fomantic attaches its
+	// listeners in the settings call); doing it lazily keeps the button
+	// working even when jQuery is not ready yet at script-eval time.
+	var fsModalInited = false;
+
+	function openFullscreen()
+	{
+		if (!fsModalEl || !fsStage || !grid || !scroll) return;
+		if (!built) { build(); paint(); }
+		fsMoved = [];
+		fsRememberMove(scroll, fsStage);
+		if (themeLegend && fsLegendRow) fsRememberMove(themeLegend, fsLegendRow);
+		if (themeAttribution && fsLegendRow) fsRememberMove(themeAttribution, fsLegendRow);
+		// The popup keeps its own theme switch; the quiz knob stays on the
+		// main page. The attendance chips travel along so the reserved key
+		// row shows something meaningful in quiz mode.
+		if (fsKey) {
+			if (legendUnattended) fsRememberMove(legendUnattended, fsKey);
+			if (legendAttended) fsRememberMove(legendAttended, fsKey);
+		}
+		if (xBar) xBar.hidden = true;
+		grid.classList.add('is-fs');
+		fsOpen = true;
+		if (!fsModalInited && window.jQuery) {
+			window.jQuery(fsModalEl).modal({
+				closable: true,
+				onVisible: function () { layoutFullscreen(); },
+				onHidden: closeFullscreen
+			});
+			fsModalInited = true;
+		}
+		if (window.jQuery && fsModalInited) window.jQuery(fsModalEl).modal('show');
+		// Fomantic sets display before the transition starts, so a double
+		// rAF is enough for the first fit even before onVisible fires.
+		window.requestAnimationFrame(function () {
+			window.requestAnimationFrame(layoutFullscreen);
+		});
+	}
+
+	function closeFullscreen()
+	{
+		fsOpen = false;
+		if (grid) grid.classList.remove('is-fs');
+		fsRestoreMoved();
+		if (xBar) xBar.hidden = false;
+		// The main one-way scroll fit owns the layout again.
+		fixedFrameH = 0;
+		layoutMap();
+		syncX();
+	}
+
+	if (fullscreenBtn) {
+		fullscreenBtn.addEventListener('click', openFullscreen);
+	}
+	if (fsThemesInput) {
+		fsThemesInput.addEventListener('change', function () {
+			setThemes(fsThemesInput.checked);
 		});
 	}
 
