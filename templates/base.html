@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en"{% if request.endpoint == 'quiz' %} data-no-ptr{% endif %}>
 <head>
   <!-- Required meta tags -->
   <meta name="theme-color" content="#eeeeee">
@@ -62,6 +62,7 @@
 
   <script defer src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.6/dist/semantic.min.js"></script>
+  <script defer src="{{ url_for('static', filename='js/pull-refresh.js') }}"></script>
   <script defer src="{{ url_for('static', filename='js/recent.js') }}"></script>
   <script defer src="{{ url_for('static', filename='js/quiz-attend.js') }}"></script>
   <script defer src="{{ url_for('static', filename='js/share.js') }}"></script>
