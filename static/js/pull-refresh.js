@@ -21,10 +21,10 @@
 	if (html.hasAttribute('data-no-ptr') || html.getAttribute('data-no-ptr') === 'true') return;
 
 	// One small injected style block — keeps base.html's diff to a single
-	// <script defer> line.
+	// <script defer> line. (No overscroll-behavior: it would kill the
+	// iOS rubber-band bounce the reader wants.)
 	var css = document.createElement('style');
 	css.textContent = [
-		'html,body{overscroll-behavior-y:contain;}',
 		'#ptr-spinner{position:fixed;top:calc(10px + env(safe-area-inset-top, 0px));left:50%;',
 		'width:34px;height:34px;margin-left:-17px;border-radius:50%;opacity:0;z-index:4000;',
 		'background:rgba(255,255,255,.92);box-shadow:0 1px 3px rgba(0,0,0,.18),0 0 0 1px rgba(34,36,38,.08);',
