@@ -247,10 +247,18 @@
      or transformed ancestor can trap it, and its own compositing layer keeps
      iOS from moving it during momentum scrolling. -->
 <button id="search-btn" type="button" aria-label="Search the Quran"
-  style="position: fixed !important; background: white; bottom: calc(15px + env(safe-area-inset-bottom, 0px)); right: 15px; opacity: .7; z-index: 1500; transform: translateZ(0); -webkit-transform: translateZ(0); will-change: transform; touch-action: manipulation"
-  class="circular ui basic huge icon button" onclick="$('#searchwindow').modal('show');">
+  style="position: fixed !important; background: white; bottom: calc(15px + env(safe-area-inset-bottom, 0px)); right: 15px; opacity: .7; z-index: 1500; transform: translateZ(0); -webkit-transform: translateZ(0); will-change: transform; touch-action: manipulation; font-size: 15px; color: #1b1c1d"
+  class="circular ui basic icon button" onclick="$('#searchwindow').modal('show');">
   <i class="icon search"></i>
 </button>
+
+{% if request.endpoint != 'index' %}
+<button id="back-btn" type="button" aria-label="Go back" title="Back"
+  style="position: fixed !important; background: white; bottom: calc(15px + env(safe-area-inset-bottom, 0px) + 44px); right: 15px; opacity: .7; z-index: 1500; transform: translateZ(0); -webkit-transform: translateZ(0); will-change: transform; touch-action: manipulation; font-size: 15px; color: #1b1c1d"
+  class="circular ui basic icon button" onclick="if (window.showLoading) window.showLoading(); if (history.length > 1) { history.back(); } else { window.location.href = '/'; }">
+  <i class="icon arrow left"></i>
+</button>
+{% endif %}
 
 
 
@@ -351,7 +359,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // $('.huge.circular.button').css('background', '');
     // $('.huge.circular.button').css('color', 'black');
-    $('.huge.circular.button i').removeClass('inverted').addClass('black');
+    $('#search-btn i, #back-btn i, #collapse-btn i').removeClass('inverted').addClass('black');
     $('.accordion').addClass('inverted');
     $('.accordion').removeClass('styled');
     // $('.text.container').addClass('very basic');
