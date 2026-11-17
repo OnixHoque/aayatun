@@ -4,6 +4,7 @@
 
 {% block js %}
 <script>window.AAYATUN_PAGE_BOUNDS = {{ page_bounds|tojson }};</script>
+<script>window.AAYATUN_SURAH_STARTS = {{ surah_starts|tojson }};</script>
 {% endblock %}
 
 {% block start %}
@@ -549,13 +550,48 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 	// Half the time jump to a random printed page, the rest to the start of a
-	// random ruku's verse detail (the historical behaviour).
+	// random ruku's verse detail (the historical behaviour). Prefer verses
+	// and pages you haven't been to yet, until everything is seen, then
+	// fall back to anywhere.
 	function surpriseTarget()
 	{
 		var base_url = window.location.origin;
-		if (Math.random() < 0.5) {
-			return base_url + '/page/' + (Math.floor(Math.random() * 604) + 1);
+		var m = (window.AayatunRecent && window.AayatunRecent.map) ? window.AayatunRecent.map() : null;
+
+		// Pages the reader hasn't opened yet.
+		var unseenPages = [];
+		if (m) {
+			for (var p = 1; p <= 604; p++) {
+				var byte = m.p[(p - 1) >> 3] || 0;
+				if (!(byte & (1 << ((p - 1) & 7)))) unseenPages.push(p);
+			}
 		}
+
+		// Verses the reader hasn't opened yet, mapped through the surah
+		// starts into a surah:verse URL.
+		var unseenVerses = [];
+		var starts = Array.isArray(window.AAYATUN_SURAH_STARTS) ? window.AAYATUN_SURAH_STARTS : null;
+		if (m && starts && starts.length === 114) {
+			for (var i = 0; i < 6236; i++) {
+				if (!m.level[i]) unseenVerses.push(i);
+			}
+		}
+
+		if (Math.random() < 0.5) {
+			var page = unseenPages.length ? unseenPages[Math.floor(Math.random() * unseenPages.length)]
+				: (Math.floor(Math.random() * 604) + 1);
+			return base_url + '/page/' + page;
+		}
+
+		if (unseenVerses.length) {
+			var idx = unseenVerses[Math.floor(Math.random() * unseenVerses.length)];
+			var surah = 1, verse = 1;
+			for (var s = 114; s >= 1; s--) {
+				if (starts[s - 1] <= idx) { surah = s; verse = idx - starts[s - 1] + 1; break; }
+			}
+			return base_url + '/' + surah + '/' + verse;
+		}
+
 		return base_url + '/' + {{ rand_surah[0] }} + '/' + {{ rand_surah[1] }};
 	}
 

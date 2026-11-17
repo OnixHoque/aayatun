@@ -128,7 +128,7 @@ def sw():
 def index():
 	i, j = random.choice(RUKU_LIST)
 	return render_template('index.html', surahs=getVerseMaps(), rand_surah=(i, j),
-		page_bounds=lib.get_page_bounds())
+		page_bounds=lib.get_page_bounds(), surah_starts=lib.surah_starts())
 
 @app.route('/map')
 def reading_map():
