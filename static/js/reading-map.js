@@ -930,7 +930,12 @@
 		if (!fsModalInited && window.jQuery) {
 			window.jQuery(fsModalEl).modal({
 				closable: true,
-				onVisible: function () { layoutFullscreen(); },
+				onVisible: function () {
+					layoutFullscreen();
+					// Close instantly instead of the default scale-out;
+					// the show animation is kept.
+					window.jQuery(fsModalEl).modal('setting', 'duration', 0);
+				},
 				onHidden: closeFullscreen
 			});
 			fsModalInited = true;
