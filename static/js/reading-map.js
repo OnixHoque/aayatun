@@ -881,11 +881,12 @@
 		grid.style.setProperty('--map-rows', String(rows));
 	}
 
-	function fsRememberMove(node, target)
+	function fsRememberMove(node, target, before)
 	{
 		if (!node || !target) return;
 		fsMoved.push({ node: node, parent: node.parentNode, next: node.nextSibling });
-		target.appendChild(node);
+		if (before) target.insertBefore(node, before);
+		else target.appendChild(node);
 	}
 
 	function fsRestoreMoved()
@@ -912,8 +913,10 @@
 		if (!built) { build(); paint(); }
 		fsMoved = [];
 		fsRememberMove(scroll, fsStage);
+		// Attribution stands in for the visited-verse key on the toggle's
+		// line; pills wrap full-width below it.
+		if (themeAttribution && fsLegendRow) fsRememberMove(themeAttribution, fsLegendRow, fsThemes);
 		if (themeLegend && fsLegendRow) fsRememberMove(themeLegend, fsLegendRow);
-		if (themeAttribution && fsLegendRow) fsRememberMove(themeAttribution, fsLegendRow);
 		// The popup keeps its own theme switch; the quiz knob stays on the
 		// main page. The attendance chips travel along so the reserved key
 		// row shows something meaningful in quiz mode.

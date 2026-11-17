@@ -1372,8 +1372,9 @@
         color: #d7d7d7;
     }
 
-    /* Theme legend + attribution inside the reserved row (theme mode),
-       each wrapping to a full-width line in the flex row. */
+    /* Theme pills + attribution inside the row (theme mode): the pills
+       wrap full-width on the next line, and the AI notice stands in for
+       the visited-verse key on the same line as the toggle. */
     #map-fullscreen-modal .reading-map-theme-legend {
         flex: none;
         flex-basis: 100%;
@@ -1385,12 +1386,13 @@
 
     #map-fullscreen-modal .reading-map-theme-attribution {
         flex: none;
-        flex-basis: 100%;
+        flex-basis: auto;
         margin: 0;
         padding: 0;
-        font-size: 76%;
-        opacity: .6;
-        text-align: center;
+        font-size: 72%;
+        opacity: .75;
+        white-space: nowrap;
+        text-align: left;
     }
 
 </style>
