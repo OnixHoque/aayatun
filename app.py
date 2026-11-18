@@ -243,6 +243,9 @@ def surah_api(surah):
 	resp = app.response_class(_surah_payload(surah, gz), mimetype='application/json')
 	resp.headers['Cache-Control'] = 'no-store'
 	resp.headers['Vary'] = 'Accept-Encoding'
+	# Read-only public data with no token; prayer-time.html (a standalone page) fetches
+	# this cross-origin when opened from outside aayatun.com.
+	resp.headers['Access-Control-Allow-Origin'] = '*'
 	if gz:
 		resp.headers['Content-Encoding'] = 'gzip'
 	return resp

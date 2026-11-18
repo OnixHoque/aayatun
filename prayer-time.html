@@ -1619,7 +1619,7 @@
     <button type="button" id="q-go" class="secondary">Go</button>
   </div>
   <div id="q-presets" class="q-presets"></div>
-  <p class="credit">Recitation: Mishary Rashid Alafasy. Audio from <a href="https://everyayah.com/" target="_blank" rel="noopener">EveryAyah.com</a>. Translation: Saheeh International, via <a href="https://alquran.cloud/" target="_blank" rel="noopener">AlQuran.cloud</a>.</p>
+  <p class="credit">Recitation: Mishary Rashid Alafasy. Audio from <a href="https://everyayah.com/" target="_blank" rel="noopener">EveryAyah.com</a>. Translation: Saheeh International, via <a href="https://www.aayatun.com/translation/1" target="_blank" rel="noopener">Aayatun</a>.</p>
 </dialog>
 
 <dialog id="details-dialog" class="forecast-dialog details-dialog" aria-labelledby="details-title">
@@ -2909,16 +2909,18 @@
     $('#q-ayah').value = a;
   }
 
-  // English translation (Saheeh International), fetched one surah at a time the first time it's needed
+  // English translation (Saheeh International), fetched from Aayatun's own API — same origin
+  // on aayatun.com, the full address everywhere else.
+  const translationBase = /(^|\.)aayatun\.com$/i.test(location.hostname) ? location.origin : 'https://www.aayatun.com';
   const qTransCache = {};           // surah number -> array of verse texts
   const qTransPending = {};
   const qTransFailed = {};          // surah number -> time of the last failed attempt
   function qTransFor(s) {
     if (qTransCache[s]) return qTransCache[s];
     if (!qTransPending[s] && !(qTransFailed[s] && Date.now() - qTransFailed[s] < 30000)) {
-      qTransPending[s] = fetch(`https://api.alquran.cloud/v1/surah/${s}/en.sahih`)
+      qTransPending[s] = fetch(`${translationBase}/api/v1/surah/${s}`)
         .then((r) => { if (!r.ok) throw new Error('translation http ' + r.status); return r.json(); })
-        .then((j) => { qTransCache[s] = j.data.ayahs.map((x) => x.text); delete qTransFailed[s]; })
+        .then((j) => { qTransCache[s] = (j.verses || []).map((x) => x[1]); delete qTransFailed[s]; })
         .catch(() => { qTransFailed[s] = Date.now(); })
         .finally(() => { delete qTransPending[s]; qShowTrans(); });
     }
