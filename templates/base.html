@@ -19,6 +19,12 @@
     });
   </script>
   <script>
+    // Inside an iframe (the verse modal, Prayer Time's verse preview) a pull
+    // would reload just the frame, which is jarring — opt out of pull-to-refresh
+    // here; pull-refresh.js is deferred, so it sees this attribute on init.
+    if (window.self !== window.top) document.documentElement.setAttribute('data-no-ptr', 'true');
+  </script>
+  <script>
     (function () {
       try {
         if (localStorage.getItem('darktheme') === 'true') {
