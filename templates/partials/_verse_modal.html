@@ -64,32 +64,9 @@ document.addEventListener('DOMContentLoaded', function () {
 		} catch (e) {}
 	}
 
-	// The floating back button belongs to the underlying page and would sit
-	// on top of the open modal (it is also hidden on the pages that never
-	// show it, e.g. /search). Hide it for as long as the modal is open and
-	// restore it afterwards if it was visible before — like the search
-	// button is handled inside the frame.
-	var backHiddenByModal = false;
-	function hideParentBackBtn()
-	{
-		var back = document.getElementById('back-btn');
-		if (back && back.style.display !== 'none') {
-			back.style.display = 'none';
-			backHiddenByModal = true;
-		}
-	}
-	function restoreParentBackBtn()
-	{
-		var back = document.getElementById('back-btn');
-		if (back && backHiddenByModal) {
-			back.style.display = '';
-			backHiddenByModal = false;
-		}
-	}
-
 	// Initialise once so every hide path (close icon, ESC, backdrop, or a
 	// programmatic .modal('hide')) goes through stopFrameAudio.
-	$('#verse_details_modal').modal({ onHide: function () { stopFrameAudio(); restoreParentBackBtn(); } });
+	$('#verse_details_modal').modal({ onHide: stopFrameAudio });
 
 	function showModal(s, v)
 	{
@@ -105,7 +82,6 @@ document.addEventListener('DOMContentLoaded', function () {
 		document.querySelector('#verse_details_modal_content').setAttribute("src", url);
 		$("#verse_details_modal_heading").text("Surah " + s + ":" + v);
 		$("#verse_details_modal").modal('show');
-		hideParentBackBtn();
 
 		// The iframe's DOM is usable at DOMContentLoaded (readyState
 		// 'interactive'), often ~350ms before `load` waits for audio and
