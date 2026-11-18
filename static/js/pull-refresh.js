@@ -33,7 +33,7 @@
 		'html.dark-theme #ptr-spinner{background:rgba(38,40,43,.95);',
 		'box-shadow:0 1px 3px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.09);}',
 		'#ptr-spinner svg{width:20px;height:20px;stroke:#3c3f42;stroke-width:2.4;',
-		'fill:none;stroke-linecap:round;}',
+		'fill:none;stroke-linecap:round;stroke-linejoin:round;}',
 		'html.dark-theme #ptr-spinner svg{stroke:rgba(255,255,255,.85);}',
 		'#ptr-spinner.is-ready svg{stroke:#2185d0;}',
 		'#ptr-spinner.is-loading{opacity:1 !important;}',
@@ -46,6 +46,27 @@
 	var PULL_MAX = 110;      // px the spinner may travel, after damping
 	var READY = 58;          // px damped pull at which release reloads
 	var MIN_VISIBLE = 14;    // px before the spinner is shown at all
+	var TOP_EPS = 1;         // scroll positions at or below this count as "at the top"
+
+	// The offset that means "how far is the page scrolled" — but WHICH
+	// element scrolls differs by engine. Fomantic ships body,html{height:100%}
+	// and body{overflow-x:hidden} (which computes to overflow:hidden auto), so
+	// some engines — iOS WebKit in particular — scroll the BODY instead of the
+	// viewport. window.scrollY then stays 0 forever and this gate would always
+	// claim the gesture. Read every scroller and take the maximum; iOS reports
+	// negative offsets during the rubber-band bounce, which Math.max keeps as
+	// "at the top".
+	function scrollPos() {
+		var doc = document.documentElement;
+		var body = document.body;
+		var y = Math.max(
+			window.scrollY || 0,
+			window.pageYOffset || 0,
+			doc && doc.scrollTop ? doc.scrollTop : 0,
+			body && body.scrollTop ? body.scrollTop : 0
+		);
+		return y < 0 ? 0 : y;
+	}
 
 	var spinner = null;
 	var armed = false;
@@ -57,7 +78,7 @@
 		spinner.id = 'ptr-spinner';
 		spinner.setAttribute('aria-hidden', 'true');
 		spinner.innerHTML =
-			'<svg viewBox="0 0 24 24"><path d="M12 4a8 8 0 1 1-6.93 4"/><polyline points="4 4 4 9 9 9"/></svg>';
+			'<svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>';
 		document.body.appendChild(spinner);
 		return spinner;
 	}
@@ -76,7 +97,7 @@
 	function onStart(e) {
 		// Only single-finger touches at the very top of the page.
 		if (e.touches.length !== 1) { armed = false; return; }
-		if (window.scrollY > 1) { armed = false; return; }
+		if (scrollPos() > TOP_EPS) { armed = false; return; }
 		armed = true;
 		startY = e.touches[0].clientY;
 		startX = e.touches[0].clientX;
@@ -85,7 +106,7 @@
 
 	function onMove(e) {
 		if (!armed || e.touches.length !== 1) return;
-		if (window.scrollY > 1) { reset(); return; }
+		if (scrollPos() > TOP_EPS) { reset(); return; }
 		var t = e.touches[0];
 		var moveY = t.clientY - startY;
 		var moveX = t.clientX - startX;
