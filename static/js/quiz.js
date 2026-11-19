@@ -650,8 +650,12 @@
 
 		var shareBtn = byId('quiz-share-btn');
 		shareBtn.onclick = function () {
+			var ses = state.session || {};
 			if (window.AayatunShare && window.AayatunShare.shareQuiz) {
-				window.AayatunShare.shareQuiz({ score: state.score, total: total }, shareBtn);
+				window.AayatunShare.shareQuiz({
+					score: state.score, total: total,
+					surah: ses.surah, verse: ses.verse, surah_name: ses.surah_name
+				}, shareBtn);
 			}
 		};
 

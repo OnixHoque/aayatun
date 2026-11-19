@@ -123,8 +123,11 @@
 	}
 
 	function quizText(o) {
+		var ref = (o.surah && o.verse)
+			? ' (' + shortName(o.surah_name) + ' ' + o.surah + ':' + o.verse + ')'
+			: '';
 		return 'I scored ' + o.score + '/' + o.total +
-			' on the Aayatun Quran Quiz. Can you beat me?\n\n' + o.url +
+			' on the Aayatun Quran Quiz' + ref + '. Can you beat me?\n\n' + o.url +
 			'\n' + HASHTAG;
 	}
 
@@ -304,6 +307,10 @@
 			card.score = payload.score || 0;
 			card.total = payload.total || 5;
 			card.subtitle = todayLabel();
+			if (payload.surah && payload.verse) {
+				card.verseRef = shortName(payload.surah_name) + ' ' +
+					payload.surah + ':' + payload.verse;
+			}
 			return card;
 		} else {
 			return null;
@@ -648,6 +655,13 @@
 		ctx.fillStyle = titleColor;
 		ctx.font = "700 26px Merriweather, Georgia, serif";
 		ctx.fillText('Quran Quiz', W / 2, 96);
+
+		// Verse this round was about.
+		if (card.verseRef) {
+			ctx.fillStyle = body;
+			ctx.font = "400 15px 'Open Sans', system-ui, sans-serif";
+			ctx.fillText(card.verseRef, W / 2, 124);
+		}
 
 		// Score ring.
 		var cx = W / 2, cy = 212, r = 56;
@@ -1002,15 +1016,22 @@
 
 	function shareQuiz(o, btn) {
 		var url = pageUrl('/quiz');
+		var ref = (o.surah && o.verse) ? (o.surah + ':' + o.verse) : '';
 		return share({
 			kind: 'quiz',
 			card: 'quiz',
-			ref: 'quiz-result',
+			ref: ref ? ('quiz-' + o.surah + '-' + o.verse) : 'quiz-result',
 			title: 'My Aayatun Quran Quiz score — Aayatun',
-			text: quizText({ score: o.score, total: o.total, url: url }),
+			text: quizText({
+				score: o.score, total: o.total, url: url,
+				surah: o.surah, verse: o.verse, surah_name: o.surah_name
+			}),
 			url: url,
 			score: o.score,
-			total: o.total
+			total: o.total,
+			surah: o.surah,
+			verse: o.verse,
+			surah_name: o.surah_name
 		}, btn || byId('quiz-share-btn'));
 	}
 
