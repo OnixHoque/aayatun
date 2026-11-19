@@ -62,41 +62,48 @@
     #loading-bar { display: none; }
     html.is-loading #loading-bar { display: block; }
 
-    /* Pinned page title (reading views only). Hidden until the menubar has
-       scrolled away; styled inline with the shell so a stale cached
-       stylesheet can never leave unstyled markup at the top of a page. */
+    /* Pinned page title (reading views only): a floating pill that fades in
+       once the menubar has scrolled away. Styled inline with the shell so a
+       stale cached stylesheet can never leave unstyled markup on a page. */
     .page-sticky-title {
-      position: fixed; top: 0; left: 0; right: 0; z-index: 990;
+      position: fixed; top: calc(8px + env(safe-area-inset-top, 0px));
+      left: 0; right: 0; z-index: 990;
+      margin: 0 auto; width: -moz-fit-content; width: fit-content;
+      max-width: calc(100% - 24px);
       display: flex; align-items: center; justify-content: center;
-      width: 100%; margin: 0; border: 0; appearance: none; -webkit-appearance: none;
-      padding: calc(9px + env(safe-area-inset-top, 0px)) 14px 9px;
-      box-sizing: border-box;
-      background: rgba(255, 255, 255, .9); color: inherit; font: inherit;
-      -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
-      box-shadow: 0 1px 0 rgba(0,0,0,.09);
+      padding: 8px 18px; box-sizing: border-box;
+      border: 1px solid rgba(0, 0, 0, .06); border-radius: 999px;
+      appearance: none; -webkit-appearance: none;
+      -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+      -webkit-user-select: none; user-select: none;
+      background: rgba(255, 255, 255, .92); color: inherit; font: inherit;
+      -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, .13), 0 1px 3px rgba(0, 0, 0, .08);
       opacity: 0; visibility: hidden; pointer-events: none;
-      transform: translateY(-100%);
+      transform: translateY(-14px);
       transition: opacity .18s ease, transform .18s ease, visibility .18s;
     }
     .page-sticky-title.is-visible {
       opacity: 1; visibility: visible; transform: none;
       pointer-events: auto; cursor: pointer;
     }
+    .page-sticky-title.is-visible:active { transform: scale(.97); }
     .page-sticky-title:focus-visible {
-      outline: 2px solid #4183C4; outline-offset: -2px;
+      outline: 2px solid #4183C4; outline-offset: 2px;
     }
     html.dark-theme .page-sticky-title:focus-visible {
       outline-color: #9CC4FF;
     }
     .page-sticky-title-text {
       font-family: 'Merriweather', serif;
-      font-size: 1rem; line-height: 1.3; text-align: center;
+      font-size: .95rem; line-height: 1.3; text-align: center;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
       max-width: 100%; min-width: 0;
     }
     html.dark-theme .page-sticky-title {
-      background: rgba(27, 28, 29, .9);
-      box-shadow: 0 1px 0 rgba(255,255,255,.12);
+      background: rgba(38, 39, 40, .94);
+      border-color: rgba(255, 255, 255, .1);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, .5), 0 1px 3px rgba(0, 0, 0, .4);
       color: rgba(255,255,255,.87);
     }
     html[data-in-frame] #page-sticky-title { display: none !important; }
