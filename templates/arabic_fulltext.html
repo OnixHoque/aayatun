@@ -4,6 +4,8 @@
 {% block og_title %}Surah {{ surah_name }} ({{ surah_no }}) — Arabic with translation{% endblock %}
 {% block og_description %}Read Surah {{ surah_name }} in Arabic with verse-by-verse English translation on Aayatun.{% endblock %}
 
+{% block sticky_title %}Surah {{ surah_name.rsplit(' (', 1)[0].rstrip(' –-') }} ({{ surah_no }}){% endblock %}
+
 {% block js %}
 <script defer src="{{ url_for('static', filename='js/qcf-font.js') }}"></script>
 <script defer src="{{ url_for('static', filename='js/mushaf-zoom.js') }}"></script>

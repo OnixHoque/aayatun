@@ -22,7 +22,12 @@
     // Inside an iframe (the verse modal, Prayer Time's verse preview) a pull
     // would reload just the frame, which is jarring — opt out of pull-to-refresh
     // here; pull-refresh.js is deferred, so it sees this attribute on init.
-    if (window.self !== window.top) document.documentElement.setAttribute('data-no-ptr', 'true');
+    if (window.self !== window.top) {
+      document.documentElement.setAttribute('data-no-ptr', 'true');
+      // The shared verse modal hides the iframe's menubar and shows its own
+      // heading, so the pinned page-title bar stays off inside frames.
+      document.documentElement.setAttribute('data-in-frame', 'true');
+    }
   </script>
   <script>
     (function () {
@@ -56,6 +61,48 @@
        it can be painted. */
     #loading-bar { display: none; }
     html.is-loading #loading-bar { display: block; }
+
+    /* Pinned page title (reading views only). Hidden until the menubar has
+       scrolled away; styled inline with the shell so a stale cached
+       stylesheet can never leave unstyled markup at the top of a page. */
+    .page-sticky-title {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 990;
+      display: flex; align-items: center; justify-content: center;
+      width: 100%; margin: 0; border: 0; appearance: none; -webkit-appearance: none;
+      padding: calc(9px + env(safe-area-inset-top, 0px)) 14px 9px;
+      box-sizing: border-box;
+      background: rgba(255, 255, 255, .9); color: inherit; font: inherit;
+      -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+      box-shadow: 0 1px 0 rgba(0,0,0,.09);
+      opacity: 0; visibility: hidden; pointer-events: none;
+      transform: translateY(-100%);
+      transition: opacity .18s ease, transform .18s ease, visibility .18s;
+    }
+    .page-sticky-title.is-visible {
+      opacity: 1; visibility: visible; transform: none;
+      pointer-events: auto; cursor: pointer;
+    }
+    .page-sticky-title:focus-visible {
+      outline: 2px solid #4183C4; outline-offset: -2px;
+    }
+    html.dark-theme .page-sticky-title:focus-visible {
+      outline-color: #9CC4FF;
+    }
+    .page-sticky-title-text {
+      font-family: 'Merriweather', serif;
+      font-size: 1rem; line-height: 1.3; text-align: center;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      max-width: 100%; min-width: 0;
+    }
+    html.dark-theme .page-sticky-title {
+      background: rgba(27, 28, 29, .9);
+      box-shadow: 0 1px 0 rgba(255,255,255,.12);
+      color: rgba(255,255,255,.87);
+    }
+    html[data-in-frame] #page-sticky-title { display: none !important; }
+    @media (prefers-reduced-motion: reduce) {
+      .page-sticky-title { transition: none; }
+    }
   </style>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -94,6 +141,85 @@
   <div class="ui blue borderless three item menu navbar fluid" id="menubar" style="width: 100%; flex-shrink: 0; background-color: #EEEEEE">
    {% block menu %} {% endblock %}
  </div>
+
+  {# Pinned page title: empty unless a reading page overrides sticky_title. #}
+  <button type="button" id="page-sticky-title" class="page-sticky-title" aria-hidden="true" title="Scroll to top">
+    <span class="page-sticky-title-text" id="page-sticky-title-text">{% block sticky_title %}{% endblock %}</span>
+  </button>
+  <script>
+  (function () {
+    // Reveal the pinned title once the menubar has scrolled out of view, and
+    // hide it again at the top. Parse-time so a restored scroll position is
+    // handled before the first paint.
+    var bar = document.getElementById('page-sticky-title');
+    if (!bar) return;
+    // Inside the shared verse modal the menubar is suppressed and the modal
+    // carries its own heading, so there is nothing for the bar to repeat.
+    if (document.documentElement.hasAttribute('data-in-frame')) { bar.remove(); return; }
+    var text = document.getElementById('page-sticky-title-text');
+    if (!text || !text.textContent.replace(/\s+/g, '')) { bar.remove(); return; }
+    var nav = document.getElementById('menubar');
+    if (!nav) { bar.remove(); return; }
+
+    var shown = false;
+    function apply(on) {
+      if (on === shown) return;
+      shown = on;
+      bar.classList.toggle('is-visible', on);
+      bar.setAttribute('aria-hidden', on ? 'false' : 'true');
+    }
+    function check() {
+      apply(nav.getBoundingClientRect().bottom <= 0);
+    }
+
+    // The verse carousel rewrites the reference in place; keep the bar in step.
+    document.addEventListener('aayatun:verse', function (evt) {
+      var d = evt.detail || {};
+      if (!d.surah || !d.verse) return;
+      var ref = bar.querySelector('[data-sticky-verse-ref]');
+      if (ref) ref.textContent = d.surah + ':' + d.verse;
+    });
+
+    // Tapping the pinned title returns to the top (the quiz's pinned HUD is
+    // a separate element and is not wired to this). Fomantic's 100%-height
+    // body makes the page scroll the BODY rather than the window on some
+    // engines, so jQuery (already used by the table pager) animates both.
+    bar.addEventListener('click', function () {
+      var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      try {
+        if (window.jQuery) {
+          window.jQuery('html, body').stop(true).animate({ scrollTop: 0 }, reduced ? 0 : 300);
+          return;
+        }
+      } catch (e) {}
+      var doc = document.documentElement;
+      var body = document.body;
+      var target = body.scrollTop > doc.scrollTop ? body : (document.scrollingElement || doc);
+      try {
+        target.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
+      } catch (e) {
+        target.scrollTop = 0;
+      }
+    });
+
+    check();
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (entries) {
+        apply(!entries[0].isIntersecting);
+      }).observe(nav);
+    } else {
+      var pending = false;
+      function onScroll() {
+        if (pending) return;
+        pending = true;
+        window.requestAnimationFrame(function () { pending = false; check(); });
+      }
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', onScroll, { passive: true });
+      window.addEventListener('pageshow', check);
+    }
+  })();
+  </script>
 
  <footer id="loading-bar" style="position: fixed; top: auto; left: 0; right: 0; bottom: 0; width: 100%; box-sizing: border-box; background: rgba(255, 255, 255, .85); font-family: 'Open Sans', open sans; z-index: 2000; font-size: 13px; padding: 8px 0 calc(8px + env(safe-area-inset-bottom, 0px)); text-align: center; opacity: 1;">
   <div class="ui active tiny inline loader" style="padding: 0px 15px"></div>Loading...

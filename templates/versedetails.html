@@ -7,6 +7,8 @@
 {% block og_description %}{{ details['translation']|truncate(180) }}{% endblock %}
 {% block meta_description %}{{ details['translation']|truncate(160) }}{% endblock %}
 
+{% block sticky_title %}Quran <span data-sticky-verse-ref>{{ details['surah'] }}:{{ details['verse'] }}</span>{% endblock %}
+
 {% block head_extra %}
 <meta name="aayatun-read" content="verse|{{ details['surah'] }}:{{ details['verse'] }}|{{ details['surah'] }}:{{ details['verse'] }} &middot; {{ details['surah_name'] }}">
 <meta name="aayatun-read-index" content="{{ read_index }}">

@@ -4,6 +4,8 @@
 {% block og_title %}Surah {{ surah_name }} ({{ surah_no }}) — Tafsir Ibn Kathir{% endblock %}
 {% block og_description %}Read Ibn Kathir's English tafsir of Surah {{ surah_name }} verse by verse on Aayatun.{% endblock %}
 
+{% block sticky_title %}Surah {{ surah_name.rsplit(' (', 1)[0].rstrip(' –-') }} ({{ surah_no }}){% endblock %}
+
 {% block url1 %} {{ url_for('en_tafsir', surah=prev) }} {% endblock %}
 {% block url2 %} {{ url_for('en_tafsir', surah=nxt) }} {% endblock %}
 {% block font_config %} font-family: Lora; font-size: 100%; text-align: left; {% endblock %}

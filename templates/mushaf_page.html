@@ -3,6 +3,8 @@
 
 {% block title %}Page {{ page_no }} : Aayatun - An Ayah a Day{% endblock %}
 
+{% block sticky_title %}Mushaf Page {{ page_no }}{% endblock %}
+
 {% block og_title %}Mushaf page {{ page_no }} — {{ surah_names|join(', ') }}{% endblock %}
 {% block og_description %}{% if overview %}{{ overview.summary|truncate(180) }}{% else %}Page {{ page_no }} of the mushaf, with the Arabic text and translation on Aayatun.{% endif %}{% endblock %}
 
