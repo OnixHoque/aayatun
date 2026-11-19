@@ -56,14 +56,16 @@
 
 	<!-- ======================= a round ======================= -->
 	<div id="quiz-round" class="quiz-view" hidden>
-		<div class="quiz-topbar">
-			<span class="quiz-score" id="quiz-score-hud" hidden aria-label="Score">
-				<i class="star icon" aria-hidden="true"></i><span class="quiz-score-num" id="quiz-score-num">0</span>
-			</span>
-			<div class="quiz-dots" id="quiz-dots" aria-hidden="true"></div>
-			<span class="quiz-timer" id="quiz-timer"><i class="clock outline icon" aria-hidden="true"></i><span id="quiz-timer-text">30s</span></span>
+		<div class="quiz-hud">
+			<div class="quiz-topbar">
+				<span class="quiz-score" id="quiz-score-hud" hidden aria-label="Score">
+					<i class="star icon" aria-hidden="true"></i><span class="quiz-score-num" id="quiz-score-num">0</span>
+				</span>
+				<div class="quiz-dots" id="quiz-dots" aria-hidden="true"></div>
+				<span class="quiz-timer" id="quiz-timer"><i class="clock outline icon" aria-hidden="true"></i><span id="quiz-timer-text">30s</span></span>
+			</div>
+			<div class="quiz-timer-track" aria-hidden="true"><div class="quiz-timer-bar" id="quiz-timer-bar" style="width: 100%"></div></div>
 		</div>
-		<div class="quiz-timer-track" aria-hidden="true"><div class="quiz-timer-bar" id="quiz-timer-bar" style="width: 100%"></div></div>
 
 		<p class="quiz-arabic" id="quiz-arabic" lang="ar" dir="rtl"></p>
 		<p class="quiz-translation" id="quiz-translation"></p>
