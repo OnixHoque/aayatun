@@ -166,8 +166,10 @@ def details2(surah):
 		surah_themes=lib.get_surah_themes(surah), verse_quiz=lib.quiz_bank_verse_available(surah, 1),
 		quiz_bank=lib.quiz_bank_bitset())))
 
-# "2:255" / "2/255" / "2.255" -> jump straight to the verse.
-_ref_re = re.compile(r'^\s*(\d{1,3})\s*[:/.\-]\s*(\d{1,3})\s*$')
+# "2:255" / "2/255" / "2.255" / "2-255" / "2 255" -> jump straight to the verse.
+_ref_re = re.compile(r'^\s*(\d{1,3})\s*[:/.\-\s]\s*(\d{1,3})\s*$')
+# "2" alone -> jump to the surah's mushaf view.
+_surah_re = re.compile(r'^\s*(\d{1,3})\s*$')
 _search_fields = ('all', 'ayah', 'translation', 'en_tafsir', 'bn_tafsir', 'ai')
 
 @app.route('/search/', strict_slashes=False, methods = ['POST'])
@@ -181,6 +183,12 @@ def search():
 		rs, rv = int(ref.group(1)), int(ref.group(2))
 		if lib.validate(rs, rv):
 			return redirect(url_for('details', surah=rs, verse=rv))
+
+	surah_ref = _surah_re.match(query_str)
+	if surah_ref:
+		rsurah = int(surah_ref.group(1))
+		if lib.validate(rsurah, 1):
+			return redirect(url_for('arabic_fulltext', surah=rsurah))
 
 	m = request.form.get('target_field')
 	if m:
