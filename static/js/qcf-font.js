@@ -1,8 +1,8 @@
 /* Shared QCF (King Fahd Complex colored mushaf) font loader.
  *
- * The verse page, the surah mushaf (/mushaf/<surah>) and the mushaf page
- * (/page/<n>) all use the same per-page COLRv1 fonts and the same persisted
- * on/off choice (localStorage['ayahTajweedOn']).
+ * The verse page, the surah Arabic view (/arabic/<surah>) and the mushaf
+ * page (/page/<n>) all use the same per-page COLRv1 fonts and the same
+ * persisted on/off choice (localStorage['ayahTajweedOn']).
  *
  *   QcfFont.get()            true / false / null (never chosen)
  *   QcfFont.setOn(on)        persist the choice

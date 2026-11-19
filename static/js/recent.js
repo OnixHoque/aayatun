@@ -34,15 +34,33 @@
 	{
 		return !!entry && !!TYPES[entry.t] &&
 			typeof entry.url === 'string' &&
-			/^\/(?:page\/\d+|\d+\/\d+|mushaf\/\d+)$/.test(entry.url) &&
+			/^\/(?:page\/\d+|\d+\/\d+|mushaf\/\d+|arabic\/\d+)$/.test(entry.url) &&
 			typeof entry.label === 'string';
+	}
+
+	// The Arabic view moved from /mushaf/<surah> to /arabic/<surah>; rewrite
+	// stored chips so they skip the 301 (mushaf pages keep /page/<n>).
+	function migrate(entry)
+	{
+		if (!entry || entry.t !== 'mushaf' || typeof entry.url !== 'string') return false;
+		var m = /^\/mushaf\/(\d+)$/.exec(entry.url);
+		if (!m) return false;
+		entry.url = '/arabic/' + m[1];
+		return true;
 	}
 
 	function list()
 	{
 		try {
 			var stored = JSON.parse(localStorage.getItem(KEY) || '[]');
-			return Array.isArray(stored) ? stored.filter(valid) : [];
+			if (!Array.isArray(stored)) return [];
+			var changed = false;
+			var items = stored.filter(valid).map(function (entry) {
+				if (migrate(entry)) changed = true;
+				return entry;
+			});
+			if (changed) write(items);
+			return items;
 		} catch (e) {
 			return [];
 		}

@@ -168,7 +168,7 @@ def details2(surah):
 
 # "2:255" / "2/255" / "2.255" / "2-255" / "2 255" -> jump straight to the verse.
 _ref_re = re.compile(r'^\s*(\d{1,3})\s*[:/.\-\s]\s*(\d{1,3})\s*$')
-# "2" alone -> jump to the surah's mushaf view.
+# "2" alone -> jump to the surah's Arabic view.
 _surah_re = re.compile(r'^\s*(\d{1,3})\s*$')
 _search_fields = ('all', 'ayah', 'translation', 'en_tafsir', 'bn_tafsir', 'ai')
 
@@ -343,7 +343,7 @@ def en_tafsir(surah):
 		page_subtitle='Tafsir Ibn Kathir of Surah %d' % surah,
 		surah_overview=lib.get_surah_overview(surah))
 
-@app.route('/mushaf/<int:surah>', strict_slashes=False)
+@app.route('/arabic/<int:surah>', strict_slashes=False)
 def arabic_fulltext(surah):
 	a, b = lib.get_full_arabic(surah)
 	c, d = lib.get_full_tranlation(surah)
@@ -355,6 +355,14 @@ def arabic_fulltext(surah):
 		share_more=len(b) > 5, prev=prev_, nxt=next_, mushaf='1',
 		page_subtitle='Arabic Text of Surah %d' % surah,
 		surah_overview=lib.get_surah_overview(surah))
+
+# The Arabic view used to live at /mushaf/<surah>; keep old links and shares
+# working. Mushaf pages themselves stay on /page/<n>.
+@app.route('/mushaf/<int:surah>', strict_slashes=False)
+def arabic_fulltext_legacy(surah):
+	extra = {k: v for k, v in request.args.items()
+		if k != 'surah' and not k.startswith('_')}
+	return redirect(url_for('arabic_fulltext', surah=surah, **extra), code=301)
 
 @app.route('/page/<int:page_no>', strict_slashes=False)
 def mushaf_page(page_no):

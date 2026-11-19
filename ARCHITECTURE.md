@@ -179,7 +179,7 @@ flowchart LR
     subgraph Views["Reading views"]
         V1["/<surah>/<verse>"]
         V2["/translation /tafsir/*"]
-        V3["/mushaf/<surah>"]
+        V3["/arabic/<surah>"]
         V4["/page/<n>"]
         V5["/theme/<id>"]
         V6["/map"]
@@ -341,7 +341,8 @@ All routes live in `app.py`. There are no blueprints.
 | GET | `/translation/<surah>` | `translation` | `translation.html` (comprehensive) | — | default |
 | GET | `/tafsir/en/<surah>` | `en_tafsir` | `en_tafsir.html` | — | default |
 | GET | `/tafsir/bn/<surah>` | `bn_tafsir` | `bn_tafsir.html` | — | default |
-| GET | `/mushaf/<surah>` | `arabic_fulltext` | `arabic_fulltext.html` | — | default |
+| GET | `/arabic/<surah>` | `arabic_fulltext` | `arabic_fulltext.html` | — | default |
+| GET | `/mushaf/<surah>` | `arabic_fulltext_legacy` | 301 → `/arabic/<surah>` | — | — |
 | GET | `/page/<n>` | `mushaf_page` | `mushaf_page.html` | — | `private, max-age=300` |
 | GET | `/theme/<theme_id>` | `theme_page` | `theme.html` | — | `private, max-age=300` |
 | GET | `/api/v1/verse/<s>/<v>` | `verse_api` | JSON core payload | token + same-site | `private, no-store` |
@@ -541,7 +542,7 @@ flowchart LR
 
 Page membership follows the V2 mushaf everywhere: `get_mushaf_page`,
 `get_page_bounds`, the reading map, and the verse list for
-`/mushaf/<surah>`.
+`/arabic/<surah>`.
 ---
 
 ### 4.5 Verse payloads
@@ -580,11 +581,11 @@ truth for the markup.
 
 | Function | Source | Caching | Used by |
 |---|---|---|---|
-| `get_full_arabic(surah)` | `_quran_text()` + `quran_stat` | `lru_cache(8)` | `/mushaf`, `/translation`, `get_mushaf_page` |
-| `get_full_tranlation(surah)` | `_quran_translation()` | `lru_cache(8)` | `/translation`, `/mushaf`, `get_mushaf_page` |
+| `get_full_arabic(surah)` | `_quran_text()` + `quran_stat` | `lru_cache(8)` | `/arabic`, `/translation`, `get_mushaf_page` |
+| `get_full_tranlation(surah)` | `_quran_translation()` | `lru_cache(8)` | `/translation`, `/arabic`, `get_mushaf_page` |
 | `get_full_en_tafsir(surah)` | `db/en_kathir.db` | none | `/tafsir/en` |
 | `get_full_bn_tafsir(surah)` | `db/bn_zakaria.db` | none | `/tafsir/bn` |
-| `get_surah_qcf(surah)` | `qcf_mem` | none | `/mushaf` |
+| `get_surah_qcf(surah)` | `qcf_mem` | none | `/arabic` |
 | `get_surah_core(surah)` | Arabic + translation + QCF | `lru_cache(4)` | `/api/v1/surah/<n>` |
 
 All return `(surah_name, ((verse_no, text), …))`, except `get_surah_core`.
@@ -649,7 +650,7 @@ Two tables, identical in shape. Both are generated offline and committed.
 Both readers return `{'context', 'summary'}` or `None`. `None` hides the
 accordion. Both use `lru_cache(128)` and a parameterised query. The surah
 overview is included by `comprehensive.html`. It appears on `/translation`,
-`/mushaf`, `/tafsir/en` and `/tafsir/bn`. The page overview appears only on
+`/arabic`, `/tafsir/en` and `/tafsir/bn`. The page overview appears only on
 `/page/<n>`.
 
 ### 4.9 Reading-map helpers
@@ -913,7 +914,7 @@ Responsible for:
 
 ### 6.3 `comprehensive.html` — surah-wide pages
 
-Used by `/translation`, `/mushaf`, `/tafsir/en`, `/tafsir/bn`. The theme
+Used by `/translation`, `/arabic`, `/tafsir/en`, `/tafsir/bn`. The theme
 page (`theme.html`) also extends it.
 
 - Menu: prev/next arrows with `url_for` targets from each child.
@@ -1214,7 +1215,7 @@ Details:
 
 Four steps (100/125/150/175 %) stored in
 `localStorage['aayatun_mushaf_zoom_v1']`. Shared by `/page/<n>` and
-`/mushaf/<surah>`. It writes `--mushaf-zoom`, which `style.css` multiplies
+`/arabic/<surah>`. It writes `--mushaf-zoom`, which `style.css` multiplies
 into `.mushaf-ayah` (225 % plain, 165 % QCF). Tables simply reflow. The
 printed layout is px-sized, so it refits through `MushafZoom.onChange`.
 
@@ -1451,7 +1452,7 @@ flowchart TB
 
 The rule throughout: **a remote failure degrades one feature, never the
 page.** The Quran text, translations, tafsir, metadata, QCF seed and line
-layout are local. `/2/255`, `/page/42`, `/theme/4` and `/mushaf/2` render
+layout are local. `/2/255`, `/page/42`, `/theme/4` and `/arabic/2` render
 with no outbound network at all.
 
 ---
@@ -1633,7 +1634,8 @@ python3 build_search.py     # re-run after source DB changes
 | `/<s>/` | `get_verse_details`, `verse_index`, `surah_starts` | `versedetails.html` |
 | `/<s>/<v>` | `get_verse_core`, `verse_index`, `surah_starts` | `versedetails.html` |
 | `/translation/<s>` | `get_full_tranlation`, `get_full_arabic`, `get_surah_overview` | `translation.html` → `comprehensive.html` |
-| `/mushaf/<s>` | `get_full_arabic`, `get_full_tranlation`, `get_surah_qcf`, `get_surah_overview` | `arabic_fulltext.html` → `comprehensive.html` |
+| `/arabic/<s>` | `get_full_arabic`, `get_full_tranlation`, `get_surah_qcf`, `get_surah_overview` | `arabic_fulltext.html` → `comprehensive.html` |
+| `/mushaf/<s>` | — | 301 → `/arabic/<s>` |
 | `/tafsir/en/<s>` | `get_full_en_tafsir`, `get_surah_overview` | `en_tafsir.html` → `comprehensive.html` |
 | `/tafsir/bn/<s>` | `get_full_bn_tafsir`, `get_surah_overview` | `bn_tafsir.html` → `comprehensive.html` |
 | `/page/<n>` | `get_mushaf_page`, `get_mushaf_lines`, `get_page_overview`, `verse_index` | `mushaf_page.html` |

@@ -550,7 +550,7 @@
 			}
 		}
 		var views = {
-			'surah-view-arabic': '/mushaf/' + d.surah,
+			'surah-view-arabic': '/arabic/' + d.surah,
 			'surah-view-translation': '/translation/' + d.surah,
 			'surah-view-bn': '/tafsir/bn/' + d.surah,
 			'surah-view-en': '/tafsir/en/' + d.surah

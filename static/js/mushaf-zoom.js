@@ -1,5 +1,5 @@
 /*
- * Zoom for the mushaf reading views (/page/<n> and /mushaf/<surah>).
+ * Zoom for the mushaf reading views (/page/<n> and /arabic/<surah>).
  *
  * Four steps (100, 125, 150, 175 %) scale the Arabic text through the
  * --mushaf-zoom custom property, which static/css/style.css multiplies into
