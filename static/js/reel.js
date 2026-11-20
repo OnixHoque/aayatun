@@ -10,6 +10,10 @@
 	var SLOW = 20 / 9; // 50% faster than previous (previous was 10/3)
 
 	var stage = document.getElementById('reel-stage');
+	var viewport = document.getElementById('reel-viewport');
+	var track = document.getElementById('reel-track');
+	var prevPane = document.getElementById('reel-pane-prev');
+	var nextPane = document.getElementById('reel-pane-next');
 	var verseBox = document.getElementById('reel-verse');
 	var verseMeaning = document.getElementById('reel-verse-meaning');
 	var refNum = document.getElementById('reel-ref-num');
@@ -57,6 +61,11 @@
 		endWmTotal: 0
 	};
 
+	var carousel = {
+		animating: false,
+		drag: null
+	};
+
 	var reduced = false;
 	try { reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
 
@@ -77,6 +86,7 @@
 		}).then(function (d) {
 			delete inflight[k];
 			cache[k] = d;
+			updateNeighborPreviews();
 			return d;
 		}).catch(function (e) {
 			delete inflight[k];
@@ -89,6 +99,7 @@
 		var d = state.data;
 		if (d.prev && d.prev[0]) fetchVerse(d.prev[0], d.prev[1]).catch(function () {});
 		if (d.next && d.next[0]) fetchVerse(d.next[0], d.next[1]).catch(function () {});
+		updateNeighborPreviews();
 	}
 
 	function isAtBeginning() {
@@ -487,28 +498,94 @@
 		updatePartButtons();
 	}
 
-	function renderFullVerse() {
-		if (!verseBox) return;
-		verseBox.innerHTML = '';
-		if (verseMeaning) verseMeaning.innerHTML = '';
-		var words = state.data.words || [];
+	function renderVerseInto(vBox, mBox, data) {
+		if (!vBox) return;
+		vBox.innerHTML = '';
+		if (mBox) mBox.innerHTML = '';
+		var words = (data && data.words) || [];
 		for (var i = 0; i < words.length; i++) {
 			var span = document.createElement('span');
 			span.className = 'rv-word is-read';
 			span.setAttribute('data-i', String(i));
 			span.textContent = words[i].ar;
-			verseBox.appendChild(span);
-			if (i < words.length - 1) verseBox.appendChild(document.createTextNode(' '));
-			if (verseMeaning) {
+			vBox.appendChild(span);
+			if (i < words.length - 1) vBox.appendChild(document.createTextNode(' '));
+			if (mBox) {
 				var m = document.createElement('span');
 				m.className = 'rv-meaning is-read';
 				m.setAttribute('data-i', String(i));
 				m.textContent = words[i].meaning || '';
-				verseMeaning.appendChild(m);
-				if (i < words.length - 1) verseMeaning.appendChild(document.createTextNode(' '));
+				mBox.appendChild(m);
+				if (i < words.length - 1) mBox.appendChild(document.createTextNode(' '));
 			}
 		}
+	}
+
+	function renderFullVerse() {
+		renderVerseInto(verseBox, verseMeaning, state.data);
 		scheduleTopFit();
+	}
+
+	function paneHeight() {
+		return viewport ? viewport.clientHeight : (stage ? stage.clientHeight : window.innerHeight);
+	}
+
+	function setTrackOffset(dy, animate) {
+		if (!track) return;
+		var h = paneHeight();
+		if (animate) track.classList.add('is-sliding');
+		else track.classList.remove('is-sliding');
+		track.style.transform = 'translateY(' + (-h + dy) + 'px)';
+	}
+
+	function centerTrack(animate) {
+		setTrackOffset(0, animate);
+	}
+
+	function clearPreviewPane(pane, dir) {
+		if (!pane) return;
+		var nameEl = pane.querySelector(dir === 'prev' ? '.reel-prev-name' : '.reel-next-name');
+		var numEl = pane.querySelector(dir === 'prev' ? '.reel-prev-num' : '.reel-next-num');
+		var vEl = pane.querySelector(dir === 'prev' ? '.reel-prev-verse' : '.reel-next-verse');
+		var mEl = pane.querySelector(dir === 'prev' ? '.reel-prev-meaning' : '.reel-next-meaning');
+		if (nameEl) nameEl.textContent = '';
+		if (numEl) numEl.textContent = '';
+		if (vEl) vEl.innerHTML = '';
+		if (mEl) mEl.innerHTML = '';
+	}
+
+	function renderPreview(dir, data) {
+		var pane = dir === 'prev' ? prevPane : nextPane;
+		if (!pane) return;
+		var target = dir === 'prev' ? (state.data && state.data.prev) : (state.data && state.data.next);
+		var nameEl = pane.querySelector(dir === 'prev' ? '.reel-prev-name' : '.reel-next-name');
+		var numEl = pane.querySelector(dir === 'prev' ? '.reel-prev-num' : '.reel-next-num');
+		var vEl = pane.querySelector(dir === 'prev' ? '.reel-prev-verse' : '.reel-next-verse');
+		var mEl = pane.querySelector(dir === 'prev' ? '.reel-prev-meaning' : '.reel-next-meaning');
+
+		// Render as cleared/initial reel state so swipe reveal/commit stays seamless
+		// (new reel page starts cleared before intro/word-by-word begins).
+		if (nameEl) nameEl.textContent = data ? (data.name || '') : '';
+		if (numEl) numEl.textContent = data ? (data.surah + ':' + data.verse) : ((target && target[0]) ? (target[0] + ':' + target[1]) : '');
+		if (vEl) vEl.innerHTML = '';
+		if (mEl) mEl.innerHTML = '';
+	}
+
+	function updateNeighborPreviews() {
+		var prevTarget = state.data && state.data.prev;
+		var nextTarget = state.data && state.data.next;
+		if (prevTarget && prevTarget[0]) {
+			var pk = key(prevTarget[0], prevTarget[1]);
+			renderPreview('prev', cache[pk] || null);
+		} else {
+			renderPreview('prev', null);
+		}
+		if (nextTarget && nextTarget[0]) {
+			var nk = key(nextTarget[0], nextTarget[1]);
+			renderPreview('next', cache[nk] || null);
+		} else {
+			renderPreview('next', null);
+		}
 	}
 
 	function escapeHtml(s) {
@@ -1291,11 +1368,21 @@
 		else if (e.key === 'Escape') { if (closeBtn) closeBtn.click(); }
 	});
 
-	// Swipe (vertical)
-	var drag = null;
+	// Swipe (vertical carousel with prev/next peek)
+	function hasNeighbor(dir) {
+		var t = dir === 'next' ? (state.data && state.data.next) : (state.data && state.data.prev);
+		return !!(t && t[0]);
+	}
+
 	function canSwipeFrom(target) {
+		if (carousel.animating) return false;
 		if (!target) return true;
 		if (target.closest && target.closest('.reel-controls, button, a')) return false;
+
+		// Allow vertical swipe on the end "next verse" overlay even if the panel has content.
+		var overlayHint = target.closest ? target.closest('.reel-end-hint.is-overlay') : null;
+		if (overlayHint) return true;
+
 		if (defText && target.closest && target.closest('#reel-bottom')) {
 			if (defText.scrollHeight > defText.clientHeight + 4) return false;
 		}
@@ -1304,49 +1391,120 @@
 		}
 		return true;
 	}
+
 	function onDown(e) {
 		if (e.pointerType === 'mouse' && e.button !== 0) return;
 		if (!canSwipeFrom(e.target)) return;
-		drag = { id: e.pointerId, x: e.clientX, y: e.clientY, dy: 0, axis: 0, vy: 0, lastY: e.clientY, lastT: Date.now() };
+		carousel.drag = { id: e.pointerId, x: e.clientX, y: e.clientY, dy: 0, axis: 0, vy: 0, lastY: e.clientY, lastT: Date.now(), target: e.target };
 	}
+
 	function onMove(e) {
-		if (!drag || e.pointerId !== drag.id) return;
-		var dx = e.clientX - drag.x;
-		var dy = e.clientY - drag.y;
-		if (!drag.axis) {
+		var d = carousel.drag;
+		if (!d || e.pointerId !== d.id) return;
+		var dx = e.clientX - d.x;
+		var dy = e.clientY - d.y;
+		if (!d.axis) {
 			if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
-			drag.axis = Math.abs(dy) > Math.abs(dx) ? 'y' : 'x';
-			if (drag.axis === 'y') { try { e.target.setPointerCapture(e.pointerId); } catch (err) {} }
+			d.axis = Math.abs(dy) > Math.abs(dx) ? 'y' : 'x';
+			if (d.axis === 'y') { try { e.target.setPointerCapture(e.pointerId); } catch (err) {} }
 		}
-		if (drag.axis !== 'y') return;
+		if (d.axis !== 'y') return;
 		if (e.cancelable) e.preventDefault();
 		var now = Date.now();
-		if (now > drag.lastT) { drag.vy = (e.clientY - drag.lastY) / (now - drag.lastT); drag.lastY = e.clientY; drag.lastT = now; }
-		drag.dy = dy;
-		if (stage) {
-			var damp = Math.abs(dy) > 120 ? 120 + (Math.abs(dy) - 120) * 0.25 : Math.abs(dy);
-			var ty = dy < 0 ? -damp : damp;
-			stage.style.transform = 'translateY(' + ty + 'px)';
-			stage.style.opacity = String(Math.max(0.5, 1 - Math.abs(dy) / 600));
+		if (now > d.lastT) { d.vy = (e.clientY - d.lastY) / (now - d.lastT); d.lastY = e.clientY; d.lastT = now; }
+		d.dy = dy;
+
+		var dir = dy < 0 ? 'next' : 'prev';
+		var h = paneHeight();
+		var limit = h;
+		var ty = dy;
+		if (!hasNeighbor(dir)) {
+			// edge resistance when there is no neighbor
+			ty = dy * 0.18;
+		} else {
+			if (Math.abs(ty) > limit) ty = ty < 0 ? -limit : limit;
+		}
+		d.renderDy = ty;
+		setTrackOffset(ty, false);
+	}
+
+	function finishCarouselCommit(dir, target) {
+		carousel.animating = false;
+		centerTrack(false);
+		if (track) track.classList.remove('is-sliding');
+		if (target) {
+			goTo(target[0], target[1], true);
 		}
 	}
-	function onUp(e) {
-		if (!drag || e.pointerId !== drag.id) return;
-		var d = drag; drag = null;
-		if (stage) { stage.style.transform = ''; stage.style.opacity = ''; }
-		if (d.axis === 'y') {
-			var commit = Math.abs(d.dy) > window.innerHeight * 0.22 || Math.abs(d.vy) > 0.35;
-			if (!commit) return;
-			navigate(d.dy < 0 ? 'next' : 'prev');
+
+	function commitSwipe(dir) {
+		var target = dir === 'next' ? (state.data && state.data.next) : (state.data && state.data.prev);
+		if (!target || !target[0]) { cancelSwipe(); return; }
+		carousel.animating = true;
+		var h = paneHeight();
+		var to = dir === 'next' ? -h : h;
+		if (reduced) {
+			setTrackOffset(to, false);
+			finishCarouselCommit(dir, target);
 			return;
 		}
-		// tap/press on screen toggles pause/play
+		setTrackOffset(to, true);
+		var done = false;
+		var onEnd = function (ev) {
+			if (done) return;
+			if (ev && ev.target !== track) return;
+			if (ev && ev.propertyName && ev.propertyName !== 'transform') return;
+			done = true;
+			if (track) track.removeEventListener('transitionend', onEnd);
+			finishCarouselCommit(dir, target);
+		};
+		if (track) track.addEventListener('transitionend', onEnd);
+		setTimeout(function () { if (!done) { done = true; if (track) track.removeEventListener('transitionend', onEnd); finishCarouselCommit(dir, target); } }, 320);
+	}
+
+	function cancelSwipe() {
+		carousel.animating = true;
+		if (reduced) {
+			centerTrack(false);
+			carousel.animating = false;
+			return;
+		}
+		setTrackOffset(0, true);
+		var done = false;
+		var onEnd = function (ev) {
+			if (done) return;
+			if (ev && ev.target !== track) return;
+			if (ev && ev.propertyName && ev.propertyName !== 'transform') return;
+			done = true;
+			if (track) track.removeEventListener('transitionend', onEnd);
+			centerTrack(false);
+			carousel.animating = false;
+		};
+		if (track) track.addEventListener('transitionend', onEnd);
+		setTimeout(function () { if (!done) { done = true; if (track) track.removeEventListener('transitionend', onEnd); centerTrack(false); carousel.animating = false; } }, 320);
+	}
+
+	function onUp(e) {
+		var d = carousel.drag;
+		if (!d || e.pointerId !== d.id) return;
+		carousel.drag = null;
+		if (d.axis === 'y') {
+			var dir = d.dy < 0 ? 'next' : 'prev';
+			var commit = hasNeighbor(dir) && (Math.abs(d.dy) > paneHeight() * 0.22 || Math.abs(d.vy) > 0.35);
+			if (commit) commitSwipe(dir);
+			else cancelSwipe();
+			return;
+		}
+		// tap/press on screen toggles pause/play (but not on end swipe overlay)
 		if (!d.axis) {
+			var onEndOverlay = !!(d.target && d.target.closest && d.target.closest('.reel-end-hint.is-overlay'));
+			if (onEndOverlay) return;
 			if (state.playing) pause(); else resume();
 		}
 	}
-	if (stage) {
-		stage.addEventListener('pointerdown', onDown);
+
+	if (viewport) {
+		viewport.addEventListener('pointerdown', onDown);
 		window.addEventListener('pointermove', onMove, { passive: false });
 		window.addEventListener('pointerup', onUp);
 		window.addEventListener('pointercancel', onUp);
@@ -1367,6 +1525,7 @@
 	clearMiddle({ immediate: true });
 	clearBottom();
 	showEnd(false);
+	centerTrack(false);
 	setPlaying(true);
 	startIntro();
 	prefetchNeighbors();
@@ -1375,6 +1534,6 @@
 	var fitTimer = null;
 	window.addEventListener('resize', function () {
 		if (fitTimer) clearTimeout(fitTimer);
-		fitTimer = setTimeout(function () { scheduleTopFit(); }, 80);
+		fitTimer = setTimeout(function () { scheduleTopFit(); if (!carousel.animating) centerTrack(false); }, 80);
 	});
 })();

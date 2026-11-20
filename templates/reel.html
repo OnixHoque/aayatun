@@ -22,29 +22,59 @@ window.AAYATUN_SURAH_STARTS = {{ surah_starts|tojson }};
 
 {% block content %}
 <div id="reel" class="reel" role="main" aria-label="Word by word reel">
-  <div class="reel-stage" id="reel-stage">
-    <section class="reel-top" aria-label="Verse">
-      <div class="reel-ref" id="reel-ref">Aayatun · {{ data.name }} <span id="reel-ref-num">{{ data.surah }}:{{ data.verse }}</span></div>
-      <div class="reel-verse" id="reel-verse" dir="rtl" lang="ar" aria-label="Arabic verse"></div>
-      <div class="reel-verse-meaning" id="reel-verse-meaning" aria-live="polite"></div>
-    </section>
+  <div class="reel-viewport" id="reel-viewport">
+    <div class="reel-track" id="reel-track">
+      <div class="reel-pane" id="reel-pane-prev" data-pane="prev">
+        <div class="reel-stage reel-stage-preview">
+          <section class="reel-top" aria-label="Verse">
+            <div class="reel-ref reel-prev-ref">Aayatun · <span class="reel-prev-name"></span> <span class="reel-prev-num"></span></div>
+            <div class="reel-verse reel-prev-verse" dir="rtl" lang="ar" aria-label="Arabic verse"></div>
+            <div class="reel-verse-meaning reel-prev-meaning" aria-live="off"></div>
+          </section>
+          <section class="reel-middle" aria-hidden="true"></section>
+          <section class="reel-bottom" aria-hidden="true"></section>
+        </div>
+      </div>
 
-    <section class="reel-middle" aria-label="Current word">
-      <div class="reel-word-ar" id="reel-word-ar" dir="rtl" lang="ar"></div>
-      <div class="reel-word-meaning" id="reel-word-meaning"></div>
-      <div class="reel-chips" id="reel-chips" aria-label="Morphology"></div>
-    </section>
+      <div class="reel-pane" id="reel-pane-current" data-pane="current">
+        <div class="reel-stage" id="reel-stage">
+          <section class="reel-top" aria-label="Verse">
+            <div class="reel-ref" id="reel-ref">Aayatun · {{ data.name }} <span id="reel-ref-num">{{ data.surah }}:{{ data.verse }}</span></div>
+            <div class="reel-verse" id="reel-verse" dir="rtl" lang="ar" aria-label="Arabic verse"></div>
+            <div class="reel-verse-meaning" id="reel-verse-meaning" aria-live="polite"></div>
+          </section>
 
-    <section class="reel-bottom" id="reel-bottom" aria-label="Definition">
-      <div class="reel-def-head" id="reel-def-head"></div>
-      <div class="reel-def-text" id="reel-def-text"></div>
-    </section>
+          <section class="reel-middle" aria-label="Current word">
+            <div class="reel-word-ar" id="reel-word-ar" dir="rtl" lang="ar"></div>
+            <div class="reel-word-meaning" id="reel-word-meaning"></div>
+            <div class="reel-chips" id="reel-chips" aria-label="Morphology"></div>
+          </section>
 
-    <section class="reel-end-panel" id="reel-end-panel" aria-label="Verse overview" hidden>
-      <div class="reel-end-context" id="reel-end-context"></div>
-      <div class="reel-end-wm" id="reel-end-wm"></div>
-      <div class="reel-end-hint" id="reel-end-hint">Swipe up for the next verse</div>
-    </section>
+          <section class="reel-bottom" id="reel-bottom" aria-label="Definition">
+            <div class="reel-def-head" id="reel-def-head"></div>
+            <div class="reel-def-text" id="reel-def-text"></div>
+          </section>
+
+          <section class="reel-end-panel" id="reel-end-panel" aria-label="Verse overview" hidden>
+            <div class="reel-end-context" id="reel-end-context"></div>
+            <div class="reel-end-wm" id="reel-end-wm"></div>
+            <div class="reel-end-hint" id="reel-end-hint"><span class="reel-swipe-arrow" aria-hidden="true"><i class="icon angle up"></i></span><span class="reel-swipe-hint-text">Swipe up for the next verse</span></div>
+          </section>
+        </div>
+      </div>
+
+      <div class="reel-pane" id="reel-pane-next" data-pane="next">
+        <div class="reel-stage reel-stage-preview">
+          <section class="reel-top" aria-label="Verse">
+            <div class="reel-ref reel-next-ref">Aayatun · <span class="reel-next-name"></span> <span class="reel-next-num"></span></div>
+            <div class="reel-verse reel-next-verse" dir="rtl" lang="ar" aria-label="Arabic verse"></div>
+            <div class="reel-verse-meaning reel-next-meaning" aria-live="off"></div>
+          </section>
+          <section class="reel-middle" aria-hidden="true"></section>
+          <section class="reel-bottom" aria-hidden="true"></section>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="reel-controls" aria-label="Controls">
