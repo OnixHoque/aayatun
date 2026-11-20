@@ -79,6 +79,43 @@ window.AAYATUN_SURAH_STARTS = {{ surah_starts|tojson }};
     </div>
   </div>
 
+  <div id="reel-hint-overlay" class="reel-hint-overlay" hidden>
+    <div class="reel-hint-zones" aria-hidden="true">
+      <div class="reel-hint-zone reel-hint-zone-left">
+        <div class="reel-hint-zone-inner">
+          <i class="icon step backward"></i>
+          <span>Prev step</span>
+          <small>Left 10%</small>
+        </div>
+      </div>
+      <div class="reel-hint-zone reel-hint-zone-mid">
+        <div class="reel-hint-zone-inner">
+          <i class="icon play"></i>
+          <span>Play / Pause</span>
+          <small>Middle 80%</small>
+        </div>
+      </div>
+      <div class="reel-hint-zone reel-hint-zone-right">
+        <div class="reel-hint-zone-inner">
+          <i class="icon step forward"></i>
+          <span>Next step</span>
+          <small>Right 10%</small>
+        </div>
+      </div>
+    </div>
+    <div class="reel-hint-gestures">
+      <div class="reel-hint-gesture">
+        <span class="reel-hint-swipe-icon"><i class="icon angle up"></i></span>
+        <span>Swipe up for next verse</span>
+      </div>
+      <div class="reel-hint-gesture">
+        <span class="reel-hint-swipe-icon"><i class="icon angle down"></i></span>
+        <span>Swipe down for previous verse</span>
+      </div>
+    </div>
+    <button type="button" id="reel-hint-gotit" class="ui basic inverted button reel-hint-gotit">Got it</button>
+  </div>
+
   <div class="reel-controls" aria-label="Controls">
     <div class="reel-controls-row">
       <button type="button" id="reel-close" class="reel-btn" aria-label="Close reel" title="Close">

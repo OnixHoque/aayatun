@@ -557,6 +557,116 @@ html.dark-theme .reel-btn-primary { color: #0b1220; }
   will-change: transform, opacity;
 }
 
+/* First-open hint overlay */
+.reel-hint-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: calc(82px + env(safe-area-inset-bottom, 0px));
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 18px 14px 16px;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  text-align: center;
+  pointer-events: auto;
+}
+.reel-hint-overlay[hidden] {
+  display: none !important;
+}
+
+.reel-hint-zones {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  pointer-events: none;
+}
+.reel-hint-zone {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 16px 6px 22%;
+  box-sizing: border-box;
+  border-right: 1px dashed rgba(255, 255, 255, 0.35);
+}
+.reel-hint-zone:last-child { border-right: none; }
+.reel-hint-zone-left { flex: 0 0 10%; background: rgba(255,255,255,0.06); }
+.reel-hint-zone-mid { flex: 1 1 80%; background: rgba(255,255,255,0.02); }
+.reel-hint-zone-right { flex: 0 0 10%; background: rgba(255,255,255,0.06); }
+
+.reel-hint-zone-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  line-height: 1.2;
+  color: rgba(255,255,255,0.95);
+}
+.reel-hint-zone-inner .icon {
+  margin: 0 !important;
+  font-size: 1.1rem;
+}
+.reel-hint-zone-inner small {
+  font-size: 0.68rem;
+  opacity: 0.85;
+}
+.reel-hint-zone-left .reel-hint-zone-inner,
+.reel-hint-zone-right .reel-hint-zone-inner {
+  font-size: 0.7rem;
+}
+.reel-hint-zone-left .reel-hint-zone-inner span,
+.reel-hint-zone-right .reel-hint-zone-inner span {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+.reel-hint-gestures {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: -10px;
+}
+.reel-hint-gesture {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  color: #fff;
+}
+.reel-hint-swipe-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+.reel-hint-swipe-icon .icon { margin: 0 !important; }
+
+.reel-hint-gotit {
+  position: relative;
+  z-index: 1;
+  margin-top: 6px !important;
+  min-width: 120px;
+}
+.reel-hint-gotit.ui.basic.inverted.button {
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.7) inset !important;
+  color: #fff !important;
+}
+.reel-hint-gotit.ui.basic.inverted.button:hover,
+.reel-hint-gotit.ui.basic.inverted.button:focus {
+  background: rgba(255,255,255,0.12) !important;
+  color: #fff !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .reel-verse .rv-word,
   .reel-verse-meaning .rv-meaning,

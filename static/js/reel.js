@@ -34,6 +34,10 @@
 	var endContext = document.getElementById('reel-end-context');
 	var endWm = document.getElementById('reel-end-wm');
 	var endHint = document.getElementById('reel-end-hint');
+	var hintOverlay = document.getElementById('reel-hint-overlay');
+	var hintGotIt = document.getElementById('reel-hint-gotit');
+	var HINT_KEY = 'aayatun_reel_hint_v1';
+	var hintActive = false;
 
 	var cache = {};
 	var inflight = {};
@@ -1601,6 +1605,36 @@
 		}
 	});
 
+	function startReel() {
+		setPlaying(true);
+		startIntro();
+	}
+
+	function maybeShowHint() {
+		var seen = false;
+		try { seen = localStorage.getItem(HINT_KEY) === '1'; } catch (e) {}
+		if (!seen && hintOverlay) {
+			hintActive = true;
+			hintOverlay.hidden = false;
+			hintOverlay.setAttribute('aria-hidden', 'false');
+			setPlaying(false);
+			return true;
+		}
+		return false;
+	}
+
+	if (hintGotIt) {
+		hintGotIt.addEventListener('click', function () {
+			try { localStorage.setItem(HINT_KEY, '1'); } catch (e) {}
+			if (hintOverlay) {
+				hintOverlay.hidden = true;
+				hintOverlay.setAttribute('aria-hidden', 'true');
+			}
+			hintActive = false;
+			startReel();
+		});
+	}
+
 	// Init
 	try { history.replaceState({ surah: state.data.surah, verse: state.data.verse }, '', location.pathname); } catch (e) {}
 	resetVerseArea();
@@ -1608,10 +1642,11 @@
 	clearBottom();
 	showEnd(false);
 	centerTrack(false);
-	setPlaying(true);
-	startIntro();
 	prefetchNeighbors();
 	emitVerse(state.data);
+	if (!maybeShowHint()) {
+		startReel();
+	}
 
 	var fitTimer = null;
 	window.addEventListener('resize', function () {
