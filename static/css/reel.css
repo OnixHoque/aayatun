@@ -168,7 +168,7 @@ html.dark-theme .reel {
 }
 
 .reel-verse .rv-word.is-hidden-target {
-  opacity: 0;
+  visibility: hidden;
 }
 
 .reel-verse .rv-word.rv-appear {
@@ -208,7 +208,7 @@ html.dark-theme .reel {
 }
 
 .reel-verse-meaning .rv-meaning.is-hidden-target {
-  opacity: 0;
+  visibility: hidden;
 }
 
 .reel-verse-meaning .rv-meaning.rv-appear {
