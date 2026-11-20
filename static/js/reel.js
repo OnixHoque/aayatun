@@ -1623,6 +1623,65 @@
 		return false;
 	}
 
+	/* ---------- keep the screen on (like prayer time) ---------- */
+	// 1) Screen Wake Lock API where available.
+	// 2) Fallback: tiny silent looping video (classic trick; browsers may need a tap).
+	var WAKE_MP4 = 'data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAANIbW9vdgAAAGxtdmhkAAAAAAAAAAAAAAAAAAAD6AAAB9AAAQAAAQAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAnJ0cmFrAAAAXHRraGQAAAADAAAAAAAAAAAAAAABAAAAAAAAB9AAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAAEAAAABAAAAAAAAkZWR0cwAAABxlbHN0AAAAAAAAAAEAAAfQAAAAAAABAAAAAAHqbWRpYQAAACBtZGhkAAAAAAAAAAAAAAAAAABAAAAAgABVxAAAAAAALWhkbHIAAAAAAAAAAHZpZGUAAAAAAAAAAAAAAABWaWRlb0hhbmRsZXIAAAABlW1pbmYAAAAUdm1oZAAAAAEAAAAAAAAAAAAAACRkaW5mAAAAHGRyZWYAAAAAAAAAAQAAAAx1cmwgAAAAAQAAAVVzdGJsAAAAuXN0c2QAAAAAAAAAAQAAAKlhdmMxAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAEAAQABIAAAASAAAAAAAAAABFUxhdmM2MC4zMS4xMDIgbGlieDI2NAAAAAAAAAAAAAAAGP//AAAAL2F2Y0MBQsAe/+EAF2dCwB7ZBCbARAAAAwAEAAADACA8WLkgAQAFaMuDyyAAAAAQcGFzcAAAAAEAAAABAAAAFGJ0cnQAAAAAAAALlAAAC5QAAAAYc3R0cwAAAAAAAAABAAAACAAAEAAAAAAYc3RzcwAAAAAAAAACAAAAAQAAAAUAAAAcc3RzYwAAAAAAAAABAAAAAQAAAAgAAAABAAAANHN0c3oAAAAAAAAAAAAAAAgAAAKMAAAACgAAAAsAAAAKAAAAGwAAAAoAAAALAAAACgAAABRzdGNvAAAAAAAAAAEAAAN4AAAAYnVkdGEAAABabWV0YQAAAAAAAAAhaGRscgAAAAAAAAAAbWRpcmFwcGwAAAAAAAAAAAAAAAAtaWxzdAAAACWpdG9vAAAAHWRhdGEAAAABAAAAAExhdmY2MC4xNi4xMDAAAAAIZnJlZQAAAu1tZGF0AAACbQYF//9p3EXpvebZSLeWLNgg2SPu73gyNjQgLSBjb3JlIDE2NCByMzEwOCAzMWUxOWY5IC0gSC4yNjQvTVBFRy00IEFWQyBjb2RlYyAtIENvcHlsZWZ0IDIwMDMtMjAyMyAtIGh0dHA6Ly93d3cudmlkZW9sYW4ub3JnL3gyNjQuaHRtbCAtIG9wdGlvbnM6IGNhYmFjPTAgcmVmPTMgZGVibG9jaz0xOjA6MCBhbmFseXNlPTB4MToweDExMSBtZT1oZXggc3VibWU9NyBwc3k9MSBwc3lfcmQ9MS4wMDowLjAwIG1peGVkX3JlZj0xIG1lX3JhbmdlPTE2IGNocm9tYV9tZT0xIHRyZWxsaXM9MSA4eDhkY3Q9MCBjcW09MCBkZWFkem9uZT0yMSwxMSBmYXN0X3Bza2lwPTEgY2hyb21hX3FwX29mZnNldD0tMiB0aHJlYWRzPTEgbG9va2FoZWFkX3RocmVhZHM9MSBzbGljZWRfdGhyZWFkcz0wIG5yPTAgZGVjaW1hdGU9MSBpbnRlcmxhY2VkPTAgYmx1cmF5X2NvbXBhdD0wIGNvbnN0cmFpbmVkX2ludHJhPTAgYmZyYW1lcz0wIHdlaWdodHA9MCBrZXlpbnQ9NCBrZXlpbnRfbWluPTEgc2NlbmVjdXQ9NDAgaW50cmFfcmVmcmVzaD0wIHJjX2xvb2thaGVhZD00IHJjPWNyZiBtYnRyZWU9MSBjcmY9MjMuMCBxY29tcD0wLjYwIHFwbWluPTAgcXBtYXg9NjkgcXBzdGVwPTQgaXBfcmF0aW89MS40MCBhcT0xOjEuMDAAgAAAABdliIQEvJigADijJycnXXXXXXXXXXXXgAAAAAZBmjgJeEYAAAAHQZpUAl4RgAAAAAZBmmAS8IwAAAAXZYiCAU8mKAAP78nJyddddddddddddeAAAAAGQZo4CXhGAAAAB0GaVAI+EYAAAAAGQZpgEPCM';
+	var WAKE_WEBM = 'data:video/webm;base64,GkXfo59ChoEBQveBAULygQRC84EIQoKEd2VibUKHgQJChYECGFOAZwEAAAAAAAK4EU2bdLpNu4tTq4QVSalmU6yBoU27i1OrhBZUrmtTrIHYTbuMU6uEElTDZ1OsggEeTbuMU6uEHFO7a1OsggKQ7AEAAAAAAABZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAVSalmsirXsYMPQkBNgI1MYXZmNjAuMTYuMTAwV0GNTGF2ZjYwLjE2LjEwMESJiECfQAAAAAAAFlSua8GuAQAAAAAAADjXgQFzxYhDZsf96HcQ4JyBACK1nIN1bmSIgQCGhVZfVlA4g4EBI+ODhA7msoDgibCBQLqBQJqBAhJUw2f8c3OgY8CAZ8iaRaOHRU5DT0RFUkSHjUxhdmY2MC4xNi4xMDBzc9ZjwItjxYhDZsf96HcQ4GfIoUWjh0VOQ09ERVJEh5RMYXZjNjAuMzEuMTAyIGxpYnZweGfIoUWjiERVUkFUSU9ORIeTMDA6MDA6MDIuMDAwMDAwMDAwAB9DtnVA6+eBAKOqgQAAgPACAJ0BKkAAQAAARwiFhYiFhIgCAgAGcDxCYAqyIPcwAP7/q1CAo5aBAPoA0QEAARAQABgAGFgv9AAIjoAAo5aBAfQA0QEAARAQABgAGFgv9AAIjoAAo5aBAu4A0QEAARAQABgAGFgv9AAIjoAAo6qBA+iA8AIAnQEqQABAAABHCIWFiIWEiAICAAZwPEJgCrIg9zAA/v+rUICjloEE4gDRAQABEBAAGAAYWC/0AAiOgACjloEF3ADRAQABEBAAGAAYWC/0AAiOgACjloEG1gDRAQABEBAAGAAYWC/0AAiOgAAcU7tro7uPs4EAt4r3gQHxggGf8IEDu5CzggPot4r3gQHxggGf8IF3';
+	var wakeVideo = document.getElementById('reel-wake-video');
+	var wakeLock = null;
+	var wakeSupported = 'wakeLock' in navigator;
+	var wakePending = false;
+	var videoOn = false;
+
+	function startVideoWake() {
+		if (!wakeVideo) return;
+		if (!wakeVideo.src) wakeVideo.src = (wakeVideo.canPlayType && wakeVideo.canPlayType('video/mp4')) ? WAKE_MP4 : WAKE_WEBM;
+		wakeVideo.muted = true;
+		var p = wakeVideo.play();
+		if (p && p.then) {
+			p.then(function () { videoOn = true; }).catch(function () { videoOn = false; });
+		}
+	}
+	function stopVideoWake() {
+		if (!wakeVideo) return;
+		try { wakeVideo.pause(); } catch (e) {}
+		videoOn = false;
+	}
+
+	function requestWakeSafe() {
+		if (document.hidden) return;
+		if (wakeSupported) {
+			if (wakePending || (wakeLock && !wakeLock.released)) return;
+			wakePending = true;
+			navigator.wakeLock.request('screen').then(function (lock) {
+				wakeLock = lock;
+				lock.addEventListener('release', function () { wakeLock = null; });
+				stopVideoWake();
+			}).catch(function () {
+				if (!videoOn) startVideoWake();
+			}).then(function () { wakePending = false; }, function () { wakePending = false; });
+			return;
+		}
+		if (!videoOn) startVideoWake();
+	}
+	function releaseWake() {
+		if (wakeLock) { try { wakeLock.release().catch(function () {}); } catch (e) {} wakeLock = null; }
+		stopVideoWake();
+	}
+
+	document.addEventListener('visibilitychange', function () {
+		if (!document.hidden) requestWakeSafe();
+	});
+	window.addEventListener('pagehide', releaseWake);
+	window.addEventListener('beforeunload', releaseWake);
+	['pointerup', 'touchend', 'click', 'keydown'].forEach(function (ev) {
+		document.addEventListener(ev, function () { requestWakeSafe(); }, true);
+	});
+	setInterval(function () {
+		if (wakeSupported && !document.hidden) requestWakeSafe();
+	}, 30000);
+
 	if (hintGotIt) {
 		hintGotIt.addEventListener('click', function () {
 			try { localStorage.setItem(HINT_KEY, '1'); } catch (e) {}
@@ -1631,6 +1690,7 @@
 				hintOverlay.setAttribute('aria-hidden', 'true');
 			}
 			hintActive = false;
+			requestWakeSafe();
 			startReel();
 		});
 	}
@@ -1644,6 +1704,7 @@
 	centerTrack(false);
 	prefetchNeighbors();
 	emitVerse(state.data);
+	requestWakeSafe();
 	if (!maybeShowHint()) {
 		startReel();
 	}
