@@ -30,6 +30,7 @@
 	var closeBtn = document.getElementById('reel-close');
 	var bottom = document.getElementById('reel-bottom');
 	var endPanel = document.getElementById('reel-end-panel');
+	var endScroll = document.getElementById('reel-end-scroll');
 	var endContext = document.getElementById('reel-end-context');
 	var endWm = document.getElementById('reel-end-wm');
 	var endHint = document.getElementById('reel-end-hint');
@@ -321,7 +322,8 @@
 
 	function resetEndPanel() {
 		if (stage) stage.classList.remove('is-ended');
-		if (endPanel) { endPanel.hidden = true; endPanel.scrollTop = 0; }
+		if (endPanel) endPanel.hidden = true;
+		if (endScroll) endScroll.scrollTop = 0;
 		if (endContext) endContext.textContent = '';
 		if (endWm) endWm.innerHTML = '';
 		if (endHint) { endHint.hidden = true; endHint.classList.remove('is-overlay'); }
@@ -372,7 +374,7 @@
 		// clear canvas before showing word meanings independently
 		if (endContext) endContext.textContent = '';
 		if (endWm) endWm.innerHTML = '';
-		if (endPanel) endPanel.scrollTop = 0;
+		if (endScroll) endScroll.scrollTop = 0;
 		state.endWmIdx = 0;
 		state.phase = 'end-wm-start';
 		updatePartButtons();
@@ -391,7 +393,7 @@
 		// clear canvas, then typewrite verse context
 		if (endContext) endContext.textContent = '';
 		if (endWm) endWm.innerHTML = '';
-		if (endPanel) endPanel.scrollTop = 0;
+		if (endScroll) endScroll.scrollTop = 0;
 		var ctx = (state.data.ai && state.data.ai.context) || '';
 		if (!ctx) { finishEndSequence(); return; }
 		state.phase = 'end-context';
@@ -443,7 +445,7 @@
 		var item = wms[state.endWmIdx] || {};
 		if (endWm) {
 			endWm.innerHTML = '';
-			if (endPanel) endPanel.scrollTop = 0;
+			if (endScroll) endScroll.scrollTop = 0;
 			var div = document.createElement('div');
 			div.className = 'reel-wm-item';
 			var word = document.createElement('div');
@@ -654,8 +656,8 @@
 		if (target) target.textContent = state.twText.slice(0, next);
 		// Keep typing position in view.
 		if (target === defText && defText) defText.scrollTop = defText.scrollHeight;
-		if (state.phase === 'end-wm-type' && endPanel) endPanel.scrollTop = endPanel.scrollHeight;
-		if (state.phase === 'end-context' && endPanel) endPanel.scrollTop = endPanel.scrollHeight;
+		if (state.phase === 'end-wm-type' && endScroll) endScroll.scrollTop = endScroll.scrollHeight;
+		if (state.phase === 'end-context' && endScroll) endScroll.scrollTop = endScroll.scrollHeight;
 		if (state.twPos < state.twText.length) {
 			state.twTimer = setTimeout(typeStep, ms(18));
 		} else {
@@ -913,6 +915,36 @@
 		finishEndSequence();
 	}
 
+	function enterWordMeaningSegment(wordIdx) {
+		var words = state.data.words || [];
+		if (!words.length) { showEnd(false); startIntro(); return; }
+		if (wordIdx < 0) wordIdx = 0;
+		if (wordIdx >= words.length) wordIdx = words.length - 1;
+		stopAllWordAnimations(false);
+		showEnd(false);
+		rebuildTopUpTo(wordIdx);
+		clearBottom();
+		state.ended = false;
+		state.idx = wordIdx;
+		state.phase = 'wordmeaning';
+		state.wordmeaningStep = 1;
+		setPlaying(true);
+		// Set up Arabic word in middle, then reveal its blue meaning (word-for-word meaning segment).
+		showWord(wordIdx);
+		var w = words[wordIdx] || {};
+		if (wordMeaning) {
+			wordMeaning.style.opacity = '';
+			wordMeaning.style.transform = '';
+			wordMeaning.textContent = w.meaning || '\u00A0';
+			wordMeaning.style.visibility = 'visible';
+			wordMeaning.style.display = '';
+			animateMidIn(wordMeaning);
+		}
+		updatePartButtons();
+		if (!state.playing) { state.remaining = phaseTimes().meaning; return; }
+		schedule(phaseTimes().meaning, function () { startBreakdown(); });
+	}
+
 	function skipPrevEndPart() {
 		var wms = (state.data.ai && state.data.ai.word_meanings) || [];
 		var ctx = (state.data.ai && state.data.ai.context) || '';
@@ -921,23 +953,37 @@
 		if (p === 'end-done') {
 			if (ctx) { leaveEndDone(); setPlaying(true); beginEndContextSequence(); }
 			else if (wms.length) { showEndWordMeaningAt(wms.length - 1); }
+			else {
+				var last = (state.data.words || []).length - 1;
+				if (last >= 0) enterWordMeaningSegment(last);
+			}
 			return;
 		}
 		if (p === 'end-context' || p === 'end-context-done-wait') {
 			if (wms.length) { showEndWordMeaningAt(wms.length - 1); }
-			else { leaveEndDone(); setPlaying(true); beginEndContextSequence(); }
+			else {
+				var last2 = (state.data.words || []).length - 1;
+				if (last2 >= 0) enterWordMeaningSegment(last2);
+				else { leaveEndDone(); setPlaying(true); beginEndContextSequence(); }
+			}
 			return;
 		}
 		if (p === 'end-wm-to-context-wait') {
 			if (wms.length) { showEndWordMeaningAt(wms.length - 1); }
-			else { leaveEndDone(); setPlaying(true); beginEndContextSequence(); }
+			else {
+				var last3 = (state.data.words || []).length - 1;
+				if (last3 >= 0) enterWordMeaningSegment(last3);
+				else { leaveEndDone(); setPlaying(true); beginEndContextSequence(); }
+			}
 			return;
 		}
 		if (p && p.indexOf('end-wm') === 0) {
-			var targetIdx = state.endWmIdx;
-			if (p === 'end-wm-type' || p === 'end-wm-hold') targetIdx = state.endWmIdx - 1;
-			else targetIdx = state.endWmIdx - 1;
-			if (targetIdx < 0) targetIdx = 0;
+			var targetIdx = state.endWmIdx - 1;
+			if (targetIdx < 0) {
+				var lastWord = (state.data.words || []).length - 1;
+				if (lastWord >= 0) enterWordMeaningSegment(lastWord);
+				return;
+			}
 			showEndWordMeaningAt(targetIdx);
 			return;
 		}
@@ -1401,7 +1447,7 @@
 		if (endPanel && target.closest && target.closest('#reel-end-panel')) {
 			// Keep verse swipe working in AI context word-meaning boxes (including headings/brackets).
 			if (target.closest('.reel-end-wm, .reel-wm-item, .reel-wm-word, .reel-wm-meaning')) return true;
-			if (endPanel.scrollHeight > endPanel.clientHeight + 4) return false;
+			if (endScroll && endScroll.scrollHeight > endScroll.clientHeight + 4) return false;
 		}
 		return true;
 	}
@@ -1409,7 +1455,7 @@
 	function onDown(e) {
 		if (e.pointerType === 'mouse' && e.button !== 0) return;
 		if (!canSwipeFrom(e.target)) return;
-		carousel.drag = { id: e.pointerId, x: e.clientX, y: e.clientY, dy: 0, axis: 0, vy: 0, lastY: e.clientY, lastT: Date.now(), target: e.target };
+		carousel.drag = { id: e.pointerId, x: e.clientX, y: e.clientY, dy: 0, axis: 0, vy: 0, lastY: e.clientY, lastT: Date.now(), target: e.target, captureEl: e.target };
 	}
 
 	function onMove(e) {
@@ -1420,7 +1466,12 @@
 		if (!d.axis) {
 			if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
 			d.axis = Math.abs(dy) > Math.abs(dx) ? 'y' : 'x';
-			if (d.axis === 'y') { try { e.target.setPointerCapture(e.pointerId); } catch (err) {} }
+			if (d.axis === 'y') {
+				var cap = viewport || d.captureEl || e.target;
+				try { cap.setPointerCapture(e.pointerId); } catch (err) {
+					try { e.target.setPointerCapture(e.pointerId); } catch (err2) {}
+				}
+			}
 		}
 		if (d.axis !== 'y') return;
 		if (e.cancelable) e.preventDefault();
