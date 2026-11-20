@@ -706,6 +706,18 @@
 		}
 	}
 
+	function animateMidIn(el) {
+		if (!el) return;
+		if (midClearTimer) { clearTimeout(midClearTimer); midClearTimer = null; }
+		el.classList.remove('is-fading');
+		el.classList.add('is-appearing');
+		// Force reflow so the "appearing" state is committed before the transition starts.
+		void el.offsetWidth;
+		requestAnimationFrame(function () {
+			el.classList.remove('is-appearing');
+		});
+	}
+
 	function showWord(i) {
 		var words = state.data.words || [];
 		if (i < 0 || i >= words.length) return;
@@ -717,11 +729,11 @@
 
 		// 1) Arabic word appears in middle with fade-in (like breakdown); meaning placeholder keeps layout stable
 		if (wordAr) {
-			wordAr.classList.remove('is-fading');
-			wordAr.classList.add('is-appearing');
+			wordAr.style.opacity = '';
+			wordAr.style.transform = '';
 			wordAr.textContent = w.ar;
 			wordAr.style.display = '';
-			requestAnimationFrame(function () { requestAnimationFrame(function () { wordAr.classList.remove('is-appearing'); }); });
+			animateMidIn(wordAr);
 		}
 		if (wordMeaning) {
 			wordMeaning.classList.remove('is-fading', 'is-appearing');
@@ -1074,12 +1086,12 @@
 			state.wordmeaningStep = 0;
 			schedule(ms(300), function () {
 				if (wordMeaning) {
-					wordMeaning.classList.remove('is-fading');
-					wordMeaning.classList.add('is-appearing');
+					wordMeaning.style.opacity = '';
+					wordMeaning.style.transform = '';
 					wordMeaning.textContent = w.meaning || '\u00A0';
 					wordMeaning.style.visibility = 'visible';
 					wordMeaning.style.display = '';
-					requestAnimationFrame(function () { requestAnimationFrame(function () { wordMeaning.classList.remove('is-appearing'); }); });
+					animateMidIn(wordMeaning);
 				}
 				state.wordmeaningStep = 1;
 				schedule(t.meaning, function () { startBreakdown(); });
@@ -1245,12 +1257,12 @@
 				fn = function () {
 					var w = (state.data.words || [])[state.idx] || {};
 					if (wordMeaning) {
-						wordMeaning.classList.remove('is-fading');
-						wordMeaning.classList.add('is-appearing');
+						wordMeaning.style.opacity = '';
+						wordMeaning.style.transform = '';
 						wordMeaning.textContent = w.meaning || '\u00A0';
 						wordMeaning.style.visibility = 'visible';
 						wordMeaning.style.display = '';
-						requestAnimationFrame(function () { requestAnimationFrame(function () { wordMeaning.classList.remove('is-appearing'); }); });
+						animateMidIn(wordMeaning);
 					}
 					state.wordmeaningStep = 1;
 					schedule(phaseTimes().meaning, function () { startBreakdown(); });
@@ -1387,6 +1399,8 @@
 			if (defText.scrollHeight > defText.clientHeight + 4) return false;
 		}
 		if (endPanel && target.closest && target.closest('#reel-end-panel')) {
+			// Keep verse swipe working in AI context word-meaning boxes (including headings/brackets).
+			if (target.closest('.reel-end-wm, .reel-wm-item, .reel-wm-word, .reel-wm-meaning')) return true;
 			if (endPanel.scrollHeight > endPanel.clientHeight + 4) return false;
 		}
 		return true;
