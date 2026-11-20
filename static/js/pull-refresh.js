@@ -39,7 +39,7 @@
 		'#ptr-spinner.is-loading{opacity:1 !important;}',
 		'#ptr-spinner.is-loading svg{animation:ptr-rotate .7s linear infinite;}',
 		'@media (prefers-reduced-motion: reduce){#ptr-spinner.is-loading svg{animation:none;}}',
-		'@keyframes ptr-rotate{from{transform:rotate(0);}to{transform:rotate(360deg);}}'
+		'@keyframes ptr-rotate{from{transform:rotate(0deg);}to{transform:rotate(-360deg);}}'
 	].join('\n');
 	(document.head || document.documentElement).appendChild(css);
 
