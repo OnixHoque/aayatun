@@ -1560,11 +1560,28 @@
 			else cancelSwipe();
 			return;
 		}
-		// tap/press on screen toggles pause/play (but not on end swipe overlay)
+		// tap/press on screen: left 10% = previous step, right 10% = next step, middle 80% = pause/play
 		if (!d.axis) {
 			var onEndOverlay = !!(d.target && d.target.closest && d.target.closest('.reel-end-hint.is-overlay'));
 			if (onEndOverlay) return;
-			if (state.playing) pause(); else resume();
+			var rect = viewport ? viewport.getBoundingClientRect() : null;
+			var tapX = (typeof d.x === 'number') ? d.x : e.clientX;
+			var left, width;
+			if (rect && rect.width) {
+				left = rect.left;
+				width = rect.width;
+			} else {
+				left = 0;
+				width = window.innerWidth || 1;
+			}
+			var rel = (tapX - left) / width;
+			if (rel < 0.1) {
+				skipPrevPart();
+			} else if (rel > 0.9) {
+				skipNextPart();
+			} else {
+				if (state.playing) pause(); else resume();
+			}
 		}
 	}
 
