@@ -303,13 +303,15 @@
 			return card;
 		} else if (payload.card === 'quiz') {
 			card.kind = 'quiz';
-			card.title = 'Quran Quiz';
 			card.score = payload.score || 0;
 			card.total = payload.total || 5;
 			card.subtitle = todayLabel();
 			if (payload.surah && payload.verse) {
-				card.verseRef = shortName(payload.surah_name) + ' ' +
-					payload.surah + ':' + payload.verse;
+				card.surah = payload.surah;
+				card.verse = payload.verse;
+				card.title = 'Quran ' + payload.surah + ':' + payload.verse;
+			} else {
+				card.title = 'Quran Quiz';
 			}
 			return card;
 		} else {
@@ -654,14 +656,7 @@
 		// Title.
 		ctx.fillStyle = titleColor;
 		ctx.font = "700 26px Merriweather, Georgia, serif";
-		ctx.fillText('Quran Quiz', W / 2, 96);
-
-		// Verse this round was about.
-		if (card.verseRef) {
-			ctx.fillStyle = body;
-			ctx.font = "400 15px 'Open Sans', system-ui, sans-serif";
-			ctx.fillText(card.verseRef, W / 2, 124);
-		}
+		ctx.fillText(card.title || 'Quran Quiz', W / 2, 96);
 
 		// Score ring.
 		var cx = W / 2, cy = 212, r = 56;
