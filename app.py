@@ -299,6 +299,23 @@ def verse_section_api(surah, verse, section):
 	return no_store(resp)
 
 
+# Word-by-word reel: one verse unpacked and animated. Public page carries the
+# per-session API token (private, no shared cache); the JSON endpoint feeds
+# swipe prefetch and is token-protected like the verse nav API.
+@app.route('/reel/<int:surah>/<int:verse>', strict_slashes=False)
+def reel(surah, verse):
+	data = lib.get_reel_verse(surah, verse)
+	return private_page(make_response(render_template('reel.html',
+		data=data, read_index=lib.verse_index(surah, verse),
+		surah_starts=lib.surah_starts(), api_token=api_token())))
+
+
+@app.route('/api/v1/reel/<int:surah>/<int:verse>', strict_slashes=False)
+def reel_api(surah, verse):
+	require_api_token()
+	return no_store(jsonify(lib.get_reel_verse(surah, verse)))
+
+
 @app.route('/font/v4/<int:page>.woff2', strict_slashes=False)
 def qcf_font(page):
 	# quran.com's per-page TajweedV4 (colrv1) mushaf fonts, cached on disk;

@@ -314,6 +314,15 @@
 				card.title = 'Quran Quiz';
 			}
 			return card;
+		/*
+		} else if (payload.card === 'reel') {
+			card.kind = 'reel';
+			card.title = shortName(payload.name) + ' ' + payload.surah + ':' + payload.verse;
+			card.arabic = payload.ayah;
+			card.translation = payload.translation;
+			card.words = payload.words;
+			return card;
+		*/
 		} else {
 			return null;
 		}
@@ -706,9 +715,108 @@
 		return out;
 	}
 
+	/* reel image rendering disabled (reel shares as link)
+	function drawReelCard(card) {
+		var dark = isDark();
+		var W = CARD_W;
+		var H = Math.round(W * 16 / 9);
+
+		var out = document.createElement('canvas');
+		out.width = OUTPUT_W;
+		out.height = Math.round(H * (OUTPUT_W / W));
+		var ctx = out.getContext('2d');
+		ctx.scale(OUTPUT_W / W, OUTPUT_W / W);
+		ctx.textBaseline = 'middle';
+
+		ctx.fillStyle = dark ? '#1b1c1d' : '#ffffff';
+		ctx.fillRect(0, 0, W, H);
+
+		var titleColor = dark ? '#9CC4FF' : '#4183C4';
+		var body = dark ? 'rgba(255,255,255,.92)' : 'rgba(0,0,0,.82)';
+		var muted = dark ? 'rgba(255,255,255,.55)' : 'rgba(0,0,0,.48)';
+
+		var maxW = W - PAD * 2;
+		ctx.textAlign = 'center';
+
+		// Kicker
+		try { ctx.letterSpacing = '4px'; } catch (e) {}
+		ctx.fillStyle = muted;
+		ctx.font = "700 12px 'Open Sans', system-ui, sans-serif";
+		ctx.fillText('WORD BY WORD', W / 2, 54);
+		try { ctx.letterSpacing = '0px'; } catch (e) {}
+
+		// Title
+		ctx.fillStyle = titleColor;
+		ctx.font = "700 24px Merriweather, Georgia, serif";
+		ctx.fillText(card.title || '', W / 2, 96);
+
+		// Arabic block (fitted)
+		var arabic = String(card.arabic || '').trim();
+		var aSize = 34, aLines = [];
+		var top = 150;
+		var bottomLimit = H - BAND - 40;
+		for (var pass = 0; pass < 30; pass++) {
+			aLines = linesFor(ctx, arabic, ARABIC, aSize, maxW, true);
+			var aH = aLines.length * aSize * ARABIC.line;
+			var tSize = Math.max(13, Math.min(17, aSize * 0.5));
+			var tLines = card.translation ? linesFor(ctx, card.translation, TRANS, tSize, maxW, false) : [];
+			var tH = tLines.length ? 18 + tLines.length * tSize * TRANS.line : 0;
+			if (top + aH + tH <= bottomLimit || aSize <= 18) {
+				card._aSize = aSize; card._tSize = tSize; card._aLines = aLines; card._tLines = tLines;
+				break;
+			}
+			aSize -= 1;
+		}
+		if (!card._aLines) { card._aSize = 18; card._tSize = 13; card._aLines = aLines; card._tLines = card.translation ? linesFor(ctx, card.translation, TRANS, 13, maxW, false) : []; }
+
+		ctx.textAlign = 'center';
+		ctx.direction = 'rtl';
+		ctx.fillStyle = body;
+		ctx.font = fontFor(ARABIC, card._aSize);
+		var y = top + card._aSize * 0.8;
+		for (var i = 0; i < card._aLines.length; i++) {
+			ctx.fillText(card._aLines[i], W / 2, y);
+			y += card._aSize * ARABIC.line;
+		}
+		ctx.direction = 'ltr';
+
+		if (card._tLines && card._tLines.length) {
+			y += 10;
+			ctx.fillStyle = muted;
+			ctx.font = fontFor(TRANS, card._tSize);
+			y += card._tSize * 0.4;
+			for (var j = 0; j < card._tLines.length; j++) {
+				ctx.fillText(card._tLines[j], W / 2, y);
+				y += card._tSize * TRANS.line;
+			}
+		}
+
+		// Brand band
+		var bandTop = H - BAND;
+		ctx.fillStyle = dark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.045)';
+		ctx.fillRect(0, bandTop, W, BAND);
+		ctx.textAlign = 'center';
+		ctx.fillStyle = dark ? 'rgba(255,255,255,.86)' : 'rgba(0,0,0,.72)';
+		ctx.font = "600 16px 'Open Sans', system-ui, sans-serif";
+		ctx.fillText('aayatun.com', W / 2, bandTop + BAND * 0.36);
+		var label = String(card.url || '');
+		var size = 12;
+		var bandMax = W - PAD * 2;
+		ctx.fillStyle = dark ? 'rgba(255,255,255,.58)' : 'rgba(0,0,0,.46)';
+		ctx.font = "400 " + size + "px 'Open Sans', system-ui, sans-serif";
+		while (label && ctx.measureText(label).width > bandMax && size > 9) {
+			size -= 0.5;
+			ctx.font = "400 " + size + "px 'Open Sans', system-ui, sans-serif";
+		}
+		ctx.fillText(label, W / 2, bandTop + BAND * 0.72);
+		return out;
+	}
+	*/
+
 	function drawCard(card) {
 		if (card.kind === 'map') return drawMapCard(card);
 		if (card.kind === 'quiz') return drawQuizCard(card);
+		// if (card.kind === 'reel') return drawReelCard(card); // reel image rendering disabled
 		var maxW = CARD_W - PAD * 2;
 		var dark = isDark();
 
@@ -1039,6 +1147,261 @@
 			btn || byId('reading-map-share'), cached ? mapShare.file : undefined);
 	}
 
+	function shareReel(o, btn) {
+		var url = pageUrl('/reel/' + o.surah + '/' + o.verse);
+		var ref = shortName(o.name) + ' ' + o.surah + ':' + o.verse;
+		var text = ref + '\n\n' + (o.ayah || '').trim() + '\n\n' +
+			(o.translation || '').trim() + '\n\nWatch on Aayatun: ' + url +
+			'\n' + HASHTAG;
+		var payload = {
+			kind: 'reel',
+			ref: 'reel-' + o.surah + '-' + o.verse,
+			title: ref + ' — Word by word on Aayatun',
+			text: text,
+			url: url,
+			surah: o.surah,
+			verse: o.verse,
+			name: o.name,
+			ayah: o.ayah,
+			translation: o.translation
+		};
+		// Share reel as normal link (image/mp4 rendering disabled).
+		return textShare(payload, btn || byId('reel-share'));
+		/*
+		var payloadWithCard = {
+			kind: 'reel',
+			card: 'reel',
+			ref: 'reel-' + o.surah + '-' + o.verse,
+			title: ref + ' — Word by word on Aayatun',
+			text: text,
+			url: url,
+			surah: o.surah,
+			verse: o.verse,
+			name: o.name,
+			ayah: o.ayah,
+			translation: o.translation,
+			words: o.words
+		};
+		// Try animated share (first 5s word-by-word) when possible; fall back to static.
+		return shareReelAnimated(payloadWithCard, btn || byId('reel-share')).catch(function () {
+			return share(payloadWithCard, btn || byId('reel-share'));
+		});
+		*/
+	}
+
+	/* ---------------------------------------------------- animated reel (disabled; reel shares as link)
+	function drawReelCardFrame(card, progress) {
+		// progress 0..1: how many words revealed (word-by-word, first 5s)
+		var dark = isDark();
+		var W = CARD_W;
+		var H = Math.round(W * 16 / 9);
+		var out = document.createElement('canvas');
+		out.width = OUTPUT_W;
+		out.height = Math.round(H * (OUTPUT_W / W));
+		var ctx = out.getContext('2d');
+		ctx.scale(OUTPUT_W / W, OUTPUT_W / W);
+		ctx.textBaseline = 'middle';
+
+		ctx.fillStyle = dark ? '#1b1c1d' : '#ffffff';
+		ctx.fillRect(0, 0, W, H);
+
+		var titleColor = dark ? '#9CC4FF' : '#4183C4';
+		var body = dark ? 'rgba(255,255,255,.92)' : 'rgba(0,0,0,.82)';
+		var muted = dark ? 'rgba(255,255,255,.55)' : 'rgba(0,0,0,.48)';
+		var accent = dark ? '#9CC4FF' : '#4183C4';
+
+		var maxW = W - PAD * 2;
+		var arabic = String(card.arabic || '').trim();
+		var tFull = String(card.translation || '').trim();
+		var top = 150;
+		var bottomLimit = H - BAND - 28;
+
+		if (!card._animLayout) {
+			var aSize = 34;
+			var lay = null;
+			for (var pass = 0; pass < 30; pass++) {
+				var aLines = linesFor(ctx, arabic, ARABIC, aSize, maxW, true);
+				var aH = aLines.length * aSize * ARABIC.line;
+				var tSize = Math.max(13, Math.min(17, aSize * 0.5));
+				var tLines = tFull ? linesFor(ctx, tFull, TRANS, tSize, maxW, false) : [];
+				var tH = tLines.length ? 18 + tLines.length * tSize * TRANS.line : 0;
+				if (top + aH + tH <= bottomLimit || aSize <= 18) {
+					lay = { aSize: aSize, tSize: tSize, aLines: aLines, tLines: tLines, aH: aH, tH: tH };
+					break;
+				}
+				aSize -= 1;
+			}
+			if (!lay) {
+				lay = { aSize: 18, tSize: 13, aLines: linesFor(ctx, arabic, ARABIC, 18, maxW, true), tLines: tFull ? linesFor(ctx, tFull, TRANS, 13, maxW, false) : [] };
+				lay.aH = lay.aLines.length * lay.aSize * ARABIC.line;
+				lay.tH = lay.tLines.length ? 18 + lay.tLines.length * lay.tSize * TRANS.line : 0;
+			}
+			card._animLayout = lay;
+		}
+		var L = card._animLayout;
+
+		ctx.textAlign = 'center';
+
+		// Kicker
+		try { ctx.letterSpacing = '4px'; } catch (e) {}
+		ctx.fillStyle = muted;
+		ctx.font = "700 12px 'Open Sans', system-ui, sans-serif";
+		ctx.fillText('WORD BY WORD', W / 2, 54);
+		try { ctx.letterSpacing = '0px'; } catch (e) {}
+
+		// Title
+		ctx.fillStyle = titleColor;
+		ctx.font = "700 24px Merriweather, Georgia, serif";
+		ctx.fillText(card.title || '', W / 2, 96);
+
+		var words = (card.words && card.words.length) ? card.words : String(arabic).split(/\s+/).filter(Boolean);
+		var total = words.length || 1;
+		var shown = Math.max(0, Math.min(total, Math.ceil(total * progress)));
+		var shownAr = [];
+		for (var si = 0; si < shown; si++) shownAr.push(words[si] && words[si].ar ? words[si].ar : String(words[si] || ''));
+		var arText = shownAr.join(' ');
+		var arDrawLines = arText ? linesFor(ctx, arText, ARABIC, L.aSize, maxW, true) : [];
+
+		ctx.direction = 'rtl';
+		ctx.font = fontFor(ARABIC, L.aSize);
+		var y = top + L.aSize * 0.8;
+		for (var i = 0; i < arDrawLines.length; i++) {
+			ctx.fillStyle = body;
+			ctx.fillText(arDrawLines[i], W / 2, y);
+			y += L.aSize * ARABIC.line;
+		}
+		ctx.direction = 'ltr';
+
+		// Translation revealed progressively; positioned below full Arabic block for stability
+		if (tFull) {
+			var tShownCount = Math.max(0, Math.min(tFull.length, Math.ceil(tFull.length * progress)));
+			var tText = tFull.slice(0, tShownCount);
+			var tDrawLines = tText ? linesFor(ctx, tText, TRANS, L.tSize, maxW, false) : [];
+			var ty = top + L.aH + 18 + L.tSize * 0.4;
+			ctx.fillStyle = muted;
+			ctx.font = fontFor(TRANS, L.tSize);
+			ctx.textAlign = 'center';
+			for (var j = 0; j < tDrawLines.length; j++) {
+				ctx.fillText(tDrawLines[j], W / 2, ty);
+				ty += L.tSize * TRANS.line;
+			}
+		}
+
+		// Progress bar
+		var barY = H - BAND - 18;
+		var barW = W - PAD * 2;
+		ctx.fillStyle = dark ? 'rgba(255,255,255,.12)' : 'rgba(0,0,0,.08)';
+		ctx.fillRect(PAD, barY, barW, 4);
+		ctx.fillStyle = accent;
+		ctx.fillRect(PAD, barY, barW * Math.min(1, progress), 4);
+
+		// Brand band
+		var bandTop = H - BAND;
+		ctx.fillStyle = dark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.045)';
+		ctx.fillRect(0, bandTop, W, BAND);
+		ctx.textAlign = 'center';
+		ctx.fillStyle = dark ? 'rgba(255,255,255,.86)' : 'rgba(0,0,0,.72)';
+		ctx.font = "600 16px 'Open Sans', system-ui, sans-serif";
+		ctx.fillText('aayatun.com', W / 2, bandTop + BAND * 0.36);
+		var label = String(card.url || '');
+		var size = 12;
+		var bandMax = W - PAD * 2;
+		ctx.fillStyle = dark ? 'rgba(255,255,255,.58)' : 'rgba(0,0,0,.46)';
+		ctx.font = "400 " + size + "px 'Open Sans', system-ui, sans-serif";
+		while (label && ctx.measureText(label).width > bandMax && size > 9) {
+			size -= 0.5;
+			ctx.font = "400 " + size + "px 'Open Sans', system-ui, sans-serif";
+		}
+		ctx.fillText(label, W / 2, bandTop + BAND * 0.72);
+		return out;
+	}
+
+	function recordReelAnimation(card) {
+		return new Promise(function (resolve, reject) {
+			var duration = 5000;
+			var fps = 15;
+			var canvas = drawReelCardFrame(card, 0);
+			var stream = canvas.captureStream ? canvas.captureStream(fps) : null;
+			if (!stream || typeof MediaRecorder === 'undefined') { reject(new Error('no recorder')); return; }
+
+			var mime = '';
+			var types = ['video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+			for (var ti = 0; ti < types.length; ti++) {
+				try { if (MediaRecorder.isTypeSupported(types[ti])) { mime = types[ti]; break; } } catch (e) {}
+			}
+			var opts = mime ? { mimeType: mime } : undefined;
+			var recorder;
+			try { recorder = new MediaRecorder(stream, opts); } catch (e) { reject(e); return; }
+			var chunks = [];
+			recorder.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+			recorder.onerror = function () { reject(new Error('recorder error')); };
+			recorder.onstop = function () {
+				var type = recorder.mimeType || mime || 'video/webm';
+				resolve(new Blob(chunks, { type: type }));
+			};
+
+			var start = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+			function step() {
+				var now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+				var t = Math.min(1, (now - start) / duration);
+				// ease-out a bit so it completes nicely
+				var p = 1 - Math.pow(1 - t, 1.4);
+				var frame = drawReelCardFrame(card, p);
+				var c2 = canvas.getContext('2d');
+				c2.clearRect(0, 0, canvas.width, canvas.height);
+				c2.drawImage(frame, 0, 0);
+				if (t < 1) {
+					setTimeout(step, 1000 / fps);
+				} else {
+					// final full frame
+					var finalFrame = drawReelCardFrame(card, 1);
+					c2.clearRect(0, 0, canvas.width, canvas.height);
+					c2.drawImage(finalFrame, 0, 0);
+					setTimeout(function () { try { recorder.stop(); } catch (e) { reject(e); } }, 150);
+				}
+			}
+
+			try { recorder.start(); } catch (e) { reject(e); return; }
+			step();
+		});
+	}
+
+	function downloadBlob(blob, name) {
+		var url = URL.createObjectURL(blob);
+		var a = document.createElement('a');
+		a.href = url;
+		a.download = name;
+		document.body.appendChild(a);
+		a.click();
+		setTimeout(function () { URL.revokeObjectURL(url); if (a.parentNode) a.parentNode.removeChild(a); }, 1000);
+	}
+
+	function shareReelAnimated(payload, btn) {
+		// Generate 5s word-by-word animation video and share it.
+		if (!canShareFiles() || typeof MediaRecorder === 'undefined') return Promise.reject(new Error('no support'));
+		var card = cardFor(payload);
+		if (btn) btn.classList.add('loading');
+		return recordReelAnimation(card).then(function (blob) {
+			if (btn) btn.classList.remove('loading');
+			var ext = (blob.type && blob.type.indexOf('mp4') !== -1) ? 'mp4' : 'webm';
+			var file = new File([blob], 'aayatun-reel-' + payload.surah + '-' + payload.verse + '.' + ext, { type: blob.type || 'video/webm' });
+			// Try to share; if user activation is lost or share fails, download.
+			if (navigator.canShare && navigator.canShare({ files: [file] })) {
+				return navigator.share({ title: payload.title, text: payload.text, files: [file] }).catch(function (err) {
+					if (err && err.name === 'AbortError') return;
+					downloadBlob(blob, file.name);
+					flash(btn);
+				});
+			}
+			downloadBlob(blob, file.name);
+			flash(btn);
+		}).catch(function (e) {
+			if (btn) btn.classList.remove('loading');
+			throw e;
+		});
+	}
+	---------------------------------------------------- animated reel disabled */
+
 	/* ---------------------------------------------------------------- init */
 
 	if (document.readyState === 'loading') {
@@ -1052,6 +1415,7 @@
 		shareVerse: shareVerse,
 		shareMap: shareMap,
 		shareQuiz: shareQuiz,
+		shareReel: shareReel,
 		warmMapShare: warmMapShare,
 		payloadFromButton: payloadFromButton,
 		cardFor: cardFor,

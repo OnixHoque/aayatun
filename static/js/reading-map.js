@@ -932,6 +932,8 @@
 				closable: true,
 				onVisible: function () {
 					layoutFullscreen();
+					// Remove focus from the theme toggle when the fullscreen popup opens.
+					if (fsThemesInput) { try { fsThemesInput.blur(); } catch (e) {} }
 					// Close instantly instead of the default scale-out;
 					// the show animation is kept.
 					window.jQuery(fsModalEl).modal('setting', 'duration', 0);

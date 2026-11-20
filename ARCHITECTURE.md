@@ -1015,7 +1015,7 @@ The inline script:
 - **Recently Read** chips rendered by `recent.js`.
 - The clear-history confirmation modal (`#clear-history-modal`).
 - The iOS install banner (`#ios-install-modal`).
-- Footer: the repo link on the “Aayatun v2.0” label, the **Dark Theme**
+- Footer: the repo link on the “Aayatun v2.1” label, the **Dark Theme**
   toggle, and the **More Apps** pointing popup (`#more-apps-popup`) which
   lists Prayer Time and Counter.
 - Two lines of **whole-surah** buttons:

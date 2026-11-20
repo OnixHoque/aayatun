@@ -18,8 +18,11 @@
 <style>
 	#control-btns {
 		position: relative;
-		/* Pill straddles the row's top edge; the hairline itself is invisible. */
+		/* Desktop: pill straddles the row's top edge; borderline invisible. */
 		margin-top: 22px;
+	}
+	.theme-pill-row {
+		display: contents;
 	}
 	.theme-pill {
 		position: absolute;
@@ -56,12 +59,34 @@
 		flex: 0 0 auto;
 		box-shadow: 0 0 0 1px rgba(0, 0, 0, .18);
 	}
+	.verse-btn-row {
+		text-align: right;
+		border-top: none;
+		padding-top: 0;
+	}
 	html.dark-theme .theme-pill {
 		border-color: rgba(255, 255, 255, .22);
 		background: rgb(27, 28, 29);
 	}
 	html.dark-theme .theme-pill:hover {
 		border-color: #9CC4FF;
+	}
+	@media (max-width: 767px) {
+		#control-btns {
+			margin-top: 8px;
+		}
+		.theme-pill-row {
+			display: block;
+			text-align: left;
+			margin-bottom: 4px;
+		}
+		.theme-pill {
+			position: static;
+			transform: none;
+		}
+		.verse-btn-row {
+			padding-top: 0;
+		}
 	}
 </style>
 {% endblock head_extra %}
@@ -267,10 +292,12 @@
 			{% if surah_themes and surah_themes.verses %}
 			{% set _tid = surah_themes.verses[details['verse'] - 1] %}
 			{% set _theme = surah_themes.themes[_tid] %}
-			<a id="theme-pill" class="theme-pill" role="status" aria-live="polite" href="{{ url_for('theme_page', theme_id=_tid) }}?v={{ details['surah'] }}:{{ details['verse'] }}" title="All “{{ _theme['name'] }}” verses (AI-assisted)" onclick="if (window.self !== window.top) { if (window.AayatunNav) { window.AayatunNav.go(this.href); } else { window.parent.location.href = this.href; } return false; }">
-				<i class="theme-pill-dot" aria-hidden="true" style="background: {{ _theme['color'] }}"></i>
-				<span id="theme-pill-name">{{ _theme['name'] }}</span>
-			</a>
+			<div class="theme-pill-row">
+				<a id="theme-pill" class="theme-pill" role="status" aria-live="polite" href="{{ url_for('theme_page', theme_id=_tid) }}?v={{ details['surah'] }}:{{ details['verse'] }}" title="All “{{ _theme['name'] }}” verses (AI-assisted)" onclick="if (window.self !== window.top) { if (window.AayatunNav) { window.AayatunNav.go(this.href); } else { window.parent.location.href = this.href; } return false; }">
+					<i class="theme-pill-dot" aria-hidden="true" style="background: {{ _theme['color'] }}"></i>
+					<span id="theme-pill-name">{{ _theme['name'] }}</span>
+				</a>
+			</div>
 			<script>
 			// Keep the pill in step with the swipe carousel (no page reload).
 			(function () {
@@ -296,6 +323,7 @@
 			</script>
 			{% endif %}
 
+			<div class="verse-btn-row">
     		<span id="more-controls" style="display: none;">
     			<span style="font-size: .8em; color: gray; text-align: center; padding-right: 30px;">Surah <span id="surah-name-label">{{ details['surah_name'] }}</span></span>
     			<span style="display: inline-block;">
@@ -311,16 +339,38 @@
 					<button id="surah-view-en" data-loading style="font-family: 'Open Sans' font-size: 90%; " class="circular ui tiny basic icon button" onclick="window.parent.location.href ='{{ url_for('en_tafsir', surah=details['surah']) }}'">
 						Tafsir (En)
 					</button>
-				<i class="icon close" style="cursor: pointer;" onclick="$('#more-controls').fadeOut(180); ['#more-btn','#play-btn','#share-btn','#tajweed-toggle-btn','#mushaf-jump-btn','#verse-quiz-btn','#theme-pill'].forEach(function(id){ $(id).fadeIn(180); })"></i>
+				<i class="icon close" style="cursor: pointer;" onclick="$('#more-controls').fadeOut(180); ['#more-btn','#play-btn','#share-btn','#tajweed-toggle-btn','#mushaf-jump-btn','#verse-quiz-btn','#reel-btn','#theme-pill'].forEach(function(id){ $(id).fadeIn(180); })"></i>
 				</span>
 
     		</span>
-			<button id="more-btn" data-tooltip="Comprehensive Reading" class="circular ui basic icon button" onclick="['#more-btn','#play-btn','#share-btn','#tajweed-toggle-btn','#mushaf-jump-btn','#verse-quiz-btn','#theme-pill'].forEach(function(id){ $(id).fadeOut(180); }); $('#more-controls').fadeIn(180);">
+			<button id="more-btn" data-tooltip="Comprehensive Reading" class="circular ui basic icon button" onclick="['#more-btn','#play-btn','#share-btn','#tajweed-toggle-btn','#mushaf-jump-btn','#verse-quiz-btn','#reel-btn','#theme-pill'].forEach(function(id){ $(id).fadeOut(180); }); $('#more-controls').fadeIn(180);">
 			  <i class="icon ellipsis horizontal"></i>
 			</button>
 	    	<button id="share-btn" data-tooltip="Share this ayah" class="circular ui basic icon button" onclick="shareVerse()">
 			  <i class="icon share alternate"></i>
 			</button>
+	    	<button id="reel-btn" data-loading data-tooltip="Watch word-by-word reel" title="Watch word-by-word reel" aria-label="Watch word-by-word reel" class="circular ui basic icon button" onclick="if (window.AayatunNav) { window.AayatunNav.go('/reel/{{ details['surah'] }}/{{ details['verse'] }}'); } else { window.location.href = '/reel/{{ details['surah'] }}/{{ details['verse'] }}'; }">
+			  <i class="icon film"></i>
+			</button>
+			<script>
+			(function () {
+				var btn = document.getElementById('reel-btn');
+				if (!btn) return;
+				if (window.self !== window.top) { btn.remove(); return; }
+				function setTarget(s, v) {
+					btn.onclick = function () {
+						var url = '/reel/' + s + '/' + v;
+						if (window.AayatunNav) window.AayatunNav.go(url);
+						else window.location.href = url;
+					};
+				}
+				setTarget({{ details['surah'] }}, {{ details['verse'] }});
+				document.addEventListener('aayatun:verse', function (evt) {
+					var d = evt.detail || {};
+					if (d.surah && d.verse) setTarget(d.surah, d.verse);
+				});
+			})();
+			</script>
 {% set _vref = details['surah']|string + ':' + details['verse']|string %}
 	    	<button id="verse-quiz-btn" data-loading data-tooltip="Take the quiz on this verse" title="Take the quiz on this verse" aria-label="Take the quiz on this verse" class="circular ui basic icon button" style="display: none;" onclick="if (window.AayatunNav) { window.AayatunNav.go('/quiz?verse={{ _vref }}'); } else { window.location.href = '/quiz?verse={{ _vref }}'; }">
 		  <i class="icon graduation cap"></i>
@@ -393,6 +443,7 @@
 		<button id="play-btn" class="circular ui basic icon button" onclick="$('#audio-box').fadeIn(180); $('#control-btns').fadeOut(180); $('#mainaudio').trigger('play');">
 			  <i class="icon play"></i>
 		</button>
+			</div>
 		</div>
     </div>
 

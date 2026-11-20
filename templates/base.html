@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"{% if request.endpoint == 'quiz' %} data-no-ptr{% endif %}>
+<html lang="en"{% if request.endpoint in ['quiz', 'reel'] %} data-no-ptr{% endif %}{% if request.endpoint == 'reel' %} class="reel-mode"{% endif %}>
 <head>
   <!-- Required meta tags -->
   <meta name="theme-color" content="#eeeeee">

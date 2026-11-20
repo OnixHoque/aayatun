@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ data.name }} {{ data.surah }}:{{ data.verse }} — Reel : Aayatun{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_title %}{{ data.name }} {{ data.surah }}:{{ data.verse }} — Word by word{% endblock %}
+{% block og_description %}{{ data.translation|truncate(180) }}{% endblock %}
+{% block meta_description %}{{ data.translation|truncate(160) }}{% endblock %}
+
+{% block head_extra %}
+<meta name="aayatun-read" content="verse|{{ data.surah }}:{{ data.verse }}|{{ data.surah }}:{{ data.verse }} &middot; {{ data.name }}">
+<meta name="aayatun-read-index" content="{{ read_index }}">
+<meta name="aayatun-api-token" content="{{ api_token }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/reel.css') }}">
+<script>
+window.AAYATUN_REEL = {{ data|tojson }};
+window.AAYATUN_SURAH_STARTS = {{ surah_starts|tojson }};
+</script>
+{% endblock head_extra %}
+
+{% block menu %}{% endblock %}
+{% block sticky_title %}{% endblock %}
+
+{% block content %}
+<div id="reel" class="reel" role="main" aria-label="Word by word reel">
+  <div class="reel-stage" id="reel-stage">
+    <section class="reel-top" aria-label="Verse">
+      <div class="reel-ref" id="reel-ref">Aayatun · {{ data.name }} <span id="reel-ref-num">{{ data.surah }}:{{ data.verse }}</span></div>
+      <div class="reel-verse" id="reel-verse" dir="rtl" lang="ar" aria-label="Arabic verse"></div>
+      <div class="reel-verse-meaning" id="reel-verse-meaning" aria-live="polite"></div>
+    </section>
+
+    <section class="reel-middle" aria-label="Current word">
+      <div class="reel-word-ar" id="reel-word-ar" dir="rtl" lang="ar"></div>
+      <div class="reel-word-meaning" id="reel-word-meaning"></div>
+      <div class="reel-chips" id="reel-chips" aria-label="Morphology"></div>
+    </section>
+
+    <section class="reel-bottom" id="reel-bottom" aria-label="Definition">
+      <div class="reel-def-head" id="reel-def-head"></div>
+      <div class="reel-def-text" id="reel-def-text"></div>
+    </section>
+
+    <section class="reel-end-panel" id="reel-end-panel" aria-label="Verse overview" hidden>
+      <div class="reel-end-context" id="reel-end-context"></div>
+      <div class="reel-end-wm" id="reel-end-wm"></div>
+      <div class="reel-end-hint" id="reel-end-hint">Swipe up for the next verse</div>
+    </section>
+  </div>
+
+  <div class="reel-controls" aria-label="Controls">
+    <div class="reel-controls-row">
+      <button type="button" id="reel-close" class="reel-btn" aria-label="Close reel" title="Close">
+        <i class="icon close" aria-hidden="true"></i>
+      </button>
+      <button type="button" id="reel-prev-part" class="reel-btn" aria-label="Previous part" title="Previous part">
+        <i class="icon step backward" aria-hidden="true"></i>
+      </button>
+      <button type="button" id="reel-play" class="reel-btn reel-btn-primary" aria-label="Play" title="Play/Pause">
+        <i class="icon pause" id="reel-play-icon" aria-hidden="true"></i>
+      </button>
+      <button type="button" id="reel-next-part" class="reel-btn" aria-label="Next part" title="Next part">
+        <i class="icon step forward" aria-hidden="true"></i>
+      </button>
+      <button type="button" id="reel-share" class="reel-btn" aria-label="Share" title="Share">
+        <i class="icon share alternate" aria-hidden="true"></i>
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+{% block content2 %}{% endblock %}
+{% block content3 %}{% endblock %}
+
+{% block end_ %}
+<script src="{{ url_for('static', filename='js/reel.js') }}"></script>
+{% endblock end_ %}
+
+{% block scriptcontent %}{% endblock %}
