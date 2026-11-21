@@ -314,15 +314,12 @@
 				card.title = 'Quran Quiz';
 			}
 			return card;
-		/*
 		} else if (payload.card === 'reel') {
 			card.kind = 'reel';
-			card.title = shortName(payload.name) + ' ' + payload.surah + ':' + payload.verse;
-			card.arabic = payload.ayah;
+			card.title = payload.title || (shortName(payload.name) + ' ' + payload.surah + ':' + payload.verse);
+			card.arabic = payload.arabic || payload.ayah;
 			card.translation = payload.translation;
-			card.words = payload.words;
 			return card;
-		*/
 		} else {
 			return null;
 		}
@@ -715,11 +712,13 @@
 		return out;
 	}
 
-	/* reel image rendering disabled (reel shares as link)
 	function drawReelCard(card) {
+		// Matches the reel opening screen: title on top, Arabic fills the top
+		// 75% of the space below it, translation fills the bottom 25%.
+		// Story-sized 9:16 poster (460 x 818 CSS px, rendered at 1080 x 1920).
 		var dark = isDark();
-		var W = CARD_W;
-		var H = Math.round(W * 16 / 9);
+		var W = 460;
+		var H = 818;
 
 		var out = document.createElement('canvas');
 		out.width = OUTPUT_W;
@@ -733,90 +732,115 @@
 
 		var titleColor = dark ? '#9CC4FF' : '#4183C4';
 		var body = dark ? 'rgba(255,255,255,.92)' : 'rgba(0,0,0,.82)';
-		var muted = dark ? 'rgba(255,255,255,.55)' : 'rgba(0,0,0,.48)';
+		var muted = dark ? 'rgba(255,255,255,.62)' : 'rgba(0,0,0,.58)';
 
-		var maxW = W - PAD * 2;
+		var PADX = 30;
+		var PADT = 34;
+		var BANDH = 70;
+		var maxW = W - PADX * 2;
+		var contentBottom = H - BANDH - 10;
+
 		ctx.textAlign = 'center';
 
-		// Kicker
-		try { ctx.letterSpacing = '4px'; } catch (e) {}
-		ctx.fillStyle = muted;
-		ctx.font = "700 12px 'Open Sans', system-ui, sans-serif";
-		ctx.fillText('WORD BY WORD', W / 2, 54);
-		try { ctx.letterSpacing = '0px'; } catch (e) {}
-
-		// Title
+		// Title (kept on top)
+		var title = card.title || '';
+		var titleSize = 20;
+		ctx.font = "700 " + titleSize + "px Merriweather, Georgia, serif";
+		while (title && ctx.measureText(title).width > maxW && titleSize > 12) {
+			titleSize -= 1;
+			ctx.font = "700 " + titleSize + "px Merriweather, Georgia, serif";
+		}
+		var titleY = PADT + titleSize * 0.7;
 		ctx.fillStyle = titleColor;
-		ctx.font = "700 24px Merriweather, Georgia, serif";
-		ctx.fillText(card.title || '', W / 2, 96);
+		ctx.fillText(title, W / 2, titleY);
 
-		// Arabic block (fitted)
+		// Space below the title, split 75% Arabic / 25% translation.
+		var bodyTop = titleY + titleSize * 0.9;
+		var bodyH = Math.max(80, contentBottom - bodyTop);
+		var arabicBoxH = bodyH * 0.75;
+		var transBoxH = bodyH * 0.25;
+
 		var arabic = String(card.arabic || '').trim();
-		var aSize = 34, aLines = [];
-		var top = 150;
-		var bottomLimit = H - BAND - 40;
-		for (var pass = 0; pass < 30; pass++) {
-			aLines = linesFor(ctx, arabic, ARABIC, aSize, maxW, true);
-			var aH = aLines.length * aSize * ARABIC.line;
-			var tSize = Math.max(13, Math.min(17, aSize * 0.5));
-			var tLines = card.translation ? linesFor(ctx, card.translation, TRANS, tSize, maxW, false) : [];
-			var tH = tLines.length ? 18 + tLines.length * tSize * TRANS.line : 0;
-			if (top + aH + tH <= bottomLimit || aSize <= 18) {
-				card._aSize = aSize; card._tSize = tSize; card._aLines = aLines; card._tLines = tLines;
-				break;
+		var translation = String(card.translation || '').trim();
+
+		// A long translation needs more than a quarter of the card; grow its
+		// box (shrinking the Arabic block) so the card never clips it.
+		if (translation) {
+			var tMinProbe = 11;
+			var tNeed = linesFor(ctx, translation, TRANS, tMinProbe, maxW, false).length *
+				(tMinProbe * TRANS.line) + 6;
+			if (tNeed > transBoxH) {
+				transBoxH = Math.min(tNeed, bodyH * 0.55);
+				arabicBoxH = bodyH - transBoxH;
 			}
+		}
+
+		// Arabic: largest size that fits the 75% box, bottom-aligned.
+		var aSize = Math.min(arabicBoxH * 0.55, 96);
+		var aLines = [], aLineH = 0, aH = 0;
+		for (var ap = 0; ap < 90; ap++) {
+			aLines = linesFor(ctx, arabic, ARABIC, aSize, maxW, true);
+			aLineH = aSize * ARABIC.line;
+			aH = aLines.length * aLineH;
+			if (aH <= arabicBoxH - 2 || aSize <= 11) break;
 			aSize -= 1;
 		}
-		if (!card._aLines) { card._aSize = 18; card._tSize = 13; card._aLines = aLines; card._tLines = card.translation ? linesFor(ctx, card.translation, TRANS, 13, maxW, false) : []; }
-
 		ctx.textAlign = 'center';
 		ctx.direction = 'rtl';
 		ctx.fillStyle = body;
-		ctx.font = fontFor(ARABIC, card._aSize);
-		var y = top + card._aSize * 0.8;
-		for (var i = 0; i < card._aLines.length; i++) {
-			ctx.fillText(card._aLines[i], W / 2, y);
-			y += card._aSize * ARABIC.line;
+		ctx.font = fontFor(ARABIC, aSize);
+		var ay = bodyTop + Math.max(0, arabicBoxH - aH) + aSize * 0.75;
+		for (var i = 0; i < aLines.length; i++) {
+			ctx.fillText(aLines[i], W / 2, ay);
+			ay += aLineH;
 		}
 		ctx.direction = 'ltr';
 
-		if (card._tLines && card._tLines.length) {
-			y += 10;
+		// Translation: largest size that fits the 25% box, top-aligned.
+		var tSize = Math.min(transBoxH * 0.55, 36);
+		var tLines = [], tLineH = 0, tH = 0;
+		for (var tp = 0; tp < 90; tp++) {
+			tLines = translation ? linesFor(ctx, translation, TRANS, tSize, maxW, false) : [];
+			tLineH = tSize * TRANS.line;
+			tH = tLines.length * tLineH;
+			if (tH <= transBoxH - 2 || tSize <= 11) break;
+			tSize -= 1;
+		}
+		if (tLines.length) {
+			ctx.textAlign = 'center';
 			ctx.fillStyle = muted;
-			ctx.font = fontFor(TRANS, card._tSize);
-			y += card._tSize * 0.4;
-			for (var j = 0; j < card._tLines.length; j++) {
-				ctx.fillText(card._tLines[j], W / 2, y);
-				y += card._tSize * TRANS.line;
+			ctx.font = fontFor(TRANS, tSize);
+			var ty = bodyTop + arabicBoxH + 8 + tSize * 0.7;
+			for (var j = 0; j < tLines.length; j++) {
+				ctx.fillText(tLines[j], W / 2, ty);
+				ty += tLineH;
 			}
 		}
 
 		// Brand band
-		var bandTop = H - BAND;
+		var bandTop = H - BANDH;
 		ctx.fillStyle = dark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.045)';
-		ctx.fillRect(0, bandTop, W, BAND);
+		ctx.fillRect(0, bandTop, W, BANDH);
 		ctx.textAlign = 'center';
 		ctx.fillStyle = dark ? 'rgba(255,255,255,.86)' : 'rgba(0,0,0,.72)';
 		ctx.font = "600 16px 'Open Sans', system-ui, sans-serif";
-		ctx.fillText('aayatun.com', W / 2, bandTop + BAND * 0.36);
+		ctx.fillText('aayatun.com', W / 2, bandTop + BANDH * 0.36);
 		var label = String(card.url || '');
-		var size = 12;
-		var bandMax = W - PAD * 2;
+		var lSize = 12;
 		ctx.fillStyle = dark ? 'rgba(255,255,255,.58)' : 'rgba(0,0,0,.46)';
-		ctx.font = "400 " + size + "px 'Open Sans', system-ui, sans-serif";
-		while (label && ctx.measureText(label).width > bandMax && size > 9) {
-			size -= 0.5;
-			ctx.font = "400 " + size + "px 'Open Sans', system-ui, sans-serif";
+		ctx.font = "400 " + lSize + "px 'Open Sans', system-ui, sans-serif";
+		while (label && ctx.measureText(label).width > maxW && lSize > 9) {
+			lSize -= 0.5;
+			ctx.font = "400 " + lSize + "px 'Open Sans', system-ui, sans-serif";
 		}
-		ctx.fillText(label, W / 2, bandTop + BAND * 0.72);
+		ctx.fillText(label, W / 2, bandTop + BANDH * 0.72);
 		return out;
 	}
-	*/
 
 	function drawCard(card) {
 		if (card.kind === 'map') return drawMapCard(card);
 		if (card.kind === 'quiz') return drawQuizCard(card);
-		// if (card.kind === 'reel') return drawReelCard(card); // reel image rendering disabled
+		if (card.kind === 'reel') return drawReelCard(card);
 		var maxW = CARD_W - PAD * 2;
 		var dark = isDark();
 
@@ -1155,38 +1179,21 @@
 			'\n' + HASHTAG;
 		var payload = {
 			kind: 'reel',
-			ref: 'reel-' + o.surah + '-' + o.verse,
-			title: ref + ' — Word by word on Aayatun',
-			text: text,
-			url: url,
-			surah: o.surah,
-			verse: o.verse,
-			name: o.name,
-			ayah: o.ayah,
-			translation: o.translation
-		};
-		// Share reel as normal link (image/mp4 rendering disabled).
-		return textShare(payload, btn || byId('reel-share'));
-		/*
-		var payloadWithCard = {
-			kind: 'reel',
 			card: 'reel',
 			ref: 'reel-' + o.surah + '-' + o.verse,
-			title: ref + ' — Word by word on Aayatun',
+			title: 'Aayatun · ' + ref,
 			text: text,
 			url: url,
 			surah: o.surah,
 			verse: o.verse,
 			name: o.name,
 			ayah: o.ayah,
-			translation: o.translation,
-			words: o.words
+			arabic: o.ayah,
+			translation: o.translation
 		};
-		// Try animated share (first 5s word-by-word) when possible; fall back to static.
-		return shareReelAnimated(payloadWithCard, btn || byId('reel-share')).catch(function () {
-			return share(payloadWithCard, btn || byId('reel-share'));
-		});
-		*/
+		// Share first-scene image (75% verse / 25% translation, matching the
+		// reel opening screen) with a text fallback.
+		return share(payload, btn || byId('reel-share'));
 	}
 
 	/* ---------------------------------------------------- animated reel (disabled; reel shares as link)

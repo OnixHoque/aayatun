@@ -25,12 +25,16 @@ window.AAYATUN_SURAH_STARTS = {{ surah_starts|tojson }};
   <div class="reel-viewport" id="reel-viewport">
     <div class="reel-track" id="reel-track">
       <div class="reel-pane" id="reel-pane-prev" data-pane="prev">
-        <div class="reel-stage reel-stage-preview">
+        <div class="reel-stage reel-stage-preview is-initial-overview">
           <section class="reel-top" aria-label="Verse">
             <div class="reel-ref reel-prev-ref">Aayatun · <span class="reel-prev-name"></span> <span class="reel-prev-num"></span></div>
+            <div class="reel-progress" aria-hidden="true"></div>
+            <div class="reel-opening-verse reel-prev-opening-verse" dir="rtl" lang="ar"></div>
+            <div class="reel-opening-translation reel-prev-opening-translation" aria-label="Translation"></div>
             <div class="reel-verse reel-prev-verse" dir="rtl" lang="ar" aria-label="Arabic verse"></div>
             <div class="reel-verse-meaning reel-prev-meaning" aria-live="off"></div>
           </section>
+          <section class="reel-opening-translation-section" aria-hidden="true"></section>
           <section class="reel-middle" aria-hidden="true"></section>
           <section class="reel-bottom" aria-hidden="true"></section>
         </div>
@@ -40,9 +44,14 @@ window.AAYATUN_SURAH_STARTS = {{ surah_starts|tojson }};
         <div class="reel-stage" id="reel-stage">
           <section class="reel-top" aria-label="Verse">
             <div class="reel-ref" id="reel-ref">Aayatun · {{ data.name }} <span id="reel-ref-num">{{ data.surah }}:{{ data.verse }}</span></div>
+            <div class="reel-progress" id="reel-progress" aria-label="Progress"></div>
+            <div class="reel-opening-verse" id="reel-opening-verse" dir="rtl" lang="ar" aria-label="Arabic verse"></div>
+            <div class="reel-opening-translation" id="reel-opening-translation"></div>
             <div class="reel-verse" id="reel-verse" dir="rtl" lang="ar" aria-label="Arabic verse"></div>
             <div class="reel-verse-meaning" id="reel-verse-meaning" aria-live="polite"></div>
           </section>
+
+          <section class="reel-opening-translation-section" id="reel-opening-translation-section" aria-hidden="true"></section>
 
           <section class="reel-middle" aria-label="Current word">
             <div class="reel-word-ar" id="reel-word-ar" dir="rtl" lang="ar"></div>
@@ -66,12 +75,16 @@ window.AAYATUN_SURAH_STARTS = {{ surah_starts|tojson }};
       </div>
 
       <div class="reel-pane" id="reel-pane-next" data-pane="next">
-        <div class="reel-stage reel-stage-preview">
+        <div class="reel-stage reel-stage-preview is-initial-overview">
           <section class="reel-top" aria-label="Verse">
             <div class="reel-ref reel-next-ref">Aayatun · <span class="reel-next-name"></span> <span class="reel-next-num"></span></div>
+            <div class="reel-progress" aria-hidden="true"></div>
+            <div class="reel-opening-verse reel-next-opening-verse" dir="rtl" lang="ar"></div>
+            <div class="reel-opening-translation reel-next-opening-translation" aria-label="Translation"></div>
             <div class="reel-verse reel-next-verse" dir="rtl" lang="ar" aria-label="Arabic verse"></div>
             <div class="reel-verse-meaning reel-next-meaning" aria-live="off"></div>
           </section>
+          <section class="reel-opening-translation-section" aria-hidden="true"></section>
           <section class="reel-middle" aria-hidden="true"></section>
           <section class="reel-bottom" aria-hidden="true"></section>
         </div>
@@ -118,21 +131,24 @@ window.AAYATUN_SURAH_STARTS = {{ surah_starts|tojson }};
 
   <video id="reel-wake-video" class="reel-wake-video" muted loop playsinline aria-hidden="true" tabindex="-1"></video>
 
+  <button type="button" id="reel-close" class="reel-btn reel-close-btn" aria-label="Close reel" title="Close">
+    <i class="icon close" aria-hidden="true"></i>
+  </button>
+
   <div class="reel-controls" aria-label="Controls">
     <div class="reel-controls-row">
-      <button type="button" id="reel-close" class="reel-btn" aria-label="Close reel" title="Close">
-        <i class="icon close" aria-hidden="true"></i>
-      </button>
-      <button type="button" id="reel-prev-part" class="reel-btn" aria-label="Previous part" title="Previous part">
-        <i class="icon step backward" aria-hidden="true"></i>
-      </button>
-      <button type="button" id="reel-play" class="reel-btn reel-btn-primary" aria-label="Play" title="Play/Pause">
-        <i class="icon pause" id="reel-play-icon" aria-hidden="true"></i>
-      </button>
-      <button type="button" id="reel-next-part" class="reel-btn" aria-label="Next part" title="Next part">
-        <i class="icon step forward" aria-hidden="true"></i>
-      </button>
-      <button type="button" id="reel-share" class="reel-btn" aria-label="Share" title="Share">
+      <div class="reel-controls-center">
+        <button type="button" id="reel-prev-part" class="reel-btn" aria-label="Previous part" title="Previous part">
+          <i class="icon step backward" aria-hidden="true"></i>
+        </button>
+        <button type="button" id="reel-play" class="reel-btn reel-btn-primary" aria-label="Play" title="Play/Pause">
+          <i class="icon pause" id="reel-play-icon" aria-hidden="true"></i>
+        </button>
+        <button type="button" id="reel-next-part" class="reel-btn" aria-label="Next part" title="Next part">
+          <i class="icon step forward" aria-hidden="true"></i>
+        </button>
+      </div>
+      <button type="button" id="reel-share" class="reel-btn reel-share-btn" aria-label="Share" title="Share">
         <i class="icon share alternate" aria-hidden="true"></i>
       </button>
     </div>

@@ -36,8 +36,12 @@
 	var endHint = document.getElementById('reel-end-hint');
 	var hintOverlay = document.getElementById('reel-hint-overlay');
 	var hintGotIt = document.getElementById('reel-hint-gotit');
+	var progressEl = document.getElementById('reel-progress');
+	var openingVerseEl = document.getElementById('reel-opening-verse');
+	var openingTranslationEl = document.getElementById('reel-opening-translation');
 	var HINT_KEY = 'aayatun_reel_hint_v1';
 	var hintActive = false;
+	var INITIAL_MS = ms(1000);
 
 	var cache = {};
 	var inflight = {};
@@ -108,7 +112,7 @@
 	}
 
 	function isAtBeginning() {
-		return state.phase === 'intro' && state.idx === 0;
+		return state.phase === 'initial' || (state.phase === 'intro' && state.idx === 0);
 	}
 
 	function updatePartButtons() {
@@ -280,11 +284,267 @@
 		return sp;
 	}
 
+	function progressDots() {
+		return progressEl ? progressEl.querySelectorAll('.reel-progress-dot') : [];
+	}
+
+	function wordCount() {
+		return (state.data && state.data.words) ? state.data.words.length : 0;
+	}
+	function aiWordMeaningCount() {
+		return (state.data && state.data.ai && state.data.ai.word_meanings) ? state.data.ai.word_meanings.length : 0;
+	}
+	function progressTotal() {
+		// word-for-word count + AI context words count + 1 (AI context)
+		return wordCount() + aiWordMeaningCount() + 1;
+	}
+	function aiWmPillIndex(i) {
+		return wordCount() + i;
+	}
+	function aiContextPillIndex() {
+		return wordCount() + aiWordMeaningCount();
+	}
+
+	function buildProgressPills() {
+		if (!progressEl) return;
+		progressEl.innerHTML = '';
+		var count = progressTotal();
+		for (var i = 0; i < count; i++) {
+			var dot = document.createElement('span');
+			dot.className = 'reel-progress-dot';
+			dot.setAttribute('data-i', String(i));
+			progressEl.appendChild(dot);
+		}
+	}
+
+	function setProgressFilledUpTo(n) {
+		var dots = progressDots();
+		for (var i = 0; i < dots.length; i++) {
+			if (i < n) dots[i].classList.add('is-done');
+			else dots[i].classList.remove('is-done');
+		}
+	}
+
+	function markProgressDone(i) {
+		var dots = progressDots();
+		if (i < 0) return;
+		if (dots[i]) dots[i].classList.add('is-done');
+	}
+
+	function syncEndProgressPills() {
+		var w = wordCount();
+		var m = aiWordMeaningCount();
+		var filled = w;
+		var p = state.phase;
+		if (p === 'end-done') {
+			filled = progressTotal();
+		} else if (p === 'end-context' || p === 'end-context-done-wait') {
+			filled = w + m;
+		} else if (p === 'end-wm-to-context-wait') {
+			filled = w + m;
+		} else if (p && p.indexOf('end-wm') === 0) {
+			// state.endWmIdx is the current/next wm index depending on subphase.
+			// Before/at start of an item: idx items done. After completing an item
+			// (clearing), endWmIdx has advanced to idx+1 and that item is done.
+			var doneWm = state.endWmIdx || 0;
+			if (p === 'end-wm-start') doneWm = 0;
+			if (p === 'end-wm-pretype' || p === 'end-wm-type' || p === 'end-wm-hold') {
+				doneWm = state.endWmIdx || 0;
+			}
+			if (p === 'end-wm-clear' || p === 'end-wm-wait') {
+				doneWm = state.endWmIdx || 0;
+			}
+			if (doneWm > m) doneWm = m;
+			filled = w + doneWm;
+		} else if (state.ended) {
+			// fallback: keep words filled at least
+			filled = w;
+		}
+		setProgressFilledUpTo(filled);
+	}
+
+	// Largest font size whose wrapped text still fits the given box.
+	function fitTextToBox(el, boxW, boxH, minPx, maxPx, lineFn) {
+		if (!el || !(el.textContent || '').trim()) return;
+		if (!(boxW > 40) || !(boxH > 30)) return;
+
+		el.style.whiteSpace = 'normal';
+		el.style.overflow = 'hidden';
+		el.style.display = 'block';
+
+		function apply(px) {
+			el.style.fontSize = px + 'px';
+			el.style.lineHeight = lineFn(px);
+		}
+		function fits(px) {
+			apply(px);
+			// Height is the only limit: the text always wraps to the box width.
+			return el.scrollHeight <= boxH + 1;
+		}
+
+		var lo = Math.max(8, minPx);
+		var hi = Math.max(lo, maxPx);
+		apply(lo);
+		if (el.scrollHeight > boxH + 1) return; // even the minimum is too big
+		apply(hi);
+		if (el.scrollHeight <= boxH + 1) return; // the maximum already fits
+		var best = lo;
+		for (var i = 0; i < 18; i++) {
+			var mid = (lo + hi) / 2;
+			if (fits(mid)) { best = mid; lo = mid; }
+			else { hi = mid; }
+		}
+		apply(Math.floor(best));
+	}
+
+	function fitOneOpeningStage(stg) {
+		if (!stg || !stg.classList || !stg.classList.contains('is-initial-overview')) return;
+		var top = stg.querySelector('.reel-top');
+		var aEl = stg.querySelector('.reel-opening-verse');
+		var tEl = stg.querySelector('.reel-opening-translation');
+		if (!top || !aEl || !tEl) return;
+
+		// Skip fitting if nothing to show (empty preview pane)
+		if (!(aEl.textContent || '').trim() && !(tEl.textContent || '').trim()) return;
+
+		var topW = top.clientWidth;
+		var topH = top.clientHeight;
+		// Layout not ready: leave the CSS fallback size in place and let the
+		// retries / ResizeObserver call us again (never write a tiny size).
+		if (!(topW > 160) || !(topH > 220)) return;
+
+		var ref = top.querySelector('.reel-ref');
+		var refH = 0;
+		if (ref) {
+			// Include the title's bottom margin: it belongs to the first row.
+			var refCs = getComputedStyle(ref);
+			refH = ref.getBoundingClientRect().height + (parseFloat(refCs.marginBottom) || 0);
+		}
+		var rowGap = 4; // .reel-stage.is-initial-overview .reel-top gap
+		// A small safety buffer keeps the bottom text from kissing the stage edge.
+		var remaining = Math.max(80, topH - refH - rowGap * 2 - 6);
+		var topCs = getComputedStyle(top);
+		var aCs = getComputedStyle(aEl);
+		var boxW = Math.max(80,
+			aEl.clientWidth - (parseFloat(aCs.paddingLeft) || 0) - (parseFloat(aCs.paddingRight) || 0) - 2);
+		if (!(boxW > 40)) {
+			boxW = Math.max(80, topW - (parseFloat(topCs.paddingLeft) || 0) - (parseFloat(topCs.paddingRight) || 0) - 8);
+		}
+		var arabicBoxH = Math.max(50, remaining * 0.75);
+		var transBoxH = Math.max(30, remaining * 0.25);
+
+		// A very long translation can need more than a quarter of the screen.
+		// Give it the height it needs at the smallest readable size and take
+		// that from the Arabic block, so nothing is ever clipped on the
+		// opening scene. Short verses keep the exact 75 / 25 split.
+		var tMin = Math.max(11, boxW * 0.02);
+		var tLine = function (px) { return px < 14 ? '1.35' : (px < 22 ? '1.45' : '1.55'); };
+		if ((tEl.textContent || '').trim()) {
+			tEl.style.whiteSpace = 'normal';
+			tEl.style.overflow = 'hidden';
+			tEl.style.fontSize = tMin + 'px';
+			tEl.style.lineHeight = tLine(tMin);
+			var tNeeded = tEl.scrollHeight + 4;
+			if (tNeeded > transBoxH) {
+				transBoxH = Math.min(tNeeded, remaining * 0.55);
+				arabicBoxH = Math.max(50, remaining - transBoxH);
+			}
+		}
+
+		// The grid rows must match the measured split, otherwise a grown
+		// translation would still be clipped by the CSS 3fr / 1fr rows.
+		top.style.gridTemplateRows = refH + 'px ' + arabicBoxH + 'px ' + transBoxH + 'px';
+
+		// Arabic fills the top block (bottom-aligned in its cell).
+		fitTextToBox(aEl, boxW, arabicBoxH,
+			Math.max(18, boxW * 0.045),
+			Math.min(arabicBoxH * 0.62, boxW * 0.30, 220),
+			function (px) { return px < 30 ? '1.5' : (px < 52 ? '1.65' : '1.8'); });
+
+		// Translation fills the bottom block (top-aligned in its cell).
+		fitTextToBox(tEl, boxW, transBoxH,
+			tMin,
+			Math.min(transBoxH * 0.55, boxW * 0.07, 64),
+			tLine);
+	}
+
+	function fitOpeningScene() {
+		var stages = track ? track.querySelectorAll('.reel-stage.is-initial-overview') : null;
+		if (stages && stages.length) {
+			for (var i = 0; i < stages.length; i++) fitOneOpeningStage(stages[i]);
+		} else if (stage && stage.classList.contains('is-initial-overview')) {
+			fitOneOpeningStage(stage);
+		}
+	}
+
+	var openingFitPending = false;
+	function scheduleOpeningFit() {
+		if (openingFitPending) return;
+		openingFitPending = true;
+		var run = function () { openingFitPending = false; fitOpeningScene(); };
+		if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
+		else setTimeout(run, 16);
+	}
+
+	// Fonts and the viewport settle after first paint; refit a few times so the
+	// opening scene always fills the screen instead of keeping an early size.
+	var openingFitRetries = [];
+	function fitOpeningSoon() {
+		for (var i = 0; i < openingFitRetries.length; i++) clearTimeout(openingFitRetries[i]);
+		openingFitRetries = [];
+		scheduleOpeningFit();
+		[60, 250, 700, 1400].forEach(function (delay) {
+			openingFitRetries.push(setTimeout(scheduleOpeningFit, delay));
+		});
+	}
+
+	function renderOpeningScene(data) {
+		var d = data || state.data || {};
+		if (openingVerseEl) openingVerseEl.textContent = d.ayah || '';
+		if (openingTranslationEl) openingTranslationEl.textContent = d.translation || '';
+		fitOpeningSoon();
+	}
+
+	function enterInitialOverview(startTimer) {
+		clearTimer();
+		stopTypewriter(false);
+		cancelFlights();
+		showEnd(false);
+		if (stage) stage.classList.add('is-initial-overview');
+		renderOpeningScene(state.data);
+		clearMiddle({ immediate: true });
+		clearBottom();
+		state.idx = 0;
+		state.ended = false;
+		state.phase = 'initial';
+		updatePartButtons();
+		if (startTimer === false) {
+			state.remaining = INITIAL_MS;
+			setPlaying(false);
+			return;
+		}
+		setPlaying(true);
+		schedule(INITIAL_MS, function () { startRegularFlow(); });
+	}
+
+	function startRegularFlow() {
+		if (stage) stage.classList.remove('is-initial-overview');
+		if (openingVerseEl) openingVerseEl.textContent = '';
+		if (openingTranslationEl) openingTranslationEl.textContent = '';
+		resetVerseArea();
+		clearMiddle({ immediate: true });
+		clearBottom();
+		state.idx = 0;
+		setPlaying(true);
+		startIntro();
+	}
+
 	function revealPlaced(i) {
 		var sp = getSpan(i);
 		var mp = getMeaningSpan(i);
 		if (sp) { sp.classList.remove('is-hidden-target', 'is-active'); sp.classList.add('is-read', 'rv-landed'); }
 		if (mp) { mp.classList.remove('is-hidden-target', 'is-active'); mp.classList.add('is-read', 'rv-landed'); }
+		markProgressDone(i);
 		// clear landed animation class later
 		setTimeout(function () {
 			if (sp) sp.classList.remove('rv-landed');
@@ -357,6 +617,7 @@
 	function startEndSequence() {
 		showEnd(true);
 		setPlaying(true);
+		setProgressFilledUpTo(wordCount());
 		var ai = state.data.ai || {};
 		var ctx = ai.context || '';
 		var wms = ai.word_meanings || [];
@@ -398,6 +659,7 @@
 		if (endContext) endContext.textContent = '';
 		if (endWm) endWm.innerHTML = '';
 		if (endScroll) endScroll.scrollTop = 0;
+		setProgressFilledUpTo(wordCount() + aiWordMeaningCount());
 		var ctx = (state.data.ai && state.data.ai.context) || '';
 		if (!ctx) { finishEndSequence(); return; }
 		state.phase = 'end-context';
@@ -441,6 +703,7 @@
 		var wms = (state.data.ai && state.data.ai.word_meanings) || [];
 		state.endWmTotal = wms.length;
 		if (state.endWmIdx >= wms.length) {
+			setProgressFilledUpTo(wordCount() + aiWordMeaningCount());
 			var ctx = (state.data.ai && state.data.ai.context) || '';
 			if (ctx) beginEndContextAfterMeanings();
 			else finishEndSequence();
@@ -480,7 +743,9 @@
 
 	function clearCurrentEndWordMeaning() {
 		var item = endWm ? endWm.querySelector('.reel-wm-item') : null;
+		var completedIdx = state.endWmIdx;
 		function next() {
+			markProgressDone(aiWmPillIndex(completedIdx));
 			if (endWm) endWm.innerHTML = '';
 			state.endWmIdx++;
 			state.phase = 'end-wm-clear';
@@ -499,6 +764,7 @@
 
 	function finishEndSequence() {
 		state.phase = 'end-done';
+		setProgressFilledUpTo(progressTotal());
 		if (endHint) { endHint.hidden = false; endHint.classList.add('is-overlay'); }
 		setPlaying(false);
 		updatePartButtons();
@@ -554,10 +820,14 @@
 		var numEl = pane.querySelector(dir === 'prev' ? '.reel-prev-num' : '.reel-next-num');
 		var vEl = pane.querySelector(dir === 'prev' ? '.reel-prev-verse' : '.reel-next-verse');
 		var mEl = pane.querySelector(dir === 'prev' ? '.reel-prev-meaning' : '.reel-next-meaning');
+		var ov = pane.querySelector(dir === 'prev' ? '.reel-prev-opening-verse' : '.reel-next-opening-verse');
+		var ot = pane.querySelector(dir === 'prev' ? '.reel-prev-opening-translation' : '.reel-next-opening-translation');
 		if (nameEl) nameEl.textContent = '';
 		if (numEl) numEl.textContent = '';
 		if (vEl) vEl.innerHTML = '';
 		if (mEl) mEl.innerHTML = '';
+		if (ov) ov.textContent = '';
+		if (ot) ot.textContent = '';
 	}
 
 	function renderPreview(dir, data) {
@@ -568,13 +838,19 @@
 		var numEl = pane.querySelector(dir === 'prev' ? '.reel-prev-num' : '.reel-next-num');
 		var vEl = pane.querySelector(dir === 'prev' ? '.reel-prev-verse' : '.reel-next-verse');
 		var mEl = pane.querySelector(dir === 'prev' ? '.reel-prev-meaning' : '.reel-next-meaning');
+		var ov = pane.querySelector(dir === 'prev' ? '.reel-prev-opening-verse' : '.reel-next-opening-verse');
+		var ot = pane.querySelector(dir === 'prev' ? '.reel-prev-opening-translation' : '.reel-next-opening-translation');
+		var stageEl = pane.querySelector('.reel-stage');
 
-		// Render as cleared/initial reel state so swipe reveal/commit stays seamless
-		// (new reel page starts cleared before intro/word-by-word begins).
-		if (nameEl) nameEl.textContent = data ? (data.name || '') : '';
+		// Render as opening scene (first reel screenplay frame) so swipe reveal/commit never shows empty.
+		if (nameEl) nameEl.textContent = data ? (data.name || '') : ((target && target[0] && cache[key(target[0], target[1])]) ? cache[key(target[0], target[1])].name : '');
 		if (numEl) numEl.textContent = data ? (data.surah + ':' + data.verse) : ((target && target[0]) ? (target[0] + ':' + target[1]) : '');
 		if (vEl) vEl.innerHTML = '';
 		if (mEl) mEl.innerHTML = '';
+		if (ov) ov.textContent = data ? (data.ayah || '') : '';
+		if (ot) ot.textContent = data ? (data.translation || '') : '';
+		if (stageEl) stageEl.classList.add('is-initial-overview');
+		fitOpeningSoon();
 	}
 
 	function updateNeighborPreviews() {
@@ -802,6 +1078,7 @@
 			}
 		}
 		fitTopToContainer();
+		setProgressFilledUpTo(k);
 	}
 
 	function advanceToWordOrEnd(nextIdx) {
@@ -820,6 +1097,11 @@
 
 	function skipNextPart() {
 		if (state.ended) { skipNextEndPart(); return; }
+		if (state.phase === 'initial') {
+			stopAllWordAnimations(false);
+			startRegularFlow();
+			return;
+		}
 		stopAllWordAnimations(true);
 		var words = state.data.words || [];
 		if (state.phase === 'intro') {
@@ -842,6 +1124,7 @@
 
 	function skipPrevPart() {
 		if (state.ended) { skipPrevEndPart(); return; }
+		if (state.phase === 'initial') return;
 		stopAllWordAnimations(false);
 		var words = state.data.words || [];
 		var target;
@@ -856,6 +1139,7 @@
 		}
 		if (target < 0) target = 0;
 		if (words.length && target >= words.length) target = words.length - 1;
+		if (stage) stage.classList.remove('is-initial-overview');
 		showEnd(false);
 		rebuildTopUpTo(target);
 		clearMiddle({ immediate: true });
@@ -882,6 +1166,7 @@
 		if (endContext) endContext.textContent = '';
 		if (endWm) endWm.innerHTML = '';
 		state.endWmIdx = idx;
+		setProgressFilledUpTo(wordCount() + Math.max(0, idx));
 		setPlaying(true);
 		showNextEndWordMeaning();
 	}
@@ -905,13 +1190,18 @@
 		}
 		if (p && p.indexOf('end-wm') === 0) {
 			if (p === 'end-wm-type' || p === 'end-wm-hold' || p === 'end-wm-pretype') {
+				// Current word-meaning item is completed/skipped.
+				markProgressDone(aiWmPillIndex(state.endWmIdx));
 				if (endWm) endWm.innerHTML = '';
 				state.endWmIdx++;
-			} else if (p === 'end-wm-clear' || p === 'end-wm-start') {
-				// idx positioned for next/first; showNextEndWordMeaning will handle
+			} else if (p === 'end-wm-clear' || p === 'end-wm-wait') {
+				// idx positioned for next/first; item already accounted for in clear flow
+			} else if (p === 'end-wm-start') {
+				// starting from first item
 			}
 			if (endContext) endContext.textContent = '';
 			leaveEndDone();
+			setProgressFilledUpTo(wordCount() + Math.min(state.endWmIdx, aiWordMeaningCount()));
 			setPlaying(true);
 			showNextEndWordMeaning();
 			return;
@@ -955,7 +1245,7 @@
 		var p = state.phase;
 		stopAllWordAnimations(false);
 		if (p === 'end-done') {
-			if (ctx) { leaveEndDone(); setPlaying(true); beginEndContextSequence(); }
+			if (ctx) { leaveEndDone(); setPlaying(true); setProgressFilledUpTo(wordCount() + aiWordMeaningCount()); beginEndContextSequence(); }
 			else if (wms.length) { showEndWordMeaningAt(wms.length - 1); }
 			else {
 				var last = (state.data.words || []).length - 1;
@@ -968,7 +1258,7 @@
 			else {
 				var last2 = (state.data.words || []).length - 1;
 				if (last2 >= 0) enterWordMeaningSegment(last2);
-				else { leaveEndDone(); setPlaying(true); beginEndContextSequence(); }
+				else { leaveEndDone(); setPlaying(true); setProgressFilledUpTo(wordCount() + aiWordMeaningCount()); beginEndContextSequence(); }
 			}
 			return;
 		}
@@ -977,7 +1267,7 @@
 			else {
 				var last3 = (state.data.words || []).length - 1;
 				if (last3 >= 0) enterWordMeaningSegment(last3);
-				else { leaveEndDone(); setPlaying(true); beginEndContextSequence(); }
+				else { leaveEndDone(); setPlaying(true); setProgressFilledUpTo(wordCount() + aiWordMeaningCount()); beginEndContextSequence(); }
 			}
 			return;
 		}
@@ -1193,6 +1483,10 @@
 		if (state.playing) return;
 		setPlaying(true);
 		if (state.phase === 'end-done' || (state.ended && state.phase === 'idle')) { replay(); return; }
+		if (state.phase === 'initial') {
+			schedule(Math.max(30, state.remaining || INITIAL_MS), function () { startRegularFlow(); });
+			return;
+		}
 		if (state.phase === 'intro') {
 			schedule(Math.max(30, state.remaining || INTRO_MS), function () { startPhase('word', 0); });
 			return;
@@ -1341,8 +1635,8 @@
 		resetVerseArea();
 		clearMiddle({ immediate: true });
 		clearBottom();
-		setPlaying(true);
-		startIntro();
+		buildProgressPills();
+		enterInitialOverview(true);
 	}
 
 	function updateMeta(data) {
@@ -1372,12 +1666,13 @@
 		state.phase = 'idle';
 		cache[key(data.surah, data.verse)] = data;
 		updateMeta(data);
+		buildProgressPills();
+		setProgressFilledUpTo(0);
 		resetVerseArea();
 		clearMiddle({ immediate: true });
 		clearBottom();
 		showEnd(false);
-		setPlaying(true);
-		startIntro();
+		enterInitialOverview(true);
 		// Keep a single reel history entry to avoid stacking; URL follows current verse.
 		try { history.replaceState({ surah: data.surah, verse: data.verse }, '', '/reel/' + data.surah + '/' + data.verse); } catch (e) {}
 		emitVerse(data);
@@ -1606,8 +1901,7 @@
 	});
 
 	function startReel() {
-		setPlaying(true);
-		startIntro();
+		enterInitialOverview(true);
 	}
 
 	function maybeShowHint() {
@@ -1617,7 +1911,7 @@
 			hintActive = true;
 			hintOverlay.hidden = false;
 			hintOverlay.setAttribute('aria-hidden', 'false');
-			setPlaying(false);
+			enterInitialOverview(false);
 			return true;
 		}
 		return false;
@@ -1697,6 +1991,8 @@
 
 	// Init
 	try { history.replaceState({ surah: state.data.surah, verse: state.data.verse }, '', location.pathname); } catch (e) {}
+	buildProgressPills();
+	setProgressFilledUpTo(0);
 	resetVerseArea();
 	clearMiddle({ immediate: true });
 	clearBottom();
@@ -1707,11 +2003,27 @@
 	requestWakeSafe();
 	if (!maybeShowHint()) {
 		startReel();
+	} else {
+		// Opening scene is already rendered (paused behind hint) so the reel is never empty.
 	}
 
 	var fitTimer = null;
 	window.addEventListener('resize', function () {
 		if (fitTimer) clearTimeout(fitTimer);
-		fitTimer = setTimeout(function () { scheduleTopFit(); if (!carousel.animating) centerTrack(false); }, 80);
+		fitTimer = setTimeout(function () { scheduleTopFit(); fitOpeningSoon(); if (!carousel.animating) centerTrack(false); }, 80);
 	});
+
+	// The reel viewport can settle after the first script pass (dvh, fonts,
+	// safe areas). Refit whenever it actually changes size so the opening
+	// scene always fills the screen.
+	if (typeof ResizeObserver === 'function' && viewport) {
+		try {
+			var openingRO = new ResizeObserver(function () { scheduleOpeningFit(); });
+			openingRO.observe(viewport);
+		} catch (e) {}
+	}
+	if (document.fonts && document.fonts.ready && document.fonts.ready.then) {
+		document.fonts.ready.then(function () { fitOpeningSoon(); }, function () {});
+	}
+	fitOpeningSoon();
 })();
