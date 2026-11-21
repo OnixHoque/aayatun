@@ -122,6 +122,7 @@
 
 	function setPlaying(on) {
 		state.playing = !!on;
+		if (state.playing) requestWakeSafe();
 		var replay = !state.playing && state.phase === 'end-done';
 		if (playIcon) playIcon.className = 'icon ' + (state.playing ? 'pause' : (replay ? 'redo' : 'play'));
 		if (playBtn) {
@@ -1901,6 +1902,7 @@
 	});
 
 	function startReel() {
+		requestWakeSafe();
 		enterInitialOverview(true);
 	}
 
@@ -1932,10 +1934,17 @@
 		if (!wakeVideo) return;
 		if (!wakeVideo.src) wakeVideo.src = (wakeVideo.canPlayType && wakeVideo.canPlayType('video/mp4')) ? WAKE_MP4 : WAKE_WEBM;
 		wakeVideo.muted = true;
-		var p = wakeVideo.play();
-		if (p && p.then) {
-			p.then(function () { videoOn = true; }).catch(function () { videoOn = false; });
-		}
+		wakeVideo.setAttribute('playsinline', '');
+		wakeVideo.setAttribute('webkit-playsinline', '');
+		wakeVideo.loop = true;
+		try {
+			var p = wakeVideo.play();
+			if (p && p.then) {
+				p.then(function () { videoOn = true; }).catch(function () { videoOn = false; });
+			} else {
+				videoOn = !wakeVideo.paused;
+			}
+		} catch (e) { videoOn = false; }
 	}
 	function stopVideoWake() {
 		if (!wakeVideo) return;
@@ -1946,18 +1955,30 @@
 	function requestWakeSafe() {
 		if (document.hidden) return;
 		if (wakeSupported) {
-			if (wakePending || (wakeLock && !wakeLock.released)) return;
+			if (wakeLock && !wakeLock.released) return;
+			if (wakePending) return;
 			wakePending = true;
-			navigator.wakeLock.request('screen').then(function (lock) {
-				wakeLock = lock;
-				lock.addEventListener('release', function () { wakeLock = null; });
-				stopVideoWake();
-			}).catch(function () {
-				if (!videoOn) startVideoWake();
-			}).then(function () { wakePending = false; }, function () { wakePending = false; });
+			try {
+				navigator.wakeLock.request('screen').then(function (lock) {
+					wakeLock = lock;
+					wakePending = false;
+					lock.addEventListener('release', function () { wakeLock = null; });
+					stopVideoWake();
+				}, function () {
+					wakePending = false;
+					// Native lock unavailable (or no user activation): keep the
+					// screen on with the silent-video fallback (important on iOS).
+					startVideoWake();
+				});
+			} catch (e) {
+				wakePending = false;
+				startVideoWake();
+			}
 			return;
 		}
-		if (!videoOn) startVideoWake();
+		// No Screen Wake Lock API: use the silent-video fallback (needs a
+		// user gesture on iOS, so we also retry on every interaction).
+		startVideoWake();
 	}
 	function releaseWake() {
 		if (wakeLock) { try { wakeLock.release().catch(function () {}); } catch (e) {} wakeLock = null; }
@@ -1969,7 +1990,7 @@
 	});
 	window.addEventListener('pagehide', releaseWake);
 	window.addEventListener('beforeunload', releaseWake);
-	['pointerup', 'touchend', 'click', 'keydown'].forEach(function (ev) {
+	['pointerdown', 'pointerup', 'touchstart', 'touchend', 'click', 'keydown'].forEach(function (ev) {
 		document.addEventListener(ev, function () { requestWakeSafe(); }, true);
 	});
 	setInterval(function () {
