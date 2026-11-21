@@ -27,6 +27,7 @@
 	var prevPartBtn = document.getElementById('reel-prev-part');
 	var nextPartBtn = document.getElementById('reel-next-part');
 	var shareBtn = document.getElementById('reel-share');
+	var shuffleBtn = document.getElementById('reel-shuffle');
 	var closeBtn = document.getElementById('reel-close');
 	var bottom = document.getElementById('reel-bottom');
 	var endPanel = document.getElementById('reel-end-panel');
@@ -78,6 +79,87 @@
 	var reduced = false;
 	try { reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
 
+	// Shuffle (random next/prev reel). Persisted; on by default.
+	var SHUFFLE_KEY = 'aayatun_reel_shuffle_v1';
+	var shuffleOn = true;
+	try {
+		var _shuffleSaved = localStorage.getItem(SHUFFLE_KEY);
+		if (_shuffleSaved === '0') shuffleOn = false;
+		else if (_shuffleSaved === '1') shuffleOn = true;
+	} catch (e) {}
+	var shuffleTargets = { prev: null, next: null };
+	var shuffleVerseKey = '';
+
+	function saveShuffle() {
+		try { localStorage.setItem(SHUFFLE_KEY, shuffleOn ? '1' : '0'); } catch (e) {}
+	}
+
+	function syncShuffleBtn() {
+		if (!shuffleBtn) return;
+		shuffleBtn.classList.toggle('is-active', shuffleOn);
+		shuffleBtn.setAttribute('aria-pressed', shuffleOn ? 'true' : 'false');
+		var label = shuffleOn ? 'Shuffle verses (on)' : 'Shuffle verses (off)';
+		shuffleBtn.setAttribute('aria-label', label);
+		shuffleBtn.setAttribute('title', label);
+	}
+	syncShuffleBtn();
+
+	function randomVerse(exclude) {
+		var starts = window.AAYATUN_SURAH_STARTS || [];
+		var total = 6236;
+		if (starts.length > 1) total = starts[starts.length - 1];
+		var exs = exclude && exclude[0] ? exclude[0] : 0;
+		var exv = exclude && exclude[1] ? exclude[1] : 0;
+		for (var tries = 0; tries < 12; tries++) {
+			var n = Math.floor(Math.random() * total) + 1; // 1-based global index
+			var lo = 0, hi = starts.length - 1;
+			while (lo < hi) {
+				var mid = (lo + hi) >> 1;
+				if (starts[mid] < n) lo = mid + 1; else hi = mid;
+			}
+			var s = lo; // 1-based surah
+			if (s < 1) s = 1;
+			var base = starts[s - 1] || 0;
+			var v = n - base;
+			if (v < 1) v = 1;
+			if (s !== exs || v !== exv) return [s, v];
+		}
+		// Fallback: step forward one verse if we somehow picked the same one.
+		var fs = exs || 1, fv = (exv || 1) + 1;
+		var fmax = (starts[fs] || 0) - (starts[fs - 1] || 0);
+		if (fv > fmax) { fs = fs >= 114 ? 1 : fs + 1; fv = 1; }
+		return [fs, fv];
+	}
+
+	function getShuffleTarget(dir) {
+		if (!shuffleTargets) shuffleTargets = { prev: null, next: null };
+		if (shuffleTargets[dir] && shuffleTargets[dir][0]) return shuffleTargets[dir];
+		var ex = state.data ? [state.data.surah, state.data.verse] : null;
+		shuffleTargets[dir] = randomVerse(ex);
+		return shuffleTargets[dir];
+	}
+
+	function pickShuffleTargets() {
+		var ex = state.data ? [state.data.surah, state.data.verse] : null;
+		shuffleTargets = {
+			next: randomVerse(ex),
+			prev: randomVerse(ex)
+		};
+		shuffleVerseKey = state.data ? key(state.data.surah, state.data.verse) : '';
+	}
+
+	function ensureShuffleTargets() {
+		var k = state.data ? key(state.data.surah, state.data.verse) : '';
+		if (shuffleVerseKey !== k || !shuffleTargets || !shuffleTargets.next || !shuffleTargets.prev) {
+			pickShuffleTargets();
+		}
+	}
+
+	function getNeighborTarget(dir) {
+		if (shuffleOn) return getShuffleTarget(dir);
+		return dir === 'next' ? (state.data && state.data.next) : (state.data && state.data.prev);
+	}
+
 	function key(s, v) { return s + ':' + v; }
 	cache[key(initial.surah, initial.verse)] = initial;
 
@@ -105,6 +187,14 @@
 	}
 
 	function prefetchNeighbors() {
+		if (shuffleOn) {
+			ensureShuffleTargets();
+			var p = shuffleTargets.prev, n = shuffleTargets.next;
+			if (p && p[0]) fetchVerse(p[0], p[1]).catch(function () {});
+			if (n && n[0]) fetchVerse(n[0], n[1]).catch(function () {});
+			updateNeighborPreviews();
+			return;
+		}
 		var d = state.data;
 		if (d.prev && d.prev[0]) fetchVerse(d.prev[0], d.prev[1]).catch(function () {});
 		if (d.next && d.next[0]) fetchVerse(d.next[0], d.next[1]).catch(function () {});
@@ -834,7 +924,9 @@
 	function renderPreview(dir, data) {
 		var pane = dir === 'prev' ? prevPane : nextPane;
 		if (!pane) return;
-		var target = dir === 'prev' ? (state.data && state.data.prev) : (state.data && state.data.next);
+		var target = shuffleOn
+			? (shuffleTargets && shuffleTargets[dir])
+			: (dir === 'prev' ? (state.data && state.data.prev) : (state.data && state.data.next));
 		var nameEl = pane.querySelector(dir === 'prev' ? '.reel-prev-name' : '.reel-next-name');
 		var numEl = pane.querySelector(dir === 'prev' ? '.reel-prev-num' : '.reel-next-num');
 		var vEl = pane.querySelector(dir === 'prev' ? '.reel-prev-verse' : '.reel-next-verse');
@@ -855,17 +947,23 @@
 	}
 
 	function updateNeighborPreviews() {
+		if (shuffleOn) {
+			ensureShuffleTargets();
+			var prevTarget = shuffleTargets.prev;
+			var nextTarget = shuffleTargets.next;
+			renderPreview('prev', (prevTarget && prevTarget[0]) ? (cache[key(prevTarget[0], prevTarget[1])] || null) : null);
+			renderPreview('next', (nextTarget && nextTarget[0]) ? (cache[key(nextTarget[0], nextTarget[1])] || null) : null);
+			return;
+		}
 		var prevTarget = state.data && state.data.prev;
 		var nextTarget = state.data && state.data.next;
 		if (prevTarget && prevTarget[0]) {
-			var pk = key(prevTarget[0], prevTarget[1]);
-			renderPreview('prev', cache[pk] || null);
+			renderPreview('prev', cache[key(prevTarget[0], prevTarget[1])] || null);
 		} else {
 			renderPreview('prev', null);
 		}
 		if (nextTarget && nextTarget[0]) {
-			var nk = key(nextTarget[0], nextTarget[1]);
-			renderPreview('next', cache[nk] || null);
+			renderPreview('next', cache[key(nextTarget[0], nextTarget[1])] || null);
 		} else {
 			renderPreview('next', null);
 		}
@@ -1689,6 +1787,11 @@
 	}
 
 	function navigate(dir) {
+		if (shuffleOn) {
+			var target = getShuffleTarget(dir);
+			if (target && target[0]) goTo(target[0], target[1], true);
+			return;
+		}
 		var target = dir === 'next' ? state.data.next : state.data.prev;
 		if (target && target[0]) goTo(target[0], target[1], true);
 	}
@@ -1716,6 +1819,15 @@
 			}, shareBtn);
 		}
 	});
+	if (shuffleBtn) shuffleBtn.addEventListener('click', function () {
+		shuffleOn = !shuffleOn;
+		saveShuffle();
+		syncShuffleBtn();
+		// Reset targets so a fresh pair is picked for the current verse/mode.
+		shuffleTargets = { prev: null, next: null };
+		shuffleVerseKey = '';
+		prefetchNeighbors();
+	});
 
 	// Keyboard
 	document.addEventListener('keydown', function (e) {
@@ -1728,6 +1840,7 @@
 
 	// Swipe (vertical carousel with prev/next peek)
 	function hasNeighbor(dir) {
+		if (shuffleOn) return true;
 		var t = dir === 'next' ? (state.data && state.data.next) : (state.data && state.data.prev);
 		return !!(t && t[0]);
 	}
@@ -1803,7 +1916,7 @@
 	}
 
 	function commitSwipe(dir) {
-		var target = dir === 'next' ? (state.data && state.data.next) : (state.data && state.data.prev);
+		var target = shuffleOn ? getShuffleTarget(dir) : (dir === 'next' ? (state.data && state.data.next) : (state.data && state.data.prev));
 		if (!target || !target[0]) { cancelSwipe(); return; }
 		carousel.animating = true;
 		var h = paneHeight();
