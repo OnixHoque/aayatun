@@ -238,6 +238,26 @@ def _run_query(conn, match_expr, limit):
 	return conn.execute(sql + ' LIMIT ?', (match_expr, int(limit))).fetchall()
 
 
+def _ranked_queries(raw, col, gloss, full_expr, match_expr):
+	"""Return retrieval tiers in priority order for ordinary text queries."""
+	queries = []
+	# Preserve the meaning of explicit FTS syntax and wildcard queries.
+	if not re.search(r'["()*]|\b(?:AND|OR|NOT)\b', raw):
+		normalized, _ = normalize(raw)
+		words = normalized.split()
+		if 1 < len(words) <= 12:
+			phrase_text = '"' + ' '.join(words) + '"'
+			columns = [col] if col else ['ar_norm', 'en_norm']
+			phrases = [_build_match(phrase_text, column, gloss)[0] for column in columns]
+			phrase = ' OR '.join(p for p in phrases if p)
+			if phrase:
+				queries.append(phrase)
+	for expr in (full_expr, match_expr):
+		if expr and expr not in queries:
+			queries.append(expr)
+	return queries
+
+
 # Hard cap on rendered rows: "Show all results" with a broad query would
 # otherwise fetch and highlight thousands of rows server-side.
 TRUNC_MAX = 500
@@ -402,11 +422,12 @@ def index_search(search_query, result_limit=10, dirname=None, search_fields=None
 		seen = set()
 		if match_expr:
 			try:
-				if full_expr and full_expr != match_expr:
-					rows = _run_query(conn, full_expr, sql_limit)
-					seen = {(r['surah'], r['verse']) for r in rows}
-				partial = _run_query(conn, match_expr, sql_limit)
-				rows += [r for r in partial if (r['surah'], r['verse']) not in seen]
+				for expr in _ranked_queries(raw, col, gloss, full_expr, match_expr):
+					for row in _run_query(conn, expr, sql_limit):
+						key = (row['surah'], row['verse'])
+						if key not in seen:
+							rows.append(row)
+							seen.add(key)
 			except sqlite3.OperationalError:
 				# Malformed boolean/paren mix the user typed: plain OR of tokens.
 				n, _ = normalize(raw)
