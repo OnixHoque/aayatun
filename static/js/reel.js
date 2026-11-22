@@ -20,6 +20,7 @@
 	var wordAr = document.getElementById('reel-word-ar');
 	var wordMeaning = document.getElementById('reel-word-meaning');
 	var chipsEl = document.getElementById('reel-chips');
+	var middleEl = document.querySelector('#reel-stage .reel-middle');
 	var defHead = document.getElementById('reel-def-head');
 	var defText = document.getElementById('reel-def-text');
 	var playBtn = document.getElementById('reel-play');
@@ -326,6 +327,37 @@
 	function scheduleTopFit() {
 		fitTopToContainer();
 		if (typeof requestAnimationFrame === 'function') requestAnimationFrame(fitTopToContainer);
+	}
+
+	// Shrink the morphology chips just enough to fit the middle row. The Arabic
+	// word and its meaning keep their size: only --chip-scale changes.
+	function fitMiddleChips() {
+		if (!middleEl || !chipsEl) return;
+		if (!chipsEl.querySelector('.reel-chip')) return;
+		// Hidden during the opening scene / ended state: nothing to measure yet.
+		if (!middleEl.clientHeight || !chipsEl.offsetParent) return;
+		var midStyle = window.getComputedStyle(middleEl);
+		var available = middleEl.clientHeight
+			- (parseFloat(midStyle.paddingTop) || 0)
+			- (parseFloat(midStyle.paddingBottom) || 0);
+		if (wordAr) available -= wordAr.offsetHeight;
+		if (wordMeaning) {
+			available -= wordMeaning.offsetHeight + (parseFloat(window.getComputedStyle(wordMeaning).marginTop) || 0);
+		}
+		var scale = 1;
+		chipsEl.style.setProperty('--chip-scale', '1');
+		while (scale > 0.45) {
+			var chipsStyle = window.getComputedStyle(chipsEl);
+			var used = chipsEl.offsetHeight + (parseFloat(chipsStyle.marginTop) || 0);
+			if (used <= available) break;
+			scale = Math.max(0.45, +(scale - 0.05).toFixed(2));
+			chipsEl.style.setProperty('--chip-scale', String(scale));
+		}
+	}
+
+	function scheduleMiddleFit() {
+		fitMiddleChips();
+		if (typeof requestAnimationFrame === 'function') requestAnimationFrame(fitMiddleChips);
 	}
 
 	function resetVerseArea() {
@@ -656,13 +688,13 @@
 		if (immediate) {
 			if (wordAr) { wordAr.classList.remove('is-fading', 'is-appearing'); wordAr.style.opacity = ''; wordAr.style.transform = ''; wordAr.textContent = ''; wordAr.style.display = ''; }
 			if (wordMeaning) { wordMeaning.classList.remove('is-fading', 'is-appearing'); wordMeaning.style.opacity = ''; wordMeaning.style.transform = ''; wordMeaning.textContent = '\u00A0'; wordMeaning.style.visibility = 'hidden'; wordMeaning.style.display = ''; }
-			if (chipsEl) { chipsEl.innerHTML = ''; chipsEl.style.display = ''; }
+			if (chipsEl) { chipsEl.innerHTML = ''; chipsEl.style.display = ''; chipsEl.style.setProperty('--chip-scale', '1'); }
 			return;
 		}
 		// fade out arabic word and blue translation (and clear chips)
 		if (wordAr && wordAr.textContent) { wordAr.classList.remove('is-appearing'); wordAr.classList.add('is-fading'); }
 		if (wordMeaning && wordMeaning.style.visibility !== 'hidden' && (wordMeaning.textContent || '').trim()) { wordMeaning.classList.remove('is-appearing'); wordMeaning.classList.add('is-fading'); }
-		if (chipsEl) { chipsEl.innerHTML = ''; }
+		if (chipsEl) { chipsEl.innerHTML = ''; chipsEl.style.setProperty('--chip-scale', '1'); }
 		midClearTimer = setTimeout(function () {
 			midClearTimer = null;
 			if (wordAr) { wordAr.classList.remove('is-fading', 'is-appearing'); wordAr.style.opacity = ''; wordAr.style.transform = ''; wordAr.textContent = ''; }
@@ -1076,7 +1108,8 @@
 		}
 		if (state.phase === 'rootmeaning') {
 			state.phase = 'rootmeaning-done';
-			if (state.playing) startPhase('fly');
+			if (state.playing) schedule(ROOT_HOLD_MS, function () { startPhase('fly'); });
+			else state.remaining = ROOT_HOLD_MS;
 			return;
 		}
 		if (state.phase === 'end-wm-type') {
@@ -1127,6 +1160,7 @@
 		if (chipsEl) { chipsEl.classList.remove('is-fading'); chipsEl.style.display = ''; }
 		state.breakdownTotal = buildBreakdownChips(w);
 		state.breakdownIdx = 0;
+		scheduleMiddleFit();
 		clearBottom();
 
 		setProgress();
@@ -1333,6 +1367,7 @@
 			wordMeaning.style.display = '';
 			animateMidIn(wordMeaning);
 		}
+		scheduleMiddleFit();
 		updatePartButtons();
 		if (!state.playing) { state.remaining = phaseTimes().meaning; return; }
 		schedule(phaseTimes().meaning, function () { startBreakdown(); });
@@ -1503,6 +1538,8 @@
 	}
 
 	var INTRO_MS = ms(800);
+	// Let the finished root definition sit for a beat before the word flies up.
+	var ROOT_HOLD_MS = ms(400);
 
 	function startIntro() {
 		state.phase = 'intro';
@@ -1532,6 +1569,7 @@
 					wordMeaning.style.display = '';
 					animateMidIn(wordMeaning);
 				}
+				scheduleMiddleFit();
 				state.wordmeaningStep = 1;
 				schedule(t.meaning, function () { startBreakdown(); });
 			});
@@ -1603,7 +1641,8 @@
 		// typewriter-driven phases
 		if (state.phase === 'rootmeaning') {
 			if (state.twPos >= state.twText.length && state.twText.length > 0) {
-				startPhase('fly');
+				state.phase = 'rootmeaning-done';
+				schedule(ROOT_HOLD_MS, function () { startPhase('fly'); });
 			} else if (state.twText) {
 				resumeTypewriter();
 			} else {
@@ -1617,7 +1656,7 @@
 			return;
 		}
 		if (state.phase === 'rootmeaning-done') {
-			startPhase('fly');
+			schedule(Math.max(30, state.remaining || ROOT_HOLD_MS), function () { startPhase('fly'); });
 			return;
 		}
 		if (state.phase === 'end-context') {
@@ -1707,6 +1746,7 @@
 						wordMeaning.style.display = '';
 						animateMidIn(wordMeaning);
 					}
+					scheduleMiddleFit();
 					state.wordmeaningStep = 1;
 					schedule(phaseTimes().meaning, function () { startBreakdown(); });
 				};
@@ -2144,7 +2184,7 @@
 	var fitTimer = null;
 	window.addEventListener('resize', function () {
 		if (fitTimer) clearTimeout(fitTimer);
-		fitTimer = setTimeout(function () { scheduleTopFit(); fitOpeningSoon(); if (!carousel.animating) centerTrack(false); }, 80);
+		fitTimer = setTimeout(function () { scheduleTopFit(); scheduleMiddleFit(); fitOpeningSoon(); if (!carousel.animating) centerTrack(false); }, 80);
 	});
 
 	// The reel viewport can settle after the first script pass (dvh, fonts,
@@ -2157,7 +2197,7 @@
 		} catch (e) {}
 	}
 	if (document.fonts && document.fonts.ready && document.fonts.ready.then) {
-		document.fonts.ready.then(function () { fitOpeningSoon(); }, function () {});
+		document.fonts.ready.then(function () { scheduleMiddleFit(); fitOpeningSoon(); }, function () {});
 	}
 	fitOpeningSoon();
 })();

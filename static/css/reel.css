@@ -411,23 +411,27 @@ html.dark-theme .reel {
 }
 
 .reel-chips {
+  /* Shrunk by fitMiddleChips() when a word has many segments, so the chips
+     never push the Arabic word or its meaning out of the middle row. */
+  --chip-scale: 1;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 0.6em;
   justify-content: center;
-  margin-top: 14px;
+  margin-top: 1.05em;
   max-width: 720px;
+  font-size: calc(0.95rem * var(--chip-scale));
 }
 
 .reel-chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
+  gap: 0.45em;
+  padding: 0.45em 0.9em;
   border-radius: 999px;
   border: 1px solid var(--reel-border);
   background: var(--reel-chip-bg);
-  font-size: 0.95rem;
+  font-size: 1em;
   line-height: 1.3;
   opacity: 0;
   transform: translateY(4px);
@@ -439,7 +443,7 @@ html.dark-theme .reel {
   transform: none;
 }
 
-.reel-chip .seg { font-family: 'Scheherazade', serif; font-size: 1.25rem; }
+.reel-chip .seg { font-family: 'Scheherazade', serif; font-size: 1.32em; }
 .reel-chip .role { color: var(--reel-muted); }
 
 .reel-end-panel {
