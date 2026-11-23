@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 from app import app
 from build_search import add_english_index
+import searchtool
 from searchtool import index_search
 
 
@@ -43,6 +44,66 @@ class TranslationRankingTests(unittest.TestCase):
         hits, _ = index_search('pledge tree reward', 1, field='translation')
         self.assertIn('Translation', hits[0]['chips'])
         self.assertIn('>pledged</span>', hits[0]['translation'])
+
+class CrossFieldRankingTests(unittest.TestCase):
+    def test_generic_and_surah_tiers_match_different_columns(self):
+        with sqlite3.connect(':memory:') as db:
+            db.row_factory = sqlite3.Row
+            db.execute("""CREATE VIRTUAL TABLE docs USING fts5(
+                ar_norm, en_norm, ai_norm, en_tafsir_norm, bn_tafsir_norm, surah_name,
+                surah UNINDEXED, verse UNINDEXED, ar_orig UNINDEXED, en UNINDEXED,
+                en_tafsir UNINDEXED, bn_tafsir UNINDEXED, ai UNINDEXED)""")
+            db.execute("INSERT INTO docs VALUES ('','','','','','Luqman',31,1,'','','','','')")
+            db.execute("INSERT INTO docs VALUES ('','parent','','','','Luqman',31,14,'','','','','')")
+            generic = searchtool._cross_field_expr(
+                ['luqman', 'parent'], searchtool._ALL_COLUMNS, {})
+            same_column = ' OR '.join(
+                f'{column} : (luqman AND parent)' for column in searchtool._ALL_COLUMNS)
+            self.assertEqual(searchtool._run_query(db, same_column, 10), [])
+            self.assertEqual(searchtool._run_query(db, generic, 10)[0]['verse'], 14)
+
+    def test_luqman_parent_has_cross_field_tiers(self):
+        conn = searchtool._connect()
+        try:
+            gloss = searchtool._load_glossary()
+            match, _ = searchtool._build_match('Luqman Parent', None, gloss)
+            full, _ = searchtool._build_match('Luqman Parent', None, gloss, join='AND')
+            queries = searchtool._ranked_queries('Luqman Parent', None, gloss, full, match, conn)
+            scoped = next(i for i, q in enumerate(queries)
+                          if q.startswith('surah_name : (luqman) AND {'))
+            generic = next(i for i, q in enumerate(queries)
+                           if q.startswith('{') and ' AND ' in q)
+            self.assertLess(scoped, generic)
+        finally:
+            conn.close()
+
+    def test_luqman_parent_puts_parent_verse_in_top_five(self):
+        hits, _ = index_search('Luqman Parent', 5, field='all')
+        refs = [f"{hit['surah']}:{hit['verse']}" for hit in hits]
+        self.assertIn('31:14', refs)
+        self.assertEqual(len(refs), len(set(refs)))
+
+    def test_cross_field_knob_can_be_disabled(self):
+        with patch('searchtool.SEARCH_CROSS_FIELD_AND', False):
+            hits, _ = index_search('Luqman Parent', 5, field='all')
+        refs = [f"{hit['surah']}:{hit['verse']}" for hit in hits]
+        self.assertNotIn('31:14', refs)
+
+    def test_explicit_syntax_and_field_scope_bypass_cross_field_tiers(self):
+        for raw, col in [('"Luqman Parent"', None), ('Luqman AND Parent', None),
+                         ('Luqman Parent*', None), ('Luqman', None),
+                         ('Luqman Parent', 'en_norm')]:
+            with self.subTest(raw=raw, col=col):
+                queries = searchtool._ranked_queries(raw, col, {}, None, None)
+                self.assertFalse(any(q.startswith('{') for q in queries))
+
+    def test_benchmark_coverage_counts_prefix_inflections(self):
+        from evaluation.compare_keyword_knobs import coverage_at_five
+
+        case = {'query': 'Luqman Parent', 'intent': 'multi', 'language': 'en'}
+        corpus = {'31:14': {'luqman', 'parents'}}
+        self.assertEqual(coverage_at_five(case, ['31:14'], corpus), 1.0)
+
 
 class MixedScriptRankingTests(unittest.TestCase):
     def test_surah_name_and_arabic_prefix_through_flask(self):

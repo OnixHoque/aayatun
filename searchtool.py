@@ -46,6 +46,9 @@ FIELD_COLS = {
 
 # BM25 column order: ar_norm, en_norm, ai_norm, en_tafsir_norm, bn_tafsir_norm, surah_name
 BM25 = 'bm25(docs, 10.0, 10.0, 1.5, 2.0, 2.0, 3.0)'
+_ALL_COLUMNS = ['ar_norm', 'en_norm', 'ai_norm', 'en_tafsir_norm', 'bn_tafsir_norm', 'surah_name']
+_CONTENT_COLUMNS = _ALL_COLUMNS[:-1]
+SEARCH_CROSS_FIELD_AND = True
 
 CHIP_LABELS = {
 	'ar_norm': 'Verse',
@@ -113,20 +116,24 @@ def _ensure_root_index(conn):
 
 
 def _surah_number(conn, name):
-	"""Resolve a unique indexed surah name, allowing common article and h variants."""
+	"""Resolve a unique surah name through its FTS index, not a docs table scan."""
 	if name.isdecimal():
 		return int(name) if 1 <= int(name) <= 114 else None
-	wanted = normalize(name)[0].replace(' ', '')
+	wanted = normalize(name)[0].strip()
+	if not wanted:
+		return None
+	variants = {wanted}
+	if wanted.startswith(('al', 'an', 'ar', 'as', 'az')):
+		variants.add(wanted[2:])
+	variants |= {value[:-1] for value in variants if value.endswith('h')}
 	matches = set()
-	for row in conn.execute('SELECT surah, surah_name FROM docs GROUP BY surah'):
-		name = (row['surah_name'] or '').split('(')[0]
-		canonical = normalize(name)[0].replace(' ', '')
-		variants = {canonical}
-		if canonical.startswith(('al', 'an', 'ar', 'as', 'az')):
-			variants.add(canonical[2:])
-		variants |= {value[:-1] for value in variants if value.endswith('h')}
-		if wanted in variants:
-			matches.add(row['surah'])
+	for variant in variants:
+		rows = conn.execute(
+			'SELECT surah FROM docs WHERE docs MATCH ? GROUP BY surah LIMIT 2',
+			(f'surah_name : ("{variant}"*)',)).fetchall()
+		matches.update(row['surah'] for row in rows)
+		if len(matches) > 1:
+			return None
 	return next(iter(matches)) if len(matches) == 1 else None
 
 
@@ -335,8 +342,7 @@ def _build_match(raw, col, gloss, join='OR'):
 		# of all phrase sets, which flattens column weights; per-column OR'ed
 		# clauses keep the weighted scores additive and restore the intended
 		# translation-over-AI ranking.
-		cols = ['ar_norm', 'en_norm', 'ai_norm', 'en_tafsir_norm', 'bn_tafsir_norm', 'surah_name']
-		expr = ' OR '.join(f'{c} : ({expr})' for c in cols)
+		expr = ' OR '.join(f'{c} : ({expr})' for c in _ALL_COLUMNS)
 	return expr, terms
 
 
@@ -349,41 +355,85 @@ def _run_query(conn, match_expr, limit):
 	return conn.execute(sql + ' LIMIT ?', (match_expr, int(limit))).fetchall()
 
 
-def _ranked_queries(raw, col, gloss, full_expr, match_expr):
+def _plain_keywords(raw):
+	"""Normalized keywords for the automatic multi-word tiers."""
+	if re.search(r'["()*]|\b(?:AND|OR|NOT)\b', raw):
+		return []
+	normalized, _ = normalize(raw)
+	words = normalized.split()
+	return words if 2 <= len(words) <= 12 else []
+
+
+def _cross_field_expr(words, columns, gloss, prefix_latin=False):
+	"""Require every keyword, allowing each one to match a different column."""
+	field_set = '{' + ' '.join(columns) + '}'
+	parts = []
+	for word in words:
+		if prefix_latin and re.fullmatch(r'[a-z]+', word) and len(word) >= 4:
+			parts.append(f'{field_set} : ({_expand_prefix(word, gloss)})')
+		else:
+			parts.append(f'{field_set} : ({_expand(word, gloss)})')
+	return ' AND '.join(parts)
+
+
+def _surah_cross_field_exprs(conn, words, gloss):
+	"""Scope a recognized surah name while matching other terms across fields."""
+	for index, word in enumerate(words):
+		if _surah_number(conn, word) is None:
+			continue
+		remaining = words[:index] + words[index + 1:]
+		if not remaining:
+			continue
+		name = f'surah_name : ({_expand(word, gloss)})'
+		exact = _cross_field_expr(remaining, _CONTENT_COLUMNS, gloss)
+		prefix = _cross_field_expr(remaining, _CONTENT_COLUMNS, gloss, prefix_latin=True)
+		yield name + ' AND ' + exact
+		if prefix != exact:
+			yield name + ' AND ' + prefix
+
+
+def _ranked_queries(raw, col, gloss, full_expr, match_expr, conn=None):
 	"""Return retrieval tiers in priority order for ordinary text queries."""
 	queries = []
 	# Preserve the meaning of explicit FTS syntax and wildcard queries.
-	if not re.search(r'["()*]|\b(?:AND|OR|NOT)\b', raw):
-		normalized, _ = normalize(raw)
-		words = normalized.split()
-		if 1 < len(words) <= 12:
-			phrase_text = '"' + ' '.join(words) + '"'
-			columns = [col] if col else ['ar_norm', 'en_norm']
-			phrases = [_build_match(phrase_text, column, gloss)[0] for column in columns]
-			phrase = ' OR '.join(p for p in phrases if p)
-			if phrase:
-				queries.append(phrase)
-			# A Latin surah name and Arabic terms may occur in different fields.
-			# Arabic prefixes support inflected words such as حمل in حملته.
-			if not col and all(re.fullmatch(r'[a-z]+|[\u0600-\u06ff]+', word) for word in words):
-				latin = [word for word in words if re.fullmatch(r'[a-z]+', word)]
-				arabic = [word for word in words if re.fullmatch(r'[\u0600-\u06ff]+', word)]
-				if latin and arabic and all(len(word) >= 3 for word in arabic):
-					name_expr = ' AND '.join('"' + word + '"' for word in latin)
-					exact_arabic = ' AND '.join('"' + word + '"' for word in arabic)
-					arabic_expr = ' AND '.join('"' + word + '"*' for word in arabic)
-					queries.append(f'surah_name : ({name_expr}) AND ar_norm : ({exact_arabic})')
-					queries.append(f'surah_name : ({name_expr}) AND ar_norm : ({arabic_expr})')
-			# In All fields, a bilingual query can describe the same verse in
-			# its Arabic text, English translation and Bengali commentary.
-			if not col:
-				scripts = [r'[a-z]', r'[\u0600-\u06ff]', r'[\u0980-\u09ff]']
-				if sum(bool(re.search(script, normalized)) for script in scripts) >= 2:
-					combined = _bare(raw, gloss, [], join='AND')
-					columns = 'ar_norm en_norm'
-					if re.search(r'[\u0980-\u09ff]', normalized):
-						columns += ' bn_tafsir_norm'
-					queries.append('{' + columns + '} : (' + combined + ')')
+	words = _plain_keywords(raw)
+	if words:
+		normalized = ' '.join(words)
+		phrase_text = '"' + ' '.join(words) + '"'
+		columns = [col] if col else ['ar_norm', 'en_norm']
+		phrases = [_build_match(phrase_text, column, gloss)[0] for column in columns]
+		phrase = ' OR '.join(p for p in phrases if p)
+		if phrase:
+			queries.append(phrase)
+		# A Latin surah name and Arabic terms may occur in different fields.
+		# Arabic prefixes support inflected words such as حمل in حملته.
+		if not col and all(re.fullmatch(r'[a-z]+|[\u0600-\u06ff]+', word) for word in words):
+			latin = [word for word in words if re.fullmatch(r'[a-z]+', word)]
+			arabic = [word for word in words if re.fullmatch(r'[\u0600-\u06ff]+', word)]
+			if latin and arabic and all(len(word) >= 3 for word in arabic):
+				name_expr = ' AND '.join('"' + word + '"' for word in latin)
+				exact_arabic = ' AND '.join('"' + word + '"' for word in arabic)
+				arabic_expr = ' AND '.join('"' + word + '"*' for word in arabic)
+				queries.append(f'surah_name : ({name_expr}) AND ar_norm : ({exact_arabic})')
+				queries.append(f'surah_name : ({name_expr}) AND ar_norm : ({arabic_expr})')
+		# In All fields, a bilingual query can describe the same verse in
+		# its Arabic text, English translation and Bengali commentary.
+		if not col:
+			scripts = [r'[a-z]', r'[\u0600-\u06ff]', r'[\u0980-\u09ff]']
+			if sum(bool(re.search(script, normalized)) for script in scripts) >= 2:
+				combined = _bare(raw, gloss, [], join='AND')
+				columns = 'ar_norm en_norm'
+				if re.search(r'[\u0980-\u09ff]', normalized):
+					columns += ' bn_tafsir_norm'
+				queries.append('{' + columns + '} : (' + combined + ')')
+		if SEARCH_CROSS_FIELD_AND and not col:
+			if conn is not None:
+				for expr in _surah_cross_field_exprs(conn, words, gloss):
+					if expr not in queries:
+						queries.append(expr)
+			generic = _cross_field_expr(words, _ALL_COLUMNS, gloss)
+			if generic and generic not in queries:
+				queries.append(generic)
 	for expr in (full_expr, match_expr):
 		if expr and expr not in queries:
 			queries.append(expr)
@@ -391,7 +441,7 @@ def _ranked_queries(raw, col, gloss, full_expr, match_expr):
 
 
 def _ranked_rows(conn, raw, col, gloss, full_expr, match_expr, limit):
-	queries = _ranked_queries(raw, col, gloss, full_expr, match_expr)
+	queries = _ranked_queries(raw, col, gloss, full_expr, match_expr, conn)
 	for expr in queries:
 		# Exact phrases and full literal matches retain their existing priority.
 		if (expr == match_expr and expr != full_expr and col == 'en_norm'

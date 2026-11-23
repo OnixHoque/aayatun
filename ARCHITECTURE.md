@@ -697,8 +697,13 @@ trigram tokenizer (needs SQLite >= 3.34, e.g. PythonAnywhere). Ranking is
 BM25 with per-column weights emitted as OR'ed column-filtered clauses
 (plain unfiltered FTS5 matches flatten the weights). Multi-word queries run
 an all-tokens pass first and merge those rows in front of the OR pass.
-Complete matches always outrank partial matches. A trailing `*` acts as a
-prefix wildcard. The `db3/` Whoosh index is gone.
+Plain All-fields multi-keyword queries also try a true cross-column AND tier,
+so a surah name can combine with translation, AI or tafsir terms. A recognized
+surah name gets a higher-priority scoped tier with exact and Latin-prefix
+content matches. `SEARCH_CROSS_FIELD_AND` disables these added tiers. Complete
+matches outrank partial matches; a trailing `*` remains an explicit prefix
+wildcard. `evaluation/compare_keyword_knobs.py` compares trusted revisions on
+the challenger fixtures. The `db3/` Whoosh index is gone.
 
 ### 4.11 In-process caches
 
