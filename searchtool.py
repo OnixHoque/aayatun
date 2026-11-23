@@ -252,6 +252,17 @@ def _ranked_queries(raw, col, gloss, full_expr, match_expr):
 			phrase = ' OR '.join(p for p in phrases if p)
 			if phrase:
 				queries.append(phrase)
+			# A Latin surah name and Arabic terms may occur in different fields.
+			# Arabic prefixes support inflected words such as حمل in حملته.
+			if not col and all(re.fullmatch(r'[a-z]+|[\u0600-\u06ff]+', word) for word in words):
+				latin = [word for word in words if re.fullmatch(r'[a-z]+', word)]
+				arabic = [word for word in words if re.fullmatch(r'[\u0600-\u06ff]+', word)]
+				if latin and arabic and all(len(word) >= 3 for word in arabic):
+					name_expr = ' AND '.join('"' + word + '"' for word in latin)
+					exact_arabic = ' AND '.join('"' + word + '"' for word in arabic)
+					arabic_expr = ' AND '.join('"' + word + '"*' for word in arabic)
+					queries.append(f'surah_name : ({name_expr}) AND ar_norm : ({exact_arabic})')
+					queries.append(f'surah_name : ({name_expr}) AND ar_norm : ({arabic_expr})')
 			# In All fields, a bilingual query can describe the same verse in
 			# its Arabic text, English translation and Bengali commentary.
 			if not col:

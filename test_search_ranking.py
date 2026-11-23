@@ -40,6 +40,25 @@ class TranslationRankingTests(unittest.TestCase):
         self.assertIn('>pledged</span>', hits[0]['translation'])
 
 class MixedScriptRankingTests(unittest.TestCase):
+    def test_surah_name_and_arabic_prefix_through_flask(self):
+        client = app.test_client()
+        for query, expected in [('luqman حمل', '31:14'), ('yusuf بقميص', '12:93'),
+                                ('nur زيتون', '24:35')]:
+            with self.subTest(query=query):
+                response = client.post('/search/', data={'query_str': query, 'limit': '5'})
+                self.assertEqual(response.status_code, 200)
+                refs = re.findall(r'class="surahlink"[^>]*>\s*(\d+:\d+)', response.get_data(as_text=True))
+                self.assertIn(expected, refs)
+                self.assertEqual(len(refs), len(set(refs)))
+
+    def test_surah_prefix_tier_respects_field_and_explicit_syntax(self):
+        from searchtool import _ranked_queries
+        for raw, field in [('luqman حمل', 'ar_norm'), ('"luqman حمل"', None),
+                           ('luqman AND حمل', None), ('luqman حمل*', None)]:
+            with self.subTest(raw=raw, field=field):
+                self.assertFalse(any('surah_name :' in q for q in
+                                     _ranked_queries(raw, field, {}, None, None)))
+
     def test_terms_can_match_the_arabic_and_translation_of_one_verse(self):
         client = app.test_client()
         for query, expected in [('النحل mountains', '16:68'), ('النمل dwellings', '27:18'),
