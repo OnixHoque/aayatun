@@ -38,3 +38,14 @@ class TranslationRankingTests(unittest.TestCase):
         hits, _ = index_search('pledge tree reward', 1, field='translation')
         self.assertIn('Translation', hits[0]['chips'])
         self.assertIn('>pledged</span>', hits[0]['translation'])
+
+class MixedScriptRankingTests(unittest.TestCase):
+    def test_terms_can_match_the_arabic_and_translation_of_one_verse(self):
+        client = app.test_client()
+        for query, expected in [('النحل mountains', '16:68'), ('النمل dwellings', '27:18'),
+                                ('العنكبوت home', '29:41'), ('কষ্টের সাথে relief', '94:6')]:
+            with self.subTest(query=query):
+                response = client.post('/search/', data={'query_str': query, 'limit': '1'})
+                self.assertEqual(response.status_code, 200)
+                refs = re.findall(r'class="surahlink"[^>]*>\s*(\d+:\d+)', response.get_data(as_text=True))
+                self.assertEqual(refs, [expected])

@@ -252,6 +252,16 @@ def _ranked_queries(raw, col, gloss, full_expr, match_expr):
 			phrase = ' OR '.join(p for p in phrases if p)
 			if phrase:
 				queries.append(phrase)
+			# In All fields, a bilingual query can describe the same verse in
+			# its Arabic text, English translation and Bengali commentary.
+			if not col:
+				scripts = [r'[a-z]', r'[\u0600-\u06ff]', r'[\u0980-\u09ff]']
+				if sum(bool(re.search(script, normalized)) for script in scripts) >= 2:
+					combined = _bare(raw, gloss, [], join='AND')
+					columns = 'ar_norm en_norm'
+					if re.search(r'[\u0980-\u09ff]', normalized):
+						columns += ' bn_tafsir_norm'
+					queries.append('{' + columns + '} : (' + combined + ')')
 	for expr in (full_expr, match_expr):
 		if expr and expr not in queries:
 			queries.append(expr)
