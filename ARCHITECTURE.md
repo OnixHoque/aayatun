@@ -715,8 +715,12 @@ It runs after surah-scoped tiers and excludes surah names. Field-restricted
 searches keep their selected column and existing BM25 weights.
 `SEARCH_MMR_LAMBDA` defaults to `0.7`. Plain English multi-keyword All-fields
 searches with finite limits retrieve 50 unique candidates. The Porter index
-supplies matched-term bitmasks. Greedy MMR combines coverage-first relevance
+supports matched-term bitmasks. Greedy MMR combines coverage-first relevance
 with Jaccard diversity. Set the knob to `1.0` to bypass reranking.
+`SEARCH_TOP5_COVERAGE` defaults to `True`. During the first five greedy
+selections, complete matches stay ahead of partial matches, then candidates
+that add an uncovered query term take priority. The first result is unchanged;
+later slots use normal MMR. Set the knob to `False` to roll back only this rule.
 Complete matches outrank partial matches; a trailing `*` remains an explicit
 prefix wildcard. `evaluation/compare_keyword_knobs.py` compares trusted
 revisions on the challenger fixtures. The `db3/` Whoosh index is gone.

@@ -53,6 +53,7 @@ SEARCH_CROSS_FIELD_AND = True
 SEARCH_ENGLISH_STEMMING = True
 SEARCH_AI_TAFSIR_TIERS = True
 SEARCH_MMR_LAMBDA = 0.7
+SEARCH_TOP5_COVERAGE = True
 MMR_CANDIDATE_POOL = 50
 
 CHIP_LABELS = {
@@ -489,8 +490,8 @@ def _jaccard(left, right):
 	return _mask_size(left & right) / _mask_size(union) if union else 0.0
 
 
-def _mmr_rerank(rows, words, masks, limit, lambda_value=None):
-	"""Greedily balance query-term coverage against matched-term redundancy."""
+def _mmr_rerank(rows, words, masks, limit, lambda_value=None, top5_coverage=False):
+	"""Greedily balance coverage, early term diversity, and redundancy."""
 	if not rows or limit <= 0:
 		return []
 	if not words:
@@ -499,9 +500,25 @@ def _mmr_rerank(rows, words, masks, limit, lambda_value=None):
 		lambda_value = SEARCH_MMR_LAMBDA
 	remaining = list(range(len(rows)))
 	selected, selected_masks = [], []
+	covered_mask = 0
+	full_mask = (1 << len(words)) - 1
 	while remaining and len(selected) < limit:
+		candidates = remaining
+		if top5_coverage and 0 < len(selected) < 5:
+			# Preserve complete matches, then prefer new term coverage.
+			complete = [
+				index for index in remaining
+				if (masks[index] if index < len(masks) else 0) == full_mask]
+			if complete:
+				candidates = complete
+			else:
+				prioritized = [
+					index for index in remaining
+					if (masks[index] if index < len(masks) else 0) & ~covered_mask]
+				if prioritized:
+					candidates = prioritized
 		best_index, best_key = None, None
-		for index in remaining:
+		for index in candidates:
 			mask = masks[index] if index < len(masks) else 0
 			coverage = _mask_size(mask) / len(words)
 			relevance = 2 * coverage + 1 / (1 + index)
@@ -510,8 +527,10 @@ def _mmr_rerank(rows, words, masks, limit, lambda_value=None):
 			key = (score, -index)
 			if best_key is None or key > best_key:
 				best_index, best_key = index, key
+		chosen_mask = masks[best_index] if best_index < len(masks) else 0
 		selected.append(rows[best_index])
-		selected_masks.append(masks[best_index] if best_index < len(masks) else 0)
+		selected_masks.append(chosen_mask)
+		covered_mask |= chosen_mask
 		remaining.remove(best_index)
 	return selected
 
@@ -878,7 +897,7 @@ def index_search(search_query, result_limit=10, dirname=None, search_fields=None
 			masks = _matched_term_masks(conn, mmr_words, rows)
 			rows = _mmr_rerank(
 				rows, mmr_words, masks, min(int(result_limit), MMR_CANDIDATE_POOL),
-				SEARCH_MMR_LAMBDA)
+				SEARCH_MMR_LAMBDA, top5_coverage=SEARCH_TOP5_COVERAGE)
 		if not need_all and len(rows) > result_limit:
 			rows = rows[:result_limit]
 		if need_all and len(rows) > TRUNC_MAX:

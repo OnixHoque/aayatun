@@ -477,6 +477,114 @@ class CoverageMmrRankingTests(unittest.TestCase):
         self.assertEqual(len(refs), len(set(refs)))
 
 
+class TopFiveCoverageRankingTests(unittest.TestCase):
+    def test_uncovered_term_outranks_repeated_partial_match(self):
+        rows = [
+            {'id': 'luqman-parent'}, {'id': 'luqman-parent-repeat'},
+            {'id': 'teaching'}, {'id': 'luqman'}, {'id': 'parent'},
+        ]
+        words = ['luqman', 'parent', 'teaching']
+        masks = [0b011, 0b011, 0b100, 0b001, 0b010]
+        normal = searchtool._mmr_rerank(rows, words, masks, 5, 0.7)
+        ranked = searchtool._mmr_rerank(rows, words, masks, 5, 0.7, top5_coverage=True)
+        self.assertEqual(normal[1]['id'], 'luqman-parent-repeat')
+        self.assertEqual(ranked[0]['id'], 'luqman-parent')
+        self.assertEqual(ranked[1]['id'], 'teaching')
+        covered = 0
+        for row in ranked:
+            covered |= masks[rows.index(row)]
+        self.assertEqual(covered, 0b111)
+
+    def test_synthetic_partial_results_cover_luqman_and_parent(self):
+        rows = [
+            {'id': 'luqman-1'}, {'id': 'luqman-2'}, {'id': 'luqman-3'},
+            {'id': 'luqman-4'}, {'id': 'parent'},
+        ]
+        masks = [0b01, 0b01, 0b01, 0b01, 0b10]
+        ranked = searchtool._mmr_rerank(
+            rows, ['luqman', 'parent'], masks, 5, 0.7, top5_coverage=True)
+        ids = [row['id'] for row in ranked]
+        self.assertIn('parent', ids)
+        self.assertTrue(any(ref.startswith('luqman-') for ref in ids))
+        self.assertEqual(len(ids), len(set(ids)))
+
+    def test_top5_maximizes_coverage_without_a_full_match(self):
+        rows = [
+            {'id': 'repeat-1'}, {'id': 'repeat-2'},
+            {'id': 'repeat-3'}, {'id': 'repeat-4'},
+            {'id': 'novel-1'}, {'id': 'novel-2'},
+        ]
+        words = ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta']
+        masks = [0b001111, 0b001111, 0b001111, 0b001111, 0b010000, 0b100000]
+        normal = searchtool._mmr_rerank(rows, words, masks, 5, 0.7)
+        ranked = searchtool._mmr_rerank(
+            rows, words, masks, 5, 0.7, top5_coverage=True)
+
+        def covered(selection):
+            union = 0
+            for row in selection:
+                union |= masks[rows.index(row)]
+            return union
+
+        self.assertNotEqual(covered(normal), 0b111111)
+        self.assertEqual(covered(ranked), 0b111111)
+        self.assertIn('novel-2', [row['id'] for row in ranked])
+
+    def test_best_result_and_all_full_coverage_results_are_preserved(self):
+        rows = [
+            {'id': 'best'}, {'id': 'full-1'}, {'id': 'full-2'}, {'id': 'partial'},
+        ]
+        words = ['alpha', 'beta', 'gamma']
+        masks = [0b001, 0b111, 0b111, 0b110]
+        normal = searchtool._mmr_rerank(rows, words, masks, 4, 0.7)
+        ranked = searchtool._mmr_rerank(
+            rows, words, masks, 4, 0.7, top5_coverage=True)
+        ids = [row['id'] for row in ranked]
+        self.assertEqual(ranked[0], normal[0])
+        self.assertLess(ids.index('full-1'), ids.index('partial'))
+        self.assertLess(ids.index('full-2'), ids.index('partial'))
+
+    def test_low_rank_full_match_precedes_nearly_full_partial(self):
+        rows = [{'id': f'row-{index}'} for index in range(50)]
+        masks = [0] * 50
+        masks[0] = 0b111110
+        masks[1] = 0b111101
+        masks[49] = 0b111111
+        words = ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta']
+        normal = searchtool._mmr_rerank(rows, words, masks, 5, 0.7)
+        ranked = searchtool._mmr_rerank(
+            rows, words, masks, 5, 0.7, top5_coverage=True)
+        self.assertEqual(normal[1]['id'], 'row-1')
+        self.assertEqual(ranked[0], normal[0])
+        self.assertEqual(ranked[1]['id'], 'row-49')
+
+    def test_knob_and_search_bypass_are_respected(self):
+        with patch('searchtool._mmr_rerank', wraps=searchtool._mmr_rerank) as rerank:
+            index_search('luqman parent', 5, field='all')
+        self.assertTrue(rerank.call_args.kwargs['top5_coverage'])
+        with patch('searchtool.SEARCH_TOP5_COVERAGE', False), \
+                patch('searchtool._mmr_rerank', wraps=searchtool._mmr_rerank) as rerank:
+            index_search('luqman parent', 5, field='all')
+        self.assertFalse(rerank.call_args.kwargs['top5_coverage'])
+        with patch('searchtool._mmr_rerank', side_effect=AssertionError('MMR called')):
+            index_search('luqman parent', 5, field='translation')
+            index_search('"luqman parent"', 5, field='all')
+
+    def test_real_data_and_limit_edges_are_deterministic(self):
+        for limit in (1, 5, 10):
+            with self.subTest(limit=limit):
+                first, _ = index_search('Luqman Parent', limit, field='all')
+                second, _ = index_search('Luqman Parent', limit, field='all')
+                refs = [f"{hit['surah']}:{hit['verse']}" for hit in first]
+                self.assertEqual(refs, [f"{hit['surah']}:{hit['verse']}" for hit in second])
+                self.assertEqual(len(refs), limit)
+                self.assertEqual(len(refs), len(set(refs)))
+                self.assertEqual(refs[0], '31:14')
+                if limit >= 5:
+                    self.assertIn('31:13', refs[:5])
+                    self.assertIn('31:12', refs[:5])
+
+
 class MixedScriptRankingTests(unittest.TestCase):
     def test_surah_name_and_arabic_prefix_through_flask(self):
         client = app.test_client()
