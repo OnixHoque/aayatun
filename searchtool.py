@@ -258,6 +258,24 @@ def _ranked_queries(raw, col, gloss, full_expr, match_expr):
 	return queries
 
 
+def _ranked_rows(conn, raw, col, gloss, full_expr, match_expr, limit):
+	queries = _ranked_queries(raw, col, gloss, full_expr, match_expr)
+	for expr in queries:
+		# Exact phrases and full literal matches retain their existing priority.
+		if (expr == match_expr and expr != full_expr and col == 'en_norm'
+				and re.fullmatch(r'[A-Za-z]+(?:\s+[A-Za-z]+){1,11}', raw)
+				and not re.search(r'\b(?:AND|OR|NOT)\b', raw)
+				and conn.execute("SELECT 1 FROM sqlite_master WHERE name='english_stem'").fetchone()):
+			stem_expr = ' OR '.join('"' + word + '"' for word in raw.split())
+			yield from conn.execute(
+				"SELECT docs.surah, docs.verse, docs.surah_name, docs.ar_orig, docs.en, docs.ai, "
+				"docs.en_tafsir, docs.bn_tafsir, highlight(english_stem, 0, '[', ']') AS stem_matches "
+				"FROM english_stem JOIN docs ON docs.rowid = english_stem.rowid "
+				"WHERE english_stem MATCH ? ORDER BY english_stem.rank, english_stem.rowid LIMIT ?",
+				(stem_expr, limit))
+		yield from _run_query(conn, expr, limit)
+
+
 # Hard cap on rendered rows: "Show all results" with a broad query would
 # otherwise fetch and highlight thousands of rows server-side.
 TRUNC_MAX = 500
@@ -346,6 +364,10 @@ def _format(rows, highlight_terms, offset=0):
 	for i, r in enumerate(rows, offset + 1):
 		matched = _matched_columns(r, highlight_terms) if highlight_terms else ['ar_norm', 'en_norm']
 		terms = highlight_terms
+		if 'stem_matches' in r.keys():
+			terms = terms + re.findall(r'\[([^\]]+)\]', r['stem_matches'])
+			if 'en_norm' not in matched:
+				matched.append('en_norm')
 		def field(col):
 			return r[_CHIP_TO_RAW[col]] or ''
 
@@ -401,7 +423,7 @@ def index_search(search_query, result_limit=10, dirname=None, search_fields=None
 	field = (field or 'all').lower()
 	col = FIELD_COLS.get(field)
 	raw = (search_query or '').strip()
-	meta = {'suggestions': [], 'corrected': None}
+	meta = {'suggestions': [], 'corrected': None, 'truncated': False}
 	if not raw:
 		return [], meta
 
@@ -411,7 +433,6 @@ def index_search(search_query, result_limit=10, dirname=None, search_fields=None
 	# all words are merged in front of the partial-match tier (OR), so a
 	# multi-word query always shows complete matches first.
 	full_expr, _ = _build_match(raw, col, gloss, join='AND')
-	meta['truncated'] = False
 	# SQL fetch limit: one extra row so we can detect that "show all" overran
 	# the render cap.
 	need_all = result_limit is None
@@ -422,12 +443,13 @@ def index_search(search_query, result_limit=10, dirname=None, search_fields=None
 		seen = set()
 		if match_expr:
 			try:
-				for expr in _ranked_queries(raw, col, gloss, full_expr, match_expr):
-					for row in _run_query(conn, expr, sql_limit):
-						key = (row['surah'], row['verse'])
-						if key not in seen:
-							rows.append(row)
-							seen.add(key)
+				for row in _ranked_rows(conn, raw, col, gloss, full_expr, match_expr, sql_limit):
+					key = (row['surah'], row['verse'])
+					if key not in seen:
+						rows.append(row)
+						seen.add(key)
+						if len(rows) == sql_limit:
+							break
 			except sqlite3.OperationalError:
 				# Malformed boolean/paren mix the user typed: plain OR of tokens.
 				n, _ = normalize(raw)

@@ -116,6 +116,19 @@ def load_rows():
 	return rows
 
 
+def add_english_index(conn):
+	"""Add the optional translation index atomically, including on existing installs."""
+	conn.execute('BEGIN IMMEDIATE')
+	try:
+		if not conn.execute("SELECT 1 FROM sqlite_master WHERE name='english_stem'").fetchone():
+			conn.execute("CREATE VIRTUAL TABLE english_stem USING fts5(en_norm, tokenize='porter unicode61')")
+			conn.execute("INSERT INTO english_stem(rowid, en_norm) SELECT rowid, en_norm FROM docs")
+		conn.commit()
+	except Exception:
+		conn.rollback()
+		raise
+
+
 def build():
 	started = time.time()
 	print('Reading local sources...')
@@ -177,6 +190,7 @@ def build():
 				vocab[tok] += 1
 	conn.commit()
 
+	add_english_index(conn)
 	print('Building typo vocabulary ...')
 	# Arabic has a small closed vocabulary; keep it all. English is capped by
 	# frequency so the pickle stays small and BK-tree build stays fast.
@@ -199,4 +213,12 @@ def build():
 
 
 if __name__ == '__main__':
-	build()
+	import argparse
+	parser = argparse.ArgumentParser(description=__doc__)
+	parser.add_argument('--add-english-index', action='store_true',
+	                    help='upgrade an existing search index in place')
+	if parser.parse_args().add_english_index:
+		with sqlite3.connect('file:db/search.db?mode=rw', uri=True) as conn:
+			add_english_index(conn)
+	else:
+		build()
