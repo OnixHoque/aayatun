@@ -51,6 +51,7 @@ _CONTENT_COLUMNS = _ALL_COLUMNS[:-1]
 _ENGLISH_STEM_COLUMNS = ['en_norm', 'ai_norm', 'en_tafsir_norm']
 SEARCH_CROSS_FIELD_AND = True
 SEARCH_ENGLISH_STEMMING = True
+SEARCH_AI_TAFSIR_TIERS = True
 
 CHIP_LABELS = {
 	'ar_norm': 'Verse',
@@ -399,6 +400,21 @@ def _latin_keywords(raw):
 	return words if words and all(re.fullmatch(r'[a-z]+', word) for word in words) else []
 
 
+def _phrase_columns(words, col):
+	"""Phrase-match only the content fields relevant to the query scripts."""
+	if col:
+		return [col]
+	normalized = ' '.join(words)
+	columns = []
+	if re.search(r'[\u0600-\u06ff]', normalized):
+		columns.append('ar_norm')
+	if re.search(r'[a-z]', normalized):
+		columns.extend(_ENGLISH_STEM_COLUMNS)
+	if re.search(r'[\u0980-\u09ff]', normalized):
+		columns.append('bn_tafsir_norm')
+	return columns
+
+
 def _english_stem_columns(conn):
 	if conn is None or not conn.execute(
 			"SELECT 1 FROM sqlite_master WHERE name='english_stem'").fetchone():
@@ -443,7 +459,8 @@ def _ranked_tiers(raw, col, gloss, full_expr, match_expr, conn=None):
 	if words:
 		normalized = ' '.join(words)
 		phrase_text = '"' + ' '.join(words) + '"'
-		columns = [col] if col else ['ar_norm', 'en_norm']
+		columns = (_phrase_columns(words, col) if SEARCH_AI_TAFSIR_TIERS else
+			   [col] if col else ['ar_norm', 'en_norm'])
 		phrases = [_build_match(phrase_text, column, gloss)[0] for column in columns]
 		phrase = ' OR '.join(p for p in phrases if p)
 		if phrase:
@@ -481,6 +498,9 @@ def _ranked_tiers(raw, col, gloss, full_expr, match_expr, conn=None):
 			if stem_ready and conn is not None:
 				for expr, surah in _surah_stem_tiers(conn, latin_words, stem_columns, gloss):
 					add('stem', expr, surah)
+			if SEARCH_AI_TAFSIR_TIERS and latin_words:
+				# English terms may be split between translation and commentary.
+				add('docs', _cross_field_expr(latin_words, _ENGLISH_STEM_COLUMNS, gloss))
 			if SEARCH_CROSS_FIELD_AND:
 				generic = _cross_field_expr(words, _ALL_COLUMNS, gloss)
 				add('docs', generic)

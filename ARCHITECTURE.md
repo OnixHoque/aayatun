@@ -707,6 +707,12 @@ existing database transactionally without changing document IDs. With
 `SEARCH_ENGLISH_STEMMING` enabled, plain Latin multi-keyword All-fields and
 Translation searches add stemmed AND tiers, translation-first surah scoping,
 and an OR fallback. Other field scopes and non-Latin queries bypass stemming.
+With `SEARCH_AI_TAFSIR_TIERS` enabled, exact-phrase columns follow the query
+script. English phrases search translation, AI explanation and English tafsir.
+Bengali phrases search Bengali tafsir. Mixed queries use the relevant union.
+A generic English AND tier can split keywords across those three English fields.
+It runs after surah-scoped tiers and excludes surah names. Field-restricted
+searches keep their selected column and existing BM25 weights.
 Complete matches outrank partial matches; a trailing `*` remains an explicit
 prefix wildcard. `evaluation/compare_keyword_knobs.py` compares trusted
 revisions on the challenger fixtures. The `db3/` Whoosh index is gone.

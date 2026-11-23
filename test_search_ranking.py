@@ -119,11 +119,15 @@ class CrossFieldRankingTests(unittest.TestCase):
             with patch('searchtool.SEARCH_CROSS_FIELD_AND', False):
                 queries = searchtool._ranked_queries(
                     'Luqman Parent', None, searchtool._load_glossary(), None, None, conn)
-            self.assertFalse(any(q.startswith(('surah_name :', '{')) for q in queries))
+            self.assertFalse(any(q.startswith('surah_name :') or
+                                 (q.startswith('{') and 'surah_name' in q) for q in queries))
+            self.assertTrue(any(q.startswith('{en_norm ai_norm en_tafsir_norm}')
+                                for q in queries))
         finally:
             conn.close()
         with patch('searchtool.SEARCH_CROSS_FIELD_AND', False), \
-                patch('searchtool.SEARCH_ENGLISH_STEMMING', False):
+                patch('searchtool.SEARCH_ENGLISH_STEMMING', False), \
+                patch('searchtool.SEARCH_AI_TAFSIR_TIERS', False):
             hits, _ = index_search('Luqman Parent', 5, field='all')
         refs = [f"{hit['surah']}:{hit['verse']}" for hit in hits]
         self.assertNotIn('31:14', refs)
@@ -235,8 +239,11 @@ class EnglishStemmingRankingTests(unittest.TestCase):
                 tiers = searchtool._ranked_tiers(
                     'Luqman Parent', None, searchtool._load_glossary(), None, None, conn)
             self.assertTrue(any(source == 'stem' for source, _, _ in tiers))
-            self.assertFalse(any(source == 'docs' and expr.startswith('{')
-                                 for source, expr, _ in tiers))
+            self.assertFalse(any(source == 'docs' and expr.startswith('{') and
+                                 'surah_name' in expr for source, expr, _ in tiers))
+            self.assertTrue(any(source == 'docs' and
+                                expr.startswith('{en_norm ai_norm en_tafsir_norm}')
+                                for source, expr, _ in tiers))
         finally:
             conn.close()
 
@@ -256,6 +263,138 @@ class EnglishStemmingRankingTests(unittest.TestCase):
     def test_luqman_parent_puts_parent_verse_first(self):
         hits, _ = index_search('Luqman Parent', 5, field='all')
         self.assertEqual(f"{hits[0]['surah']}:{hits[0]['verse']}", '31:14')
+
+
+class AiTafsirPhraseRankingTests(unittest.TestCase):
+    def _docs_index(self):
+        db = sqlite3.connect(':memory:')
+        db.row_factory = sqlite3.Row
+        db.execute("""CREATE VIRTUAL TABLE docs USING fts5(
+            ar_norm, en_norm, ai_norm, en_tafsir_norm, bn_tafsir_norm, surah_name,
+            surah UNINDEXED, verse UNINDEXED, ar_orig UNINDEXED, en UNINDEXED,
+            en_tafsir UNINDEXED, bn_tafsir UNINDEXED, ai UNINDEXED)""")
+        rows = [
+            ('', '', 'the strongest parental claims', '', '', 'Luqman', 31, 13,
+             '', '', '', '', 'The strongest parental claims are stated here.'),
+            ('', '', '', 'hardship mujahid said', '', 'Luqman', 31, 14,
+             '', '', 'Hardship, Mujahid said, requires patience.', '', ''),
+            ('', 'parent', 'teaching', '', '', 'The Women', 4, 1,
+             '', 'Parent', '', '', 'Teaching'),
+            ('', '', '', '', 'কষটর সথ', 'The Relief', 94, 6,
+             '', '', '', 'কষ্টের সাথে relief', ''),
+            ('الحمد لله', '', '', '', '', 'The Opening', 1, 2,
+             'الحمد لله', '', '', '', ''),
+            ('', 'light upon light', '', '', '', 'The Light', 24, 35,
+             '', 'Light upon light', '', '', ''),
+            ('', '', '', '', '', 'strongest parental claims', 99, 1,
+             '', '', '', '', ''),
+        ]
+        db.executemany('INSERT INTO docs VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)', rows)
+        db.commit()
+        return db
+
+    def test_phrase_columns_follow_script_and_field_scope(self):
+        self.assertEqual(searchtool._phrase_columns(
+            ['strongest', 'parental', 'claims'], None), searchtool._ENGLISH_STEM_COLUMNS)
+        self.assertEqual(searchtool._phrase_columns(['الحمد', 'لله'], None), ['ar_norm'])
+        self.assertEqual(searchtool._phrase_columns(['কষটর', 'সথ'], None), ['bn_tafsir_norm'])
+        self.assertEqual(searchtool._phrase_columns(
+            ['النحل', 'mountains'], None), ['ar_norm'] + searchtool._ENGLISH_STEM_COLUMNS)
+        self.assertEqual(searchtool._phrase_columns(
+            ['parent', 'teaching'], 'en_norm'), ['en_norm'])
+
+    def test_phrases_match_ai_and_english_tafsir_with_chips(self):
+        with closing(self._docs_index()) as db:
+            for query, ref, chip, item_field, span in [
+                    ('strongest parental claims', '31:13', 'AI explanation', 'ai',
+                     '>strongest</span>'),
+                    ('hardship mujahid said', '31:14', 'Tafsir Ibn Kathir', 'en_tafsir',
+                     '>Hardship</span>')]:
+                with self.subTest(query=query):
+                    _, terms = searchtool._build_match(query, None, {})
+                    tiers = searchtool._ranked_tiers(query, None, {}, None, None, db)
+                    rows = searchtool._run_query(db, tiers[0][1], 10)
+                    refs = [f"{row['surah']}:{row['verse']}" for row in rows]
+                    self.assertIn(ref, refs)
+                    item = searchtool._format([rows[refs.index(ref)]], terms)[0]
+                    self.assertIn(chip, item['chips'])
+                    self.assertIn(span, item[item_field])
+
+    def test_english_combined_tier_allows_split_keywords(self):
+        with closing(self._docs_index()) as db:
+            query = 'parent teaching'
+            _, terms = searchtool._build_match(query, None, {})
+            tiers = searchtool._ranked_tiers(query, None, {}, None, None, db)
+            combined = searchtool._cross_field_expr(
+                ['parent', 'teaching'], searchtool._ENGLISH_STEM_COLUMNS, {})
+            combined_index = next(i for i, (_, expr, _) in enumerate(tiers)
+                                  if expr == combined)
+            generic_index = next(i for i, (_, expr, _) in enumerate(tiers)
+                                 if expr.startswith('{') and 'surah_name' in expr)
+            self.assertLess(combined_index, generic_index)
+            rows = searchtool._run_query(db, combined, 10)
+            refs = [f"{row['surah']}:{row['verse']}" for row in rows]
+            self.assertEqual(refs, ['4:1'])
+            item = searchtool._format([rows[0]], terms)[0]
+            self.assertIn('Translation', item['chips'])
+            self.assertIn('AI explanation', item['chips'])
+            self.assertIn('>Parent</span>', item['translation'])
+            self.assertIn('>Teaching</span>', item['ai'])
+
+    def test_arabic_bengali_and_surah_name_phrase_behavior(self):
+        with closing(self._docs_index()) as db:
+            for query, expected in [('الحمد لله', '1:2'), ('কষ্টের সাথে', '94:6')]:
+                with self.subTest(query=query):
+                    tiers = searchtool._ranked_tiers(query, None, {}, None, None, db)
+                    rows = searchtool._run_query(db, tiers[0][1], 10)
+                    refs = [f"{row['surah']}:{row['verse']}" for row in rows]
+                    self.assertEqual(refs, [expected])
+            tiers = searchtool._ranked_tiers(
+                'strongest parental claims', None, {}, None, None, db)
+            rows = searchtool._run_query(db, tiers[0][1], 10)
+            self.assertNotIn('99:1', [f"{row['surah']}:{row['verse']}" for row in rows])
+
+    def test_translation_scope_is_unchanged_by_knob(self):
+        with closing(self._docs_index()) as db:
+            with patch('searchtool.SEARCH_AI_TAFSIR_TIERS', True):
+                enabled = searchtool._ranked_tiers(
+                    'light upon light', 'en_norm', {}, None, None, db)
+            with patch('searchtool.SEARCH_AI_TAFSIR_TIERS', False):
+                disabled = searchtool._ranked_tiers(
+                    'light upon light', 'en_norm', {}, None, None, db)
+            self.assertEqual(enabled, disabled)
+
+    def test_knob_rollback_restores_legacy_phrase_columns(self):
+        with closing(self._docs_index()) as db:
+            with patch('searchtool.SEARCH_AI_TAFSIR_TIERS', False):
+                tiers = searchtool._ranked_tiers(
+                    'strongest parental claims', None, {}, None, None, db)
+            self.assertEqual(tiers[0][1],
+                             'ar_norm : ("strongest parental claims") OR '
+                             'en_norm : ("strongest parental claims")')
+            self.assertFalse(any(expr.startswith('{en_norm ai_norm en_tafsir_norm}')
+                                 for _, expr, _ in tiers))
+
+    def test_explicit_syntax_and_single_word_bypass_new_tiers(self):
+        with closing(self._docs_index()) as db:
+            for raw in ['"strongest parental claims"', 'strongest AND parental',
+                        'strongest parental*', 'strongest']:
+                with self.subTest(raw=raw):
+                    tiers = searchtool._ranked_tiers(raw, None, {}, None, None, db)
+                    self.assertFalse(any(expr.startswith('{en_norm ai_norm en_tafsir_norm}')
+                                         for _, expr, _ in tiers))
+
+    def test_real_commentary_phrases_are_ranked_and_highlighted(self):
+        for query, ref, chip in [
+                ('strongest parental claims', '31:13', 'AI explanation'),
+                ('hardship mujahid said', '31:14', 'Tafsir Ibn Kathir'),
+                ('কষ্টের সাথে', '94:6', 'Tafsir Abu Bakr Zakaria')]:
+            with self.subTest(query=query):
+                hits, _ = index_search(query, 5, field='all')
+                refs = [f"{hit['surah']}:{hit['verse']}" for hit in hits]
+                self.assertIn(ref, refs)
+                item = hits[refs.index(ref)]
+                self.assertIn(chip, item['chips'])
 
 
 class MixedScriptRankingTests(unittest.TestCase):
