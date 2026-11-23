@@ -52,6 +52,8 @@ _ENGLISH_STEM_COLUMNS = ['en_norm', 'ai_norm', 'en_tafsir_norm']
 SEARCH_CROSS_FIELD_AND = True
 SEARCH_ENGLISH_STEMMING = True
 SEARCH_AI_TAFSIR_TIERS = True
+SEARCH_MMR_LAMBDA = 0.7
+MMR_CANDIDATE_POOL = 50
 
 CHIP_LABELS = {
 	'ar_norm': 'Verse',
@@ -352,7 +354,7 @@ def _build_match(raw, col, gloss, join='OR'):
 def _run_query(conn, match_expr, limit):
 	"""Run the FTS5 query. `limit` is the SQL LIMIT: pass None for unlimited
 	(use only when the caller guarantees a small row count)."""
-	sql = f'SELECT surah, verse, surah_name, ar_orig, en, en_tafsir, bn_tafsir, ai, {BM25} AS score FROM docs WHERE docs MATCH ? ORDER BY score'
+	sql = f'SELECT rowid AS rowid, surah, verse, surah_name, ar_orig, en, en_tafsir, bn_tafsir, ai, {BM25} AS score FROM docs WHERE docs MATCH ? ORDER BY score'
 	if limit is None:
 		return conn.execute(sql, (match_expr,)).fetchall()
 	return conn.execute(sql + ' LIMIT ?', (match_expr, int(limit))).fetchall()
@@ -437,6 +439,81 @@ def _surah_stem_tiers(conn, words, columns, gloss):
 		remaining = words[:index] + words[index + 1:]
 		if remaining:
 			yield _stem_expr(remaining, columns, gloss), surah
+
+
+def _mmr_keywords(raw, col, limit):
+	"""Keywords eligible for coverage-first lexical MMR reranking."""
+	if col is not None or limit is None or limit <= 0:
+		return []
+	if not isinstance(SEARCH_MMR_LAMBDA, (int, float)) or not 0 < SEARCH_MMR_LAMBDA < 1:
+		return []
+	return _latin_keywords(raw)
+
+
+def _row_has_exact_term(row, term):
+	for field in ('ar_orig', 'en', 'ai', 'en_tafsir', 'bn_tafsir', 'surah_name'):
+		if field not in row.keys():
+			continue
+		normalized, _ = normalize(row[field] or '')
+		if term in normalized.split():
+			return True
+	return False
+
+
+def _matched_term_masks(conn, words, rows):
+	"""Return one query-term bitmask per candidate, using the Porter index."""
+	masks = {row['rowid']: 0 for row in rows}
+	rowids = list(masks)
+	if not rowids:
+		return []
+	placeholders = ','.join('?' for _ in rowids)
+	stem_columns = _english_stem_columns(conn)
+	for index, word in enumerate(words):
+		if re.fullmatch(r'[a-z]+', word) and stem_columns:
+			matches = {row[0] for row in conn.execute(
+				'SELECT rowid FROM english_stem WHERE english_stem MATCH ? '
+				'AND rowid IN (' + placeholders + ')', [word] + rowids)}
+		else:
+			matches = {row['rowid'] for row in rows if _row_has_exact_term(row, word)}
+		for rowid in matches:
+			masks[rowid] |= 1 << index
+	return [masks[row['rowid']] for row in rows]
+
+
+def _mask_size(mask):
+	return bin(mask).count('1')
+
+
+def _jaccard(left, right):
+	union = left | right
+	return _mask_size(left & right) / _mask_size(union) if union else 0.0
+
+
+def _mmr_rerank(rows, words, masks, limit, lambda_value=None):
+	"""Greedily balance query-term coverage against matched-term redundancy."""
+	if not rows or limit <= 0:
+		return []
+	if not words:
+		return rows[:limit]
+	if lambda_value is None:
+		lambda_value = SEARCH_MMR_LAMBDA
+	remaining = list(range(len(rows)))
+	selected, selected_masks = [], []
+	while remaining and len(selected) < limit:
+		best_index, best_key = None, None
+		for index in remaining:
+			mask = masks[index] if index < len(masks) else 0
+			coverage = _mask_size(mask) / len(words)
+			relevance = 2 * coverage + 1 / (1 + index)
+			similarity = max((_jaccard(mask, chosen) for chosen in selected_masks), default=0.0)
+			score = lambda_value * relevance - (1 - lambda_value) * similarity
+			key = (score, -index)
+			if best_key is None or key > best_key:
+				best_index, best_key = index, key
+		selected.append(rows[best_index])
+		selected_masks.append(masks[best_index] if best_index < len(masks) else 0)
+		remaining.remove(best_index)
+	return selected
 
 
 def _ranked_tiers(raw, col, gloss, full_expr, match_expr, conn=None):
@@ -529,7 +606,7 @@ def _run_stem_query(conn, match_expr, limit, surah=None):
 	highlights = ', '.join(
 		f"highlight(english_stem, {index}, '[', ']') AS stem_{column}"
 		for index, column in enumerate(columns))
-	sql = ('SELECT docs.surah, docs.verse, docs.surah_name, docs.ar_orig, docs.en, docs.ai, '
+	sql = ('SELECT docs.rowid AS rowid, docs.surah, docs.verse, docs.surah_name, docs.ar_orig, docs.en, docs.ai, '
 	       'docs.en_tafsir, docs.bn_tafsir, ' + highlights +
 	       ' FROM english_stem JOIN docs ON docs.rowid = english_stem.rowid '
 	       'WHERE english_stem MATCH ?')
@@ -737,9 +814,12 @@ def index_search(search_query, result_limit=10, dirname=None, search_fields=None
 	# SQL fetch limit: one extra row so we can detect that "show all" overran
 	# the render cap.
 	need_all = result_limit is None
-	sql_limit = (TRUNC_MAX + 1) if need_all else result_limit
+	mmr_words = _mmr_keywords(raw, col, result_limit)
 	conn = _connect()
 	try:
+		if mmr_words and not _english_stem_columns(conn):
+			mmr_words = []
+		sql_limit = MMR_CANDIDATE_POOL if mmr_words else ((TRUNC_MAX + 1) if need_all else result_limit)
 		rows = []
 		seen = set()
 		if match_expr:
@@ -766,6 +846,8 @@ def index_search(search_query, result_limit=10, dirname=None, search_fields=None
 		else:
 			rows = []
 		if not rows:
+			# MMR applies to ranked keyword candidates, not spelling/substring fallbacks.
+			mmr_words = []
 			tri = _run_trigram(conn, raw, sql_limit)
 			if tri:
 				rows = tri
@@ -792,6 +874,11 @@ def index_search(search_query, result_limit=10, dirname=None, search_fields=None
 						terms = t2
 					else:
 						meta['suggestions'] = corrected
+		if mmr_words and rows:
+			masks = _matched_term_masks(conn, mmr_words, rows)
+			rows = _mmr_rerank(
+				rows, mmr_words, masks, min(int(result_limit), MMR_CANDIDATE_POOL),
+				SEARCH_MMR_LAMBDA)
 		if not need_all and len(rows) > result_limit:
 			rows = rows[:result_limit]
 		if need_all and len(rows) > TRUNC_MAX:

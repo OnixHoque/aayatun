@@ -127,7 +127,8 @@ class CrossFieldRankingTests(unittest.TestCase):
             conn.close()
         with patch('searchtool.SEARCH_CROSS_FIELD_AND', False), \
                 patch('searchtool.SEARCH_ENGLISH_STEMMING', False), \
-                patch('searchtool.SEARCH_AI_TAFSIR_TIERS', False):
+                patch('searchtool.SEARCH_AI_TAFSIR_TIERS', False), \
+                patch('searchtool.SEARCH_MMR_LAMBDA', 1.0):
             hits, _ = index_search('Luqman Parent', 5, field='all')
         refs = [f"{hit['surah']}:{hit['verse']}" for hit in hits]
         self.assertNotIn('31:14', refs)
@@ -395,6 +396,85 @@ class AiTafsirPhraseRankingTests(unittest.TestCase):
                 self.assertIn(ref, refs)
                 item = hits[refs.index(ref)]
                 self.assertIn(chip, item['chips'])
+
+
+class CoverageMmrRankingTests(unittest.TestCase):
+    def test_mmr_eligibility_and_rollback(self):
+        for raw, col, limit, expected in [
+                ('luqman parent', None, 5, ['luqman', 'parent']),
+                ('luqman parent', 'en_norm', 5, []),
+                ('Luqman أبو', None, 5, []),
+                ('Luqman', None, 5, []),
+                ('"Luqman Parent"', None, 5, []),
+                ('Luqman AND Parent', None, 5, []),
+                ('Luqman Parent*', None, 5, []),
+                ('Luqman Parent', None, None, []),
+                ('Luqman Parent', None, 0, [])]:
+            with self.subTest(raw=raw, col=col, limit=limit):
+                self.assertEqual(searchtool._mmr_keywords(raw, col, limit), expected)
+        with patch('searchtool.SEARCH_MMR_LAMBDA', 1.0):
+            self.assertEqual(searchtool._mmr_keywords('Luqman Parent', None, 5), [])
+
+    def test_term_masks_use_porter_index(self):
+        with closing(EnglishStemmingRankingTests()._stem_index()) as db:
+            rows = searchtool._run_stem_query(db, 'parent OR teaching', 10)
+            masks = searchtool._matched_term_masks(db, ['parent', 'teaching'], rows)
+            by_ref = {f"{row['surah']}:{row['verse']}": mask
+                      for row, mask in zip(rows, masks)}
+            self.assertEqual(by_ref['31:14'], 0b01)
+            self.assertEqual(by_ref['2:1'], 0b10)
+            self.assertEqual(by_ref['4:1'], 0b11)
+
+    def test_non_english_term_masks_use_exact_tokens(self):
+        rows = [
+            {'rowid': 1, 'ar_orig': 'الحمد لله'},
+            {'rowid': 2, 'ar_orig': 'الحمد'},
+            {'rowid': 3, 'bn_tafsir': 'কষ্টের সাথে relief'},
+        ]
+        masks = searchtool._matched_term_masks(None, ['الحمد', 'لله'], rows)
+        self.assertEqual(masks, [0b11, 0b01, 0])
+
+    def test_coverage_ordering_and_redundancy_reduction(self):
+        rows = [{'id': 'partial'}, {'id': 'full'}, {'id': 'novel'}, {'id': 'redundant'}]
+        words = ['alpha', 'beta', 'gamma']
+        ranked = searchtool._mmr_rerank(
+            rows, words, [0b001, 0b111, 0b110, 0b100], 4, 0.7)
+        self.assertEqual(ranked[0]['id'], 'full')
+        self.assertLess(ranked.index(rows[2]), ranked.index(rows[3]))
+
+    def test_mmr_ties_and_limits_are_deterministic(self):
+        rows = [{'id': 'first'}, {'id': 'second'}, {'id': 'third'}]
+        words = ['alpha', 'beta']
+        masks = [0b01, 0b01, 0b10]
+        first = searchtool._mmr_rerank(rows, words, masks, 2, 0.7)
+        second = searchtool._mmr_rerank(rows, words, masks, 2, 0.7)
+        self.assertEqual(first, second)
+        self.assertEqual([row['id'] for row in first], ['first', 'third'])
+        all_ranked = searchtool._mmr_rerank(rows, words, masks, 10, 0.7)
+        self.assertEqual(len(all_ranked), len(rows))
+        self.assertEqual({row['id'] for row in all_ranked}, {row['id'] for row in rows})
+        self.assertEqual(searchtool._mmr_rerank(rows, words, masks, 0, 0.7), [])
+
+    def test_candidate_pool_is_fifty_unique_rows(self):
+        hits, _ = index_search('luqman parent', 100, field='all')
+        refs = [f"{hit['surah']}:{hit['verse']}" for hit in hits]
+        self.assertEqual(len(refs), searchtool.MMR_CANDIDATE_POOL)
+        self.assertEqual(len(refs), len(set(refs)))
+
+    def test_bypassed_searches_do_not_call_mmr(self):
+        with patch('searchtool._mmr_rerank', side_effect=AssertionError('MMR called')):
+            index_search('luqman parent', 5, field='translation')
+            index_search('"luqman parent"', 5, field='all')
+            index_search('luqman', 5, field='all')
+        with patch('searchtool.SEARCH_MMR_LAMBDA', 1.0), \
+                patch('searchtool._mmr_rerank', side_effect=AssertionError('MMR called')):
+            index_search('luqman parent', 5, field='all')
+
+    def test_luqman_parent_keeps_parent_verse_first(self):
+        hits, _ = index_search('Luqman Parent', 5, field='all')
+        self.assertEqual(f"{hits[0]['surah']}:{hits[0]['verse']}", '31:14')
+        refs = [f"{hit['surah']}:{hit['verse']}" for hit in hits]
+        self.assertEqual(len(refs), len(set(refs)))
 
 
 class MixedScriptRankingTests(unittest.TestCase):
