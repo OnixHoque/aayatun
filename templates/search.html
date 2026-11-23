@@ -42,6 +42,14 @@
 	<br>
 	<!-- <a href=""><h4 style="text-align: center; font-size: 150%; font-family: 'Merriweather', serif;"> Surah Name</h4></a>  -->
 	<form class="ui form" method="POST" action="/search">
+		{% if meaning_search_enabled %}
+		<label for="result-search-mode">Search mode</label>
+		<select id="result-search-mode" name="search_mode">
+			<option value="keyword" {% if search_mode != 'meaning' %}selected{% endif %}>Keyword search</option>
+			<option value="meaning" {% if search_mode == 'meaning' %}selected{% endif %}>Search by meaning</option>
+		</select>
+		<p>Meaning search looks for related English translations and returns up to ten verses.</p>
+		{% endif %}
 		<div class="field" style="width: 100%;">
 			<div class="ui action large input">
 				<input type="text" name="query_str" style="font-family: Open Sans" value="{{ query }}" placeholder="Enter a keyword...">

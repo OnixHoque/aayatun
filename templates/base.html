@@ -354,6 +354,14 @@
   </div>
   <div class="content">
     <form class="ui form" method="POST" action="/search">
+      {% if meaning_search_enabled %}
+      <label for="dialog-search-mode">Search mode</label>
+      <select id="dialog-search-mode" name="search_mode">
+        <option value="keyword">Keyword search</option>
+        <option value="meaning">Search by meaning</option>
+      </select>
+      <p>Meaning search looks for related English translations.</p>
+      {% endif %}
       <div class="field" style="width: 100%;">
         <div class="ui action large input">
           <input type="text" name="query_str" style="font-family: Open Sans" placeholder="Enter a keyword...">

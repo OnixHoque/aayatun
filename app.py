@@ -30,6 +30,10 @@ RUKU_LIST = getRukuList()
 
 app = Flask(__name__)
 
+@app.context_processor
+def search_modes():
+	return {'meaning_search_enabled': bool(os.environ.get('AAYATUN_SEMANTIC_URL'))}
+
 # Session signing key for the nav API token. Prefer an env var; otherwise keep
 # a generated key in a gitignored file so sessions survive reloads/restarts and
 # stay valid across the workers on one host.
@@ -205,14 +209,20 @@ def search():
 	except Exception:
 		pass
 
-	results_dict, meta = st.index_search(query_str.strip(), n, field=field)
+	mode = request.form.get('search_mode', 'keyword')
+	if mode == 'meaning':
+		import meaning_search
+		results_dict, meta = meaning_search.search(query_str.strip(), n, field)
+	else:
+		mode = 'keyword'
+		results_dict, meta = st.index_search(query_str.strip(), n, field=field)
 	if n is None:
 		n = -1
 
 	return render_template('search.html', query=query_str, results=results_dict,
 		suggestions=meta['suggestions'], corrected=meta['corrected'],
 		limit_label=n, filter_value=field + ':', truncated=meta['truncated'],
-		search_error=meta.get('error'))
+		search_error=meta.get('error'), search_mode=mode)
 
 # @app.route('/search/<query_str>', strict_slashes=False, methods = ['POST'])
 # def search2(query_str):
