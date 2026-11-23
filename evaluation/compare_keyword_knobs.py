@@ -2,6 +2,7 @@
 import argparse
 from collections import defaultdict
 import hashlib
+from functools import lru_cache
 import importlib.util
 import json
 import math
@@ -18,6 +19,14 @@ import types
 HERE = Path(__file__).resolve().parent
 TOP_K = 10
 PLAIN_ENGLISH = re.compile(r"[A-Za-z]+(?:\s+[A-Za-z]+){1,11}")
+FIELD_CORPUS_COLUMNS = {
+    "all": ("ar_norm", "en_norm", "ai_norm", "en_tafsir_norm", "bn_tafsir_norm", "surah_name"),
+    "ayah": ("ar_norm",),
+    "translation": ("en_norm",),
+    "en_tafsir": ("en_tafsir_norm",),
+    "bn_tafsir": ("bn_tafsir_norm",),
+    "ai": ("ai_norm",),
+}
 
 
 def read_cases(path):
@@ -37,9 +46,10 @@ def anchors(case):
 
 def resolve_revision(repo, revision):
     if revision == "worktree":
-        return subprocess.check_output(
+        head = subprocess.check_output(
             ["git", "-C", str(repo), "rev-parse", "HEAD"], text=True
         ).strip()
+        return head + "+worktree"
     return subprocess.check_output(
         ["git", "-C", str(repo), "rev-parse", revision], text=True
     ).strip()
@@ -64,22 +74,41 @@ def load_engine(repo, revision):
     return module
 
 
-def build_corpus(repo):
+def build_corpora(repo):
     from searchnorm import normalize
 
-    columns = ("ar_norm", "en_norm", "ai_norm", "en_tafsir_norm", "bn_tafsir_norm", "surah_name")
-    corpus = {}
+    corpora = {field: {} for field in FIELD_CORPUS_COLUMNS}
+    refs_by_rowid = {}
     with sqlite3.connect(f"{(repo / 'db/search.db').as_uri()}?mode=ro", uri=True) as db:
         db.row_factory = sqlite3.Row
-        for row in db.execute(
-            "SELECT surah, verse, " + ", ".join(columns) + " FROM docs"
-        ):
-            tokens = set()
-            for column in columns:
-                text, _ = normalize(row[column] or "")
-                tokens.update(text.split())
-            corpus[f"{row['surah']}:{row['verse']}"] = tokens
-    return corpus
+        for row in db.execute("SELECT rowid, surah, verse, * FROM docs"):
+            ref = f"{row['surah']}:{row['verse']}"
+            refs_by_rowid[row['rowid']] = ref
+            for field, columns in FIELD_CORPUS_COLUMNS.items():
+                tokens = set()
+                for column in columns:
+                    text, _ = normalize(row[column] or "")
+                    tokens.update(text.split())
+                corpora[field][ref] = tokens
+        if db.execute(
+                "SELECT 1 FROM sqlite_master WHERE name='english_stem'").fetchone():
+            db.execute("CREATE VIRTUAL TABLE temp.stem_vocab "
+                       "USING fts5vocab(main, english_stem, 'instance')")
+            stem_fields = {'en_norm': 'translation', 'ai_norm': 'ai',
+                           'en_tafsir_norm': 'en_tafsir'}
+            for term, doc, column in db.execute(
+                    "SELECT term, doc, col FROM stem_vocab"):
+                ref = refs_by_rowid.get(doc)
+                if ref is None or column not in stem_fields:
+                    continue
+                corpora['all'][ref].add(term)
+                corpora[stem_fields[column]][ref].add(term)
+    return corpora
+
+
+def build_corpus(repo):
+    """Return the All-fields token corpus for compatibility."""
+    return build_corpora(repo)["all"]
 
 
 def query_terms(case):
@@ -95,6 +124,25 @@ def query_terms(case):
     return normalized.split()
 
 
+_PORTER_DB = None
+
+
+@lru_cache(maxsize=None)
+def porter_term(term):
+    """Return SQLite's Porter stem so coverage matches FCS term masks."""
+    global _PORTER_DB
+    if _PORTER_DB is None:
+        _PORTER_DB = sqlite3.connect(':memory:')
+        _PORTER_DB.execute("CREATE VIRTUAL TABLE porter_terms USING fts5("
+                           "term, tokenize='porter unicode61')")
+        _PORTER_DB.execute("CREATE VIRTUAL TABLE porter_vocab "
+                           "USING fts5vocab(porter_terms, 'instance')")
+    _PORTER_DB.execute('DELETE FROM porter_terms')
+    _PORTER_DB.execute('INSERT INTO porter_terms VALUES (?)', (term,))
+    row = _PORTER_DB.execute('SELECT term FROM porter_vocab').fetchone()
+    return row[0] if row else term
+
+
 def coverage_at_five(case, refs, corpus):
     terms = query_terms(case)
     if not terms:
@@ -103,7 +151,9 @@ def coverage_at_five(case, refs, corpus):
     for ref in refs[:5]:
         tokens = corpus.get(ref, set())
         for term in terms:
-            if term in tokens or (len(term) >= 4 and any(token.startswith(term) for token in tokens)):
+            stem = porter_term(term)
+            if (term in tokens or stem in tokens or
+                    (len(term) >= 4 and any(token.startswith(term) for token in tokens))):
                 covered.add(term)
     return len(covered) / len(terms)
 
@@ -112,20 +162,23 @@ def first_rank(refs, expected):
     return next((rank for rank, ref in enumerate(refs, 1) if ref in expected), 0)
 
 
-def group_keys(case):
+def group_keys(case, field=None):
     keys = ["all"]
-    for field in ("split", "intent", "kind", "provenance", "language"):
-        if case.get(field):
-            keys.append(f"{field}={case[field]}")
+    for key in ("split", "intent", "kind", "provenance", "language"):
+        if case.get(key):
+            keys.append(f"{key}={case[key]}")
     terms = query_terms(case)
     if terms:
         keys.append("coverage_english_multi")
-        if case.get("field") in (None, "all"):
+        scope = field or case.get("field") or "all"
+        if scope == "all":
             keys.append("coverage_english_multi_all")
+        else:
+            keys.append(f"coverage_english_multi_{scope}")
     return keys
 
 
-def summarize(cases, runs, engine, corpus):
+def summarize(cases, runs, engine, corpora, field_override=None):
     groups = defaultdict(list)
     for case in cases:
         expected = anchors(case)
@@ -133,8 +186,9 @@ def summarize(cases, runs, engine, corpus):
             continue
         refs = runs[case["id"]][engine]["results"]
         rank = first_rank(refs, expected)
-        coverage = coverage_at_five(case, refs, corpus)
-        for key in group_keys(case):
+        field = field_override or case.get("field") or "all"
+        coverage = coverage_at_five(case, refs, corpora[field])
+        for key in group_keys(case, field):
             groups[key].append((rank, coverage))
     summary = {}
     for key, rows in groups.items():
@@ -187,10 +241,15 @@ def main():
     parser.add_argument(
         "--field", choices=["all", "ayah", "translation", "en_tafsir", "bn_tafsir", "ai"],
         help="Override the fixture field scope for generalized regression runs")
+    parser.add_argument(
+        "--english-multi", action="store_true",
+        help="Keep only plain-English multi-keyword cases eligible for FCS")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     repo = args.repo.resolve()
     benchmark_dir = args.benchmark_dir.resolve()
+    os.chdir(repo)
+    sys.path.insert(0, str(repo))
     fixture = benchmark_dir / args.fixture
     data = fixture.read_bytes()
     manifest_path = benchmark_dir / "challenge_manifest.json"
@@ -203,9 +262,11 @@ def main():
         cases = [case for case in cases if case.get("split") == args.split]
     if not cases:
         raise ValueError("No cases remain after applying the requested split")
+    if args.english_multi:
+        cases = [case for case in cases if query_terms(case)]
+    if not cases:
+        raise ValueError("No plain-English multi-keyword cases remain")
 
-    os.chdir(repo)
-    sys.path.insert(0, str(repo))
     revisions = {
         "baseline": resolve_revision(repo, args.baseline),
         "candidate": resolve_revision(repo, args.candidate),
@@ -214,7 +275,7 @@ def main():
         "baseline": load_engine(repo, args.baseline),
         "candidate": load_engine(repo, args.candidate),
     }
-    corpus = build_corpus(repo)
+    corpora = build_corpora(repo)
     runs = {}
     for index, case in enumerate(cases):
         order = ["baseline", "candidate"] if index % 2 == 0 else ["candidate", "baseline"]
@@ -232,17 +293,24 @@ def main():
             print(args.fixture, args.split, index, "/", len(cases), flush=True)
 
     metrics = {
-        name: summarize(cases, runs, name, corpus) for name in engines
+        name: summarize(cases, runs, name, corpora, args.field) for name in engines
     }
     regressions = rank_regressions(cases, runs, "baseline", "candidate")
+    top_five_losses = [
+        row for row in regressions
+        if row["baseline_rank"] <= 5 and
+        (not row["candidate_rank"] or row["candidate_rank"] > 5)
+    ]
     report = {
         "fixture": args.fixture,
         "fixture_sha256": hashlib.sha256(data).hexdigest(),
         "split": args.split,
         "field_override": args.field,
+        "english_multi_only": args.english_multi,
         "revisions": revisions,
         "metrics": metrics,
         "regressions": regressions,
+        "top_five_losses": top_five_losses,
         "runs": [
             {"id": case["id"], "query": case["query"],
              "field": args.field or case["field"], "rankings": runs[case["id"]]}
@@ -262,8 +330,14 @@ def main():
         "coverage_english_multi_all": {
             name: values.get("coverage_english_multi_all") for name, values in metrics.items()
         },
+        "scoped_coverage": {
+            name: {key: value for key, value in values.items()
+                   if key.startswith("coverage_english_multi_")}
+            for name, values in metrics.items()
+        },
         "latency": {name: values["latency"] for name, values in metrics.items()},
         "rank_regressions": len(regressions),
+        "top_five_losses": len(top_five_losses),
     }, indent=2))
 
 

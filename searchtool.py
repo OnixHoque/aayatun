@@ -443,16 +443,20 @@ def _surah_stem_tiers(conn, words, columns, gloss):
 
 
 def _mmr_keywords(raw, col, limit):
-	"""Keywords eligible for coverage-first lexical MMR reranking."""
-	if col is not None or limit is None or limit <= 0:
+	"""Keywords eligible for field-aware coverage-first lexical MMR reranking."""
+	if col not in (None, 'en_norm', 'ai_norm', 'en_tafsir_norm'):
+		return []
+	if limit is None or limit <= 0:
 		return []
 	if not isinstance(SEARCH_MMR_LAMBDA, (int, float)) or not 0 < SEARCH_MMR_LAMBDA < 1:
 		return []
 	return _latin_keywords(raw)
 
 
-def _row_has_exact_term(row, term):
-	for field in ('ar_orig', 'en', 'ai', 'en_tafsir', 'bn_tafsir', 'surah_name'):
+def _row_has_exact_term(row, term, col=None):
+	fields = ([col] if col else
+		  ['ar_orig', 'en', 'ai', 'en_tafsir', 'bn_tafsir', 'surah_name'])
+	for field in fields:
 		if field not in row.keys():
 			continue
 		normalized, _ = normalize(row[field] or '')
@@ -461,21 +465,27 @@ def _row_has_exact_term(row, term):
 	return False
 
 
-def _matched_term_masks(conn, words, rows):
-	"""Return one query-term bitmask per candidate, using the Porter index."""
+def _matched_term_masks(conn, words, rows, col=None):
+	"""Return query-term bitmasks using Porter matches in the selected scope."""
 	masks = {row['rowid']: 0 for row in rows}
 	rowids = list(masks)
 	if not rowids:
 		return []
 	placeholders = ','.join('?' for _ in rowids)
 	stem_columns = _english_stem_columns(conn)
+	if col is not None:
+		stem_columns = [col] if col in stem_columns else []
 	for index, word in enumerate(words):
 		if re.fullmatch(r'[a-z]+', word) and stem_columns:
+			field_set = (stem_columns[0] if len(stem_columns) == 1 else
+					 '{' + ' '.join(stem_columns) + '}')
 			matches = {row[0] for row in conn.execute(
 				'SELECT rowid FROM english_stem WHERE english_stem MATCH ? '
-				'AND rowid IN (' + placeholders + ')', [word] + rowids)}
+				'AND rowid IN (' + placeholders + ')',
+				[f'{field_set} : ({word})'] + rowids)}
 		else:
-			matches = {row['rowid'] for row in rows if _row_has_exact_term(row, word)}
+			matches = {row['rowid'] for row in rows
+					   if _row_has_exact_term(row, word, col)}
 		for rowid in matches:
 			masks[rowid] |= 1 << index
 	return [masks[row['rowid']] for row in rows]
@@ -547,10 +557,11 @@ def _ranked_tiers(raw, col, gloss, full_expr, match_expr, conn=None):
 	# Preserve the meaning of explicit FTS syntax and wildcard queries.
 	words = _plain_keywords(raw)
 	latin_words = _latin_keywords(raw)
-	stem_columns = _english_stem_columns(conn) if latin_words and col in (None, 'en_norm') else []
+	english_scope = col in (None, 'en_norm', 'ai_norm', 'en_tafsir_norm')
+	stem_columns = _english_stem_columns(conn) if latin_words and english_scope else []
 	stem_ready = bool(latin_words and SEARCH_ENGLISH_STEMMING and (
 		(col is None and stem_columns == _ENGLISH_STEM_COLUMNS) or
-		(col == 'en_norm' and 'en_norm' in stem_columns)))
+		(col in ('en_norm', 'ai_norm', 'en_tafsir_norm') and col in stem_columns)))
 	legacy_stem_ready = bool(latin_words and col == 'en_norm' and 'en_norm' in stem_columns)
 	if words:
 		normalized = ' '.join(words)
@@ -602,9 +613,9 @@ def _ranked_tiers(raw, col, gloss, full_expr, match_expr, conn=None):
 				add('docs', generic)
 	add('docs', full_expr)
 	if stem_ready:
-		columns = stem_columns if col is None else ['en_norm']
+		columns = stem_columns if col is None else [col]
 		add('stem', _stem_expr(latin_words, columns, gloss))
-		if col == 'en_norm':
+		if col in ('en_norm', 'ai_norm', 'en_tafsir_norm'):
 			add('stem', _stem_expr(latin_words, columns, gloss, join='OR'))
 	elif legacy_stem_ready:
 		add('stem', _stem_expr(latin_words, ['en_norm'], gloss, join='OR'))
@@ -620,15 +631,25 @@ def _ranked_queries(raw, col, gloss, full_expr, match_expr, conn=None):
 		raw, col, gloss, full_expr, match_expr, conn) if source == 'docs']
 
 
-def _run_stem_query(conn, match_expr, limit, surah=None):
+def _run_stem_query(conn, match_expr, limit, surah=None, col=None):
 	columns = _english_stem_columns(conn)
+	if col is not None:
+		columns = [col] if col in columns else []
 	highlights = ', '.join(
 		f"highlight(english_stem, {index}, '[', ']') AS stem_{column}"
 		for index, column in enumerate(columns))
-	sql = ('SELECT docs.rowid AS rowid, docs.surah, docs.verse, docs.surah_name, docs.ar_orig, docs.en, docs.ai, '
-	       'docs.en_tafsir, docs.bn_tafsir, ' + highlights +
-	       ' FROM english_stem JOIN docs ON docs.rowid = english_stem.rowid '
-	       'WHERE english_stem MATCH ?')
+	if col is None:
+		selected = ('docs.rowid AS rowid, docs.surah, docs.verse, docs.surah_name, '
+			    'docs.ar_orig, docs.en, docs.ai, docs.en_tafsir, docs.bn_tafsir')
+	else:
+		raw = _CHIP_TO_RAW[col]
+		selected = 'docs.rowid AS rowid, docs.surah, docs.verse, docs.surah_name, docs.en'
+		if raw != 'en':
+			selected += f', docs.{raw} AS {raw}'
+	sql = ('SELECT ' + selected + (
+		', ' + highlights if highlights else '') +
+		' FROM english_stem JOIN docs ON docs.rowid = english_stem.rowid '
+		'WHERE english_stem MATCH ?')
 	params = [match_expr]
 	if surah is not None:
 		sql += ' AND docs.surah = ?'
@@ -641,7 +662,7 @@ def _run_stem_query(conn, match_expr, limit, surah=None):
 def _ranked_rows(conn, raw, col, gloss, full_expr, match_expr, limit):
 	for source, expr, surah in _ranked_tiers(raw, col, gloss, full_expr, match_expr, conn):
 		if source == 'stem':
-			yield from _run_stem_query(conn, expr, limit, surah)
+			yield from _run_stem_query(conn, expr, limit, surah, col)
 		else:
 			yield from _run_query(conn, expr, limit)
 
@@ -665,15 +686,17 @@ def _trgm_ok(conn):
 	return _trgm_available
 
 
-def _run_trigram(conn, raw, limit):
-	"""Substring fallback for zero-hit queries (Arabic roots, partial words)."""
-	if not _trgm_ok(conn):
+def _run_trigram(conn, raw, limit, col=None):
+	"""Substring fallback for zero-hit queries in indexed trigram fields."""
+	if col not in (None, 'ar_norm', 'en_norm') or not _trgm_ok(conn):
 		return []
 	n, _ = normalize(raw)
 	toks = [t for t in n.split() if len(t) >= 3]
 	if not toks:
 		return []
 	expr = ' AND '.join(toks)
+	if col:
+		expr = f'{col} : ({expr})'
 	try:
 		rows = conn.execute(
 			'SELECT surah, verse FROM docs_trgm WHERE docs_trgm MATCH ? LIMIT ?',
@@ -729,12 +752,20 @@ def _matched_columns(row, terms):
 	return chips
 
 
-def _format(rows, highlight_terms, offset=0):
+def _format(rows, highlight_terms, offset=0, col=None):
 	results = []
 	for i, r in enumerate(rows, offset + 1):
-		matched = _matched_columns(r, highlight_terms) if highlight_terms else ['ar_norm', 'en_norm']
+		if col:
+			# Scoped retrieval already guarantees a match in this column.
+			matched = [col] if r[_CHIP_TO_RAW[col]] else []
+		elif highlight_terms:
+			matched = _matched_columns(r, highlight_terms)
+		else:
+			matched = ['ar_norm', 'en_norm']
 		terms = highlight_terms
 		for column in _ENGLISH_STEM_COLUMNS:
+			if col is not None and column != col:
+				continue
 			key = 'stem_' + column
 			if key in r.keys():
 				found = re.findall(r'\[([^\]]+)\]', r[key] or '')
@@ -742,7 +773,7 @@ def _format(rows, highlight_terms, offset=0):
 					terms = terms + found
 					if column not in matched:
 						matched.append(column)
-		if 'stem_matches' in r.keys():
+		if 'stem_matches' in r.keys() and col in (None, 'en_norm'):
 			terms = terms + re.findall(r'\[([^\]]+)\]', r['stem_matches'])
 			if 'en_norm' not in matched:
 				matched.append('en_norm')
@@ -836,7 +867,9 @@ def index_search(search_query, result_limit=10, dirname=None, search_fields=None
 	mmr_words = _mmr_keywords(raw, col, result_limit)
 	conn = _connect()
 	try:
-		if mmr_words and not _english_stem_columns(conn):
+		stem_columns = _english_stem_columns(conn)
+		if mmr_words and (col is None and stem_columns != _ENGLISH_STEM_COLUMNS or
+				col is not None and col not in stem_columns):
 			mmr_words = []
 		sql_limit = MMR_CANDIDATE_POOL if mmr_words else ((TRUNC_MAX + 1) if need_all else result_limit)
 		rows = []
@@ -867,7 +900,7 @@ def index_search(search_query, result_limit=10, dirname=None, search_fields=None
 		if not rows:
 			# MMR applies to ranked keyword candidates, not spelling/substring fallbacks.
 			mmr_words = []
-			tri = _run_trigram(conn, raw, sql_limit)
+			tri = _run_trigram(conn, raw, sql_limit, col)
 			if tri:
 				rows = tri
 				terms = terms or normalize(raw)[0].split()
@@ -894,7 +927,7 @@ def index_search(search_query, result_limit=10, dirname=None, search_fields=None
 					else:
 						meta['suggestions'] = corrected
 		if mmr_words and rows:
-			masks = _matched_term_masks(conn, mmr_words, rows)
+			masks = _matched_term_masks(conn, mmr_words, rows, col)
 			rows = _mmr_rerank(
 				rows, mmr_words, masks, min(int(result_limit), MMR_CANDIDATE_POOL),
 				SEARCH_MMR_LAMBDA, top5_coverage=SEARCH_TOP5_COVERAGE)
@@ -903,7 +936,7 @@ def index_search(search_query, result_limit=10, dirname=None, search_fields=None
 		if need_all and len(rows) > TRUNC_MAX:
 			rows = rows[:TRUNC_MAX]
 			meta['truncated'] = True
-		return _format(rows, terms), meta
+		return _format(rows, terms, col=col), meta
 	finally:
 		conn.close()
 

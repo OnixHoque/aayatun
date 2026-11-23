@@ -700,33 +700,46 @@ an all-tokens pass first and merge those rows in front of the OR pass.
 Plain All-fields multi-keyword queries also try a true cross-column AND tier,
 so a surah name can combine with translation, AI or tafsir terms. A recognized
 surah name gets a higher-priority scoped tier with exact and Latin-prefix
-content matches. `SEARCH_CROSS_FIELD_AND` disables these added tiers. The
-Porter-backed `english_stem` table covers `en_norm`, `ai_norm` and
+content matches. `SEARCH_CROSS_FIELD_AND` disables these added tiers.
+The five keyword-search rules are the **Field-aware Coverage Stack (FCS)**.
+The Porter-backed `english_stem` table covers `en_norm`, `ai_norm` and
 `en_tafsir_norm`; run `python build_search.py --add-english-index` to migrate an
 existing database transactionally without changing document IDs. With
-`SEARCH_ENGLISH_STEMMING` enabled, plain Latin multi-keyword All-fields and
-Translation searches add stemmed AND tiers, translation-first surah scoping,
-and an OR fallback. Other field scopes and non-Latin queries bypass stemming.
+`SEARCH_ENGLISH_STEMMING` enabled, plain Latin multi-keyword searches in
+All-fields, Translation, AI explanation and English tafsir add stemmed AND tiers
+and an OR fallback. All-fields also retains translation-first surah scoping.
+Other field scopes and non-Latin queries bypass English stemming.
 With `SEARCH_AI_TAFSIR_TIERS` enabled, exact-phrase columns follow the query
 script. English phrases search translation, AI explanation and English tafsir.
 Bengali phrases search Bengali tafsir. Mixed queries use the relevant union.
 A generic English AND tier can split keywords across those three English fields.
 It runs after surah-scoped tiers and excludes surah names. Field-restricted
 searches keep their selected column and existing BM25 weights.
-`SEARCH_MMR_LAMBDA` defaults to `0.7`. Plain English multi-keyword All-fields
-searches with finite limits retrieve 50 unique candidates. The Porter index
-supports matched-term bitmasks. Greedy MMR combines coverage-first relevance
-with Jaccard diversity. Set the knob to `1.0` to bypass reranking.
+| Scope | Cross-field/surah AND | English stemming | Commentary tiers | Coverage MMR + top-five |
+|---|---|---|---|---|
+| All-fields | Yes | Yes | Yes | Yes |
+| Translation | N/A | Selected column | N/A | Selected column |
+| AI explanation | N/A | Selected column | Field itself | Selected column |
+| English tafsir | N/A | Selected column | Field itself | Selected column |
+| Arabic verse / Bengali tafsir | N/A | No English Porter | Existing field path | Bypassed |
+
+`SEARCH_MMR_LAMBDA` defaults to `0.7`. Eligible plain-English multi-keyword
+queries with finite limits retrieve up to 50 unique candidates. All-fields masks
+may combine the three English columns; a field-restricted mask and its highlights
+use only the selected column. Greedy MMR combines coverage-first relevance with
+Jaccard diversity. Set the knob to `1.0` to bypass reranking.
 `SEARCH_TOP5_COVERAGE` defaults to `True`. During the first five greedy
 selections, complete matches stay ahead of partial matches, then candidates
-that add an uncovered query term take priority. The first result is unchanged;
-later slots use normal MMR. Set the knob to `False` to roll back only this rule.
-Complete matches outrank partial matches; a trailing `*` remains an explicit
-prefix wildcard. `evaluation/compare_keyword_knobs.py` compares trusted
-revisions on the challenger fixtures. Use `--field all` for the difficult
-multiword regression gate; its fixture-level Translation scope remains a
-diagnostic comparison, not the generalized All-fields acceptance path. The
-`db3/` Whoosh index is gone.
+that add an uncovered query term take priority. The first MMR selection is
+unchanged; later slots use normal MMR. Set the knob to `False` to roll back only
+this rule. Complete matches outrank partial matches; explicit syntax, wildcards,
+single words, mixed/non-Latin queries and unlimited result requests bypass the
+automatic FCS reranking path. `evaluation/compare_keyword_knobs.py` compares
+trusted revisions on the challenger fixtures and measures coverage against the
+effective field. Use `--english-multi --field <scope>` for FCS scope gates. Use
+`--field all` for the difficult multiword regression gate; its fixture-level
+Translation scope remains a diagnostic comparison, not the generalized
+All-fields acceptance path. The `db3/` Whoosh index is gone.
 
 ### 4.11 In-process caches
 
