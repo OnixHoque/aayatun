@@ -117,12 +117,24 @@ def load_rows():
 
 
 def add_english_index(conn):
-	"""Add the optional translation index atomically, including on existing installs."""
+	"""Create or atomically upgrade the Porter index for every English field."""
+	columns = ['en_norm', 'ai_norm', 'en_tafsir_norm']
 	conn.execute('BEGIN IMMEDIATE')
 	try:
-		if not conn.execute("SELECT 1 FROM sqlite_master WHERE name='english_stem'").fetchone():
-			conn.execute("CREATE VIRTUAL TABLE english_stem USING fts5(en_norm, tokenize='porter unicode61')")
-			conn.execute("INSERT INTO english_stem(rowid, en_norm) SELECT rowid, en_norm FROM docs")
+		exists = conn.execute(
+			"SELECT 1 FROM sqlite_master WHERE name='english_stem'").fetchone()
+		if exists:
+			current = [row[1] for row in conn.execute('PRAGMA table_info(english_stem)')]
+			if current == columns:
+				conn.commit()
+				return
+			if current != ['en_norm']:
+				raise ValueError('Unexpected english_stem schema: ' + ', '.join(current))
+			conn.execute('DROP TABLE english_stem')
+		conn.execute("CREATE VIRTUAL TABLE english_stem USING fts5("
+		             "en_norm, ai_norm, en_tafsir_norm, tokenize='porter unicode61')")
+		conn.execute('INSERT INTO english_stem(rowid, en_norm, ai_norm, en_tafsir_norm) '
+		             'SELECT rowid, en_norm, ai_norm, en_tafsir_norm FROM docs')
 		conn.commit()
 	except Exception:
 		conn.rollback()

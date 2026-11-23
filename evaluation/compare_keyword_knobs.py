@@ -120,7 +120,7 @@ def group_keys(case):
     terms = query_terms(case)
     if terms:
         keys.append("coverage_english_multi")
-        if case.get("field") == "all":
+        if case.get("field") in (None, "all"):
             keys.append("coverage_english_multi_all")
     return keys
 

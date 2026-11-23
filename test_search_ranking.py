@@ -17,13 +17,43 @@ from searchtool import index_search
 class TranslationRankingTests(unittest.TestCase):
     def test_upgrade_keeps_document_ids_and_can_be_retried(self):
         with sqlite3.connect(':memory:') as db:
-            db.execute('CREATE TABLE docs(en_norm)')
-            db.execute("INSERT INTO docs(rowid,en_norm) VALUES (42,'pledged')")
+            db.execute('CREATE TABLE docs(en_norm, ai_norm, en_tafsir_norm)')
+            db.execute("INSERT INTO docs(rowid,en_norm,ai_norm,en_tafsir_norm) "
+                       "VALUES (42,'pledged','teachings','believers')")
+            db.execute("CREATE VIRTUAL TABLE english_stem USING fts5("
+                       "en_norm, tokenize='porter unicode61')")
+            db.execute("INSERT INTO english_stem(rowid,en_norm) VALUES (42,'pledged')")
             db.commit()
             for attempt in range(2):
                 add_english_index(db)
-            hits = db.execute("SELECT rowid FROM english_stem WHERE english_stem MATCH 'pledge'")
-            self.assertEqual(hits.fetchall(), [(42,)])
+            self.assertEqual([row[1] for row in db.execute('PRAGMA table_info(english_stem)')],
+                             ['en_norm', 'ai_norm', 'en_tafsir_norm'])
+            for query in ('pledge', 'teaching', 'believer'):
+                hits = db.execute(
+                    "SELECT rowid FROM english_stem WHERE english_stem MATCH ?", (query,))
+                self.assertEqual(hits.fetchall(), [(42,)])
+
+    def test_old_schema_migration_rolls_back_and_can_be_retried(self):
+        with sqlite3.connect(':memory:') as db:
+            db.execute('CREATE TABLE docs(en_norm)')
+            db.execute("INSERT INTO docs(rowid,en_norm) VALUES (42,'pledged')")
+            db.execute("CREATE VIRTUAL TABLE english_stem USING fts5("
+                       "en_norm, tokenize='porter unicode61')")
+            db.execute("INSERT INTO english_stem(rowid,en_norm) VALUES (42,'pledged')")
+            db.commit()
+            with self.assertRaises(sqlite3.OperationalError):
+                add_english_index(db)
+            self.assertEqual([row[1] for row in db.execute('PRAGMA table_info(english_stem)')],
+                             ['en_norm'])
+            self.assertEqual(db.execute(
+                "SELECT rowid FROM english_stem WHERE english_stem MATCH 'pledge'").fetchall(),
+                [(42,)])
+            db.execute('ALTER TABLE docs ADD COLUMN ai_norm')
+            db.execute('ALTER TABLE docs ADD COLUMN en_tafsir_norm')
+            db.execute("UPDATE docs SET ai_norm='teachings', en_tafsir_norm='believers'")
+            db.commit()
+            add_english_index(db)
+            self.assertEqual(db.execute('SELECT rowid FROM english_stem').fetchall(), [(42,)])
 
     def test_translation_ranking_through_flask(self):
         client = app.test_client()
@@ -84,7 +114,16 @@ class CrossFieldRankingTests(unittest.TestCase):
         self.assertEqual(len(refs), len(set(refs)))
 
     def test_cross_field_knob_can_be_disabled(self):
-        with patch('searchtool.SEARCH_CROSS_FIELD_AND', False):
+        conn = searchtool._connect()
+        try:
+            with patch('searchtool.SEARCH_CROSS_FIELD_AND', False):
+                queries = searchtool._ranked_queries(
+                    'Luqman Parent', None, searchtool._load_glossary(), None, None, conn)
+            self.assertFalse(any(q.startswith(('surah_name :', '{')) for q in queries))
+        finally:
+            conn.close()
+        with patch('searchtool.SEARCH_CROSS_FIELD_AND', False), \
+                patch('searchtool.SEARCH_ENGLISH_STEMMING', False):
             hits, _ = index_search('Luqman Parent', 5, field='all')
         refs = [f"{hit['surah']}:{hit['verse']}" for hit in hits]
         self.assertNotIn('31:14', refs)
@@ -103,6 +142,120 @@ class CrossFieldRankingTests(unittest.TestCase):
         case = {'query': 'Luqman Parent', 'intent': 'multi', 'language': 'en'}
         corpus = {'31:14': {'luqman', 'parents'}}
         self.assertEqual(coverage_at_five(case, ['31:14'], corpus), 1.0)
+
+
+class EnglishStemmingRankingTests(unittest.TestCase):
+    def _stem_index(self):
+        db = sqlite3.connect(':memory:')
+        db.row_factory = sqlite3.Row
+        db.execute('''CREATE TABLE docs(
+            en_norm, ai_norm, en_tafsir_norm, surah_name, surah, verse,
+            ar_orig, en, ai, en_tafsir, bn_tafsir)''')
+        rows = [
+            ('parents', '', '', 'Luqman', 31, 14, '', 'parents', '', '', ''),
+            ('', 'teachings', '', 'The Cow', 2, 1, '', '', 'teachings', '', ''),
+            ('', '', 'believers', 'The Family of Imran', 3, 1,
+             '', '', '', 'believers', ''),
+            ('parents', 'teachings', '', 'The Women', 4, 1,
+             '', 'parents', 'teachings', '', ''),
+        ]
+        db.executemany('INSERT INTO docs VALUES (?,?,?,?,?,?,?,?,?,?,?)', rows)
+        db.commit()
+        add_english_index(db)
+        return db
+
+    def test_inflections_and_chips_cover_all_english_fields(self):
+        with closing(self._stem_index()) as db:
+            for query, ref, chip, span in [
+                    ('parent', '31:14', 'Translation', '>parents</span>'),
+                    ('teaching', '2:1', 'AI explanation', '>teachings</span>'),
+                    ('believer', '3:1', 'Tafsir Ibn Kathir', '>believers</span>')]:
+                with self.subTest(query=query):
+                    expr = searchtool._stem_expr(
+                        [query], searchtool._ENGLISH_STEM_COLUMNS, {})
+                    rows = searchtool._run_stem_query(db, expr, 10)
+                    refs = [f"{row['surah']}:{row['verse']}" for row in rows]
+                    self.assertIn(ref, refs)
+                    row = rows[refs.index(ref)]
+                    item = searchtool._format([row], [query])[0]
+                    self.assertIn(chip, item['chips'])
+                    rendered = item['translation'] or item['ai'] or item['en_tafsir']
+                    self.assertIn(span, rendered)
+
+    def test_combined_stem_tier_allows_keywords_in_different_fields(self):
+        with closing(self._stem_index()) as db:
+            expr = searchtool._stem_expr(
+                ['parent', 'teaching'], searchtool._ENGLISH_STEM_COLUMNS, {})
+            rows = searchtool._run_stem_query(db, expr, 10)
+            refs = [f"{row['surah']}:{row['verse']}" for row in rows]
+            self.assertIn('4:1', refs)
+            self.assertNotIn('2:1', refs)
+
+    def test_surah_stem_tier_precedes_exact_surah_tier(self):
+        conn = searchtool._connect()
+        try:
+            with patch('searchtool._english_stem_columns',
+                       return_value=searchtool._ENGLISH_STEM_COLUMNS):
+                tiers = searchtool._ranked_tiers(
+                    'Luqman Parent', None, searchtool._load_glossary(), None, None, conn)
+            stem_surah = next(i for i, (source, _, surah) in enumerate(tiers)
+                              if source == 'stem' and surah == 31)
+            exact_surah = next(i for i, (source, expr, _) in enumerate(tiers)
+                               if source == 'docs' and expr.startswith('surah_name : (luqman)'))
+            self.assertLess(stem_surah, exact_surah)
+            stem_and = next(i for i, (source, expr, _) in enumerate(tiers)
+                            if source == 'stem' and ' AND ' in expr and _ is None)
+            stem_or = next(i for i, (source, expr, _) in enumerate(tiers)
+                           if source == 'stem' and ' OR ' in expr and _ is None)
+            self.assertLess(stem_and, stem_or)
+        finally:
+            conn.close()
+
+    def test_field_scope_explicit_syntax_and_non_english_bypass_stemming(self):
+        conn = searchtool._connect()
+        try:
+            with patch('searchtool._english_stem_columns',
+                       return_value=searchtool._ENGLISH_STEM_COLUMNS):
+                for raw, col in [('parents teachings', 'ai_norm'),
+                                 ('parents teachings', 'en_tafsir_norm'),
+                                 ('Luqman AND Parent', None), ('Luqman Parent*', None),
+                                 ('Luqman أبو', None), ('Parent', None)]:
+                    with self.subTest(raw=raw, col=col):
+                        tiers = searchtool._ranked_tiers(raw, col, {}, None, None, conn)
+                        self.assertFalse(any(source == 'stem' for source, _, _ in tiers))
+        finally:
+            conn.close()
+
+    def test_stemming_knob_is_independent_of_cross_field_tiers(self):
+        conn = searchtool._connect()
+        try:
+            with patch('searchtool.SEARCH_CROSS_FIELD_AND', False), \
+                    patch('searchtool._english_stem_columns',
+                           return_value=searchtool._ENGLISH_STEM_COLUMNS):
+                tiers = searchtool._ranked_tiers(
+                    'Luqman Parent', None, searchtool._load_glossary(), None, None, conn)
+            self.assertTrue(any(source == 'stem' for source, _, _ in tiers))
+            self.assertFalse(any(source == 'docs' and expr.startswith('{')
+                                 for source, expr, _ in tiers))
+        finally:
+            conn.close()
+
+    def test_knob_rollback_retains_legacy_translation_fallback(self):
+        conn = searchtool._connect()
+        try:
+            with patch('searchtool.SEARCH_ENGLISH_STEMMING', False), \
+                    patch('searchtool._english_stem_columns', return_value=['en_norm']):
+                tiers = searchtool._ranked_tiers(
+                    'pledge tree reward', 'en_norm', {}, None, None, conn)
+            stem_tiers = [expr for source, expr, _ in tiers if source == 'stem']
+            self.assertEqual(len(stem_tiers), 1)
+            self.assertIn(' OR ', stem_tiers[0])
+        finally:
+            conn.close()
+
+    def test_luqman_parent_puts_parent_verse_first(self):
+        hits, _ = index_search('Luqman Parent', 5, field='all')
+        self.assertEqual(f"{hits[0]['surah']}:{hits[0]['verse']}", '31:14')
 
 
 class MixedScriptRankingTests(unittest.TestCase):

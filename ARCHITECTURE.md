@@ -700,10 +700,16 @@ an all-tokens pass first and merge those rows in front of the OR pass.
 Plain All-fields multi-keyword queries also try a true cross-column AND tier,
 so a surah name can combine with translation, AI or tafsir terms. A recognized
 surah name gets a higher-priority scoped tier with exact and Latin-prefix
-content matches. `SEARCH_CROSS_FIELD_AND` disables these added tiers. Complete
-matches outrank partial matches; a trailing `*` remains an explicit prefix
-wildcard. `evaluation/compare_keyword_knobs.py` compares trusted revisions on
-the challenger fixtures. The `db3/` Whoosh index is gone.
+content matches. `SEARCH_CROSS_FIELD_AND` disables these added tiers. The
+Porter-backed `english_stem` table covers `en_norm`, `ai_norm` and
+`en_tafsir_norm`; run `python build_search.py --add-english-index` to migrate an
+existing database transactionally without changing document IDs. With
+`SEARCH_ENGLISH_STEMMING` enabled, plain Latin multi-keyword All-fields and
+Translation searches add stemmed AND tiers, translation-first surah scoping,
+and an OR fallback. Other field scopes and non-Latin queries bypass stemming.
+Complete matches outrank partial matches; a trailing `*` remains an explicit
+prefix wildcard. `evaluation/compare_keyword_knobs.py` compares trusted
+revisions on the challenger fixtures. The `db3/` Whoosh index is gone.
 
 ### 4.11 In-process caches
 
