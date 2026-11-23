@@ -184,6 +184,9 @@ def main():
     parser.add_argument("--candidate", default="HEAD")
     parser.add_argument("--fixture", default="challenge_v2.jsonl")
     parser.add_argument("--split", default="all")
+    parser.add_argument(
+        "--field", choices=["all", "ayah", "translation", "en_tafsir", "bn_tafsir", "ai"],
+        help="Override the fixture field scope for generalized regression runs")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     repo = args.repo.resolve()
@@ -216,9 +219,10 @@ def main():
     for index, case in enumerate(cases):
         order = ["baseline", "candidate"] if index % 2 == 0 else ["candidate", "baseline"]
         runs[case["id"]] = {}
+        field = args.field or case["field"]
         for name in order:
             started = time.perf_counter()
-            hits, _ = engines[name].index_search(case["query"], TOP_K, field=case["field"])
+            hits, _ = engines[name].index_search(case["query"], TOP_K, field=field)
             elapsed = (time.perf_counter() - started) * 1000
             runs[case["id"]][name] = {
                 "results": [f"{hit['surah']}:{hit['verse']}" for hit in hits],
@@ -235,12 +239,13 @@ def main():
         "fixture": args.fixture,
         "fixture_sha256": hashlib.sha256(data).hexdigest(),
         "split": args.split,
+        "field_override": args.field,
         "revisions": revisions,
         "metrics": metrics,
         "regressions": regressions,
         "runs": [
-            {"id": case["id"], "query": case["query"], "field": case["field"],
-             "rankings": runs[case["id"]]}
+            {"id": case["id"], "query": case["query"],
+             "field": args.field or case["field"], "rankings": runs[case["id"]]}
             for case in cases
         ],
     }

@@ -585,6 +585,29 @@ class TopFiveCoverageRankingTests(unittest.TestCase):
                     self.assertIn('31:12', refs[:5])
 
 
+class DifficultAllFieldsRegressionTests(unittest.TestCase):
+    def test_difficult_paraphrases_keep_expected_verse_in_top_five(self):
+        cases = [
+            ('dead village century uneaten meal animal bones', '2:259'),
+            ('kind leader forgive advice trust', '3:159'),
+            ('gossip suspicion eating dead sibling', '49:12'),
+            ('save one life entire humanity israel', '5:32'),
+            ('hard times patient worship seek support', '2:153'),
+            ('god never sleeps throne sky knowledge', '2:255'),
+            ('hatred enemies fair judgment righteousness', '5:8'),
+            ('fairness kindness family oppression forbidden', '16:90'),
+            ('enter home permission greeting inhabitants', '24:27'),
+            ('sinners despair hope mercy forgiveness', '39:53'),
+            ('tribes ethnicities honor righteousness meet', '49:13'),
+        ]
+        for query, expected in cases:
+            with self.subTest(query=query):
+                hits, _ = index_search(query, 5, field='all')
+                refs = [f"{hit['surah']}:{hit['verse']}" for hit in hits]
+                self.assertIn(expected, refs)
+                self.assertEqual(len(refs), len(set(refs)))
+
+
 class MixedScriptRankingTests(unittest.TestCase):
     def test_surah_name_and_arabic_prefix_through_flask(self):
         client = app.test_client()

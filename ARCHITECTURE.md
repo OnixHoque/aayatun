@@ -723,7 +723,10 @@ that add an uncovered query term take priority. The first result is unchanged;
 later slots use normal MMR. Set the knob to `False` to roll back only this rule.
 Complete matches outrank partial matches; a trailing `*` remains an explicit
 prefix wildcard. `evaluation/compare_keyword_knobs.py` compares trusted
-revisions on the challenger fixtures. The `db3/` Whoosh index is gone.
+revisions on the challenger fixtures. Use `--field all` for the difficult
+multiword regression gate; its fixture-level Translation scope remains a
+diagnostic comparison, not the generalized All-fields acceptance path. The
+`db3/` Whoosh index is gone.
 
 ### 4.11 In-process caches
 
