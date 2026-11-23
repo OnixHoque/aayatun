@@ -851,6 +851,17 @@ original (diacritized) text using a normalized→original index map, escaping
 via `_render` in `searchnorm.py`. Bengali has no stemming. It matches on
 exact tokens and trigram substrings (where the host's SQLite provides them).
 
+Arabic root search uses the annotated morphology in `db2/quran_metadata.db`.
+Enter `root:رحم` or `surah:fatiha root:رحم`. A recognized surah name
+followed by an Arabic root also works, for example `Fatiha رحم`. Results
+are ordered by surah and verse. Surah aliases use indexed names with common
+article and final-h variations. A surah number can resolve ambiguous names.
+The first root query builds `root_occurrences` in `db/search.db` atomically.
+To prepare the index before serving requests, run
+`python build_search.py --add-root-index` after building `db/search.db`.
+The metadata must be present and match the indexed verses. Rebuild the
+search index when the metadata changes so the root index is regenerated.
+
 ---
 
 ## 6. Module templates

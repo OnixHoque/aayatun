@@ -2,6 +2,11 @@
 import re
 import sqlite3
 import unittest
+import pickle
+import tempfile
+from contextlib import closing
+from pathlib import Path
+from unittest.mock import patch
 
 from app import app
 from build_search import add_english_index
@@ -68,3 +73,57 @@ class MixedScriptRankingTests(unittest.TestCase):
                 self.assertEqual(response.status_code, 200)
                 refs = re.findall(r'class="surahlink"[^>]*>\s*(\d+:\d+)', response.get_data(as_text=True))
                 self.assertEqual(refs, [expected])
+
+
+class ArabicRootSearchTests(unittest.TestCase):
+    def test_root_index_is_atomic_and_retryable(self):
+        from searchtool import _ensure_root_index
+        with tempfile.TemporaryDirectory() as directory:
+            metadata = Path(directory) / 'metadata.db'
+            with closing(sqlite3.connect(metadata)) as source:
+                source.execute('CREATE TABLE verses (surah INTEGER, verse INTEGER, data BLOB)')
+                source.execute('INSERT INTO verses VALUES (?, ?, ?)',
+                               (1, 1, pickle.dumps({'morph': []})))
+                source.commit()
+            with sqlite3.connect(':memory:') as index:
+                index.row_factory = sqlite3.Row
+                index.execute('CREATE TABLE docs (surah INTEGER, verse INTEGER)')
+                index.execute('INSERT INTO docs VALUES (1, 1)')
+                index.commit()
+                with patch('searchtool._MORPH_PATH', str(metadata)):
+                    with self.assertRaises(ValueError):
+                        _ensure_root_index(index)
+                    self.assertIsNone(index.execute(
+                        "SELECT name FROM sqlite_master WHERE name='root_occurrences'").fetchone())
+                    with closing(sqlite3.connect(metadata)) as source:
+                        source.execute('UPDATE verses SET data = ?',
+                                       (pickle.dumps({'morph': [{'root': 'رحم', 'word': 'الرَّحْمَٰنِ'}]}),))
+                        source.commit()
+                    _ensure_root_index(index)
+                    _ensure_root_index(index)
+                    self.assertEqual(index.execute(
+                        'SELECT count(*) FROM root_occurrences WHERE root = ?', ('رحم',)).fetchone()[0], 1)
+
+    def test_root_search_and_surah_variants_through_flask(self):
+        client = app.test_client()
+        for query, expected in [('root:رحم', ['1:1', '1:3']),
+                                ('surah:fatiha root:رحم', ['1:1', '1:3']),
+                                ('surah:1 root:رَحْم', ['1:1', '1:3']),
+                                ('Fatiha رحم', ['1:1', '1:3']),
+                                ('Luqman حمل', ['31:14'])]:
+            with self.subTest(query=query):
+                response = client.post('/search/', data={'query_str': query, 'limit': '10'})
+                self.assertEqual(response.status_code, 200)
+                refs = re.findall(r'class="surahlink"[^>]*>\s*(\d+:\d+)', response.get_data(as_text=True))
+                for ref in expected:
+                    self.assertIn(ref, refs)
+                self.assertEqual(len(refs), len(set(refs)))
+
+    def test_unknown_surah_and_incompatible_field_are_reported(self):
+        client = app.test_client()
+        for query, field, message in [
+                ('surah:unknown root:رحم', 'all:', 'Surah name is unknown or ambiguous'),
+                ('root:رحم', 'translation:', 'select the entire Quran or the Arabic verse')]:
+            with self.subTest(query=query):
+                response = client.post('/search/', data={'query_str': query, 'target_field': field})
+                self.assertIn(message, response.get_data(as_text=True))

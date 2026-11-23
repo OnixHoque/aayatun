@@ -217,7 +217,17 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description=__doc__)
 	parser.add_argument('--add-english-index', action='store_true',
 	                    help='upgrade an existing search index in place')
-	if parser.parse_args().add_english_index:
+	parser.add_argument('--add-root-index', action='store_true',
+	                    help='add the annotated Arabic root index to an existing search index')
+	args = parser.parse_args()
+	if args.add_english_index and args.add_root_index:
+		parser.error('choose one index upgrade at a time')
+	if args.add_root_index:
+		import searchtool
+		with sqlite3.connect('file:db/search.db?mode=rw', uri=True, timeout=60) as conn:
+			conn.row_factory = sqlite3.Row
+			searchtool._ensure_root_index(conn)
+	elif args.add_english_index:
 		with sqlite3.connect('file:db/search.db?mode=rw', uri=True) as conn:
 			add_english_index(conn)
 	else:

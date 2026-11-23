@@ -17,6 +17,8 @@ import pickle
 import re
 import sqlite3
 import threading
+from contextlib import closing
+from pathlib import Path
 
 from markupsafe import Markup
 
@@ -26,6 +28,7 @@ from searchnorm import BKTree, normalize, snippet
 _DB = 'db/search.db'
 _SYN_PATH = 'db/search_synonyms.json'
 _VOCAB_PATH = 'db/search_vocab.pkl'
+_MORPH_PATH = 'db2/quran_metadata.db'
 
 _ensure_lock = threading.Lock()
 _glossary = None
@@ -64,9 +67,117 @@ def _ensure_db():
 
 
 def _connect():
-	conn = sqlite3.connect(_DB)
+	conn = sqlite3.connect(_DB, timeout=60)
 	conn.row_factory = sqlite3.Row
 	return conn
+
+
+def _ensure_root_index(conn):
+	"""Build the root-to-verse index once from the app's trusted metadata."""
+	if conn.execute("SELECT 1 FROM sqlite_master WHERE name='root_occurrences'").fetchone():
+		return
+	metadata = Path(_MORPH_PATH).resolve()
+	if not metadata.is_file():
+		raise FileNotFoundError('Verse morphology metadata is unavailable')
+	conn.execute('BEGIN IMMEDIATE')
+	try:
+		if conn.execute("SELECT 1 FROM sqlite_master WHERE name='root_occurrences'").fetchone():
+			conn.commit()
+			return
+		conn.execute('CREATE TABLE root_occurrences (root TEXT NOT NULL, docid INTEGER NOT NULL, '
+		             'word TEXT NOT NULL, PRIMARY KEY (root, docid, word)) WITHOUT ROWID')
+		docids = {(row['surah'], row['verse']): row['rowid'] for row in
+		          conn.execute('SELECT rowid, surah, verse FROM docs')}
+		with closing(sqlite3.connect(metadata.as_uri() + '?mode=ro', uri=True)) as source:
+			seen = set()
+			for surah, verse, data in source.execute('SELECT surah, verse, data FROM verses'):
+				key = (surah, verse)
+				if key not in docids:
+					raise ValueError('Morphology and search index verses do not match')
+				seen.add(key)
+				morph = pickle.loads(data).get('morph')
+				if not morph:
+					raise ValueError('Verse morphology is incomplete')
+				for item in morph:
+					root, _ = normalize(item.get('root') or '')
+					word, _ = normalize(item.get('word') or '')
+					if root and word:
+						conn.execute('INSERT OR IGNORE INTO root_occurrences VALUES (?, ?, ?)',
+						             (root.replace(' ', ''), docids[key], word))
+			if seen != set(docids):
+				raise ValueError('Morphology and search index verses do not match')
+		conn.commit()
+	except Exception:
+		conn.rollback()
+		raise
+
+
+def _surah_number(conn, name):
+	"""Resolve a unique indexed surah name, allowing common article and h variants."""
+	if name.isdecimal():
+		return int(name) if 1 <= int(name) <= 114 else None
+	wanted = normalize(name)[0].replace(' ', '')
+	matches = set()
+	for row in conn.execute('SELECT surah, surah_name FROM docs GROUP BY surah'):
+		name = (row['surah_name'] or '').split('(')[0]
+		canonical = normalize(name)[0].replace(' ', '')
+		variants = {canonical}
+		if canonical.startswith(('al', 'an', 'ar', 'as', 'az')):
+			variants.add(canonical[2:])
+		variants |= {value[:-1] for value in variants if value.endswith('h')}
+		if wanted in variants:
+			matches.add(row['surah'])
+	return next(iter(matches)) if len(matches) == 1 else None
+
+
+def _search_root(raw, field, limit, meta):
+	"""Handle root:رحم and optional surah:fatiha as an explicit search mode."""
+	parts = raw.split()
+	roots = [part[5:] for part in parts if part.lower().startswith('root:')]
+	surahs = [part[6:] for part in parts if part.lower().startswith('surah:')]
+	if len(roots) != 1 or len(surahs) > 1 or len(parts) != len(roots) + len(surahs):
+		meta['error'] = 'Use root:رحم, optionally with surah:fatiha.'
+		return [], meta
+	root = normalize(roots[0])[0].replace(' ', '')
+	if not re.fullmatch(r'[\u0621-\u064a]{2,5}', root) or field not in ('all', 'ayah'):
+		meta['error'] = 'Enter an Arabic root and select the entire Quran or the Arabic verse.'
+		return [], meta
+	conn = _connect()
+	try:
+		surah = _surah_number(conn, surahs[0]) if surahs else None
+		if surahs and surah is None:
+			meta['error'] = 'Surah name is unknown or ambiguous. Use a surah number instead.'
+			return [], meta
+		try:
+			_ensure_root_index(conn)
+		except (OSError, sqlite3.Error, ValueError, pickle.PickleError, EOFError):
+			meta['error'] = 'Arabic root search is unavailable because verse morphology could not be loaded.'
+			return [], meta
+		condition = ' AND docs.surah = ?' if surah is not None else ''
+		params = [root] + ([surah] if surah is not None else [])
+		cap = TRUNC_MAX + 1 if limit is None else max(0, limit)
+		rows = conn.execute(
+			'SELECT docs.rowid, docs.surah, docs.verse, docs.surah_name, docs.ar_orig, '
+			'docs.en, docs.en_tafsir, docs.bn_tafsir, docs.ai, '
+			'group_concat(root_occurrences.word, \' \') AS root_words '
+			'FROM root_occurrences JOIN docs ON docs.rowid = root_occurrences.docid '
+			'WHERE root_occurrences.root = ?' + condition +
+			' GROUP BY docs.rowid ORDER BY docs.surah, docs.verse LIMIT ?', params + [cap]).fetchall()
+		if limit is None and len(rows) > TRUNC_MAX:
+			rows = rows[:TRUNC_MAX]
+			meta['truncated'] = True
+		results = []
+		for row in rows:
+			item = _format([row], row['root_words'].split(), offset=len(results))[0]
+			item['chips'] = ['Verse']
+			item['en_tafsir'] = item['bn_tafsir'] = item['ai'] = ''
+			if row['en']:
+				item['chips'].append('Translation')
+				item['translation'] = Markup(snippet(row['en'], []))
+			results.append(item)
+		return results, meta
+	finally:
+		conn.close()
 
 
 def _load_glossary():
@@ -444,9 +555,27 @@ def index_search(search_query, result_limit=10, dirname=None, search_fields=None
 	field = (field or 'all').lower()
 	col = FIELD_COLS.get(field)
 	raw = (search_query or '').strip()
-	meta = {'suggestions': [], 'corrected': None, 'truncated': False}
+	meta = {'suggestions': [], 'corrected': None, 'truncated': False, 'error': None}
 	if not raw:
 		return [], meta
+	if any(part.lower().startswith('root:') for part in raw.split()):
+		return _search_root(raw, field, result_limit, meta)
+	# Treat a recognized surah name followed by an annotated Arabic root as
+	# a scoped root search. Other mixed queries retain the keyword path.
+	parts = raw.split()
+	if field == 'all' and len(parts) == 2 and re.fullmatch(r'[A-Za-z-]+', parts[0]):
+		root, _ = normalize(parts[1])
+		if re.fullmatch(r'[\u0621-\u064a]{2,5}', root):
+			conn = _connect()
+			try:
+				surah = _surah_number(conn, parts[0])
+			finally:
+				conn.close()
+			if surah is not None:
+				root_results, root_meta = _search_root(
+					f'surah:{surah} root:{root}', field, result_limit, meta.copy())
+				if root_results:
+					return root_results, root_meta
 
 	gloss = _load_glossary()
 	match_expr, terms = _build_match(raw, col, gloss)
