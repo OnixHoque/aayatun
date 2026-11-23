@@ -360,7 +360,7 @@
         <option value="keyword">Keyword search</option>
         <option value="meaning">Search by meaning</option>
       </select>
-      <p>Meaning search looks for related English translations.</p>
+      <p data-meaning-status role="status"></p>
       {% endif %}
       <div class="field" style="width: 100%;">
         <div class="ui action large input">
@@ -378,6 +378,10 @@
   </div>
 </div>
 <div class="ui basic segment" style="padding: 0 !important; margin: 0 !important;">
+{% if meaning_search_enabled %}
+<script type="module" src="{{ url_for('static', filename='js/meaning-search.js') }}"
+  {% if local_meaning_model %}data-local-meaning-model{% endif %}></script>
+{% endif %}
 
   <div class="ui text container">
 

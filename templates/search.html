@@ -48,7 +48,7 @@
 			<option value="keyword" {% if search_mode != 'meaning' %}selected{% endif %}>Keyword search</option>
 			<option value="meaning" {% if search_mode == 'meaning' %}selected{% endif %}>Search by meaning</option>
 		</select>
-		<p>Meaning search looks for related English translations and returns up to ten verses.</p>
+		<p data-meaning-status role="status"></p>
 		{% endif %}
 		<div class="field" style="width: 100%;">
 			<div class="ui action large input">
@@ -64,7 +64,7 @@
 		<p class="search-hint" style="margin: 8px 2px 0; font-size: 84%; line-height: 1.45; opacity: .78; font-family: 'Open Sans'">Tip: jump straight to a verse by typing <b>Surah:Verse</b> — e.g. <b>2:255</b> or <b>2 255</b> — or to a surah with just <b>2</b>. Or search English or Arabic keywords, e.g. “mercy” / “رحمة”, “Abraham” / “إبراهيم”, “charity” / “صدقة”, “Paradise” / “جنة”.</p>
 		<p class="search-hint">Search an Arabic root with <b>root:رحم</b>, or restrict it to a surah with <b>surah:fatiha root:رحم</b>.</p>
 		{% if search_error %}<div class="ui warning message" role="alert">{{ search_error }}</div>{% endif %}
-		<div style="text-align: center;">
+		<div data-keyword-controls {% if search_mode == 'meaning' %}hidden{% endif %} style="text-align: center;">
 
 			<span  style="display: inline-block;">
 			  Search

@@ -11,6 +11,7 @@ import os
 import secrets
 import time
 from functools import lru_cache
+from pathlib import Path
 from datetime import datetime
 from urllib.parse import urlparse
 from flask import request, redirect, session, jsonify, make_response, url_for
@@ -32,7 +33,10 @@ app = Flask(__name__)
 
 @app.context_processor
 def search_modes():
-	return {'meaning_search_enabled': bool(os.environ.get('AAYATUN_SEMANTIC_URL'))}
+	return {
+		'meaning_search_enabled': (Path(app.static_folder) / 'meaning/index.json').is_file(),
+		'local_meaning_model': os.environ.get('AAYATUN_LOCAL_MEANING_MODEL') == '1',
+	}
 
 # Session signing key for the nav API token. Prefer an env var; otherwise keep
 # a generated key in a gitignored file so sessions survive reloads/restarts and
@@ -179,6 +183,14 @@ _search_fields = ('all', 'ayah', 'translation', 'en_tafsir', 'bn_tafsir', 'ai')
 @app.route('/search/', strict_slashes=False, methods = ['POST'])
 def search():
 	query_str = request.form['query_str']
+	mode = request.form.get('search_mode', 'keyword')
+	if mode == 'meaning':
+		import meaning_search
+		results, meta = meaning_search.search(
+			request.form.getlist('meaning_ref'), request.form.get('meaning_corpus'))
+		return render_template('search.html', query=query_str, results=results,
+			suggestions=[], corrected=None, limit_label=10, filter_value='translation:',
+			truncated=False, search_error=meta.get('error'), search_mode='meaning')
 	n = 25
 	field = 'all'
 
@@ -209,20 +221,14 @@ def search():
 	except Exception:
 		pass
 
-	mode = request.form.get('search_mode', 'keyword')
-	if mode == 'meaning':
-		import meaning_search
-		results_dict, meta = meaning_search.search(query_str.strip(), n, field)
-	else:
-		mode = 'keyword'
-		results_dict, meta = st.index_search(query_str.strip(), n, field=field)
+	results_dict, meta = st.index_search(query_str.strip(), n, field=field)
 	if n is None:
 		n = -1
 
 	return render_template('search.html', query=query_str, results=results_dict,
 		suggestions=meta['suggestions'], corrected=meta['corrected'],
 		limit_label=n, filter_value=field + ':', truncated=meta['truncated'],
-		search_error=meta.get('error'), search_mode=mode)
+		search_error=meta.get('error'), search_mode='keyword')
 
 # @app.route('/search/<query_str>', strict_slashes=False, methods = ['POST'])
 # def search2(query_str):
