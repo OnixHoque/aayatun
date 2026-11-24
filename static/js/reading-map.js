@@ -406,6 +406,8 @@
 		var prev = themeFocus;
 		themeFocus = next;
 		if (themeCells) {
+			var bulk = prev === null || next === null;
+			if (bulk && grid) grid.classList.add('rg-focus-bulk');
 			if (prev === null) {
 				for (var t = 0; t < themeCells.length; t++) {
 					if (t === next) continue;
@@ -423,6 +425,10 @@
 				var nextCells = themeCells[next];
 				for (var i = 0; i < prevCells.length; i++) prevCells[i].classList.add('rg-dim');
 				for (var j = 0; j < nextCells.length; j++) nextCells[j].classList.remove('rg-dim');
+			}
+			if (bulk && grid) {
+				grid.offsetHeight;
+				grid.classList.remove('rg-focus-bulk');
 			}
 		}
 		if (themeLegend) {
