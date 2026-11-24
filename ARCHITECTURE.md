@@ -732,14 +732,22 @@ Jaccard diversity. Set the knob to `1.0` to bypass reranking.
 selections, complete matches stay ahead of partial matches, then candidates
 that add an uncovered query term take priority. The first MMR selection is
 unchanged; later slots use normal MMR. Set the knob to `False` to roll back only
-this rule. Complete matches outrank partial matches; explicit syntax, wildcards,
-single words, mixed/non-Latin queries and unlimited result requests bypass the
-automatic FCS reranking path. `evaluation/compare_keyword_knobs.py` compares
-trusted revisions on the challenger fixtures and measures coverage against the
-effective field. Use `--english-multi --field <scope>` for FCS scope gates. Use
-`--field all` for the difficult multiword regression gate; its fixture-level
-Translation scope remains a diagnostic comparison, not the generalized
-All-fields acceptance path. The `db3/` Whoosh index is gone.
+this rule. When no complete candidate exists, Translation keeps its four strongest
+literal BM25 anchors stable and lets coverage compete for the remaining top-five
+slot. Its candidate pool preserves the literal top-five order before filling the
+remaining slots with stem-expanded candidates, and its stem tiers never match AI
+or tafsir columns. All-fields masks also credit exact surah-name terms. When the
+pre-FCS All-fields top five already cover the query through Translation alone, FCS
+preserves that BM25 order so commentary repetition cannot crowd out translation-
+relevant results; otherwise it allows coverage/MMR reranking.
+Complete matches outrank partial matches; explicit syntax, wildcards, single words,
+mixed/non-Latin queries and unlimited result requests bypass the automatic FCS
+reranking path. `evaluation/compare_keyword_knobs.py` compares trusted revisions on
+the challenger fixtures and measures coverage against the effective field. Use
+`--english-multi --field <scope>` for FCS scope gates. Use `--field all` for the
+difficult multiword regression gate; its fixture-level Translation scope remains a
+diagnostic comparison, not the generalized All-fields acceptance path. The `db3/`
+Whoosh index is gone.
 
 ### 4.11 In-process caches
 

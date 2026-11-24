@@ -196,6 +196,25 @@ class EnglishStemmingRankingTests(unittest.TestCase):
             self.assertIn('4:1', refs)
             self.assertNotIn('2:1', refs)
 
+    def test_translation_literal_tier_precedes_stem_expansion(self):
+        conn = searchtool._connect()
+        try:
+            raw = 'hard times patient worship seek support'
+            full, _ = searchtool._build_match(raw, 'en_norm', {}, join='AND')
+            match, _ = searchtool._build_match(raw, 'en_norm', {})
+            with patch('searchtool._english_stem_columns',
+                       return_value=searchtool._ENGLISH_STEM_COLUMNS):
+                tiers = searchtool._ranked_tiers(
+                    raw, 'en_norm', {}, full, match, conn)
+            docs = [expr for source, expr, _ in tiers if source == 'docs']
+            stems = [index for index, (source, _, _) in enumerate(tiers)
+                     if source == 'stem']
+            literal_start = docs.index(full)
+            self.assertEqual(docs[literal_start:literal_start + 2], [full, match])
+            self.assertLess(tiers.index(('docs', match, None)), min(stems))
+        finally:
+            conn.close()
+
     def test_surah_stem_tier_precedes_exact_surah_tier(self):
         conn = searchtool._connect()
         try:
@@ -213,6 +232,22 @@ class EnglishStemmingRankingTests(unittest.TestCase):
             stem_or = next(i for i, (source, expr, _) in enumerate(tiers)
                            if source == 'stem' and ' OR ' in expr and _ is None)
             self.assertLess(stem_and, stem_or)
+        finally:
+            conn.close()
+
+    def test_translation_surah_scope_only_matches_translation_stems(self):
+        conn = searchtool._connect()
+        try:
+            with patch('searchtool._english_stem_columns',
+                       return_value=searchtool._ENGLISH_STEM_COLUMNS):
+                tiers = searchtool._ranked_tiers(
+                    'Luqman Parent', 'en_norm', {}, None, None, conn)
+            scoped = [(expr, surah) for source, expr, surah in tiers
+                      if source == 'stem' and surah == 31]
+            self.assertTrue(scoped)
+            self.assertTrue(all(expr.startswith('en_norm :') and
+                                'ai_norm' not in expr and 'en_tafsir_norm' not in expr
+                                for expr, _ in scoped))
         finally:
             conn.close()
 
@@ -257,8 +292,15 @@ class EnglishStemmingRankingTests(unittest.TestCase):
             self.assertIn('stem_ai_norm', rows[0].keys())
             self.assertNotIn('stem_en_norm', rows[0].keys())
             self.assertNotIn('stem_en_tafsir_norm', rows[0].keys())
+            self.assertIn('[teachings]', rows[0]['stem_ai_norm'])
             self.assertIn('ai', rows[0].keys())
             self.assertNotIn('en_tafsir', rows[0].keys())
+            tafsir_rows = searchtool._run_stem_query(
+                db, 'en_tafsir_norm : (believer)', 10, col='en_tafsir_norm')
+            self.assertTrue(tafsir_rows)
+            self.assertIn('[believers]', tafsir_rows[0]['stem_en_tafsir_norm'])
+            self.assertNotIn('stem_ai_norm', tafsir_rows[0].keys())
+            self.assertNotIn('stem_en_norm', tafsir_rows[0].keys())
 
     def test_scoped_results_only_render_the_selected_field(self):
         row = {
@@ -500,6 +542,18 @@ class CoverageMmrRankingTests(unittest.TestCase):
             self.assertEqual(by_ref['31:14'], 0b01)
             self.assertEqual(by_ref['2:1'], 0b10)
             self.assertEqual(by_ref['4:1'], 0b11)
+            surah_rows = searchtool._run_stem_query(db, 'parent', 10)
+            surah_masks = searchtool._matched_term_masks(
+                db, ['luqman', 'parent'], surah_rows)
+            surah_by_ref = {f"{row['surah']}:{row['verse']}": mask
+                            for row, mask in zip(surah_rows, surah_masks)}
+            self.assertEqual(surah_by_ref['31:14'], 0b11)
+            self.assertEqual(surah_by_ref['4:1'], 0b10)
+            scoped = searchtool._matched_term_masks(
+                db, ['luqman', 'parent'], surah_rows, 'en_norm')
+            scoped_by_ref = {f"{row['surah']}:{row['verse']}": mask
+                             for row, mask in zip(surah_rows, scoped)}
+            self.assertEqual(scoped_by_ref['31:14'], 0b10)
             index = next(i for i, row in enumerate(rows)
                          if f"{row['surah']}:{row['verse']}" == '4:1')
             for col, expected in [('en_norm', 0b01), ('ai_norm', 0b10),
@@ -526,6 +580,32 @@ class CoverageMmrRankingTests(unittest.TestCase):
         self.assertEqual(ranked[0]['id'], 'full')
         self.assertLess(ranked.index(rows[2]), ranked.index(rows[3]))
 
+    def test_translation_mmr_preserves_four_literal_anchors(self):
+        rows = [{'id': f'anchor-{index}'} for index in range(4)]
+        rows.extend([{'id': 'novel-1'}, {'id': 'novel-2'}])
+        words = ['alpha', 'beta', 'gamma']
+        masks = [0b001] * 4 + [0b010, 0b100]
+        ranked = searchtool._mmr_rerank(
+            rows, words, masks, 5, 0.7, top5_coverage=True,
+            preserve_baseline=True)
+        self.assertEqual([row['id'] for row in ranked[:4]],
+                         [f'anchor-{index}' for index in range(4)])
+        self.assertEqual(len(ranked), 5)
+        self.assertEqual(len({row['id'] for row in ranked}), 5)
+        self.assertIn(ranked[4]['id'], ('novel-1', 'novel-2'))
+        complete = searchtool._mmr_rerank(
+            rows, words, [0b001] * 4 + [0b111, 0b100], 5, 0.7,
+            top5_coverage=True, preserve_baseline=True)
+        self.assertEqual(complete[0]['id'], 'novel-1')
+        for count, limit in ((2, 10), (2, 1), (0, 5)):
+            with self.subTest(count=count, limit=limit):
+                short = rows[:count]
+                result = searchtool._mmr_rerank(
+                    short, words, masks[:count], limit, 0.7,
+                    top5_coverage=True, preserve_baseline=True)
+                self.assertEqual(len(result), min(count, limit))
+                self.assertEqual(len({row['id'] for row in result}), len(result))
+
     def test_mmr_ties_and_limits_are_deterministic(self):
         rows = [{'id': 'first'}, {'id': 'second'}, {'id': 'third'}]
         words = ['alpha', 'beta']
@@ -550,6 +630,20 @@ class CoverageMmrRankingTests(unittest.TestCase):
                 refs = [f"{hit['surah']}:{hit['verse']}" for hit in hits]
                 self.assertLessEqual(len(refs), searchtool.MMR_CANDIDATE_POOL)
                 self.assertEqual(len(refs), len(set(refs)))
+
+    def test_translation_pool_reserves_a_slot_for_missing_stem_terms(self):
+        literal = [{'rowid': index, 'surah': 1, 'verse': index}
+                   for index in range(1, 51)]
+        stem = [{'rowid': 51, 'surah': 2, 'verse': 1}]
+        tiers = [('docs', row) for row in literal] + [('stem', row) for row in stem]
+
+        with patch('searchtool._ranked_row_tiers', return_value=tiers):
+            rows = searchtool._translation_candidate_rows(
+                None, 'alpha beta', {}, None, None, 50)
+        self.assertEqual(rows[:5], literal[:5])
+        self.assertEqual(len(rows), 50)
+        self.assertEqual(len({(row['surah'], row['verse']) for row in rows}), 50)
+        self.assertIn(stem[0], rows)
 
     def test_bypassed_searches_do_not_call_mmr(self):
         with patch('searchtool._mmr_rerank', side_effect=AssertionError('MMR called')):
@@ -577,13 +671,29 @@ class CoverageMmrRankingTests(unittest.TestCase):
                 self.assertTrue(hits)
                 self.assertTrue(rerank.called)
                 self.assertTrue(rerank.call_args.kwargs['top5_coverage'])
-                self.assertEqual(masks.call_args.args[3], col)
+                self.assertEqual(rerank.call_args.kwargs['preserve_baseline'],
+                                 col == 'en_norm')
+                self.assertEqual(masks.call_args_list[0].args[3], col)
 
     def test_luqman_parent_keeps_parent_verse_first(self):
         hits, _ = index_search('Luqman Parent', 5, field='all')
         self.assertEqual(f"{hits[0]['surah']}:{hits[0]['verse']}", '31:14')
         refs = [f"{hit['surah']}:{hit['verse']}" for hit in hits]
         self.assertEqual(len(refs), len(set(refs)))
+
+    def test_all_fields_preserves_translation_complete_baseline(self):
+        with patch('searchtool._mmr_rerank',
+                   side_effect=AssertionError('MMR called')):
+            hits, _ = index_search('indeed allah lord', 5, field='all')
+        refs = [f"{hit['surah']}:{hit['verse']}" for hit in hits]
+        self.assertEqual(refs, ['60:4', '7:54', '14:39', '16:110', '35:34'])
+
+    def test_all_fields_baseline_guard_respects_top5_knob(self):
+        with patch('searchtool.SEARCH_TOP5_COVERAGE', False), \
+                patch('searchtool._mmr_rerank',
+                      wraps=searchtool._mmr_rerank) as rerank:
+            index_search('indeed allah lord', 5, field='all')
+        self.assertTrue(rerank.called)
 
 
 class TopFiveCoverageRankingTests(unittest.TestCase):
@@ -749,6 +859,9 @@ class DifficultTranslationCoverageRegressionTests(unittest.TestCase):
             ('hatred enemies fair judgment righteousness', '5:8'),
             ('enter home permission greeting inhabitants', '24:27'),
             ('sinners despair hope mercy forgiveness', '39:53'),
+            ('hard times patient worship seek support', '2:153'),
+            ('fairness kindness family oppression forbidden', '16:90'),
+            ('tribes ethnicities honor righteousness meet', '49:13'),
         ]
         for query, expected in cases:
             with self.subTest(query=query):

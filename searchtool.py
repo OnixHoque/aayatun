@@ -427,9 +427,12 @@ def _english_stem_columns(conn):
 
 
 def _stem_expr(words, columns, gloss, join='AND'):
-	field_set = columns[0] if len(columns) == 1 else '{' + ' '.join(columns) + '}'
+	expanded = [_expand(word, gloss) for word in words]
+	if len(columns) == 1:
+		return f'{columns[0]} : (' + f' {join} '.join(expanded) + ')'
+	field_set = '{' + ' '.join(columns) + '}'
 	return f' {join} '.join(
-		f'{field_set} : ({_expand(word, gloss)})' for word in words)
+		f'{field_set} : ({term})' for term in expanded)
 
 
 def _surah_stem_tiers(conn, words, columns, gloss):
@@ -483,6 +486,9 @@ def _matched_term_masks(conn, words, rows, col=None):
 				'SELECT rowid FROM english_stem WHERE english_stem MATCH ? '
 				'AND rowid IN (' + placeholders + ')',
 				[f'{field_set} : ({word})'] + rowids)}
+			if col is None:
+				matches.update(row['rowid'] for row in rows
+						   if _row_has_exact_term(row, word, 'surah_name'))
 		else:
 			matches = {row['rowid'] for row in rows
 					   if _row_has_exact_term(row, word, col)}
@@ -500,7 +506,8 @@ def _jaccard(left, right):
 	return _mask_size(left & right) / _mask_size(union) if union else 0.0
 
 
-def _mmr_rerank(rows, words, masks, limit, lambda_value=None, top5_coverage=False):
+def _mmr_rerank(rows, words, masks, limit, lambda_value=None, top5_coverage=False,
+				 preserve_baseline=False):
 	"""Greedily balance coverage, early term diversity, and redundancy."""
 	if not rows or limit <= 0:
 		return []
@@ -509,7 +516,7 @@ def _mmr_rerank(rows, words, masks, limit, lambda_value=None, top5_coverage=Fals
 	if lambda_value is None:
 		lambda_value = SEARCH_MMR_LAMBDA
 	remaining = list(range(len(rows)))
-	selected, selected_masks = [], []
+	selected, selected_masks, selected_indices = [], [], []
 	covered_mask = 0
 	full_mask = (1 << len(words)) - 1
 	while remaining and len(selected) < limit:
@@ -540,8 +547,17 @@ def _mmr_rerank(rows, words, masks, limit, lambda_value=None, top5_coverage=Fals
 		chosen_mask = masks[best_index] if best_index < len(masks) else 0
 		selected.append(rows[best_index])
 		selected_masks.append(chosen_mask)
+		selected_indices.append(best_index)
 		covered_mask |= chosen_mask
 		remaining.remove(best_index)
+	if (top5_coverage and preserve_baseline and
+			not any(mask == full_mask for mask in masks)):
+		# Translation paraphrases can be lexically sparse. Keep the four
+		# strongest literal matches stable and let coverage compete for the
+		# remaining top-five slot instead of displacing all BM25 anchors.
+		protected = list(range(min(4, limit, len(rows))))
+		protected.extend(index for index in selected_indices if index not in protected)
+		return [rows[index] for index in protected[:limit]]
 	return selected
 
 
@@ -593,11 +609,11 @@ def _ranked_tiers(raw, col, gloss, full_expr, match_expr, conn=None):
 				if re.search(r'[\u0980-\u09ff]', normalized):
 					columns += ' bn_tafsir_norm'
 				add('docs', '{' + columns + '} : (' + combined + ')')
-			if stem_ready and not col and conn is not None:
-				# Prefer the verse translation inside a recognized surah before
-				# commentary that may merely discuss the same keyword.
-				for expr, surah in _surah_stem_tiers(conn, latin_words, ['en_norm'], gloss):
-					add('stem', expr, surah)
+		if stem_ready and conn is not None and col in (None, 'en_norm'):
+			# A recognized surah can scope Translation matches without searching
+			# commentary columns or treating the surah name as translated content.
+			for expr, surah in _surah_stem_tiers(conn, latin_words, ['en_norm'], gloss):
+				add('stem', expr, surah)
 		if not col:
 			if SEARCH_CROSS_FIELD_AND and conn is not None:
 				for expr in _surah_cross_field_exprs(conn, words, gloss):
@@ -612,6 +628,10 @@ def _ranked_tiers(raw, col, gloss, full_expr, match_expr, conn=None):
 				generic = _cross_field_expr(words, _ALL_COLUMNS, gloss)
 				add('docs', generic)
 	add('docs', full_expr)
+	if col == 'en_norm':
+		# Literal Translation matches retain priority inside the bounded MMR
+		# pool; stemming expands the candidate set without displacing it.
+		add('docs', match_expr)
 	if stem_ready:
 		columns = stem_columns if col is None else [col]
 		add('stem', _stem_expr(latin_words, columns, gloss))
@@ -632,12 +652,11 @@ def _ranked_queries(raw, col, gloss, full_expr, match_expr, conn=None):
 
 
 def _run_stem_query(conn, match_expr, limit, surah=None, col=None):
-	columns = _english_stem_columns(conn)
-	if col is not None:
-		columns = [col] if col in columns else []
+	table_columns = [row[1] for row in conn.execute('PRAGMA table_info(english_stem)')]
 	highlights = ', '.join(
 		f"highlight(english_stem, {index}, '[', ']') AS stem_{column}"
-		for index, column in enumerate(columns))
+		for index, column in enumerate(table_columns)
+		if col is None or column == col)
 	if col is None:
 		selected = ('docs.rowid AS rowid, docs.surah, docs.verse, docs.surah_name, '
 			    'docs.ar_orig, docs.en, docs.ai, docs.en_tafsir, docs.bn_tafsir')
@@ -659,12 +678,78 @@ def _run_stem_query(conn, match_expr, limit, surah=None, col=None):
 	return conn.execute(sql, params).fetchall()
 
 
-def _ranked_rows(conn, raw, col, gloss, full_expr, match_expr, limit):
+def _merge_stem_metadata(row, stem_row):
+	merged = dict(row)
+	for key in stem_row.keys():
+		if key.startswith('stem_'):
+			merged[key] = stem_row[key]
+	return merged
+
+
+def _ranked_row_tiers(conn, raw, col, gloss, full_expr, match_expr, limit):
 	for source, expr, surah in _ranked_tiers(raw, col, gloss, full_expr, match_expr, conn):
-		if source == 'stem':
-			yield from _run_stem_query(conn, expr, limit, surah, col)
-		else:
-			yield from _run_query(conn, expr, limit)
+		rows = (_run_stem_query(conn, expr, limit, surah, col) if source == 'stem' else
+				_run_query(conn, expr, limit))
+		for row in rows:
+			yield source, row
+
+
+def _ranked_rows(conn, raw, col, gloss, full_expr, match_expr, limit):
+	for _, row in _ranked_row_tiers(conn, raw, col, gloss, full_expr, match_expr, limit):
+		yield row
+
+
+def _baseline_all_rows(conn, raw, gloss, full_expr, match_expr, limit):
+	"""Return the pre-FCS All-fields BM25 order for plain keyword queries."""
+	words = _plain_keywords(raw)
+	if not words:
+		return []
+	phrase_text = '"' + ' '.join(words) + '"'
+	phrases = [_build_match(phrase_text, column, gloss)[0]
+			   for column in ('ar_norm', 'en_norm')]
+	queries = [' OR '.join(p for p in phrases if p), full_expr, match_expr]
+	rows, seen = [], set()
+	for expr in queries:
+		if not expr:
+			continue
+		for row in _run_query(conn, expr, limit):
+			key = (row['surah'], row['verse'])
+			if key in seen:
+				continue
+			seen.add(key)
+			rows.append(row)
+			if len(rows) == limit:
+				return rows
+	return rows
+
+
+def _translation_candidate_rows(conn, raw, gloss, full_expr, match_expr, limit):
+	"""Keep literal top-five order and reserve the rest of the pool for stemming."""
+	literal, stem = [], []
+	positions = {}
+	for source, row in _ranked_row_tiers(
+			conn, raw, 'en_norm', gloss, full_expr, match_expr, limit):
+		key = (row['surah'], row['verse'])
+		if key in positions:
+			if source == 'stem':
+				target, index = positions[key]
+				target[index] = _merge_stem_metadata(target[index], row)
+			continue
+		target = stem if source == 'stem' else literal
+		if len(target) < limit:
+			positions[key] = (target, len(target))
+			target.append(row)
+	baseline = literal[:min(5, limit)]
+	rows = baseline + stem[:max(0, limit - len(baseline))]
+	selected = {(row['surah'], row['verse']) for row in rows}
+	for row in literal[len(baseline):]:
+		key = (row['surah'], row['verse'])
+		if key not in selected:
+			rows.append(row)
+			selected.add(key)
+			if len(rows) == limit:
+				break
+	return rows
 
 
 # Hard cap on rendered rows: "Show all results" with a broad query would
@@ -874,15 +959,37 @@ def index_search(search_query, result_limit=10, dirname=None, search_fields=None
 		sql_limit = MMR_CANDIDATE_POOL if mmr_words else ((TRUNC_MAX + 1) if need_all else result_limit)
 		rows = []
 		seen = set()
+		baseline_rows = []
 		if match_expr:
 			try:
-				for row in _ranked_rows(conn, raw, col, gloss, full_expr, match_expr, sql_limit):
-					key = (row['surah'], row['verse'])
-					if key not in seen:
-						rows.append(row)
-						seen.add(key)
-						if len(rows) == sql_limit:
-							break
+				if mmr_words and col == 'en_norm':
+					rows = _translation_candidate_rows(
+						conn, raw, gloss, full_expr, match_expr, sql_limit)
+				else:
+					positions = {}
+					for source, row in _ranked_row_tiers(
+							conn, raw, col, gloss, full_expr, match_expr, sql_limit):
+						key = (row['surah'], row['verse'])
+						if key in positions:
+							if source == 'stem':
+								rows[positions[key]] = _merge_stem_metadata(
+									rows[positions[key]], row)
+							continue
+						if len(rows) < sql_limit:
+							positions[key] = len(rows)
+							rows.append(row)
+							seen.add(key)
+							if len(rows) == sql_limit:
+								break
+				if mmr_words and col is None and SEARCH_TOP5_COVERAGE:
+					baseline_rows = _baseline_all_rows(
+						conn, raw, gloss, full_expr, match_expr, 5)
+					positions = {(row['surah'], row['verse']) for row in rows}
+					for row in baseline_rows:
+						key = (row['surah'], row['verse'])
+						if key not in positions and len(rows) < sql_limit:
+							rows.append(row)
+							positions.add(key)
 			except sqlite3.OperationalError:
 				# Malformed boolean/paren mix the user typed: plain OR of tokens.
 				n, _ = normalize(raw)
@@ -928,9 +1035,23 @@ def index_search(search_query, result_limit=10, dirname=None, search_fields=None
 						meta['suggestions'] = corrected
 		if mmr_words and rows:
 			masks = _matched_term_masks(conn, mmr_words, rows, col)
-			rows = _mmr_rerank(
-				rows, mmr_words, masks, min(int(result_limit), MMR_CANDIDATE_POOL),
-				SEARCH_MMR_LAMBDA, top5_coverage=SEARCH_TOP5_COVERAGE)
+			preserve_baseline_top5 = False
+			if baseline_rows:
+				baseline_masks = _matched_term_masks(
+					conn, mmr_words, baseline_rows, 'en_norm')
+				covered = 0
+				for mask in baseline_masks[:min(5, int(result_limit))]:
+					covered |= mask
+				preserve_baseline_top5 = covered == (1 << len(mmr_words)) - 1
+			if preserve_baseline_top5:
+				baseline_keys = {(row['surah'], row['verse']) for row in baseline_rows}
+				rows = baseline_rows + [row for row in rows
+					if (row['surah'], row['verse']) not in baseline_keys]
+			else:
+				rows = _mmr_rerank(
+					rows, mmr_words, masks, min(int(result_limit), MMR_CANDIDATE_POOL),
+					SEARCH_MMR_LAMBDA, top5_coverage=SEARCH_TOP5_COVERAGE,
+					preserve_baseline=col == 'en_norm')
 		if not need_all and len(rows) > result_limit:
 			rows = rows[:result_limit]
 		if need_all and len(rows) > TRUNC_MAX:
