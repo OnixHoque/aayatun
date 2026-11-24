@@ -616,7 +616,7 @@ html.dark-theme .reel-end-hint.is-overlay {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   flex: 1 1 auto;
-  padding: 4px 8px 8px;
+  padding: 0 0 8px;
   text-align: left;
   white-space: pre-wrap;
   touch-action: pan-y;
