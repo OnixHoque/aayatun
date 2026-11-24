@@ -920,7 +920,7 @@ def _correct_query(raw, max_tokens=6):
 	if not vocab:
 		return None
 	corrected, changed = [], False
-	plain_english = _plain_english_query(raw)
+	plain_english = _plain_english_query(raw) and len(n.split()) == 1
 	for t in n.split()[:max_tokens]:
 		if len(t) < 4 or (plain_english and t in _english_words()):
 			corrected.append(t)

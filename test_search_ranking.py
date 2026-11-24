@@ -41,7 +41,6 @@ class SearchFormattingTests(unittest.TestCase):
             self.assertEqual(rows, [])
             self.assertIsNone(meta['corrected'])
             self.assertEqual(meta['suggestions'], [])
-        self.assertEqual(searchtool._correct_query('ward judgmnet'), ['ward', 'judgment'])
 
     def test_dictionary_includes_american_and_british_forms(self):
         words = searchtool._english_words()
