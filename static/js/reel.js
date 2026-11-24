@@ -87,11 +87,9 @@
 	// history end picks an unseen verse (Surprise Me source: read map v2), else
 	// any random verse; up goes back. Swipe up then down returns the same verse.
 	var SHUFFLE_KEY = 'aayatun_reel_shuffle_v1';
-	var shuffleOn = true;
+	var shuffleOn = false;
 	try {
-		var _shuffleSaved = localStorage.getItem(SHUFFLE_KEY);
-		if (_shuffleSaved === '0') shuffleOn = false;
-		else if (_shuffleSaved === '1') shuffleOn = true;
+		if (localStorage.getItem(SHUFFLE_KEY) === '1') shuffleOn = true;
 	} catch (e) {}
 	var shuffleHistory = []; // [[surah, verse], ...], session-only
 	var shuffleCursor = -1;
