@@ -182,7 +182,8 @@ html.dark-theme .reel {
 }
 
 .reel-stage.is-initial-overview .reel-verse,
-.reel-stage.is-initial-overview .reel-verse-meaning {
+.reel-stage.is-initial-overview .reel-verse-meaning,
+.reel-stage.is-initial-overview .reel-top-translation {
   display: none;
 }
 
@@ -319,17 +320,53 @@ html.dark-theme .reel {
   opacity: 1;
 }
 
-.reel-verse-meaning {
-  font-size: 1.1rem;
-  color: var(--reel-muted);
-  min-height: 1.4em;
+.reel-top-translation {
+  width: 100%;
+  max-width: 720px;
   margin-top: 6px;
   flex: 0 0 auto;
+  min-height: 1.4em;
+}
+
+.reel-verse-meaning,
+.reel-actual-translation {
+  font-size: 1.1rem;
   line-height: 1.6;
   text-align: left;
   width: 100%;
   max-width: 720px;
   min-height: 0;
+}
+
+.reel-verse-meaning {
+  color: var(--reel-muted);
+}
+
+.reel-actual-translation {
+  display: none;
+  color: var(--reel-fg);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.reel-stage.show-actual-translation .reel-verse-meaning {
+  display: none;
+}
+
+.reel-stage.show-actual-translation .reel-actual-translation {
+  display: block;
+  animation: reelActualFadeIn 240ms ease;
+}
+
+@keyframes reelActualFadeIn {
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reel-stage.show-actual-translation .reel-actual-translation {
+    animation: none;
+  }
 }
 
 .reel-verse-meaning .rv-meaning {

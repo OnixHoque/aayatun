@@ -16,6 +16,7 @@
 	var nextPane = document.getElementById('reel-pane-next');
 	var verseBox = document.getElementById('reel-verse');
 	var verseMeaning = document.getElementById('reel-verse-meaning');
+	var actualTranslationEl = document.getElementById('reel-actual-translation');
 	var refNum = document.getElementById('reel-ref-num');
 	var wordAr = document.getElementById('reel-word-ar');
 	var wordMeaning = document.getElementById('reel-word-meaning');
@@ -332,8 +333,11 @@
 	}
 
 	function applyTopFontSizes(v, m) {
+		var actualMode = stage && stage.classList.contains('show-actual-translation');
+		if (actualMode) return;
 		if (verseBox) verseBox.style.fontSize = v + 'rem';
 		if (verseMeaning) verseMeaning.style.fontSize = m + 'rem';
+		if (actualTranslationEl) actualTranslationEl.style.fontSize = '';
 	}
 
 	function fitVerseFont() {
@@ -346,12 +350,14 @@
 		if (top.scrollHeight > top.clientHeight + 1) return true;
 		if (verseBox && verseBox.scrollHeight > verseBox.clientHeight + 1) return true;
 		if (verseMeaning && verseMeaning.scrollHeight > verseMeaning.clientHeight + 1) return true;
+		if (actualTranslationEl && actualTranslationEl.scrollHeight > actualTranslationEl.clientHeight + 1) return true;
 		return false;
 	}
 
 	function fitTopToContainer() {
 		var top = verseBox ? verseBox.closest('.reel-top') : null;
 		if (!top || !verseBox) return;
+		if (stage && stage.classList.contains('show-actual-translation')) return;
 		var b = baseTopFontSizes();
 		var v = b.v, m = b.m;
 		applyTopFontSizes(v, m);
@@ -372,12 +378,18 @@
 				verseBox.style.lineHeight = String(lh);
 			}
 		}
-		if (topOverflows(top) && verseMeaning) {
-			verseMeaning.style.marginTop = '2px';
-			verseMeaning.style.lineHeight = '1.3';
-		} else if (verseMeaning) {
-			verseMeaning.style.marginTop = '';
-			verseMeaning.style.lineHeight = '';
+		var trEl = (stage && stage.classList.contains('show-actual-translation')) ? actualTranslationEl : verseMeaning;
+		if (topOverflows(top) && trEl) {
+			trEl.style.marginTop = '2px';
+			trEl.style.lineHeight = '1.3';
+		}
+		if (verseMeaning) {
+			if (trEl !== verseMeaning) { verseMeaning.style.marginTop = ''; verseMeaning.style.lineHeight = ''; }
+			else if (!topOverflows(top)) { verseMeaning.style.marginTop = ''; verseMeaning.style.lineHeight = ''; }
+		}
+		if (actualTranslationEl) {
+			if (trEl !== actualTranslationEl) { actualTranslationEl.style.marginTop = ''; actualTranslationEl.style.lineHeight = ''; }
+			else if (!topOverflows(top)) { actualTranslationEl.style.marginTop = ''; actualTranslationEl.style.lineHeight = ''; }
 		}
 	}
 
@@ -422,6 +434,7 @@
 		if (verseMeaning) verseMeaning.innerHTML = '';
 		if (verseBox) verseBox.style.lineHeight = '';
 		if (verseMeaning) { verseMeaning.style.marginTop = ''; verseMeaning.style.lineHeight = ''; }
+		if (actualTranslationEl) { actualTranslationEl.style.marginTop = ''; actualTranslationEl.style.lineHeight = ''; }
 		scheduleTopFit();
 	}
 
@@ -766,8 +779,37 @@
 		if (morphCredit) morphCredit.hidden = true;
 	}
 
+	function setTopActualTranslation(on) {
+		var turningOn = !!on && !(stage && stage.classList.contains('show-actual-translation'));
+		if (turningOn) {
+			// Keep AI-mode top sizes locked to the final word-by-word layout.
+			if (actualTranslationEl && verseMeaning) {
+				var fs = verseMeaning.style.fontSize;
+				if (!fs) {
+					try { fs = window.getComputedStyle(verseMeaning).fontSize; } catch (e) { fs = ''; }
+				}
+				if (fs) actualTranslationEl.style.fontSize = fs;
+			}
+			if (verseBox) {
+				var vfs = verseBox.style.fontSize;
+				if (!vfs) {
+					try { vfs = window.getComputedStyle(verseBox).fontSize; } catch (e) { vfs = ''; }
+				}
+				if (vfs) verseBox.style.fontSize = vfs;
+			}
+		}
+		if (!on) {
+			if (actualTranslationEl) actualTranslationEl.style.fontSize = '';
+			if (verseBox) verseBox.style.fontSize = '';
+		}
+		if (stage) stage.classList.toggle('show-actual-translation', !!on);
+		if (actualTranslationEl && state.data) actualTranslationEl.textContent = state.data.translation || '';
+		scheduleTopFit();
+	}
+
 	function resetEndPanel() {
 		if (stage) stage.classList.remove('is-ended');
+		setTopActualTranslation(false);
 		if (endPanel) endPanel.hidden = true;
 		if (endScroll) endScroll.scrollTop = 0;
 		if (endContext) endContext.textContent = '';
@@ -783,7 +825,8 @@
 			resetEndPanel();
 			return;
 		}
-		// ended layout: top 25% keeps built verse/translation, lower 75% shows end panel
+		// ended layout: top 25% keeps built verse/actual translation, lower 75% shows end panel
+		setTopActualTranslation(true);
 		clearMiddle({ immediate: true });
 		if (wordAr) wordAr.style.display = 'none';
 		if (wordMeaning) wordMeaning.style.display = 'none';
@@ -1330,6 +1373,7 @@
 
 	function leaveEndDone() {
 		state.ended = true;
+		setTopActualTranslation(true);
 		if (endHint) { endHint.hidden = true; endHint.classList.remove('is-overlay'); }
 		if (stage) stage.classList.add('is-ended');
 		if (endPanel) endPanel.hidden = false;
@@ -1853,6 +1897,7 @@
 		state.idx = 0;
 		state.ended = false;
 		state.phase = 'idle';
+		if (actualTranslationEl) actualTranslationEl.textContent = data.translation || '';
 		cache[key(data.surah, data.verse)] = data;
 		updateMeta(data);
 		buildProgressPills();
@@ -2267,6 +2312,7 @@
 	clearBottom();
 	showEnd(false);
 	centerTrack(false);
+	if (actualTranslationEl) actualTranslationEl.textContent = (state.data && state.data.translation) || '';
 	seedShuffleHistory(state.data);
 	prefetchNeighbors();
 	emitVerse(state.data);
