@@ -21,8 +21,11 @@
 	var wordMeaning = document.getElementById('reel-word-meaning');
 	var chipsEl = document.getElementById('reel-chips');
 	var middleEl = document.querySelector('#reel-stage .reel-middle');
-	var defHead = document.getElementById('reel-def-head');
+	var defRoot = document.getElementById('reel-def-root');
+	var defSep = document.getElementById('reel-def-sep');
 	var defText = document.getElementById('reel-def-text');
+	var defLine = document.getElementById('reel-def-line');
+	var morphCredit = document.getElementById('reel-morph-credit');
 	var playBtn = document.getElementById('reel-play');
 	var playIcon = document.getElementById('reel-play-icon');
 	var prevPartBtn = document.getElementById('reel-prev-part');
@@ -703,8 +706,10 @@
 	}
 
 	function clearBottom() {
-		if (defHead) defHead.innerHTML = '';
+		if (defRoot) defRoot.textContent = '';
+		if (defSep) defSep.textContent = '';
 		if (defText) defText.textContent = '';
+		if (morphCredit) morphCredit.hidden = true;
 	}
 
 	function resetEndPanel() {
@@ -1034,15 +1039,18 @@
 		var key = word.defKey;
 		var root = state.data.roots && key ? state.data.roots[key] : null;
 		if (root) {
+			var text = String(root.text || '').replace(/<br\s*\/?>/gi, '\n');
+			if (root.meaning && !root.v2) text = String(root.meaning) + (text ? ' — ' + text : '');
 			return {
-				headHtml: '<span class="root-ar">' + escapeHtml(root.ar || word.root || '') + '</span>' +
-					(root.meaning ? ' — ' + escapeHtml(root.meaning) : ''),
-				text: String(root.text || '').replace(/<br\s*\/?>/gi, '\n')
+				root: root.ar || word.root || word.lemma || '',
+				text: text,
+				v2: !!root.v2
 			};
 		}
 		return {
-			headHtml: '<span class="root-ar">' + escapeHtml(word.lemma || word.root || word.ar || '') + '</span>',
-			text: word.meaning || ''
+			root: word.lemma || word.root || word.ar || '',
+			text: word.meaning || '',
+			v2: false
 		};
 	}
 
@@ -1066,11 +1074,11 @@
 		var target = state.twTarget || defText;
 		if (target) target.textContent = state.twText.slice(0, next);
 		// Keep typing position in view.
-		if (target === defText && defText) defText.scrollTop = defText.scrollHeight;
+		if (target === defText && defLine) defLine.scrollTop = defLine.scrollHeight;
 		if (state.phase === 'end-wm-type' && endScroll) endScroll.scrollTop = endScroll.scrollHeight;
 		if (state.phase === 'end-context' && endScroll) endScroll.scrollTop = endScroll.scrollHeight;
 		if (state.twPos < state.twText.length) {
-			state.twTimer = setTimeout(typeStep, ms(18));
+			state.twTimer = setTimeout(typeStep, ms(21));
 		} else {
 			onTypewriterDone();
 		}
@@ -1088,7 +1096,7 @@
 			onTypewriterDone();
 			return;
 		}
-		state.twTimer = setTimeout(typeStep, ms(18));
+		state.twTimer = setTimeout(typeStep, ms(21));
 	}
 	function pauseTypewriter() {
 		if (state.twTimer) { clearTimeout(state.twTimer); state.twTimer = null; }
@@ -1575,8 +1583,11 @@
 			});
 		} else if (phase === 'rootmeaning') {
 			var def = defForWord(w);
-			if (defHead) defHead.innerHTML = def.headHtml;
+			if (defRoot) defRoot.textContent = def.root || '';
+			if (defSep) defSep.textContent = def.root ? ': ' : '';
 			if (bottom) bottom.scrollTop = 0;
+			if (morphCredit) morphCredit.hidden = !def.v2;
+			scheduleMiddleFit();
 			startTypewriter(def.text, defText);
 			// advance on typewriter completion (onTypewriterDone)
 		} else if (phase === 'fly') {
@@ -1649,8 +1660,11 @@
 				// typewriter not started yet (e.g. paused immediately)
 				var w = (state.data.words || [])[state.idx] || {};
 				var def = defForWord(w);
-				if (defHead) defHead.innerHTML = def.headHtml;
+				if (defRoot) defRoot.textContent = def.root || '';
+				if (defSep) defSep.textContent = def.root ? ': ' : '';
 				if (bottom) bottom.scrollTop = 0;
+				if (morphCredit) morphCredit.hidden = !def.v2;
+				scheduleMiddleFit();
 				startTypewriter(def.text, defText);
 			}
 			return;
@@ -1894,8 +1908,8 @@
 		var overlayHint = target.closest ? target.closest('.reel-end-hint.is-overlay') : null;
 		if (overlayHint) return true;
 
-		if (defText && target.closest && target.closest('#reel-bottom')) {
-			if (defText.scrollHeight > defText.clientHeight + 4) return false;
+		if (defLine && target.closest && target.closest('#reel-bottom')) {
+			if (defLine.scrollHeight > defLine.clientHeight + 4) return false;
 		}
 		if (endPanel && target.closest && target.closest('#reel-end-panel')) {
 			// Keep verse swipe working in AI context word-meaning boxes (including headings/brackets).

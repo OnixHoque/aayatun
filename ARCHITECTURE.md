@@ -345,7 +345,9 @@ All routes live in `app.py`. There are no blueprints.
 | GET | `/mushaf/<surah>` | `arabic_fulltext_legacy` | 301 → `/arabic/<surah>` | — | — |
 | GET | `/page/<n>` | `mushaf_page` | `mushaf_page.html` | — | `private, max-age=300` |
 | GET | `/theme/<theme_id>` | `theme_page` | `theme.html` | — | `private, max-age=300` |
+| GET | `/reel/<surah>/<verse>` | `reel` | `reel.html` (word-by-word reel) | — | `private, max-age=0, must-revalidate` |
 | GET | `/api/v1/verse/<s>/<v>` | `verse_api` | JSON core payload | token + same-site | `private, no-store` |
+| GET | `/api/v1/reel/<s>/<v>` | `reel_api` | JSON reel payload | token + same-site | `private, no-store` |
 | GET | `/api/v1/surah/<n>` | `surah_api` | compact gzipped surah payload | — | `no-store`, `Vary: Accept-Encoding` |
 | GET | `/api/v1/verse/<s>/<v>/<section>` | `verse_section_api` | HTML partial | token + same-site | `private, no-store` |
 | GET | `/font/v4/<n>.woff2` | `qcf_font` | font bytes | — | `public, max-age=31536000, immutable` |
@@ -770,11 +772,55 @@ Whoosh index is gone.
 | `get_page_overview` / `get_surah_overview` | 128 each | AI overview rows |
 | `get_theme_page` | 12 | Theme rows |
 | `get_surah_core` | 4 | Carousel payload |
+| `get_reel_verse` | 64 | Per-verse reel payload |
+| `_reel_root_meanings` | 1 | Normalized root → compact meaning (from `db/root_meanings.json`) |
+| `_get_verse_ai_context` | 128 | Per-verse AI context for reel |
 | `_surah_payload` (app.py) | 8 | Gzipped JSON bytes |
 
 The mutating caches use `threading.Lock` (text tables, QCF load, mushaf
 JSON). Flask's dev server and production workers handle requests in
 threads.
+### 4.12 Reel
+
+`/reel/<surah>/<verse>` is a fullscreen word-by-word reading view. The page
+is server-rendered with the first payload (`private_page`) and embeds
+`window.AAYATUN_REEL`; neighbour verses are fetched from
+`GET /api/v1/reel/<s>/<v>` (token-protected, `no-store`).
+
+`library.get_reel_verse()` (`lru_cache(maxsize=64)`) builds a compact
+payload from `db2/quran_metadata.db` pickles:
+
+- **Display tokens**: `ayah.split()` so the reel word stays byte-identical
+  to the top-verse word (`morph[].word` strips waqf marks in some verses).
+- **Per-word morphology**: from `morph[i]` — `meaning`, `root`, `lemma`,
+  `annot` as `segments [segment, role]`, `verb_type`, `defKey`. The JS
+  renders chips as `seg[0] → seg[1]`.
+- **Root definitions**: `_reel_root_meanings()` loads
+  `db/root_meanings.json` (distilled from
+  `/home/onixhoque/playground/lisan/quran_v2.json`; app ships only
+  `rootSources` + `roots[root].meaning`, ~350 KB). Keys are normalized with
+  `_reel_norm_root()`. When a normalized root has a v2 meaning,
+  `get_reel_verse()` sets `roots[key] = {ar, meaning:'', text, v2:true}`;
+  the JS typewrites it as `root: text` and shows a muted credit
+  `[Source: StudyQuran.org through Lisan App]`. If no v2 meaning exists, it
+  falls back to the pickle `definitions` (quranhive). Rootless words fall
+  back to lemma/word meaning.
+
+**Two on-the-fly corrections/normalizations:**
+
+1. **Root-key normalization**. `_reel_norm_root()` strips diacritics,
+   tatweel and ZWJ, and unifies alif/hamza/ya/waw variants, so v2 keys like
+   `شيأ` match app morph roots like `شيا`. In a 161-verse sample this
+   collapsed 10,212 raw root-string differences to 1 normalized mismatch.
+2. **App-root precedence for v2 alignment exceptions**. The reel uses app
+   `ayah.split()` tokens and app pickle morph roots as lookup identity; it
+   does not use v2 word-token/root assignments. This bypasses the two known
+   v2/app exceptions: 37:130 where v2 merges `إِلْ يَاسِينَ` into one word
+   token while the app keeps 4 tokens, and 20:94 word 1 (`يَبْنَؤُمَّ`)
+   where app morph root is `امم` and v2 word root is `بني`. The lookup
+   resolves by the app morph root key, so the displayed root meaning follows
+   the app’s morphology.
+
 ---
 
 ## 5. Module data stores
@@ -789,6 +835,7 @@ flowchart LR
         R3["mushaf page"]
         R4["search"]
         R5["index + map + theme"]
+        R6["reel"]
     end
 
     subgraph DB["db/ — tracked + runtime"]
@@ -799,6 +846,7 @@ flowchart LR
         AI["ai_context.db"]
         ST["quran_stat.json"]
         SARF["sarf.json"]
+        RM["root_meanings.json"]
         QV["qcf_verses.json<br/>seed"]
         ML["mushaf_lines.json"]
         PO["page_overviews.db"]
@@ -837,6 +885,9 @@ flowchart LR
     R5 --> RI
     R5 --> QV
     R5 --> AT
+    R6 --> D2
+    R6 --> RM
+    R6 --> AI
 ```
 
 ### 5.2 `db/` — the main data directory
@@ -852,6 +903,7 @@ Names are misleading. Read this table, not the filenames.
 | `ai_context.db` | 31.9 MB | `verse_analysis(surah, verse 0-based, content)` | yes | AI word/verse analysis; `content` is a Python-literal dict read with `eval` |
 | `quran_stat.json` | 9.5 KB | DataFrame | yes | `Surah` names + `Verses` counts |
 | `sarf.json` | 1.4 MB | DataFrame | yes | Root → baab/form/description |
+| `root_meanings.json` | 350 KB | `{rootSources, roots:{root:meaning}}` | yes | Compact root meanings distilled from quran_v2.json for reel typewriter (StudyQuran PRL / Wiktionary attribution) |
 | `qcf_verses.json` | 434 KB | `{"verses": [[s,v,page,code_v2], …]}` | yes | QCF text + V2 page membership |
 | `mushaf_lines.json` | 2.0 MB | `{"pages": {"N": [lines]}}` | yes | Printed line layout, 604 pages |
 | `page_overviews.db` | 840 KB | `page_overviews(page, context, summary, model, generated_at)` | yes | AI page orientation |

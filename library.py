@@ -1436,6 +1436,7 @@ def get_reel_verse(surah, verse):
 				'ar': ar,
 				'meaning': '',
 				'text': v2_root_meanings[key],
+				'v2': True,
 			}
 		def_key = key if key in roots else ''
 		segs = m.get('annot') or []
