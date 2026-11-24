@@ -1,0 +1,8 @@
+English word list
+
+Source: https://github.com/dwyl/english-words/blob/20f5cc9b3f0ccc8ce45d814c532b7c2031bba31c/words_alpha.txt
+Revision: 20f5cc9b3f0ccc8ce45d814c532b7c2031bba31c
+SHA-256: 3ed0c94610d8bcf7c11bbb49c56aa49c7234d32b66824df91f554169e572da48
+Entries: 370105
+
+This list provides exact membership for the English substring and spelling guard. It is not a complete inventory of English spellings. The source README attributes the underlying data to an external word list and says copyright belongs to its original owner.

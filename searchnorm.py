@@ -80,7 +80,7 @@ def normalize(text):
 	return s[start:end], imap[start:end]
 
 
-def spans_for(norm, imap, terms, orig=None):
+def spans_for(norm, imap, terms, orig=None, whole_terms=frozenset()):
 	"""All (start, end) spans in the *original* string matching the terms.
 
 	Spans are extended over any trailing combining marks in the original text,
@@ -93,7 +93,9 @@ def spans_for(norm, imap, terms, orig=None):
 			continue
 		pos = norm.find(t)
 		while pos != -1:
-			spans.append((imap[pos], imap[pos + len(t) - 1] + 1))
+			end = pos + len(t)
+			if t not in whole_terms or ((pos == 0 or norm[pos - 1] == ' ') and (end == len(norm) or norm[end] == ' ')):
+				spans.append((imap[pos], imap[end - 1] + 1))
 			pos = norm.find(t, pos + 1)
 	if not spans:
 		return []
@@ -134,14 +136,14 @@ def highlight(orig, terms):
 	return _render(orig, spans_for(norm, imap, terms, orig))
 
 
-def snippet(orig, terms, width=240):
+def snippet(orig, terms, width=240, whole_terms=frozenset()):
 	"""Excerpt (~width chars) around the first match, as HTML.
 
 	Falls back to the beginning of the field when nothing matches (the field
 	only gets rendered for columns that matched, so this is rare).
 	"""
 	norm, imap = normalize(orig)
-	spans = spans_for(norm, imap, terms, orig)
+	spans = spans_for(norm, imap, terms, orig, whole_terms)
 	if not spans:
 		text = orig[:width]
 		suffix = '…' if len(orig) > width else ''

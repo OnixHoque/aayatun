@@ -19,6 +19,7 @@ import sqlite3
 import threading
 from contextlib import closing
 from pathlib import Path
+from functools import lru_cache
 
 from markupsafe import Markup
 
@@ -771,6 +772,11 @@ def _trgm_ok(conn):
 	return _trgm_available
 
 
+@lru_cache(maxsize=1)
+def _english_words():
+	return frozenset(Path(__file__).with_name('db').joinpath('english_words.txt').read_text(encoding='utf8').splitlines())
+
+
 def _run_trigram(conn, raw, limit, col=None):
 	"""Substring fallback for zero-hit queries in indexed trigram fields."""
 	if col not in (None, 'ar_norm', 'en_norm') or not _trgm_ok(conn):
@@ -779,13 +785,25 @@ def _run_trigram(conn, raw, limit, col=None):
 	toks = [t for t in n.split() if len(t) >= 3]
 	if not toks:
 		return []
-	expr = ' AND '.join(toks)
-	if col:
-		expr = f'{col} : ({expr})'
+	plain_english = bool(re.fullmatch(r'[A-Za-z]+(?:\s+[A-Za-z]+)*', raw)) and not re.search(r'\b(?:AND|OR|NOT)\b', raw)
+	known = [t for t in n.split() if t in _english_words()] if plain_english and col in (None, 'en_norm') else []
+	fragments = [t for t in toks if t not in known]
+	if known and not fragments:
+		return []
+	expr = ' AND '.join(fragments if known else toks)
+	if col or known:
+		expr = f'{col or "en_norm"} : ({expr})'
 	try:
-		rows = conn.execute(
-			'SELECT surah, verse FROM docs_trgm WHERE docs_trgm MATCH ? LIMIT ?',
-			(expr, limit if limit is not None else TRUNC_MAX + 1)).fetchall()
+		if known:
+			word_expr = 'en_norm : (' + ' AND '.join(known) + ')'
+			rows = conn.execute(
+				'SELECT t.surah, t.verse FROM docs_trgm t JOIN docs d ON d.rowid=t.rowid '
+				'WHERE docs_trgm MATCH ? AND docs MATCH ? LIMIT ?',
+				(expr, word_expr, limit if limit is not None else TRUNC_MAX + 1)).fetchall()
+		else:
+			rows = conn.execute(
+				'SELECT surah, verse FROM docs_trgm WHERE docs_trgm MATCH ? LIMIT ?',
+				(expr, limit if limit is not None else TRUNC_MAX + 1)).fetchall()
 	except sqlite3.OperationalError:
 		return []
 	if not rows:
@@ -824,27 +842,27 @@ _CHIP_TO_ITEM = {
 }
 
 
-def _matched_columns(row, terms):
+def _matched_columns(row, terms, whole_terms=frozenset()):
 	chips = []
 	for col in CHIP_LABELS:
 		field = _CHIP_TO_RAW[col]
 		text = row[field] or ''
 		if not text:
 			continue
-		n, _ = normalize(text)
-		if any(t in n for t in terms):
+		n, imap = normalize(text)
+		if searchnorm.spans_for(n, imap, terms, text, whole_terms if col in _ENGLISH_STEM_COLUMNS else frozenset()):
 			chips.append(col)
 	return chips
 
 
-def _format(rows, highlight_terms, offset=0, col=None):
+def _format(rows, highlight_terms, offset=0, col=None, whole_terms=frozenset()):
 	results = []
 	for i, r in enumerate(rows, offset + 1):
 		if col:
 			# Scoped retrieval already guarantees a match in this column.
 			matched = [col] if r[_CHIP_TO_RAW[col]] else []
 		elif highlight_terms:
-			matched = _matched_columns(r, highlight_terms)
+			matched = _matched_columns(r, highlight_terms, whole_terms)
 		else:
 			matched = ['ar_norm', 'en_norm']
 		field_terms = {column: list(highlight_terms) for column in matched}
@@ -882,7 +900,7 @@ def _format(rows, highlight_terms, offset=0, col=None):
 		for matched_col in matched:
 			text = r[_CHIP_TO_RAW[matched_col]] or ''
 			item[_CHIP_TO_ITEM[matched_col]] = Markup(
-				snippet(text, field_terms[matched_col]))
+				snippet(text, field_terms[matched_col], whole_terms=whole_terms if matched_col in _ENGLISH_STEM_COLUMNS else frozenset()))
 		results.append(item)
 	return results
 
@@ -898,8 +916,9 @@ def _correct_query(raw, max_tokens=6):
 	if not vocab:
 		return None
 	corrected, changed = [], False
+	plain_english = bool(re.fullmatch(r'[A-Za-z]+(?:\s+[A-Za-z]+)*', raw)) and not re.search(r'\b(?:AND|OR|NOT)\b', raw)
 	for t in n.split()[:max_tokens]:
-		if len(t) < 4:
+		if len(t) < 4 or (plain_english and t in _english_words()):
 			corrected.append(t)
 			continue
 		max_dist = 2 if len(t) >= 6 else 1
@@ -1059,7 +1078,8 @@ def index_search(search_query, result_limit=10, dirname=None, search_fields=None
 		if need_all and len(rows) > TRUNC_MAX:
 			rows = rows[:TRUNC_MAX]
 			meta['truncated'] = True
-		return _format(rows, terms, col=col), meta
+		whole_terms = frozenset(t for t in terms if t in _english_words()) if re.fullmatch(r'[A-Za-z]+(?:\s+[A-Za-z]+)*', raw) and not re.search(r'\b(?:AND|OR|NOT)\b', raw) else frozenset()
+		return _format(rows, terms, col=col, whole_terms=whole_terms), meta
 	finally:
 		conn.close()
 
