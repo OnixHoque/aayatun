@@ -626,6 +626,7 @@ html.dark-theme .reel-end-hint.is-overlay {
   font-family: 'Scheherazade', serif;
   font-size: 1.35rem;
   font-weight: 700;
+  line-height: 1;
   color: var(--reel-fg);
 }
 
