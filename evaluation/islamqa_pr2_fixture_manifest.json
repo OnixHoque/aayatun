@@ -1,0 +1,50 @@
+{
+  "dataset_version": "2.0.0",
+  "package_commit": "7484cfa2eae1cfa399e1c46ad656396b2c9d4b0e",
+  "release_status": "provisional",
+  "benchmark_grade": false,
+  "curation_change_required": false,
+  "adapter": "External query-level fixture; group-level qrels unchanged.",
+  "split": "test",
+  "package_files": {
+    "manifest.json": "916dfe70eb9f3d4a5aed0a88d7896a0697330f30563e6c662338568d715ba104",
+    "schema.json": "f98aa2c47b1e46404c608b3cc39d65e83815d98f54598efbfc94f56d04bca26b",
+    "dataset_common.py": "98cd8ac0795423c676e5b780b0537771cd2e1e7fe7b9fa9275c5a323c32797d7",
+    "load_dataset.py": "6c3bc15caaccc6678af5d4adbc7b295a4db10960cf0b350bd14332a118b4ac27",
+    "validate_dataset.py": "8a0aaf18ed94bf1d145f1da6e6aa07f98c9ee0e645e1629395d37a05d8fdf8d0",
+    "evaluate_search.py": "e4319e8df17cd33f7c7a01f07cffd2a9f2ea190ee94506c5b70ba9f63e0c4ced",
+    "test/questions.jsonl": "972562e6647737b69e44dd4eaf66a29cac36b3d1dd92b1652cc6b7bd58e85ebd",
+    "test/grades.jsonl": "f028b8d18576c9ee6383f993d4c9fc13adfeb0e91cabf246df8668aee392eaf3"
+  },
+  "corpus": {
+    "verses": 6236,
+    "sha256": "d1c40be0bef518288500f3940d4419b3516c2497b7285f5dcbd22802487e34e0",
+    "dataset_search_equal": true
+  },
+  "counts": {
+    "query_cases": 345,
+    "question_groups": 341,
+    "multi_query_groups": 4,
+    "useful_answerable_cases": 294,
+    "direct_answerable_cases": 54
+  },
+  "by_language": {
+    "en": 345
+  },
+  "by_best_settled_label": {
+    "background": 51,
+    "direct": 54,
+    "partial": 240
+  },
+  "success_definitions": {
+    "positive_hit@5": "At least one settled grade-1, grade-2, or grade-3 ayah in the first five results.",
+    "useful_hit@5": "At least one settled grade-2 or grade-3 ayah in the first five results.",
+    "direct_hit@5": "At least one settled grade-3 ayah in the first five results."
+  },
+  "notes": [
+    "Query wordings are evaluation cases; qrels remain question-group level.",
+    "Confidence intervals must resample question groups, not query wordings.",
+    "The test split is held out but not blind, and labels remain provisional."
+  ],
+  "fixture_sha256": "cb33c2b58d229caac4c8374af7a857cbd93a4578833592fcac1afd4e4ab5ab25"
+}

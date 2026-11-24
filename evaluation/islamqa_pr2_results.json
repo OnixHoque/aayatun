@@ -1,0 +1,1388 @@
+{
+  "fixture": "islamqa_pr2_test_queries.jsonl",
+  "fixture_sha256": "cb33c2b58d229caac4c8374af7a857cbd93a4578833592fcac1afd4e4ab5ab25",
+  "fixture_manifest": {
+    "dataset_version": "2.0.0",
+    "package_commit": "7484cfa2eae1cfa399e1c46ad656396b2c9d4b0e",
+    "release_status": "provisional",
+    "benchmark_grade": false,
+    "curation_change_required": false,
+    "adapter": "External query-level fixture; group-level qrels unchanged.",
+    "split": "test",
+    "package_files": {
+      "manifest.json": "916dfe70eb9f3d4a5aed0a88d7896a0697330f30563e6c662338568d715ba104",
+      "schema.json": "f98aa2c47b1e46404c608b3cc39d65e83815d98f54598efbfc94f56d04bca26b",
+      "dataset_common.py": "98cd8ac0795423c676e5b780b0537771cd2e1e7fe7b9fa9275c5a323c32797d7",
+      "load_dataset.py": "6c3bc15caaccc6678af5d4adbc7b295a4db10960cf0b350bd14332a118b4ac27",
+      "validate_dataset.py": "8a0aaf18ed94bf1d145f1da6e6aa07f98c9ee0e645e1629395d37a05d8fdf8d0",
+      "evaluate_search.py": "e4319e8df17cd33f7c7a01f07cffd2a9f2ea190ee94506c5b70ba9f63e0c4ced",
+      "test/questions.jsonl": "972562e6647737b69e44dd4eaf66a29cac36b3d1dd92b1652cc6b7bd58e85ebd",
+      "test/grades.jsonl": "f028b8d18576c9ee6383f993d4c9fc13adfeb0e91cabf246df8668aee392eaf3"
+    },
+    "corpus": {
+      "verses": 6236,
+      "sha256": "d1c40be0bef518288500f3940d4419b3516c2497b7285f5dcbd22802487e34e0",
+      "dataset_search_equal": true
+    },
+    "counts": {
+      "query_cases": 345,
+      "question_groups": 341,
+      "multi_query_groups": 4,
+      "useful_answerable_cases": 294,
+      "direct_answerable_cases": 54
+    },
+    "by_language": {
+      "en": 345
+    },
+    "by_best_settled_label": {
+      "background": 51,
+      "direct": 54,
+      "partial": 240
+    },
+    "success_definitions": {
+      "positive_hit@5": "At least one settled grade-1, grade-2, or grade-3 ayah in the first five results.",
+      "useful_hit@5": "At least one settled grade-2 or grade-3 ayah in the first five results.",
+      "direct_hit@5": "At least one settled grade-3 ayah in the first five results."
+    },
+    "notes": [
+      "Query wordings are evaluation cases; qrels remain question-group level.",
+      "Confidence intervals must resample question groups, not query wordings.",
+      "The test split is held out but not blind, and labels remain provisional."
+    ],
+    "fixture_sha256": "cb33c2b58d229caac4c8374af7a857cbd93a4578833592fcac1afd4e4ab5ab25"
+  },
+  "evaluation": {
+    "scorer_sha256": "7fd04f460a452ca19910d296fff851ea205910a19f8fbb025a9b34a5ec38bca9",
+    "browser_harness_sha256": "f4d104f6e952317a83f8f55308112436bfc648c815a06c8ec9aebf6657b4a649"
+  },
+  "product": {
+    "deploy_revision": "d9cff5d3f21dc11423465893fb1839dd6c9251c0",
+    "fcs_revision": "54990b849f176d722fb087372c8875cb2d7c6e14",
+    "candidate_revision": "357a367ef4631cb771cdd9e3a34116280c7dd2d8",
+    "candidate_worker_sha256": "445fb57fb91ee6b1ef8fea11d618a88eaa6d9ad6b944ed930f09dec0ece4171a",
+    "candidate_index_sha256": "495726e9d693af8c3a21f587a6ca6139d7b78476586b7ece3d9f954240f89a21",
+    "candidate_vectors_sha256": "0cad61636eb49d656fb65e705da4b84f2038c2a771a10bc6bf3d57e16fc071e5"
+  },
+  "success_definition": {
+    "positive_hit@5": "At least one settled grade-1, grade-2, or grade-3 ayah in the first five results.",
+    "useful_hit@5": "At least one settled grade-2 or grade-3 ayah in the first five results.",
+    "direct_hit@5": "At least one settled grade-3 ayah in the first five results."
+  },
+  "slices": {
+    "All test queries": {
+      "deploy": {
+        "queries": 345,
+        "groups": 341,
+        "metrics": {
+          "direct_hit@5": 0.023188,
+          "useful_hit@5": 0.066667,
+          "positive_hit@5": 0.069565,
+          "recall@5": 0.035198,
+          "recall@10": 0.046132,
+          "mrr@10": 0.050537,
+          "ndcg@10": 0.03729
+        }
+      },
+      "fcs": {
+        "queries": 345,
+        "groups": 341,
+        "metrics": {
+          "direct_hit@5": 0.02029,
+          "useful_hit@5": 0.069565,
+          "positive_hit@5": 0.072464,
+          "recall@5": 0.036055,
+          "recall@10": 0.047181,
+          "mrr@10": 0.050252,
+          "ndcg@10": 0.037558
+        }
+      },
+      "meaning": {
+        "queries": 345,
+        "groups": 341,
+        "metrics": {
+          "direct_hit@5": 0.043478,
+          "useful_hit@5": 0.127536,
+          "positive_hit@5": 0.133333,
+          "recall@5": 0.075602,
+          "recall@10": 0.101442,
+          "mrr@10": 0.090045,
+          "ndcg@10": 0.074181
+        }
+      }
+    },
+    "English": {
+      "deploy": {
+        "queries": 345,
+        "groups": 341,
+        "metrics": {
+          "direct_hit@5": 0.023188,
+          "useful_hit@5": 0.066667,
+          "positive_hit@5": 0.069565,
+          "recall@5": 0.035198,
+          "recall@10": 0.046132,
+          "mrr@10": 0.050537,
+          "ndcg@10": 0.03729
+        }
+      },
+      "fcs": {
+        "queries": 345,
+        "groups": 341,
+        "metrics": {
+          "direct_hit@5": 0.02029,
+          "useful_hit@5": 0.069565,
+          "positive_hit@5": 0.072464,
+          "recall@5": 0.036055,
+          "recall@10": 0.047181,
+          "mrr@10": 0.050252,
+          "ndcg@10": 0.037558
+        }
+      },
+      "meaning": {
+        "queries": 345,
+        "groups": 341,
+        "metrics": {
+          "direct_hit@5": 0.043478,
+          "useful_hit@5": 0.127536,
+          "positive_hit@5": 0.133333,
+          "recall@5": 0.075602,
+          "recall@10": 0.101442,
+          "mrr@10": 0.090045,
+          "ndcg@10": 0.074181
+        }
+      }
+    },
+    "Direct-answer groups": {
+      "deploy": {
+        "queries": 54,
+        "groups": 51,
+        "metrics": {
+          "direct_hit@5": 0.148148,
+          "useful_hit@5": 0.166667,
+          "positive_hit@5": 0.166667,
+          "recall@5": 0.038383,
+          "recall@10": 0.061069,
+          "mrr@10": 0.098707,
+          "ndcg@10": 0.053143
+        }
+      },
+      "fcs": {
+        "queries": 54,
+        "groups": 51,
+        "metrics": {
+          "direct_hit@5": 0.12963,
+          "useful_hit@5": 0.148148,
+          "positive_hit@5": 0.148148,
+          "recall@5": 0.03684,
+          "recall@10": 0.066933,
+          "mrr@10": 0.092563,
+          "ndcg@10": 0.053015
+        }
+      },
+      "meaning": {
+        "queries": 54,
+        "groups": 51,
+        "metrics": {
+          "direct_hit@5": 0.277778,
+          "useful_hit@5": 0.296296,
+          "positive_hit@5": 0.296296,
+          "recall@5": 0.105133,
+          "recall@10": 0.124984,
+          "mrr@10": 0.193952,
+          "ndcg@10": 0.115584
+        }
+      }
+    },
+    "Partial-answer groups": {
+      "deploy": {
+        "queries": 240,
+        "groups": 239,
+        "metrics": {
+          "direct_hit@5": 0.0,
+          "useful_hit@5": 0.058333,
+          "positive_hit@5": 0.0625,
+          "recall@5": 0.041961,
+          "recall@10": 0.052574,
+          "mrr@10": 0.050438,
+          "ndcg@10": 0.041647
+        }
+      },
+      "fcs": {
+        "queries": 240,
+        "groups": 239,
+        "metrics": {
+          "direct_hit@5": 0.0,
+          "useful_hit@5": 0.066667,
+          "positive_hit@5": 0.070833,
+          "recall@5": 0.04354,
+          "recall@10": 0.052763,
+          "mrr@10": 0.05141,
+          "ndcg@10": 0.042061
+        }
+      },
+      "meaning": {
+        "queries": 240,
+        "groups": 239,
+        "metrics": {
+          "direct_hit@5": 0.0,
+          "useful_hit@5": 0.116667,
+          "positive_hit@5": 0.120833,
+          "recall@5": 0.080856,
+          "recall@10": 0.109368,
+          "mrr@10": 0.084272,
+          "ndcg@10": 0.077533
+        }
+      }
+    },
+    "Background-only groups": {
+      "deploy": {
+        "queries": 51,
+        "groups": 51,
+        "metrics": {
+          "direct_hit@5": 0.0,
+          "useful_hit@5": 0.0,
+          "positive_hit@5": 0.0,
+          "recall@5": 0.0,
+          "recall@10": 0.0,
+          "mrr@10": 0.0,
+          "ndcg@10": 0.0
+        }
+      },
+      "fcs": {
+        "queries": 51,
+        "groups": 51,
+        "metrics": {
+          "direct_hit@5": 0.0,
+          "useful_hit@5": 0.0,
+          "positive_hit@5": 0.0,
+          "recall@5": 0.0,
+          "recall@10": 0.0,
+          "mrr@10": 0.0,
+          "ndcg@10": 0.0
+        }
+      },
+      "meaning": {
+        "queries": 51,
+        "groups": 51,
+        "metrics": {
+          "direct_hit@5": 0.0,
+          "useful_hit@5": 0.0,
+          "positive_hit@5": 0.019608,
+          "recall@5": 0.019608,
+          "recall@10": 0.039216,
+          "mrr@10": 0.00719,
+          "ndcg@10": 0.01457
+        }
+      }
+    }
+  },
+  "overall": {
+    "deploy": {
+      "queries": 345,
+      "groups": 341,
+      "metrics": {
+        "direct_hit@5": 0.023188,
+        "useful_hit@5": 0.066667,
+        "positive_hit@5": 0.069565,
+        "recall@5": 0.035198,
+        "recall@10": 0.046132,
+        "mrr@10": 0.050537,
+        "ndcg@10": 0.03729
+      }
+    },
+    "fcs": {
+      "queries": 345,
+      "groups": 341,
+      "metrics": {
+        "direct_hit@5": 0.02029,
+        "useful_hit@5": 0.069565,
+        "positive_hit@5": 0.072464,
+        "recall@5": 0.036055,
+        "recall@10": 0.047181,
+        "mrr@10": 0.050252,
+        "ndcg@10": 0.037558
+      }
+    },
+    "meaning": {
+      "queries": 345,
+      "groups": 341,
+      "metrics": {
+        "direct_hit@5": 0.043478,
+        "useful_hit@5": 0.127536,
+        "positive_hit@5": 0.133333,
+        "recall@5": 0.075602,
+        "recall@10": 0.101442,
+        "mrr@10": 0.090045,
+        "ndcg@10": 0.074181
+      }
+    }
+  },
+  "comparisons": {
+    "fcs_vs_deploy": {
+      "positive_hit@5": {
+        "queries": 345,
+        "delta_mean": 0.002899,
+        "delta_ci95": [
+          -0.005814,
+          0.011662
+        ],
+        "bootstrap": {
+          "samples": 2000,
+          "seed": 4213,
+          "method": "paired_percentile_question_group_resampling"
+        }
+      },
+      "useful_hit@5": {
+        "queries": 294,
+        "delta_mean": 0.003401,
+        "delta_ci95": [
+          -0.006826,
+          0.016779
+        ],
+        "bootstrap": {
+          "samples": 2000,
+          "seed": 4213,
+          "method": "paired_percentile_question_group_resampling"
+        }
+      },
+      "useful_case_details": {
+        "wins": 2,
+        "losses": 1,
+        "ties": 291,
+        "gained_cases": [
+          {
+            "id": "95f9d978aaad63fb:q0",
+            "group_id": "95f9d978aaad63fb",
+            "query": "What are Ruling on the call to unite all religions",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 0,
+            "candidate_useful_rank": 5,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 1.0
+          },
+          {
+            "id": "f4cda10e296d000d:q0",
+            "group_id": "f4cda10e296d000d",
+            "query": "What is the ruling of the Shari’ah on blood transfusions?",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 6,
+            "candidate_useful_rank": 5,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 1.0
+          }
+        ],
+        "lost_cases": [
+          {
+            "id": "4e2ebf554d766736:q0",
+            "group_id": "4e2ebf554d766736",
+            "query": "How should we call people to Islam?",
+            "language": "en",
+            "best_settled_label": "direct",
+            "baseline_useful_rank": 5,
+            "candidate_useful_rank": 0,
+            "baseline_useful_hit@5": 1.0,
+            "candidate_useful_hit@5": 0.0,
+            "baseline_positive_hit@5": 1.0,
+            "candidate_positive_hit@5": 0.0
+          }
+        ],
+        "rank_regressions": [
+          {
+            "id": "4e2ebf554d766736:q0",
+            "group_id": "4e2ebf554d766736",
+            "query": "How should we call people to Islam?",
+            "language": "en",
+            "best_settled_label": "direct",
+            "baseline_useful_rank": 5,
+            "candidate_useful_rank": 0,
+            "baseline_useful_hit@5": 1.0,
+            "candidate_useful_hit@5": 0.0,
+            "baseline_positive_hit@5": 1.0,
+            "candidate_positive_hit@5": 0.0
+          },
+          {
+            "id": "eaa86ac9fe9e464f:q0",
+            "group_id": "eaa86ac9fe9e464f",
+            "query": "What is meant by belief in the Messengers?",
+            "language": "en",
+            "best_settled_label": "direct",
+            "baseline_useful_rank": 7,
+            "candidate_useful_rank": 0,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 0.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 0.0
+          }
+        ]
+      }
+    },
+    "meaning_vs_fcs": {
+      "positive_hit@5": {
+        "queries": 345,
+        "delta_mean": 0.06087,
+        "delta_ci95": [
+          0.022989,
+          0.098837
+        ],
+        "bootstrap": {
+          "samples": 2000,
+          "seed": 4213,
+          "method": "paired_percentile_question_group_resampling"
+        }
+      },
+      "useful_hit@5": {
+        "queries": 294,
+        "delta_mean": 0.068027,
+        "delta_ci95": [
+          0.023891,
+          0.111486
+        ],
+        "bootstrap": {
+          "samples": 2000,
+          "seed": 4213,
+          "method": "paired_percentile_question_group_resampling"
+        }
+      },
+      "useful_case_details": {
+        "wins": 32,
+        "losses": 12,
+        "ties": 250,
+        "gained_cases": [
+          {
+            "id": "28bc314a759054ed:q0",
+            "group_id": "28bc314a759054ed",
+            "query": "What is the ruling on spending on one’s children? What is the maximum extent of spending?",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 9,
+            "candidate_useful_rank": 2,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 1.0
+          },
+          {
+            "id": "2e7cb26cc7b50c6a:q0",
+            "group_id": "2e7cb26cc7b50c6a",
+            "query": "There is no one among us who is unaware of what the Christians say defaming the Prophet (peace and blessings of Allaah be upon him), and we are not unaware either of the gheerah (protective jealousy) of the young men of the Muslim ummah towards their religion and their Prophet (peace and blessings of Allaah be upon him). Is it permissible to respond to those who defame the Prophet (peace and blessings of Allaah be upon him) by insulting the speaker, knowing that I insulted one of them and some of my relatives advised me not to do that again, because it will make them defame and mock him even more, so their sin will be on me?.",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 0,
+            "candidate_useful_rank": 1,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 1.0
+          },
+          {
+            "id": "314146560882192b:q0",
+            "group_id": "314146560882192b",
+            "query": "Assalamu a'laikum How can we make things haraam or halaal (such as smoking or avoiding tax or insurance) when Allah (SWT) Himself is the only One to say what is halaal and what is not?",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 0,
+            "candidate_useful_rank": 2,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 1.0
+          },
+          {
+            "id": "43e9f90dcd428001:q0",
+            "group_id": "43e9f90dcd428001",
+            "query": "Who are the Ahlul Kitab? Are they the ones who believe in the Oneness of Allah? Or do they include the ones who believe in the Trinity? If they include Trinitarians, is Trinity not Shirk? And are present day Christians in Africa also amongst the People of the Book?",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 0,
+            "candidate_useful_rank": 4,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 1.0
+          },
+          {
+            "id": "47397e4b826003dd:q0",
+            "group_id": "47397e4b826003dd",
+            "query": "Man is accountable",
+            "language": "en",
+            "best_settled_label": "direct",
+            "baseline_useful_rank": 0,
+            "candidate_useful_rank": 2,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 1.0
+          },
+          {
+            "id": "47919459b9edb4f3:q0",
+            "group_id": "47919459b9edb4f3",
+            "query": "My brother works and has his salary but there is a big money he has to pay and this will take years from him to pay. Can I give him from the Zaka Almal(charity of the money)?",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 0,
+            "candidate_useful_rank": 1,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 1.0
+          },
+          {
+            "id": "5921ae3143382201:q0",
+            "group_id": "5921ae3143382201",
+            "query": "If an Imam makes the adan after the TIME of salah, and I pray at the TIME of salah, is it best for me to WAIT? or should i pray at the TIME?",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 0,
+            "candidate_useful_rank": 4,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 1.0
+          },
+          {
+            "id": "6b66bb94f58fb00d:q0",
+            "group_id": "6b66bb94f58fb00d",
+            "query": "At this time of year the Isha prayer is around 10:25 pm. I have school the next day so i'm not aloud to stay up that late. I wanted to know if it is haraam to pray it the next morning. My parents are willing to allow me to stay up for the Isha prayer if praying it the next morning is haraam. Thank you for your time.",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 0,
+            "candidate_useful_rank": 1,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 1.0
+          },
+          {
+            "id": "6d1b360de6a5faab:q0",
+            "group_id": "6d1b360de6a5faab",
+            "query": "Some people say that women are lacking in intellect and religious commitment, and in inheritance and bearing witness. Some say that Allaah has made them equal in reward and punishment. What is your opinion: are they lacking according to Islam or not?.",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 0,
+            "candidate_useful_rank": 1,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 1.0
+          },
+          {
+            "id": "732a65f8a5cc60d5:q0",
+            "group_id": "732a65f8a5cc60d5",
+            "query": "I am a working woman, and I have a salary from which I spend on myself and my home, I give some to my family and I give some in charity, and so on. Many of the arguments that I have with my husband arise because of the way I spend my money. Does my husband have the right to object to the way I spend my money? Do I have to ask for his permission when I want to spend any of my money?",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 0,
+            "candidate_useful_rank": 4,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 1.0
+          },
+          {
+            "id": "74018ca3a2642298:q0",
+            "group_id": "74018ca3a2642298",
+            "query": "I would like to know those verses in the Quran which talk about the covering the face by women as I need to show it to a few persons who want to know whether covering the face by women is compulsory or optional.",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 0,
+            "candidate_useful_rank": 1,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 1.0
+          },
+          {
+            "id": "785edcec0d54a8ac:q0",
+            "group_id": "785edcec0d54a8ac",
+            "query": "Can you please tell me what is the correct procedure for giving debt (Lending money to a person). I am comitting a mistake/sin if i dont keep a witness and lend some money to another person.",
+            "language": "en",
+            "best_settled_label": "direct",
+            "baseline_useful_rank": 0,
+            "candidate_useful_rank": 4,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 1.0
+          },
+          {
+            "id": "7d00e2aa60162c53:q0",
+            "group_id": "7d00e2aa60162c53",
+            "query": "As-salamo Alikum Wa Rahamtu Allah Wa Barakatoh I pray that Allah grant your Tech. by his mercy. Still he in sha;a Allah got the reward of this valuable home page. Please, visit the following web-site, XXXX it is concerning Hilal sighting and calculation, they claimed that in XXXX they never sight the moon and every thing run according to astronomy calculations. My question, Is this information is right or worng, and what is the real authentic way to decied the begining of Hajrii moneth?",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 0,
+            "candidate_useful_rank": 1,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 1.0
+          },
+          {
+            "id": "8414eb00f701e2d2:q0",
+            "group_id": "8414eb00f701e2d2",
+            "query": "Is it permissable for a child to call her stepfather Abu or Abi as long as she knows who her real father is, and she carried her real father's name? Her real father is muslim, but she calls him daddy, and for the sake of unity in the home, we want her to call her stepfather Abi like the others do.",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 0,
+            "candidate_useful_rank": 1,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 1.0
+          },
+          {
+            "id": "8615d4e51f0c968a:q0",
+            "group_id": "8615d4e51f0c968a",
+            "query": "Prophet Zakariyya’s sponsorship of Maryam",
+            "language": "en",
+            "best_settled_label": "direct",
+            "baseline_useful_rank": 0,
+            "candidate_useful_rank": 1,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 1.0
+          },
+          {
+            "id": "8bbbb596d422cfe3:q0",
+            "group_id": "8bbbb596d422cfe3",
+            "query": "Is it permisible to bow while greeting a respectable/elder person/parent Other than saying \"As-salam Alaykum Wa-rahmatullahi Wa-barakatuh\".",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 0,
+            "candidate_useful_rank": 5,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 1.0
+          },
+          {
+            "id": "8c9f8f285174c689:q0",
+            "group_id": "8c9f8f285174c689",
+            "query": "I would like to know if it's okay if i didn't make wudu after taking a bath???",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 0,
+            "candidate_useful_rank": 2,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 1.0
+          },
+          {
+            "id": "9dba0ee546575342:q0",
+            "group_id": "9dba0ee546575342",
+            "query": "i'm trying to determine if there is anything in the Quran similar to the Ten Commandents in the Old Testament, particularly the line \"thou shalt not kill.\" i have been using search functions on several Quran translation sites to no avail. thank you very much",
+            "language": "en",
+            "best_settled_label": "direct",
+            "baseline_useful_rank": 0,
+            "candidate_useful_rank": 5,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 1.0
+          },
+          {
+            "id": "aa32559c796fcea7:q0",
+            "group_id": "aa32559c796fcea7",
+            "query": "if parents of the man wouldn't like his wife to wear nikab,does he has a right to ask from his wife or future wife to wear it,contrary to their will?",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 0,
+            "candidate_useful_rank": 4,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 1.0
+          },
+          {
+            "id": "afc7fadbf739a436:q0",
+            "group_id": "afc7fadbf739a436",
+            "query": "What are the virtues of Ramadan?",
+            "language": "en",
+            "best_settled_label": "direct",
+            "baseline_useful_rank": 0,
+            "candidate_useful_rank": 1,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 1.0
+          },
+          {
+            "id": "b2c75a877b636d15:q0",
+            "group_id": "b2c75a877b636d15",
+            "query": "Is It Prohibited in Islam to Not Get Married?",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 0,
+            "candidate_useful_rank": 3,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 1.0
+          },
+          {
+            "id": "b5b9fedbc8dd3739:q0",
+            "group_id": "b5b9fedbc8dd3739",
+            "query": "What is the age at which a woman should observe hijab from a boy – is it when he reaches the age of discernment or when he reaches the age of puberty?.",
+            "language": "en",
+            "best_settled_label": "direct",
+            "baseline_useful_rank": 0,
+            "candidate_useful_rank": 5,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 1.0
+          },
+          {
+            "id": "b77f9bd524ea1d30:q0",
+            "group_id": "b77f9bd524ea1d30",
+            "query": "A school for imparting primary education to children is in need of funds.Can Zakat be given to the school?",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 0,
+            "candidate_useful_rank": 1,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 1.0
+          },
+          {
+            "id": "b90a2ec372c438b7:q0",
+            "group_id": "b90a2ec372c438b7",
+            "query": "Commentary on the verse in which Allah, may He be exalted, says (interpretation of the meaning): “And Allah has created you and then He will cause you to die, and of you there are some who are sent back to senility, so that they know nothing...",
+            "language": "en",
+            "best_settled_label": "direct",
+            "baseline_useful_rank": 10,
+            "candidate_useful_rank": 1,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 1.0
+          },
+          {
+            "id": "bcb94109256245f9:q0",
+            "group_id": "bcb94109256245f9",
+            "query": "i would like to know can a person cut out any of his childern from the inheritences. because their was some problems between him and his son-in-law. or use it as an excuse to cut his daughters out of the inheritences. can a person that has 10 childern .give one of them more then the other. while he is still alive put in his name a house and land and say it is not haram because it is his money and nobody has anything to do with it.",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 0,
+            "candidate_useful_rank": 1,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 1.0
+          },
+          {
+            "id": "c915549a689570dc:q0",
+            "group_id": "c915549a689570dc",
+            "query": "A men, who I think is a very good muslim and Allah knows the best, has asked for my hand in marriage. I love him very much but my parents disapprove of this marriage for the following reasons. They think I am too young. They think that he (we) will not be able to support ourselves since both of us are students. They want me to finish school (i am in my last year of high school) and maybe even finish university before getting married for they think that is i get married i will not complete my studies. Please advise me on what i should do and what right i have in this.",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 0,
+            "candidate_useful_rank": 3,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 1.0
+          },
+          {
+            "id": "cdb953ec00f9316d:q0",
+            "group_id": "cdb953ec00f9316d",
+            "query": "Do you think there is any evidence that the universe has been designed by an intelligent and powerful creator?",
+            "language": "en",
+            "best_settled_label": "direct",
+            "baseline_useful_rank": 0,
+            "candidate_useful_rank": 1,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 1.0
+          },
+          {
+            "id": "e009f5cd19b1b171:q0",
+            "group_id": "e009f5cd19b1b171",
+            "query": "After a woman reaches the end of her menstruation cycle, what is the order for her before she can have relations with her husband? I mean is it mandatory for her to perform Ghusl before resuming relations with her husband?",
+            "language": "en",
+            "best_settled_label": "direct",
+            "baseline_useful_rank": 0,
+            "candidate_useful_rank": 3,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 1.0
+          },
+          {
+            "id": "e018397c4b7a19f8:q0",
+            "group_id": "e018397c4b7a19f8",
+            "query": "I am a girl who hates backbiting and malicious gossip. Sometimes I find myself in the midst of a group of people who are talking about people, and they engage in backbiting and malicious gossip. I myself loathe and detest this, but I am extremely shy and I cannot tell them not to do that, and there is no place where I can keep away from them. Allaah knows that I wish they would talk about something else. Is there any sin on me for sitting with them? What should I do?",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 0,
+            "candidate_useful_rank": 4,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 1.0
+          },
+          {
+            "id": "eaa86ac9fe9e464f:q0",
+            "group_id": "eaa86ac9fe9e464f",
+            "query": "What is meant by belief in the Messengers?",
+            "language": "en",
+            "best_settled_label": "direct",
+            "baseline_useful_rank": 0,
+            "candidate_useful_rank": 1,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 1.0
+          },
+          {
+            "id": "fb1897b58f706bc7:q0",
+            "group_id": "fb1897b58f706bc7",
+            "query": "Is it permissible for a person to use part of his zakaat to pay the taxes he is obliged to pay?",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 0,
+            "candidate_useful_rank": 1,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 1.0
+          },
+          {
+            "id": "fe32e1f1b778e3c9:q0",
+            "group_id": "fe32e1f1b778e3c9",
+            "query": "I have read in the Holy Quran what a jinn is, but I really don't understand what they really are. Can you please send me more information on them? Peace be unto you!",
+            "language": "en",
+            "best_settled_label": "direct",
+            "baseline_useful_rank": 0,
+            "candidate_useful_rank": 1,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 1.0
+          }
+        ],
+        "lost_cases": [
+          {
+            "id": "10a25878f4f1a289:q0",
+            "group_id": "10a25878f4f1a289",
+            "query": "I have a few questions concerning parents: 1- What right does my mother have over me? 2- What right do I have over my mother? 3- What do I have the freedom to do (which is Halal or Mubah, of course) without my mother having the right to stop me? 4- When does the father have the final say in a matter? I love my mother very, very, very much. She is very over protective, and sometimes I feel like I'm in chains. I know she is doing it out of extreme love for me. How can I tell her that I need a little choice of my own in life?",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 2,
+            "candidate_useful_rank": 0,
+            "baseline_useful_hit@5": 1.0,
+            "candidate_useful_hit@5": 0.0,
+            "baseline_positive_hit@5": 1.0,
+            "candidate_positive_hit@5": 0.0
+          },
+          {
+            "id": "349c0580bf51ff9a:q0",
+            "group_id": "349c0580bf51ff9a",
+            "query": "Why do the Muslims consider enjoining what is good and forbidding what is evil to be one of the basic principles of their religion?",
+            "language": "en",
+            "best_settled_label": "direct",
+            "baseline_useful_rank": 1,
+            "candidate_useful_rank": 0,
+            "baseline_useful_hit@5": 1.0,
+            "candidate_useful_hit@5": 0.0,
+            "baseline_positive_hit@5": 1.0,
+            "candidate_positive_hit@5": 0.0
+          },
+          {
+            "id": "42b426a401959623:q0",
+            "group_id": "42b426a401959623",
+            "query": "What is the ruling on taking an interest-based loan from the bank for an urgent need such as continuing university studies, or buying a car for one who has a family, or buying a house for a family, knowing that the person who is taking the loan cannot find anyone to lend him money without interest?",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 1,
+            "candidate_useful_rank": 0,
+            "baseline_useful_hit@5": 1.0,
+            "candidate_useful_hit@5": 0.0,
+            "baseline_positive_hit@5": 1.0,
+            "candidate_positive_hit@5": 0.0
+          },
+          {
+            "id": "45d5cebd37d67818:q0",
+            "group_id": "45d5cebd37d67818",
+            "query": "Who are the Prophets who were sent by Allah? What are the Books which were sent down with them?",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 4,
+            "candidate_useful_rank": 7,
+            "baseline_useful_hit@5": 1.0,
+            "candidate_useful_hit@5": 0.0,
+            "baseline_positive_hit@5": 1.0,
+            "candidate_positive_hit@5": 0.0
+          },
+          {
+            "id": "5d91409c55f6ac68:q0",
+            "group_id": "5d91409c55f6ac68",
+            "query": "I would like to know the Islamic view point of mahr (dowry). Is it permissible for the wife to take it or is it a sin? If it is wrong, what should a person who has taken mahr do?",
+            "language": "en",
+            "best_settled_label": "direct",
+            "baseline_useful_rank": 2,
+            "candidate_useful_rank": 0,
+            "baseline_useful_hit@5": 1.0,
+            "candidate_useful_hit@5": 0.0,
+            "baseline_positive_hit@5": 1.0,
+            "candidate_positive_hit@5": 0.0
+          },
+          {
+            "id": "823ea681df2ec083:q0",
+            "group_id": "823ea681df2ec083",
+            "query": "The mother’s rights over her daughter are great but the husband’s rights over his wife are greater",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 3,
+            "candidate_useful_rank": 0,
+            "baseline_useful_hit@5": 1.0,
+            "candidate_useful_hit@5": 0.0,
+            "baseline_positive_hit@5": 1.0,
+            "candidate_positive_hit@5": 0.0
+          },
+          {
+            "id": "95f9d978aaad63fb:q0",
+            "group_id": "95f9d978aaad63fb",
+            "query": "What are Ruling on the call to unite all religions",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 5,
+            "candidate_useful_rank": 0,
+            "baseline_useful_hit@5": 1.0,
+            "candidate_useful_hit@5": 0.0,
+            "baseline_positive_hit@5": 1.0,
+            "candidate_positive_hit@5": 0.0
+          },
+          {
+            "id": "97f15a91c051be81:q0",
+            "group_id": "97f15a91c051be81",
+            "query": "I understand that Prophet Ibrahim (peace be upon him) intended to sacrifice his son, Prophet Ishmail (pbuh), according to Muslim belief. However, a non-Muslim that I had a discussion with pointed out that this is not mentioned in the Quran. Upon investigating this matter, it seems that the Quran is ambiguous as to which son is intended to be sacrificed (as least in my English translation-surah 37). Please explain the Muslim position on Prophet Ibrahim and the sacrifice, using textual evidence.",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 1,
+            "candidate_useful_rank": 0,
+            "baseline_useful_hit@5": 1.0,
+            "candidate_useful_hit@5": 0.0,
+            "baseline_positive_hit@5": 1.0,
+            "candidate_positive_hit@5": 0.0
+          },
+          {
+            "id": "b6278c2dfb9173f8:q0",
+            "group_id": "b6278c2dfb9173f8",
+            "query": "What are the attributes of the correct religion?",
+            "language": "en",
+            "best_settled_label": "direct",
+            "baseline_useful_rank": 4,
+            "candidate_useful_rank": 0,
+            "baseline_useful_hit@5": 1.0,
+            "candidate_useful_hit@5": 0.0,
+            "baseline_positive_hit@5": 1.0,
+            "candidate_positive_hit@5": 0.0
+          },
+          {
+            "id": "c621688238a05a1d:q0",
+            "group_id": "c621688238a05a1d",
+            "query": "Is it permissible to marry a Yazidi woman?",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 1,
+            "candidate_useful_rank": 0,
+            "baseline_useful_hit@5": 1.0,
+            "candidate_useful_hit@5": 0.0,
+            "baseline_positive_hit@5": 1.0,
+            "candidate_positive_hit@5": 0.0
+          },
+          {
+            "id": "c86c976b4bcc9900:q0",
+            "group_id": "c86c976b4bcc9900",
+            "query": "How do I go about repaying my fast as I had just given birth during the month of Ramadan ? What is the intention that I should recite before fasting ?",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 1,
+            "candidate_useful_rank": 0,
+            "baseline_useful_hit@5": 1.0,
+            "candidate_useful_hit@5": 0.0,
+            "baseline_positive_hit@5": 1.0,
+            "candidate_positive_hit@5": 0.0
+          },
+          {
+            "id": "f4cda10e296d000d:q0",
+            "group_id": "f4cda10e296d000d",
+            "query": "What is the ruling of the Shari’ah on blood transfusions?",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 5,
+            "candidate_useful_rank": 0,
+            "baseline_useful_hit@5": 1.0,
+            "candidate_useful_hit@5": 0.0,
+            "baseline_positive_hit@5": 1.0,
+            "candidate_positive_hit@5": 0.0
+          }
+        ],
+        "rank_regressions": [
+          {
+            "id": "10a25878f4f1a289:q0",
+            "group_id": "10a25878f4f1a289",
+            "query": "I have a few questions concerning parents: 1- What right does my mother have over me? 2- What right do I have over my mother? 3- What do I have the freedom to do (which is Halal or Mubah, of course) without my mother having the right to stop me? 4- When does the father have the final say in a matter? I love my mother very, very, very much. She is very over protective, and sometimes I feel like I'm in chains. I know she is doing it out of extreme love for me. How can I tell her that I need a little choice of my own in life?",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 2,
+            "candidate_useful_rank": 0,
+            "baseline_useful_hit@5": 1.0,
+            "candidate_useful_hit@5": 0.0,
+            "baseline_positive_hit@5": 1.0,
+            "candidate_positive_hit@5": 0.0
+          },
+          {
+            "id": "2d0fe8ad79f5a8f3:q0",
+            "group_id": "2d0fe8ad79f5a8f3",
+            "query": "I know when getting married a person needs their parents blessing and consent but what if a married couple are separated and are considering returning to each other, do they still need their parents blessing all over again?",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 6,
+            "candidate_useful_rank": 9,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 0.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 0.0
+          },
+          {
+            "id": "31eb5f5bb9a1baa4:q0",
+            "group_id": "31eb5f5bb9a1baa4",
+            "query": "In the last few days a controversy has arisen concerning the matter of jinn entering human bodies. Some say that this is rationally impossible, because of the difference in the essences from which they were created, as man was created from clay and the jinn from fire. It has also been said that the shayateen (devils) have no power other than waswas (insinuating whispers) and that Allah has not given them any power over man. And it is said that the recorded tapes that are in circulation (recordings of jinn supposedly speaking through people) are no proof of anything. What is your response to all this?",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 6,
+            "candidate_useful_rank": 0,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 0.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 0.0
+          },
+          {
+            "id": "349c0580bf51ff9a:q0",
+            "group_id": "349c0580bf51ff9a",
+            "query": "Why do the Muslims consider enjoining what is good and forbidding what is evil to be one of the basic principles of their religion?",
+            "language": "en",
+            "best_settled_label": "direct",
+            "baseline_useful_rank": 1,
+            "candidate_useful_rank": 0,
+            "baseline_useful_hit@5": 1.0,
+            "candidate_useful_hit@5": 0.0,
+            "baseline_positive_hit@5": 1.0,
+            "candidate_positive_hit@5": 0.0
+          },
+          {
+            "id": "379359fdd6b3b721:q0",
+            "group_id": "379359fdd6b3b721",
+            "query": "If a woman misses several years of fasting the month of Ramdan due to pregnancy and breastfeeding is she obligated to make these up by fasting each day? Is there another option that she may take such as feeding the poor because it would be very difficult for her to make up so many days? Some women are pregnant or breastfeeding for many years in a row without an opportunity to make them up. Also, does she need to make these up before she can do voluntary fasting such as during the month of Shawwal? If this is the case, then it may be difficult for her to gain the rewards of fasting during this month since she would need to make up the missed days first ? Is the opportunity to make up days lost after a certain time period ? For example, if the woman had not made them up before the next Ramadan is the opportunity lost ?",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 1,
+            "candidate_useful_rank": 5,
+            "baseline_useful_hit@5": 1.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 1.0,
+            "candidate_positive_hit@5": 1.0
+          },
+          {
+            "id": "3d96d424775ecac2:q0",
+            "group_id": "3d96d424775ecac2",
+            "query": "In your 'Innovations' sections, you say it's bidah to recite, say a 100 times or something, suras hoping for reward. After reading a Sufi book by Hakim Moinuddin Chishti called 'Sufi Healing\", I saw that it justified using such formulas by saying that the formulas and other things had been inspired by Allah through dreams or etc. to certain Muslims who were very close to Allah. Would this make it a part of Shariah? How can we know that they are being truthful? Is this acceptable in Islam?",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 8,
+            "candidate_useful_rank": 0,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 0.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 0.0
+          },
+          {
+            "id": "42b426a401959623:q0",
+            "group_id": "42b426a401959623",
+            "query": "What is the ruling on taking an interest-based loan from the bank for an urgent need such as continuing university studies, or buying a car for one who has a family, or buying a house for a family, knowing that the person who is taking the loan cannot find anyone to lend him money without interest?",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 1,
+            "candidate_useful_rank": 0,
+            "baseline_useful_hit@5": 1.0,
+            "candidate_useful_hit@5": 0.0,
+            "baseline_positive_hit@5": 1.0,
+            "candidate_positive_hit@5": 0.0
+          },
+          {
+            "id": "45d5cebd37d67818:q0",
+            "group_id": "45d5cebd37d67818",
+            "query": "Who are the Prophets who were sent by Allah? What are the Books which were sent down with them?",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 4,
+            "candidate_useful_rank": 7,
+            "baseline_useful_hit@5": 1.0,
+            "candidate_useful_hit@5": 0.0,
+            "baseline_positive_hit@5": 1.0,
+            "candidate_positive_hit@5": 0.0
+          },
+          {
+            "id": "49c7ead93d2133a2:q0",
+            "group_id": "49c7ead93d2133a2",
+            "query": "Commentary on the verse in which Allaah says: “Verily, Allaah will not change the (good) condition of a people as long as they do not change their state (of goodness) themselves (by committing sins and by being ungrateful and disobedient to Allaah)” [al-Ra’d 13:11]",
+            "language": "en",
+            "best_settled_label": "direct",
+            "baseline_useful_rank": 1,
+            "candidate_useful_rank": 3,
+            "baseline_useful_hit@5": 1.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 1.0,
+            "candidate_positive_hit@5": 1.0
+          },
+          {
+            "id": "586d5fc859f4e608:q0",
+            "group_id": "586d5fc859f4e608",
+            "query": "What is the Importance of Prayer?",
+            "language": "en",
+            "best_settled_label": "direct",
+            "baseline_useful_rank": 9,
+            "candidate_useful_rank": 0,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 0.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 0.0
+          },
+          {
+            "id": "5d91409c55f6ac68:q0",
+            "group_id": "5d91409c55f6ac68",
+            "query": "I would like to know the Islamic view point of mahr (dowry). Is it permissible for the wife to take it or is it a sin? If it is wrong, what should a person who has taken mahr do?",
+            "language": "en",
+            "best_settled_label": "direct",
+            "baseline_useful_rank": 2,
+            "candidate_useful_rank": 0,
+            "baseline_useful_hit@5": 1.0,
+            "candidate_useful_hit@5": 0.0,
+            "baseline_positive_hit@5": 1.0,
+            "candidate_positive_hit@5": 0.0
+          },
+          {
+            "id": "7addd445928e2ffb:q0",
+            "group_id": "7addd445928e2ffb",
+            "query": "What is the importance of honouring parents in the light of the Quran and Sunnah?",
+            "language": "en",
+            "best_settled_label": "direct",
+            "baseline_useful_rank": 9,
+            "candidate_useful_rank": 0,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 0.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 0.0
+          },
+          {
+            "id": "823ea681df2ec083:q0",
+            "group_id": "823ea681df2ec083",
+            "query": "The mother’s rights over her daughter are great but the husband’s rights over his wife are greater",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 3,
+            "candidate_useful_rank": 0,
+            "baseline_useful_hit@5": 1.0,
+            "candidate_useful_hit@5": 0.0,
+            "baseline_positive_hit@5": 1.0,
+            "candidate_positive_hit@5": 0.0
+          },
+          {
+            "id": "95f9d978aaad63fb:q0",
+            "group_id": "95f9d978aaad63fb",
+            "query": "What are Ruling on the call to unite all religions",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 5,
+            "candidate_useful_rank": 0,
+            "baseline_useful_hit@5": 1.0,
+            "candidate_useful_hit@5": 0.0,
+            "baseline_positive_hit@5": 1.0,
+            "candidate_positive_hit@5": 0.0
+          },
+          {
+            "id": "97f15a91c051be81:q0",
+            "group_id": "97f15a91c051be81",
+            "query": "I understand that Prophet Ibrahim (peace be upon him) intended to sacrifice his son, Prophet Ishmail (pbuh), according to Muslim belief. However, a non-Muslim that I had a discussion with pointed out that this is not mentioned in the Quran. Upon investigating this matter, it seems that the Quran is ambiguous as to which son is intended to be sacrificed (as least in my English translation-surah 37). Please explain the Muslim position on Prophet Ibrahim and the sacrifice, using textual evidence.",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 1,
+            "candidate_useful_rank": 0,
+            "baseline_useful_hit@5": 1.0,
+            "candidate_useful_hit@5": 0.0,
+            "baseline_positive_hit@5": 1.0,
+            "candidate_positive_hit@5": 0.0
+          },
+          {
+            "id": "b1c6417814f0fe3e:q0",
+            "group_id": "b1c6417814f0fe3e",
+            "query": "Here in America we are trying as best we can to call people to Allaah according to the way of the Pious Predecessors (al-salaf al-saalih). Recently there has emerged a very serious matter, which is the spread of committees to bring together the three heavenly religions – Islam, Christianity and Judaism – whereby each group sends a representative to try to bridge the gaps between these three religions and bring them closer together. They meet in churches and synagogues, and even pray together, as happened following the massacre in al-Khaleel (“Hebron”) in Palestine. These meetings are attended by a not insignificant number of followers from these three religions. Our question is: the Muslims are represented by scholars – or by people who are counted as being scholars – and there has arisen among us an argument as to the ruling on attending meetings such as these, where Muslim scholars shake hands with and embrace priests and monks. There is no opportunity for da’wah in these meetings; they are held in the name of bringing these three religion closer together. Is it permissible for a Muslim who believes in Allaah and the Last Day to attend such meetings, to enter churches and synagogues and to greet and embrace a priest or monk? For your information, this phenomenon has spread across America, and we hope that you can send us the solution, because we have agreed to accept your ruling between us to suppress this fitnah that exists at the national level. Wa’l-salaamu ‘alaykum wa rahmat-Allaahi wa barakaatuhu.",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 7,
+            "candidate_useful_rank": 0,
+            "baseline_useful_hit@5": 0.0,
+            "candidate_useful_hit@5": 0.0,
+            "baseline_positive_hit@5": 0.0,
+            "candidate_positive_hit@5": 0.0
+          },
+          {
+            "id": "b6278c2dfb9173f8:q0",
+            "group_id": "b6278c2dfb9173f8",
+            "query": "What are the attributes of the correct religion?",
+            "language": "en",
+            "best_settled_label": "direct",
+            "baseline_useful_rank": 4,
+            "candidate_useful_rank": 0,
+            "baseline_useful_hit@5": 1.0,
+            "candidate_useful_hit@5": 0.0,
+            "baseline_positive_hit@5": 1.0,
+            "candidate_positive_hit@5": 0.0
+          },
+          {
+            "id": "c621688238a05a1d:q0",
+            "group_id": "c621688238a05a1d",
+            "query": "Is it permissible to marry a Yazidi woman?",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 1,
+            "candidate_useful_rank": 0,
+            "baseline_useful_hit@5": 1.0,
+            "candidate_useful_hit@5": 0.0,
+            "baseline_positive_hit@5": 1.0,
+            "candidate_positive_hit@5": 0.0
+          },
+          {
+            "id": "c86c976b4bcc9900:q0",
+            "group_id": "c86c976b4bcc9900",
+            "query": "How do I go about repaying my fast as I had just given birth during the month of Ramadan ? What is the intention that I should recite before fasting ?",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 1,
+            "candidate_useful_rank": 0,
+            "baseline_useful_hit@5": 1.0,
+            "candidate_useful_hit@5": 0.0,
+            "baseline_positive_hit@5": 1.0,
+            "candidate_positive_hit@5": 0.0
+          },
+          {
+            "id": "f4cda10e296d000d:q0",
+            "group_id": "f4cda10e296d000d",
+            "query": "What is the ruling of the Shari’ah on blood transfusions?",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 5,
+            "candidate_useful_rank": 0,
+            "baseline_useful_hit@5": 1.0,
+            "candidate_useful_hit@5": 0.0,
+            "baseline_positive_hit@5": 1.0,
+            "candidate_positive_hit@5": 0.0
+          },
+          {
+            "id": "f5b8c46ec5a93f41:q0",
+            "group_id": "f5b8c46ec5a93f41",
+            "query": "In the Quran in 2:87, an excerpt: ...We gave Jesus the son of Mary clear (signs) and strengthened him with the Holy Spirit. What is the Holy Spirit?",
+            "language": "en",
+            "best_settled_label": "partial",
+            "baseline_useful_rank": 1,
+            "candidate_useful_rank": 3,
+            "baseline_useful_hit@5": 1.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 1.0,
+            "candidate_positive_hit@5": 1.0
+          },
+          {
+            "id": "fc3cc09f519a2738:q0",
+            "group_id": "fc3cc09f519a2738",
+            "query": "What is hypocrisy in Islam and how dangerous is it for the Muslims?",
+            "language": "en",
+            "best_settled_label": "direct",
+            "baseline_useful_rank": 1,
+            "candidate_useful_rank": 2,
+            "baseline_useful_hit@5": 1.0,
+            "candidate_useful_hit@5": 1.0,
+            "baseline_positive_hit@5": 1.0,
+            "candidate_positive_hit@5": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "coverage": {
+    "deploy": {
+      "total_results": 3450,
+      "unjudged_results": 3406,
+      "settled_judged_results": 42,
+      "disputed_results": 2
+    },
+    "fcs": {
+      "total_results": 3450,
+      "unjudged_results": 3406,
+      "settled_judged_results": 42,
+      "disputed_results": 2
+    },
+    "meaning": {
+      "total_results": 3450,
+      "unjudged_results": 3377,
+      "settled_judged_results": 72,
+      "disputed_results": 1
+    }
+  },
+  "failure_diagnostics": {
+    "deploy": {
+      "positive_hit_failures": 321,
+      "all_top5_unjudged": 319,
+      "with_disputed_in_top5": 2
+    },
+    "fcs": {
+      "positive_hit_failures": 320,
+      "all_top5_unjudged": 318,
+      "with_disputed_in_top5": 2
+    },
+    "meaning": {
+      "positive_hit_failures": 299,
+      "all_top5_unjudged": 299
+    }
+  },
+  "timings_ms": {
+    "deploy": {
+      "p50": 103.876,
+      "p95": 226.607,
+      "basis": "local Python queries after one warm-up call"
+    },
+    "fcs": {
+      "p50": 80.104,
+      "p95": 530.877,
+      "basis": "local Python queries after one warm-up call"
+    },
+    "meaning": {
+      "p50": 45,
+      "p95": 226,
+      "basis": "warmed browser queries; cold first query excluded"
+    }
+  },
+  "tables": {
+    "positive_hit@5": "| Test slice | Queries | Deploy positive_hit@5 | FCS positive_hit@5 | PR #2 meaning positive_hit@5 | FCS - Deploy | PR #2 - FCS |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: |\n| All test queries | 345 | 7.0% | 7.2% | 13.3% | +0.3 pp | +6.1 pp |\n| English | 345 | 7.0% | 7.2% | 13.3% | +0.3 pp | +6.1 pp |\n| Direct-answer groups | 54 | 16.7% | 14.8% | 29.6% | -1.9 pp | +14.8 pp |\n| Partial-answer groups | 240 | 6.2% | 7.1% | 12.1% | +0.8 pp | +5.0 pp |\n| Background-only groups | 51 | 0.0% | 0.0% | 2.0% | +0.0 pp | +2.0 pp |",
+    "useful_hit@5": "| Test slice | Queries | Deploy useful_hit@5 | FCS useful_hit@5 | PR #2 meaning useful_hit@5 | FCS - Deploy | PR #2 - FCS |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: |\n| All useful-answerable | 294 | 7.8% | 8.2% | 15.0% | +0.3 pp | +6.8 pp |\n| English | 294 | 7.8% | 8.2% | 15.0% | +0.3 pp | +6.8 pp |\n| Direct-answer groups | 54 | 16.7% | 14.8% | 29.6% | -1.9 pp | +14.8 pp |\n| Partial-answer groups | 240 | 5.8% | 6.7% | 11.7% | +0.8 pp | +5.0 pp |"
+  },
+  "limitations": [
+    "The IslamQA package is provisional and not benchmark-grade.",
+    "Test questions were visible during model-assisted review; the split is not blind.",
+    "Relevance labels and citation corrections lack independent scholarly review.",
+    "Pooled judgments are incomplete; unjudged results earn no gain.",
+    "Deploy and FCS search are constrained to the English translation field for a same-corpus comparison.",
+    "Meaning-search timings use a warmed browser worker and a local static model mirror.",
+    "Local Python and browser-worker timings are not production-latency comparisons."
+  ]
+}
