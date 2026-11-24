@@ -777,6 +777,10 @@ def _english_words():
 	return frozenset(Path(__file__).with_name('db').joinpath('english_words.txt').read_text(encoding='utf8').splitlines())
 
 
+def _plain_english_query(raw):
+	return bool(re.fullmatch(r"[A-Za-z\s,.;:!?'-]+", raw)) and not re.search(r'\b(?:AND|OR|NOT)\b', raw)
+
+
 def _run_trigram(conn, raw, limit, col=None):
 	"""Substring fallback for zero-hit queries in indexed trigram fields."""
 	if col not in (None, 'ar_norm', 'en_norm') or not _trgm_ok(conn):
@@ -785,7 +789,7 @@ def _run_trigram(conn, raw, limit, col=None):
 	toks = [t for t in n.split() if len(t) >= 3]
 	if not toks:
 		return []
-	plain_english = bool(re.fullmatch(r'[A-Za-z]+(?:\s+[A-Za-z]+)*', raw)) and not re.search(r'\b(?:AND|OR|NOT)\b', raw)
+	plain_english = _plain_english_query(raw)
 	known = [t for t in n.split() if t in _english_words()] if plain_english and col in (None, 'en_norm') else []
 	fragments = [t for t in toks if t not in known]
 	if known and not fragments:
@@ -916,7 +920,7 @@ def _correct_query(raw, max_tokens=6):
 	if not vocab:
 		return None
 	corrected, changed = [], False
-	plain_english = bool(re.fullmatch(r'[A-Za-z]+(?:\s+[A-Za-z]+)*', raw)) and not re.search(r'\b(?:AND|OR|NOT)\b', raw)
+	plain_english = _plain_english_query(raw)
 	for t in n.split()[:max_tokens]:
 		if len(t) < 4 or (plain_english and t in _english_words()):
 			corrected.append(t)
@@ -1078,7 +1082,7 @@ def index_search(search_query, result_limit=10, dirname=None, search_fields=None
 		if need_all and len(rows) > TRUNC_MAX:
 			rows = rows[:TRUNC_MAX]
 			meta['truncated'] = True
-		whole_terms = frozenset(t for t in terms if t in _english_words()) if re.fullmatch(r'[A-Za-z]+(?:\s+[A-Za-z]+)*', raw) and not re.search(r'\b(?:AND|OR|NOT)\b', raw) else frozenset()
+		whole_terms = frozenset(t for t in terms if t in _english_words()) if _plain_english_query(raw) else frozenset()
 		return _format(rows, terms, col=col, whole_terms=whole_terms), meta
 	finally:
 		conn.close()

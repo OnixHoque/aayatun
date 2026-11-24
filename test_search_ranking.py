@@ -36,10 +36,11 @@ class SearchFormattingTests(unittest.TestCase):
             conn.close()
 
     def test_known_word_is_not_silently_corrected(self):
-        rows, meta = index_search('ward', 10, field='translation')
-        self.assertEqual(rows, [])
-        self.assertIsNone(meta['corrected'])
-        self.assertEqual(meta['suggestions'], [])
+        for query in ('ward', 'ward,'):
+            rows, meta = index_search(query, 10, field='translation')
+            self.assertEqual(rows, [])
+            self.assertIsNone(meta['corrected'])
+            self.assertEqual(meta['suggestions'], [])
         self.assertEqual(searchtool._correct_query('ward judgmnet'), ['ward', 'judgment'])
 
     def test_dictionary_includes_american_and_british_forms(self):
