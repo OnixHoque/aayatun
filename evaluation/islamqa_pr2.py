@@ -4,16 +4,20 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter, defaultdict
+from contextlib import closing
 import hashlib
+import io
 import json
 import math
-import os
 from pathlib import Path
 import random
+import re
 import sqlite3
 import statistics
 import subprocess
 import sys
+import tarfile
+import tempfile
 import time
 import types
 from typing import Any, Callable, Iterable
@@ -33,16 +37,40 @@ LEXICAL_BLOBS = {
     "deploy": {
         "searchnorm_blob": "b106e0ff964e4fb5bdf5ed6f3a3543e8df472df2",
         "searchtool_blob": "a7973e5d3c34300f0876fe0be3658bc163c8b1cc",
+        "build_search_blob": "e497f9bba5c93b9ff83c7192388ce9d781f94f93",
+        "en_quran_blob": "bea5fd6cac389dc3258183e6261cd08f4e8758e9",
+        "synonyms_blob": "9d7495d29bc71561d521b5c3cec94b1fde4f4b60",
     },
     "fcs": {
         "searchnorm_blob": "b106e0ff964e4fb5bdf5ed6f3a3543e8df472df2",
         "searchtool_blob": "5fe6e25542514e16e77a2abab411bfe4aec82fb1",
+        "build_search_blob": "1a5fb561aad9ea0d7481d3191a4b22b7cf9205fd",
+        "en_quran_blob": "bea5fd6cac389dc3258183e6261cd08f4e8758e9",
+        "synonyms_blob": "9d7495d29bc71561d521b5c3cec94b1fde4f4b60",
     },
+}
+MEANING_MODEL_FILES = {
+    "Xenova/multilingual-e5-small/config.json": "cb99455288675345e1a4f411438d5d0adbba5fbd3a67ea4fb03c015433b996c1",
+    "Xenova/multilingual-e5-small/tokenizer.json": "0b44a9d7b51c3c62626640cda0e2c2f70fdacdc25bbbd68038369d14ebdf4c39",
+    "Xenova/multilingual-e5-small/tokenizer_config.json": "a1d6bc8734a6f635dc158508bef000f8e2e5a759c7d92f984b2c86e5ff53425b",
+    "Xenova/multilingual-e5-small/onnx/model_int8.onnx": "4d24e2bc01a447951524466ef533e52944bf48509e6552810bcee1a2711cb02c",
 }
 MEANING_ASSET_SHA256 = {
     "worker_sha256": "445fb57fb91ee6b1ef8fea11d618a88eaa6d9ad6b944ed930f09dec0ece4171a",
     "index_sha256": "495726e9d693af8c3a21f587a6ca6139d7b78476586b7ece3d9f954240f89a21",
     "vectors_sha256": "0cad61636eb49d656fb65e705da4b84f2038c2a771a10bc6bf3d57e16fc071e5",
+    "model_config_sha256": MEANING_MODEL_FILES[
+        "Xenova/multilingual-e5-small/config.json"
+    ],
+    "model_tokenizer_sha256": MEANING_MODEL_FILES[
+        "Xenova/multilingual-e5-small/tokenizer.json"
+    ],
+    "model_tokenizer_config_sha256": MEANING_MODEL_FILES[
+        "Xenova/multilingual-e5-small/tokenizer_config.json"
+    ],
+    "model_weights_sha256": MEANING_MODEL_FILES[
+        "Xenova/multilingual-e5-small/onnx/model_int8.onnx"
+    ],
 }
 FIXTURE_NAME = "islamqa_pr2_test_queries.jsonl"
 MANIFEST_NAME = "islamqa_pr2_fixture_manifest.json"
@@ -91,7 +119,7 @@ def corpus_hash(corpus: dict[str, str]) -> str:
 
 
 def load_dataset_corpus(path: Path) -> dict[str, str]:
-    with sqlite3.connect(f"{path.resolve().as_uri()}?mode=ro", uri=True) as db:
+    with closing(sqlite3.connect(f"{path.resolve().as_uri()}?mode=ro", uri=True)) as db:
         rows = db.execute(
             "SELECT sura, ayah, text FROM verses ORDER BY sura, ayah"
         ).fetchall()
@@ -102,7 +130,7 @@ def load_dataset_corpus(path: Path) -> dict[str, str]:
 
 
 def load_search_corpus(path: Path) -> dict[str, str]:
-    with sqlite3.connect(f"{path.resolve().as_uri()}?mode=ro", uri=True) as db:
+    with closing(sqlite3.connect(f"{path.resolve().as_uri()}?mode=ro", uri=True)) as db:
         rows = db.execute(
             "SELECT surah, verse, en FROM docs ORDER BY surah, verse"
         ).fetchall()
@@ -269,36 +297,52 @@ def verify_package_files(package: Path, manifest: dict[str, Any]) -> None:
             raise ValueError(f"Package hash mismatch for {relative}: {actual} != {expected}")
 
 
-def run_lexical(args: argparse.Namespace) -> None:
-    cases, fixture_manifest = load_fixture(args.fixture, args.manifest)
-    revision = resolve_revision(args.repo, args.revision)
-    norm_source = subprocess.check_output(
-        ["git", "-C", str(args.repo), "show", f"{revision}:searchnorm.py"]
-    ).decode("utf8")
-    search_source = subprocess.check_output(
-        ["git", "-C", str(args.repo), "show", f"{revision}:searchtool.py"]
-    ).decode("utf8")
+def materialize_revision(repo: Path, revision: str, destination: Path) -> None:
+    paths = [
+        "build_search.py",
+        "searchnorm.py",
+        "searchtool.py",
+        "db/quran.db",
+        "db/en_quran.db",
+        "db/en_kathir.db",
+        "db/bn_zakaria.db",
+        "db/ai_context.db",
+        "db/quran_stat.json",
+        "db/search_synonyms.json",
+        "db2/quran_metadata.db",
+    ]
+    archive = subprocess.check_output(
+        ["git", "-C", str(repo), "archive", revision, *paths]
+    )
+    with tarfile.open(fileobj=io.BytesIO(archive)) as bundle:
+        bundle.extractall(destination, filter="data")
 
+
+def run_lexical_queries(runtime: Path, revision: str, engine_name: str) -> dict[str, Any]:
+    """Run in a child process so Windows releases SQLite handles before cleanup."""
+    norm_source = (runtime / "searchnorm.py").read_text(encoding="utf8")
+    search_source = (runtime / "searchtool.py").read_text(encoding="utf8")
     norm_module = types.ModuleType("searchnorm")
-    norm_module.__file__ = str(args.repo / "searchnorm.py")
-    exec(compile(norm_source, f"{revision}:searchnorm.py", "exec"), norm_module.__dict__)
+    norm_module.__file__ = str(runtime / "searchnorm.py")
+    exec(
+        compile(norm_source, f"{revision}:searchnorm.py", "exec"),
+        norm_module.__dict__,
+    )
     sys.modules["searchnorm"] = norm_module
 
-    engine = types.ModuleType("islamqa_pr2_fcs")
-    engine.__file__ = str(args.repo / "searchtool.py")
-    exec(compile(search_source, f"{revision}:searchtool.py", "exec"), engine.__dict__)
-    os.chdir(args.repo)
-    if str(args.repo) not in sys.path:
-        sys.path.insert(0, str(args.repo))
+    engine = types.ModuleType("islamqa_pr2_lexical")
+    engine.__file__ = str(runtime / "searchtool.py")
+    exec(
+        compile(search_source, f"{revision}:searchtool.py", "exec"),
+        engine.__dict__,
+    )
+    if str(runtime) not in sys.path:
+        sys.path.insert(0, str(runtime))
     engine._load_vocab()
     engine._load_bk_tree()
     engine.index_search("mercy", 10, field="translation")
 
-    corpus = load_search_corpus(args.repo / "db" / "search.db")
-    digest = corpus_hash(corpus)
-    if digest != fixture_manifest["corpus"]["sha256"]:
-        raise ValueError(f"{args.engine_name} index corpus differs from the curated corpus")
-
+    cases = read_jsonl(runtime / "queries.jsonl")
     runs: dict[str, dict[str, Any]] = {}
     for index, case in enumerate(cases):
         started = time.perf_counter()
@@ -309,19 +353,67 @@ def run_lexical(args: argparse.Namespace) -> None:
             raise ValueError(f"Duplicate ayah returned for {case['id']}")
         runs[case["id"]] = {"refs": refs, "ms": elapsed}
         if index % 50 == 0:
-            print(f"{args.engine_name} queries {index}/{len(cases)}", flush=True)
+            print(f"{engine_name} queries {index}/{len(cases)}", flush=True)
+    return runs
 
-    report = {
-        "engine": f"Aayatun {args.engine_name} keyword search",
-        "revision": revision,
-        "searchnorm_blob": git_blob(args.repo, revision, "searchnorm.py"),
-        "searchtool_blob": git_blob(args.repo, revision, "searchtool.py"),
-        "field": "translation",
-        "fixture": args.fixture.name,
-        "fixture_sha256": file_sha256(args.fixture),
-        "corpus": {"verses": len(corpus), "sha256": digest},
-        "runs": runs,
-    }
+
+def run_lexical(args: argparse.Namespace) -> None:
+    cases, fixture_manifest = load_fixture(args.fixture, args.manifest)
+    revision = resolve_revision(args.repo, args.revision)
+    with tempfile.TemporaryDirectory(prefix=".islamqa-pr2-", dir=WORKSPACE) as temp:
+        runtime = Path(temp)
+        materialize_revision(args.repo, revision, runtime)
+        build = subprocess.run(
+            [sys.executable, str(runtime / "build_search.py")],
+            cwd=runtime,
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+        print(build.stdout.strip().splitlines()[-1], flush=True)
+        write_jsonl(runtime / "queries.jsonl", cases)
+        subprocess.run(
+            [
+                sys.executable,
+                str(Path(__file__).resolve()),
+                "lexical-queries",
+                "--runtime",
+                str(runtime),
+                "--revision",
+                revision,
+                "--engine-name",
+                args.engine_name,
+            ],
+            cwd=runtime,
+            check=True,
+        )
+        runs = json.loads((runtime / "runs.json").read_text(encoding="utf8"))
+
+        corpus = load_search_corpus(runtime / "db" / "search.db")
+        digest = corpus_hash(corpus)
+        if digest != fixture_manifest["corpus"]["sha256"]:
+            raise ValueError(
+                f"{args.engine_name} index corpus differs from the curated corpus"
+            )
+
+        report = {
+            "engine": f"Aayatun {args.engine_name} keyword search",
+            "revision": revision,
+            "searchnorm_blob": git_blob(args.repo, revision, "searchnorm.py"),
+            "searchtool_blob": git_blob(args.repo, revision, "searchtool.py"),
+            "build_search_blob": git_blob(args.repo, revision, "build_search.py"),
+            "en_quran_blob": git_blob(args.repo, revision, "db/en_quran.db"),
+            "synonyms_blob": git_blob(args.repo, revision, "db/search_synonyms.json"),
+            "runtime_index": "built from pinned revision",
+            "search_db_sha256": file_sha256(runtime / "db" / "search.db"),
+            "vocab_sha256": file_sha256(runtime / "db" / "search_vocab.pkl"),
+            "field": "translation",
+            "fixture": args.fixture.name,
+            "fixture_sha256": file_sha256(args.fixture),
+            "corpus": {"verses": len(corpus), "sha256": digest},
+            "runs": runs,
+        }
     write_json(args.output, report)
     print(json.dumps({"output": str(args.output), "queries": len(runs)}, indent=2))
 
@@ -340,8 +432,11 @@ def validate_rankings(
         refs = run.get("refs")
         if not isinstance(refs, list) or not 1 <= len(refs) <= 10:
             raise ValueError(f"{case_id}: expected one to ten ranked ayat")
-        if any(not isinstance(ref, str) for ref in refs):
-            raise ValueError(f"{case_id}: ranking entries must be strings")
+        if any(
+            not isinstance(ref, str) or not re.fullmatch(r"[1-9]\d*:[1-9]\d*", ref)
+            for ref in refs
+        ):
+            raise ValueError(f"{case_id}: ranking entries must be ayah references")
         if len(refs) != len(set(refs)):
             raise ValueError(f"{case_id}: duplicate ayah in ranking")
         unknown = set(refs) - corpus_refs
@@ -581,6 +676,8 @@ def score(args: argparse.Namespace) -> None:
     for key, expected in MEANING_ASSET_SHA256.items():
         if meaning.get(key) != expected:
             raise ValueError(f"meaning {key} does not match the pinned PR assets")
+    if meaning.get("model_files") != MEANING_MODEL_FILES:
+        raise ValueError("meaning model_files does not match the pinned local E5 mirror")
     expected_corpus = fixture_manifest["corpus"]["sha256"]
     for name, report in reports.items():
         if report["fixture_sha256"] != file_sha256(args.fixture):
@@ -592,15 +689,10 @@ def score(args: argparse.Namespace) -> None:
         )
         if report_corpus != expected_corpus:
             raise ValueError(f"{name} corpus hash mismatch")
-    with sqlite3.connect(
-        f"{args.search_db.resolve().as_uri()}?mode=ro", uri=True
-    ) as db:
-        corpus_refs = {
-            f"{surah}:{ayah}"
-            for surah, ayah, _ in db.execute(
-                "SELECT surah, verse, en FROM docs"
-            )
-        }
+    dataset_corpus = load_dataset_corpus(args.dataset_corpus)
+    if corpus_hash(dataset_corpus) != expected_corpus:
+        raise ValueError("Tracked translation corpus does not match the fixture")
+    corpus_refs = set(dataset_corpus)
     for report in reports.values():
         validate_rankings(cases, report, corpus_refs)
     scores = {
@@ -717,6 +809,12 @@ def score(args: argparse.Namespace) -> None:
             "candidate_worker_sha256": meaning["worker_sha256"],
             "candidate_index_sha256": meaning["index_sha256"],
             "candidate_vectors_sha256": meaning["vectors_sha256"],
+            "candidate_model_config_sha256": meaning["model_config_sha256"],
+            "candidate_model_tokenizer_sha256": meaning["model_tokenizer_sha256"],
+            "candidate_model_tokenizer_config_sha256": meaning[
+                "model_tokenizer_config_sha256"
+            ],
+            "candidate_model_weights_sha256": meaning["model_weights_sha256"],
         },
         "success_definition": fixture_manifest["success_definitions"],
         "slices": slice_reports,
@@ -808,6 +906,16 @@ def main() -> None:
     lexical_parser.add_argument("--output", type=Path, default=HERE / FCS_NAME)
     lexical_parser.set_defaults(func=run_lexical)
 
+    query_parser = subparsers.add_parser("lexical-queries", help=argparse.SUPPRESS)
+    query_parser.add_argument("--runtime", type=Path, required=True)
+    query_parser.add_argument("--revision", required=True)
+    query_parser.add_argument("--engine-name", required=True)
+    query_parser.set_defaults(func=lambda args: write_json(
+        args.runtime / "runs.json",
+        run_lexical_queries(args.runtime, args.revision, args.engine_name),
+    ))
+
+
     score_parser = subparsers.add_parser("score", help="Score deploy, FCS, and meaning runs")
     score_parser.add_argument("--package", type=Path, default=DEFAULT_PACKAGE)
     score_parser.add_argument("--fixture", type=Path, default=HERE / FIXTURE_NAME)
@@ -816,7 +924,9 @@ def main() -> None:
     score_parser.add_argument("--fcs", type=Path, default=HERE / FCS_NAME)
     score_parser.add_argument("--meaning", type=Path, default=HERE / MEANING_NAME)
     score_parser.add_argument(
-        "--search-db", type=Path, default=DEFAULT_REPO / "db" / "search.db"
+        "--dataset-corpus",
+        type=Path,
+        default=WORKSPACE / "aayatun-research" / "db" / "en_quran.db",
     )
     score_parser.add_argument("--output-dir", type=Path, default=HERE)
     score_parser.add_argument("--output", type=Path, default=HERE / RESULTS_NAME)

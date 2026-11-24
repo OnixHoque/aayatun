@@ -16,6 +16,12 @@ const DEFAULT_MANIFEST = path.join(HERE, 'islamqa_pr2_fixture_manifest.json');
 const DEFAULT_OUTPUT = path.join(HERE, 'islamqa_pr2_meaning_rankings.json');
 const DEFAULT_CHROME = 'C:\\Users\\mehra\\AppData\\Local\\ms-playwright\\chromium-1234\\chrome-win64\\chrome.exe';
 const PRODUCT_COMMIT = '357a367ef4631cb771cdd9e3a34116280c7dd2d8';
+const MODEL_FILE_SHA256 = {
+    'Xenova/multilingual-e5-small/config.json': 'cb99455288675345e1a4f411438d5d0adbba5fbd3a67ea4fb03c015433b996c1',
+    'Xenova/multilingual-e5-small/tokenizer.json': '0b44a9d7b51c3c62626640cda0e2c2f70fdacdc25bbbd68038369d14ebdf4c39',
+    'Xenova/multilingual-e5-small/tokenizer_config.json': 'a1d6bc8734a6f635dc158508bef000f8e2e5a759c7d92f984b2c86e5ff53425b',
+    'Xenova/multilingual-e5-small/onnx/model_int8.onnx': '4d24e2bc01a447951524466ef533e52944bf48509e6552810bcee1a2711cb02c',
+};
 
 function parseArgs() {
     const args = {};
@@ -53,6 +59,21 @@ function assertPinnedAsset(root, relative) {
     if (workingBlob !== committedBlob) {
         throw new Error(`Working-tree asset differs from ${PRODUCT_COMMIT}: ${relative}`);
     }
+}
+
+function assertPinnedFile(filename, expected, label) {
+    const actual = sha256File(filename);
+    if (actual !== expected) {
+        throw new Error(`${label} hash mismatch: expected ${expected}, got ${actual}`);
+    }
+    return actual;
+}
+
+function verifyModelFiles(modelRoot) {
+    return Object.fromEntries(Object.entries(MODEL_FILE_SHA256).map(([relative, expected]) => [
+        relative,
+        assertPinnedFile(path.join(modelRoot, relative), expected, `E5 model ${relative}`),
+    ]));
 }
 
 function readFixture(filename, manifestFilename) {
@@ -215,6 +236,45 @@ async function connect(port) {
     return { client: new CdpClient(socket), socket, target };
 }
 
+async function stopChild(child, timeoutMs = 5000) {
+    if (!child || child.exitCode !== null || child.signalCode !== null) return;
+    const exited = new Promise(resolve => child.once('exit', resolve));
+    child.kill();
+    let timer;
+    try {
+        await Promise.race([
+            exited,
+            new Promise(resolve => { timer = setTimeout(resolve, timeoutMs); }),
+        ]);
+    } finally {
+        clearTimeout(timer);
+    }
+    if (child.exitCode === null && child.signalCode === null) {
+        child.kill('SIGKILL');
+        await Promise.race([exited, new Promise(resolve => setTimeout(resolve, 2000))]);
+    }
+}
+
+async function removeDirectory(directory, timeoutMs = 10000) {
+    const deadline = Date.now() + timeoutMs;
+    for (;;) {
+        try {
+            await fsp.rm(directory, { recursive: true, force: true });
+            return;
+        } catch (error) {
+            if (Date.now() >= deadline) throw error;
+            await new Promise(resolve => setTimeout(resolve, 200));
+        }
+    }
+}
+
+async function closeServer(server) {
+    if (!server?.listening) return;
+    await new Promise((resolve, reject) => {
+        server.close(error => error ? reject(error) : resolve());
+    });
+}
+
 async function main() {
     const args = parseArgs();
     const root = path.resolve(args.root || DEFAULT_ROOT);
@@ -231,9 +291,6 @@ async function main() {
     const rootRevision = execFileSync('git', ['-C', root, 'rev-parse', 'HEAD'], {
         encoding: 'utf8',
     }).trim();
-    if (rootRevision !== PRODUCT_COMMIT) {
-        throw new Error(`Product revision mismatch: expected ${PRODUCT_COMMIT}, got ${rootRevision}`);
-    }
     const { cases, manifest, digest } = readFixture(fixturePath, manifestPath);
     const selected = args.limit ? cases.slice(0, Number(args.limit)) : cases;
 
@@ -248,26 +305,32 @@ async function main() {
     const workerHash = textSha256File(workerPath);
     const indexHash = textSha256File(indexPath);
     const vectorsHash = sha256File(vectorsPath);
+    const modelFiles = verifyModelFiles(modelRoot);
 
     const { server, base } = await serve(root, modelRoot);
-    const userDataDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'aayatun-pr2-'));
     const chromeErrors = [];
-    const child = spawn(chromePath, [
-        '--headless=new',
-        '--no-sandbox',
-        '--disable-dev-shm-usage',
-        '--remote-debugging-port=0',
-        '--remote-allow-origins=*',
-        `--user-data-dir=${userDataDir}`,
-        'about:blank',
-    ], { stdio: ['ignore', 'ignore', 'pipe'], windowsHide: true });
-    child.stderr.on('data', chunk => {
-        chromeErrors.push(chunk.toString());
-        if (chromeErrors.length > 20) chromeErrors.shift();
-    });
+    let userDataDir;
+    let child;
     let socket;
+    let failure;
+    const cleanupErrors = [];
     try {
-        const port = await waitForPort(userDataDir, 30000);
+        userDataDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'aayatun-pr2-'));
+        child = spawn(chromePath, [
+            '--headless=new',
+            '--no-sandbox',
+            '--disable-dev-shm-usage',
+            '--remote-debugging-port=0',
+            '--remote-allow-origins=*',
+            `--user-data-dir=${userDataDir}`,
+            'about:blank',
+        ], { stdio: ['ignore', 'ignore', 'pipe'], windowsHide: true });
+        child.stderr.on('data', chunk => {
+            chromeErrors.push(chunk.toString());
+            if (chromeErrors.length > 20) chromeErrors.shift();
+        });
+        const childFailure = new Promise((resolve, reject) => child.once('error', reject));
+        const port = await Promise.race([waitForPort(userDataDir, 30000), childFailure]);
         const connected = await connect(port);
         socket = connected.socket;
         const { client } = connected;
@@ -344,10 +407,16 @@ async function main() {
         const warm = timings.slice(1).sort((a, b) => a - b);
         const report = {
             engine: 'Aayatun PR #2 Search by meaning',
-            product_commit: rootRevision,
+            product_commit: PRODUCT_COMMIT,
+            root_revision: rootRevision,
             worker_sha256: workerHash,
             index_sha256: indexHash,
             vectors_sha256: vectorsHash,
+            model_config_sha256: modelFiles['Xenova/multilingual-e5-small/config.json'],
+            model_tokenizer_sha256: modelFiles['Xenova/multilingual-e5-small/tokenizer.json'],
+            model_tokenizer_config_sha256: modelFiles['Xenova/multilingual-e5-small/tokenizer_config.json'],
+            model_weights_sha256: modelFiles['Xenova/multilingual-e5-small/onnx/model_int8.onnx'],
+            model_files: modelFiles,
             corpus: index.corpus,
             fixture: path.basename(fixturePath),
             fixture_sha256: digest,
@@ -367,11 +436,32 @@ async function main() {
         console.log(JSON.stringify({ output: outputPath, queries: Object.keys(runs).length }, null, 2));
     } catch (error) {
         if (chromeErrors.length) console.error(chromeErrors.join(''));
-        throw error;
+        failure = error;
     } finally {
-        if (socket) socket.close();
-        child.kill();
-        await new Promise(resolve => server.close(resolve));
+        try {
+            if (socket) socket.close();
+        } catch (error) {
+            cleanupErrors.push(error);
+        }
+        try {
+            await stopChild(child);
+        } catch (error) {
+            cleanupErrors.push(error);
+        }
+        try {
+            await closeServer(server);
+        } catch (error) {
+            cleanupErrors.push(error);
+        }
+        try {
+            if (userDataDir) await removeDirectory(userDataDir);
+        } catch (error) {
+            cleanupErrors.push(error);
+        }
+    }
+    if (failure || cleanupErrors.length) {
+        const errors = cleanupErrors.length ? [failure, ...cleanupErrors].filter(Boolean) : [failure];
+        throw errors.length === 1 ? errors[0] : new AggregateError(errors, failure?.message || 'Browser cleanup failed');
     }
 }
 

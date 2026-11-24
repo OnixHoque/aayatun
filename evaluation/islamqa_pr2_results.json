@@ -52,8 +52,8 @@
     "fixture_sha256": "cb33c2b58d229caac4c8374af7a857cbd93a4578833592fcac1afd4e4ab5ab25"
   },
   "evaluation": {
-    "scorer_sha256": "7fd04f460a452ca19910d296fff851ea205910a19f8fbb025a9b34a5ec38bca9",
-    "browser_harness_sha256": "f4d104f6e952317a83f8f55308112436bfc648c815a06c8ec9aebf6657b4a649"
+    "scorer_sha256": "18239a4d48388e7db4318d7c9669c67253a09493793a9f063e1237fc69934b97",
+    "browser_harness_sha256": "642106025132d0b7c87e58a59142c978e3882f656e63e5cb9df3b4b6bdd9fd7c"
   },
   "product": {
     "deploy_revision": "d9cff5d3f21dc11423465893fb1839dd6c9251c0",
@@ -61,7 +61,11 @@
     "candidate_revision": "357a367ef4631cb771cdd9e3a34116280c7dd2d8",
     "candidate_worker_sha256": "445fb57fb91ee6b1ef8fea11d618a88eaa6d9ad6b944ed930f09dec0ece4171a",
     "candidate_index_sha256": "495726e9d693af8c3a21f587a6ca6139d7b78476586b7ece3d9f954240f89a21",
-    "candidate_vectors_sha256": "0cad61636eb49d656fb65e705da4b84f2038c2a771a10bc6bf3d57e16fc071e5"
+    "candidate_vectors_sha256": "0cad61636eb49d656fb65e705da4b84f2038c2a771a10bc6bf3d57e16fc071e5",
+    "candidate_model_config_sha256": "cb99455288675345e1a4f411438d5d0adbba5fbd3a67ea4fb03c015433b996c1",
+    "candidate_model_tokenizer_sha256": "0b44a9d7b51c3c62626640cda0e2c2f70fdacdc25bbbd68038369d14ebdf4c39",
+    "candidate_model_tokenizer_config_sha256": "a1d6bc8734a6f635dc158508bef000f8e2e5a759c7d92f984b2c86e5ff53425b",
+    "candidate_model_weights_sha256": "4d24e2bc01a447951524466ef533e52944bf48509e6552810bcee1a2711cb02c"
   },
   "success_definition": {
     "positive_hit@5": "At least one settled grade-1, grade-2, or grade-3 ayah in the first five results.",
@@ -1357,18 +1361,18 @@
   },
   "timings_ms": {
     "deploy": {
-      "p50": 103.876,
-      "p95": 226.607,
+      "p50": 104.01,
+      "p95": 223.275,
       "basis": "local Python queries after one warm-up call"
     },
     "fcs": {
-      "p50": 80.104,
-      "p95": 530.877,
+      "p50": 75.943,
+      "p95": 472.505,
       "basis": "local Python queries after one warm-up call"
     },
     "meaning": {
-      "p50": 45,
-      "p95": 226,
+      "p50": 46,
+      "p95": 221,
       "basis": "warmed browser queries; cold first query excluded"
     }
   },
