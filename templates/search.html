@@ -35,6 +35,16 @@
 		padding: 0 1px;
 		border-radius: 2px;
 	}
+	.ui.popup {
+		max-width: calc(100vw - 32px);
+		box-sizing: border-box;
+	}
+	.search-tips-content {
+		width: min(640px, calc(100vw - 48px));
+		max-width: calc(100vw - 48px);
+		box-sizing: border-box;
+		overflow-wrap: anywhere;
+	}
 </style>
 
 
@@ -123,9 +133,9 @@
 		class="idea circular blue icon"
 		id="tips"
 		data-variation="wide"
-		data-position="bottom right"
+		data-position="bottom center"
 		data-html=
-		"<div class='ui basic segment' style='font-size: 90%; max-height: 50vh; overflow-y:auto; font-family: Open Sans'>
+		"<div class='ui basic segment search-tips-content' style='font-size: 90%; max-height: 50vh; overflow-y:auto; font-family: Open Sans'>
 			<h4>Jump to a verse or surah</h4>
 				<p>Verses: <strong>2:255</strong>, <strong>2/255</strong> or <strong>2 255</strong></p>
 				<p>Whole surah: <strong>2</strong></p>

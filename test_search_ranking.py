@@ -6,12 +6,76 @@ import pickle
 import tempfile
 from contextlib import closing
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from app import app
+import build_search
 from build_search import add_english_index
 import searchtool
 from searchtool import index_search
+
+
+class SearchFormattingTests(unittest.TestCase):
+    def _row(self, surah, verse, **fields):
+        row = {
+            'surah': surah,
+            'verse': verse,
+            'surah_name': '',
+            'ar_orig': '',
+            'en': '',
+            'en_tafsir': '',
+            'bn_tafsir': '',
+            'ai': '',
+        }
+        row.update(fields)
+        return row
+
+    def test_all_fields_formatting_does_not_leak_scope_between_rows(self):
+        rows = [
+            self._row(29, 41, ai='A spider builds a fragile house.'),
+            self._row(2, 26, en_tafsir='The spider is mentioned as a parable.'),
+        ]
+        items = searchtool._format(rows, ['spider'])
+        self.assertEqual([(item['surah'], item['verse']) for item in items],
+                         [(29, 41), (2, 26)])
+        self.assertEqual(items[0]['chips'], ['AI explanation'])
+        self.assertEqual(items[1]['chips'], ['Tafsir Ibn Kathir'])
+        self.assertEqual(items[1]['ai'], '')
+        self.assertIn('<span class="match">spider</span>', items[1]['en_tafsir'])
+
+    def test_stem_highlights_stay_in_the_matching_field(self):
+        row = self._row(4, 1, en='mercy pledged', ai='pledged',
+                        stem_ai_norm='[pledged]')
+        item = searchtool._format([row], ['mercy', 'pledge'])[0]
+        self.assertIn('>mercy</span>', item['translation'])
+        self.assertNotIn('>pledged</span>', item['translation'])
+        self.assertIn('>pledged</span>', item['ai'])
+
+    def test_snippet_centers_on_a_late_match(self):
+        text = ('ordinary context ' * 300) + 'the needle appears late'
+        rendered = searchtool.snippet(text, ['needle'])
+        self.assertIn('<span class="match">needle</span>', rendered)
+        self.assertIn('…', rendered)
+
+
+class BuildSearchConnectionTests(unittest.TestCase):
+    def test_load_rows_closes_connection_on_query_failure(self):
+        conn = Mock()
+        conn.execute.side_effect = sqlite3.OperationalError('query failed')
+        with patch('build_search.sqlite3.connect', return_value=conn):
+            with self.assertRaises(sqlite3.OperationalError):
+                build_search.load_rows()
+        conn.close.assert_called_once_with()
+
+    def test_build_closes_output_connection_on_failure(self):
+        conn = Mock()
+        conn.execute.side_effect = sqlite3.OperationalError('write failed')
+        with patch('build_search.load_rows', return_value=[]), \
+                patch('build_search.os.path.exists', return_value=False), \
+                patch('build_search.sqlite3.connect', return_value=conn):
+            with self.assertRaises(sqlite3.OperationalError):
+                build_search.build()
+        conn.close.assert_called_once_with()
 
 
 class TranslationRankingTests(unittest.TestCase):

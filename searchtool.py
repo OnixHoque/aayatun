@@ -847,7 +847,7 @@ def _format(rows, highlight_terms, offset=0, col=None):
 			matched = _matched_columns(r, highlight_terms)
 		else:
 			matched = ['ar_norm', 'en_norm']
-		terms = highlight_terms
+		field_terms = {column: list(highlight_terms) for column in matched}
 		for column in _ENGLISH_STEM_COLUMNS:
 			if col is not None and column != col:
 				continue
@@ -855,16 +855,16 @@ def _format(rows, highlight_terms, offset=0, col=None):
 			if key in r.keys():
 				found = re.findall(r'\[([^\]]+)\]', r[key] or '')
 				if found:
-					terms = terms + found
+					field_terms.setdefault(column, []).extend(found)
 					if column not in matched:
 						matched.append(column)
 		if 'stem_matches' in r.keys() and col in (None, 'en_norm'):
-			terms = terms + re.findall(r'\[([^\]]+)\]', r['stem_matches'])
-			if 'en_norm' not in matched:
-				matched.append('en_norm')
+			found = re.findall(r'\[([^\]]+)\]', r['stem_matches'])
+			if found:
+				field_terms.setdefault('en_norm', []).extend(found)
+				if 'en_norm' not in matched:
+					matched.append('en_norm')
 		matched = [column for column in CHIP_LABELS if column in matched]
-		def field(col):
-			return r[_CHIP_TO_RAW[col]] or ''
 
 		item = {
 			'ser': str(i),
@@ -879,8 +879,10 @@ def _format(rows, highlight_terms, offset=0, col=None):
 			'bn_tafsir': '',
 			'ai': '',
 		}
-		for col in matched:
-			item[_CHIP_TO_ITEM[col]] = Markup(snippet(field(col), terms))
+		for matched_col in matched:
+			text = r[_CHIP_TO_RAW[matched_col]] or ''
+			item[_CHIP_TO_ITEM[matched_col]] = Markup(
+				snippet(text, field_terms[matched_col]))
 		results.append(item)
 	return results
 
