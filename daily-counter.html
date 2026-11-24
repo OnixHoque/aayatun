@@ -390,6 +390,13 @@ button, .tile, input, [tabindex] { -webkit-tap-highlight-color: transparent; }
 .io-error { margin: 0; color: #ffc9c9; font-size: .8rem; line-height: 1.45; }
 .io-warn { margin: 0; color: #ffd7a8; font-size: .8rem; line-height: 1.5; }
 .io-confirm-text { margin: 6px 0 14px; font-size: .92rem; line-height: 1.6; }
+.io-diff-wrap { margin: 0 0 14px; overflow-x: auto; }
+.io-diff { width: 100%; border-collapse: collapse; font-size: .78rem; line-height: 1.4; }
+.io-diff th, .io-diff td { padding: 7px 8px; text-align: left; border-bottom: 1px solid var(--edge); vertical-align: top; }
+.io-diff th { color: var(--muted); font-weight: 600; font-size: .72rem; text-transform: uppercase; letter-spacing: .03em; }
+.io-diff td:first-child { font-weight: 600; word-break: break-word; }
+.io-diff-muted { color: var(--muted); }
+.io-diff-more { margin: 8px 0 0; color: var(--muted); font-size: .76rem; }
 @media (max-width: 560px) {
   .top { flex-wrap: wrap; }
   .top-actions { width: 100%; justify-content: space-between; }
@@ -482,7 +489,7 @@ button, .tile, input, [tabindex] { -webkit-tap-highlight-color: transparent; }
 <div class="toast" id="toast" role="status" aria-live="polite" hidden><span id="toastText"></span></div>
 <dialog id="editDialog" aria-labelledby="editTitle"><div class="dialog-card"><div class="modal-heading"><div><p>EDIT</p><h2 id="editTitle">Edit habit</h2></div><button type="button" class="icon-btn x" data-close="editDialog" aria-label="Close">×</button></div><form id="editForm"><label class="field-label" for="editName">Habit name</label><input id="editName" type="text" maxlength="65" required autocomplete="off"><div class="field-group"><span class="field-label">Color tag (optional)</span><div class="choice-row" id="editColorRow" role="group" aria-label="Color tag"></div></div><div class="field-group"><span class="field-label">Type</span><div class="type-toggle" id="editTypeRow" role="group" aria-label="Habit type"><button type="button" data-type="count" aria-pressed="false">Counter</button><button type="button" data-type="timer" aria-pressed="false">Timer</button></div><p class="field-hint">Changing type keeps the same stored numbers — as raw counts or as seconds.</p></div><div class="dialog-actions"><button type="button" class="btn" data-close="editDialog">Cancel</button><button class="btn primary" type="submit">Save</button></div></form></div></dialog>
 <dialog id="deleteDialog" class="confirm-dialog" aria-labelledby="deleteTitle"><div class="dialog-card"><div class="modal-heading"><div><p>DELETE</p><h2 id="deleteTitle">Delete habit?</h2></div><button type="button" class="icon-btn x" data-close="deleteDialog" aria-label="Close">×</button></div><p class="confirm-text">“<b id="deleteName"></b>” and all of its recorded counts will be removed. This can’t be undone.</p><div class="dialog-actions"><button type="button" class="btn" data-close="deleteDialog">Keep it</button><button type="button" class="btn danger" id="deleteConfirm">Delete</button></div></div></dialog>
-<dialog id="ioDialog" aria-labelledby="ioTitle"><div class="dialog-card"><div class="modal-heading"><div><p>BACKUP</p><h2 id="ioTitle">Import / export</h2></div><button type="button" class="icon-btn x" data-close="ioDialog" aria-label="Close">×</button></div><div id="ioMain"><div class="io-section"><div><p class="io-head">Export</p><p class="io-sub">Copies your stored habit history as JSON — names, color tags, types and day-by-day counts for the latest 20 weeks (older days are folded into each habit’s All time total, exactly as you see them here). Anyone you paste this to can read these counts.</p></div><button type="button" class="btn primary" id="ioExportBtn">Copy to clipboard</button></div><div class="io-section"><div><p class="io-head">Import</p><p class="io-sub">Pasted day-counts replace the counts already saved for the same dates, and matching habits also take the backup’s color tag and type. Your current data is backed up automatically before anything changes. After an import, you can revert it here while that backup is available.</p></div><textarea id="ioPaste" class="io-textarea" rows="5" spellcheck="false" autocomplete="off" placeholder='Paste backup JSON, e.g. [{"name":"Dhikr","days":{"2026-11-13":3}}]'></textarea><p class="io-error" id="ioError" hidden></p><div class="dialog-actions" style="margin-top:0"><button type="button" class="btn primary" id="ioImportBtn">Import</button></div></div><div class="io-section" id="ioRevertSection" hidden><div><p class="io-head">Revert last import</p><p class="io-sub" id="ioRevertSummary">A backup from your last import is available.</p></div><p class="io-warn" id="ioRevertWarn">Reverting replaces your current habit data with that backup. Any changes made since that import will be lost.</p><p class="io-error" id="ioRevertError" hidden></p><div class="dialog-actions" style="margin-top:0"><button type="button" class="btn danger" id="ioRevertBtn">Revert last import</button></div></div></div><div id="ioConfirm" hidden><p class="io-confirm-text" id="ioConfirmText"></p><div class="dialog-actions"><button type="button" class="btn" id="ioCancelImport">Cancel</button><button type="button" class="btn primary" id="ioConfirmImport">Import</button></div></div><div id="ioRevertConfirm" hidden><p class="io-confirm-text" id="ioRevertConfirmText"></p><div class="dialog-actions"><button type="button" class="btn" id="ioRevertCancel">Cancel</button><button type="button" class="btn danger" id="ioRevertConfirmBtn">Revert</button></div></div></div></dialog>
+<dialog id="ioDialog" aria-labelledby="ioTitle"><div class="dialog-card"><div class="modal-heading"><div><p>BACKUP</p><h2 id="ioTitle">Import / export</h2></div><button type="button" class="icon-btn x" data-close="ioDialog" aria-label="Close">×</button></div><div id="ioMain"><div class="io-section"><div><p class="io-head">Export</p><p class="io-sub">Copies your stored habit history as JSON — names, color tags, types and day-by-day counts for the latest 20 weeks (older days are folded into each habit’s All time total, exactly as you see them here). Anyone you paste this to can read these counts.</p></div><button type="button" class="btn primary" id="ioExportBtn">Copy to clipboard</button></div><div class="io-section"><div><p class="io-head">Import</p><p class="io-sub">Pasted day-counts replace the counts already saved for the same dates, and matching habits also take the backup’s color tag and type. Your current data is backed up automatically before anything changes. After an import, you can revert it here while that backup is available.</p></div><textarea id="ioPaste" class="io-textarea" rows="5" spellcheck="false" autocomplete="off" placeholder='Paste backup JSON, e.g. [{"name":"Dhikr","days":{"2026-11-13":3}}]'></textarea><p class="io-error" id="ioError" hidden></p><div class="dialog-actions" style="margin-top:0"><button type="button" class="btn primary" id="ioImportBtn">Import</button></div></div><div class="io-section" id="ioRevertSection" hidden><div><p class="io-head">Revert last import</p><p class="io-sub" id="ioRevertSummary">A backup from your last import is available.</p></div><p class="io-warn" id="ioRevertWarn">Reverting replaces your current habit data with that backup. Any changes made since that import will be lost.</p><p class="io-error" id="ioRevertError" hidden></p><div class="dialog-actions" style="margin-top:0"><button type="button" class="btn danger" id="ioRevertBtn">Revert last import</button></div></div></div><div id="ioConfirm" hidden><p class="io-confirm-text" id="ioConfirmText"></p><div class="io-diff-wrap" id="ioConfirmDiff" hidden></div><div class="dialog-actions"><button type="button" class="btn" id="ioCancelImport">Cancel</button><button type="button" class="btn primary" id="ioConfirmImport">Import</button></div></div><div id="ioRevertConfirm" hidden><p class="io-confirm-text" id="ioRevertConfirmText"></p><div class="io-diff-wrap" id="ioRevertConfirmDiff" hidden></div><div class="dialog-actions"><button type="button" class="btn" id="ioRevertCancel">Cancel</button><button type="button" class="btn danger" id="ioRevertConfirmBtn">Revert</button></div></div></div></dialog>
 <script>
 (()=>{'use strict';
 const KEY='daily-counter-v1';
@@ -830,6 +837,67 @@ function refreshRevertSection(){
   $('ioRevertWarn').textContent='Reverting replaces your current habit data with that backup. Any changes made since that import will be lost. The backup is removed after a successful revert.';
   sec.hidden=false;
 }
+function habitDiffSummary(c){
+  if(!c) return 'Not present';
+  let all=(c.older?Number(c.older.n)||0:0), days=0;
+  for(const k of Object.keys(c.days)){const n=safeCount(c,k); if(n>0){all+=n; days++}}
+  const bits=[c.type==='timer'?'Timer':'Counter'];
+  if(c.color&&TAG_META[c.color]) bits.push(TAG_META[c.color].name);
+  bits.push(`${days} ${days===1?'day':'days'}`);
+  bits.push(`${disp(c,all)} total`);
+  if(c.archived) bits.push('archived');
+  return bits.join(', ');
+}
+function renderDiff(el, rows, afterLabel){
+  if(!rows.length){ el.hidden=true; el.replaceChildren(); return }
+  const cap=10, show=rows.slice(0,cap);
+  const table=document.createElement('table'); table.className='io-diff';
+  const thead=document.createElement('thead'), hr=document.createElement('tr');
+  ['Habit','Current','After '+afterLabel].forEach(h=>{const th=document.createElement('th'); th.scope='col'; th.textContent=h; hr.append(th)});
+  thead.append(hr); table.append(thead);
+  const tbody=document.createElement('tbody');
+  for(const r of show){
+    const tr=document.createElement('tr');
+    const td1=document.createElement('td'); td1.textContent=r.name;
+    const td2=document.createElement('td'); td2.textContent=r.before; if(r.before==='Not present'||r.before==='Removed') td2.className='io-diff-muted';
+    const td3=document.createElement('td'); td3.textContent=r.after; if(r.after==='Not present'||r.after==='Removed') td3.className='io-diff-muted';
+    tr.append(td1,td2,td3); tbody.append(tr);
+  }
+  table.append(tbody);
+  el.replaceChildren(table);
+  if(rows.length>cap){ const more=document.createElement('p'); more.className='io-diff-more'; more.textContent=`…and ${rows.length-cap} more ${rows.length-cap===1?'change':'changes'}.`; el.append(more) }
+  el.hidden=false;
+}
+function importDiffRows(plan){
+  const rows=[];
+  for(const {inc,target} of plan.entries){
+    if(!target){
+      rows.push({name:inc.name, before:'Not present', after:habitDiffSummary(inc)});
+    } else {
+      const before=habitDiffSummary(target);
+      const sim=normalizeHabit({ ...target, days:{...target.days}, older:target.older?{...target.older}:undefined });
+      for(const [k,v] of Object.entries(inc.days)) sim.days[k]=v;
+      sim.color=inc.color; sim.type=inc.type;
+      mergeOlder(sim,inc);
+      const after=habitDiffSummary(sim);
+      const changed=before!==after || target.name!==sim.name;
+      if(changed) rows.push({name:target.name, before, after});
+    }
+  }
+  return rows;
+}
+function revertDiffRows(bakHabits){
+  const rows=[], curById=new Map(counters.map(c=>[c.id,c])), bakById=new Map(bakHabits.map(c=>[c.id,c]));
+  const ids=new Set([...counters.map(c=>c.id),...bakHabits.map(c=>c.id)]);
+  for(const id of ids){
+    const cur=curById.get(id)||null, bak=bakById.get(id)||null;
+    const before=habitDiffSummary(cur), after=habitDiffSummary(bak);
+    if(before!==after || (cur&&bak&&cur.name!==bak.name)){
+      rows.push({name:(bak||cur).name, before:cur?before:'Not present', after:bak?after:'Removed'});
+    }
+  }
+  return rows;
+}
 let pendingPlan=null;
 $('ioOpenBtn').addEventListener('click',()=>{ $('ioError').hidden=true; $('ioMain').hidden=false; $('ioConfirm').hidden=true; $('ioRevertConfirm').hidden=true; refreshRevertSection(); $('ioDialog').showModal() });
 $('ioExportBtn').addEventListener('click',async ()=>{
@@ -848,6 +916,7 @@ $('ioImportBtn').addEventListener('click',()=>{
   pendingPlan.skipped=parsed.skipped;
   const r=pendingPlan;
   $('ioConfirmText').textContent=`${r.updatedHabits} ${r.updatedHabits===1?'habit':'habits'} updated · ${r.newCount} new ${r.newCount===1?'habit':'habits'} added · ${r.countsToWrite} day-count${r.countsToWrite===1?'':'s'} written (${r.replacedCounts} replacing existing).${r.skipped?` ${r.skipped} ${r.skipped===1?'entry':'entries'} skipped.`:''} A backup of your current data is kept automatically — you can revert it from this Import / export dialog while that backup is available.`;
+  renderDiff($('ioConfirmDiff'), importDiffRows(pendingPlan), 'import');
   $('ioMain').hidden=true; $('ioConfirm').hidden=false;
 });
 $('ioCancelImport').addEventListener('click',()=>{ pendingPlan=null; $('ioConfirm').hidden=true; $('ioMain').hidden=false });
@@ -873,6 +942,7 @@ $('ioRevertBtn').addEventListener('click',()=>{
   if(!bak){ err.textContent='No import backup was found. Nothing was reverted.'; err.hidden=false; refreshRevertSection(); return }
   const n=bak.habits.length;
   $('ioRevertConfirmText').textContent=`Restore the backup from your last import (${n} ${n===1?'habit':'habits'})? This replaces your current habit data with that backup. Any changes made since that import will be lost, and the backup will be removed after revert.`;
+  renderDiff($('ioRevertConfirmDiff'), revertDiffRows(bak.habits), 'revert');
   $('ioMain').hidden=true; $('ioRevertConfirm').hidden=false;
 });
 $('ioRevertCancel').addEventListener('click',()=>{ $('ioRevertConfirm').hidden=true; $('ioMain').hidden=false; refreshRevertSection(); });
