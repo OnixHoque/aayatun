@@ -211,7 +211,8 @@ def search():
 
 	return render_template('search.html', query=query_str, results=results_dict,
 		suggestions=meta['suggestions'], corrected=meta['corrected'],
-		limit_label=n, filter_value=field + ':', truncated=meta['truncated'])
+		limit_label=n, filter_value=field + ':', truncated=meta['truncated'],
+		search_error=meta.get('error'))
 
 # @app.route('/search/<query_str>', strict_slashes=False, methods = ['POST'])
 # def search2(query_str):
