@@ -821,7 +821,10 @@ class RootDefAdder:
 		root = item[2] if len(item) > 2 else ''
 		key = _reel_norm_root(root)
 		v2_meaning = _reel_root_meanings().get(key, '') if key else ''
-		return (item[0], item[1], item[2], item[3].replace("/", " / "), v2_meaning)
+		def_text = item[3].replace("/", " / ")
+		if v2_meaning and 'No definitions for this word' in str(def_text):
+			def_text = ''
+		return (item[0], item[1], item[2], def_text, v2_meaning)
 	
 	def add_ai_explanation(self):
 		# print('test')
