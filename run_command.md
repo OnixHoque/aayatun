@@ -30,3 +30,9 @@
 # Run the app for testing
 
 flask --app app.py run --debug
+
+# Fetch PR
+
+git fetch origin pull/1/head:pr-1
+git fetch origin pull/1/head
+git merge --ff-only FETCH_HEAD
