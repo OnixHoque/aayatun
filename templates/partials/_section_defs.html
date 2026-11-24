@@ -8,6 +8,10 @@
 		    <h4 style="font-family: 'Open Sans'"> {{ x[1].capitalize() }} ({{ x[2] }}) </h4>
 		    <div style="padding-right: 5%">
 		    <p style="font-size: 90%"> {{ x[3] }} </p>
+		    {% set v2 = x[4] if x|length > 4 else '' %}
+		    {% if v2 %}
+		    <p style="font-size: 90%; margin-top: 8px;">[From <a href="https://studyquran.org/PRL/PRLonline.htm" target="_blank" rel="noopener">StudyQuran.org</a> through Lisan App]: {{ v2 }}</p>
+		    {% endif %}
 		</div>
 	    <!-- <br> -->
 		</div>
