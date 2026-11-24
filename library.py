@@ -1336,6 +1336,26 @@ def get_verse_details(surah, verse):
 # ~2,653 verses). wordforword[i][3] (all-occurrences) is dropped.
 _REEL_ROOT_DIAC = re.compile(r'[\u064B-\u065F\u0670\u06D6-\u06ED\u0640\u200C\u200D\s]+')
 
+@lru_cache(maxsize=1)
+def _reel_root_meanings():
+	"""Compact root meanings distilled from quran_v2.json (db/root_meanings.json).
+	Returns a dict keyed by normalized root -> meaning string."""
+	path = os.path.join('db', 'root_meanings.json')
+	if not os.path.exists(path):
+		return {}
+	try:
+		with open(path, encoding='utf-8') as f:
+			data = json.load(f)
+	except Exception as e:
+		logger.warning(f'failed to load root meanings: {e}')
+		return {}
+	out = {}
+	for root, meaning in (data.get('roots') or {}).items():
+		key = _reel_norm_root(root)
+		if key and meaning:
+			out[key] = str(meaning)
+	return out
+
 @lru_cache(maxsize=128)
 def _get_verse_ai_context(surah, verse):
 	try:
@@ -1399,6 +1419,9 @@ def get_reel_verse(surah, verse):
 			'text': str(item[3] or ''),
 		}
 
+	# Prefer compact distilled root meanings for the reel typewriter.
+	v2_root_meanings = _reel_root_meanings()
+
 	words = []
 	n = len(ayah_words)
 	for i in range(n):
@@ -1407,6 +1430,13 @@ def get_reel_verse(surah, verse):
 		root = m.get('root') or ''
 		lemma = m.get('lemma') or ''
 		key = _reel_norm_root(root)
+		if key and key in v2_root_meanings:
+			ar = (roots.get(key) or {}).get('ar') or root or lemma or ''
+			roots[key] = {
+				'ar': ar,
+				'meaning': '',
+				'text': v2_root_meanings[key],
+			}
 		def_key = key if key in roots else ''
 		segs = m.get('annot') or []
 		words.append({
