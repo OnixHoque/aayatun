@@ -238,14 +238,14 @@
 		    			{% endif %}
 
 		    			{% if x.ayah %}
-		    				<h4 style="font-family: Open Sans">{{ 'Arabic verse' if search_mode == 'meaning' else 'Matched in the verse' }}</h4>
+					<h4 style="font-family: Open Sans">{{ 'Arabic verse' if search_mode == 'meaning' else 'Matched in the verse' }}</h4>
 
 		    				<p style="font-family: 'Scheherazade', serif; font-size: 225%; text-align: right; "> ...{{ x.ayah }}... </p>
 		    				<hr style="width: 50%; color: lightgray; opacity: 50%;">
 		    			{% endif %}
 
 		    			{% if x.translation %}
-		    				<h4 style="font-family: Open Sans">{{ 'English translation' if search_mode == 'meaning' else 'Matched in English Translation' }}</h4>
+					<h4 style="font-family: Open Sans">{{ 'English translation' if search_mode == 'meaning' else 'Matched in English Translation' }}</h4>
 		    				<p> ...{{ x.translation }}... </p>
 		    				<hr style="width: 50%; color: lightgray; opacity: 50%;">
 		    			{% endif %}
