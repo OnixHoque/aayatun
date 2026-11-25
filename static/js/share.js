@@ -757,53 +757,68 @@
 		// Space below the title, split 75% Arabic / 25% translation.
 		var bodyTop = titleY + titleSize * 0.9;
 		var bodyH = Math.max(80, contentBottom - bodyTop);
-		var arabicBoxH = bodyH * 0.75;
-		var transBoxH = bodyH * 0.25;
-
 		var arabic = String(card.arabic || '').trim();
 		var translation = String(card.translation || '').trim();
+		var hasA = !!arabic;
+		var hasT = !!translation;
 
-		// A long translation needs more than a quarter of the card; grow its
-		// box (shrinking the Arabic block) so the card never clips it.
-		if (translation) {
-			var tMinProbe = 11;
-			var tNeed = linesFor(ctx, translation, TRANS, tMinProbe, maxW, false).length *
-				(tMinProbe * TRANS.line) + 6;
-			if (tNeed > transBoxH) {
-				transBoxH = Math.min(tNeed, bodyH * 0.55);
-				arabicBoxH = bodyH - transBoxH;
-			}
+		// Adaptive split: allocate space by needed height at small readable sizes,
+		// mirroring the reel opening screen so very long verses don't clip.
+		var aMin = 10;
+		var tMin = 10;
+		var aNeed = hasA ? linesFor(ctx, arabic, ARABIC, aMin, maxW, true).length * (aMin * ARABIC.line) + 6 : 0;
+		var tNeed = hasT ? linesFor(ctx, translation, TRANS, tMin, maxW, false).length * (tMin * TRANS.line) + 6 : 0;
+		var arabicBoxH = hasA ? bodyH * 0.75 : 0;
+		var transBoxH = hasT ? bodyH - arabicBoxH : 0;
+		if (hasA && hasT) {
+			var totalNeed = Math.max(1, aNeed + tNeed);
+			arabicBoxH = bodyH * (aNeed / totalNeed);
+			transBoxH = bodyH - arabicBoxH;
+			var minABox = 50;
+			var minTBox = 34;
+			if (arabicBoxH < minABox) { arabicBoxH = minABox; transBoxH = bodyH - arabicBoxH; }
+			if (transBoxH < minTBox) { transBoxH = minTBox; arabicBoxH = bodyH - transBoxH; }
+			arabicBoxH = Math.max(minABox, Math.min(bodyH - minTBox, arabicBoxH));
+			transBoxH = bodyH - arabicBoxH;
+		} else if (hasA) {
+			arabicBoxH = bodyH;
+			transBoxH = 0;
+		} else {
+			arabicBoxH = 0;
+			transBoxH = bodyH;
 		}
 
-		// Arabic: largest size that fits the 75% box, bottom-aligned.
+		// Arabic: largest size that fits its box, bottom-aligned.
 		var aSize = Math.min(arabicBoxH * 0.55, 96);
 		var aLines = [], aLineH = 0, aH = 0;
 		for (var ap = 0; ap < 90; ap++) {
-			aLines = linesFor(ctx, arabic, ARABIC, aSize, maxW, true);
+			aLines = hasA ? linesFor(ctx, arabic, ARABIC, aSize, maxW, true) : [];
 			aLineH = aSize * ARABIC.line;
 			aH = aLines.length * aLineH;
-			if (aH <= arabicBoxH - 2 || aSize <= 11) break;
+			if (aH <= arabicBoxH - 2 || aSize <= aMin) break;
 			aSize -= 1;
 		}
-		ctx.textAlign = 'center';
-		ctx.direction = 'rtl';
-		ctx.fillStyle = body;
-		ctx.font = fontFor(ARABIC, aSize);
-		var ay = bodyTop + Math.max(0, arabicBoxH - aH) + aSize * 0.75;
-		for (var i = 0; i < aLines.length; i++) {
-			ctx.fillText(aLines[i], W / 2, ay);
-			ay += aLineH;
+		if (aLines.length) {
+			ctx.textAlign = 'center';
+			ctx.direction = 'rtl';
+			ctx.fillStyle = body;
+			ctx.font = fontFor(ARABIC, aSize);
+			var ay = bodyTop + Math.max(0, arabicBoxH - aH) + aSize * 0.75;
+			for (var i = 0; i < aLines.length; i++) {
+				ctx.fillText(aLines[i], W / 2, ay);
+				ay += aLineH;
+			}
+			ctx.direction = 'ltr';
 		}
-		ctx.direction = 'ltr';
 
-		// Translation: largest size that fits the 25% box, top-aligned.
+		// Translation: largest size that fits its box, top-aligned.
 		var tSize = Math.min(transBoxH * 0.55, 36);
 		var tLines = [], tLineH = 0, tH = 0;
 		for (var tp = 0; tp < 90; tp++) {
-			tLines = translation ? linesFor(ctx, translation, TRANS, tSize, maxW, false) : [];
+			tLines = hasT ? linesFor(ctx, translation, TRANS, tSize, maxW, false) : [];
 			tLineH = tSize * TRANS.line;
 			tH = tLines.length * tLineH;
-			if (tH <= transBoxH - 2 || tSize <= 11) break;
+			if (tH <= transBoxH - 2 || tSize <= tMin) break;
 			tSize -= 1;
 		}
 		if (tLines.length) {

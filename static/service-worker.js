@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aayatun-v251';
+const CACHE_NAME = 'aayatun-v254';
 const MEANING_ASSET_CACHE = 'aayatun-meaning-assets-v1';
 
 // Prayer Time's sunrise/sunset/midnight pills use Material Symbols. The CSS

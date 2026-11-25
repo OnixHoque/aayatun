@@ -118,41 +118,29 @@ html.dark-theme .reel {
 }
 
 .reel-progress {
-  display: flex;
-  flex-wrap: nowrap;
-  justify-content: center;
-  align-items: center;
-  gap: 2px;
   width: 100%;
   max-width: 720px;
+  height: 4px;
   margin: 0 0 6px;
-  min-height: 0;
   flex: 0 0 auto;
   pointer-events: none;
   overflow: hidden;
+  border-radius: 999px;
+  background: var(--reel-border);
+  opacity: 0.9;
 }
 
 .reel-progress:empty {
   display: none;
 }
 
-.reel-progress-dot {
-  width: 4px;
-  height: 4px;
-  min-width: 2px;
+.reel-progress-fill {
+  display: block;
+  height: 100%;
+  width: 0;
   border-radius: 999px;
-  box-sizing: border-box;
-  border: 1px solid var(--reel-border);
-  background: transparent;
-  opacity: 0.7;
-  flex: 1 1 0;
-  max-width: 6px;
-}
-
-.reel-progress-dot.is-done {
   background: var(--reel-accent);
-  border-color: var(--reel-accent);
-  opacity: 1;
+  transition: width 180ms ease;
 }
 
 .reel-stage.is-initial-overview {
