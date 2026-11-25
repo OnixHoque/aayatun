@@ -572,12 +572,19 @@
 			return el.scrollHeight <= boxH + 1;
 		}
 
-		var lo = Math.max(8, minPx);
+		var hardMin = 8;
+		var lo = Math.max(hardMin, minPx);
 		var hi = Math.max(lo, maxPx);
 		apply(lo);
-		if (el.scrollHeight > boxH + 1) return; // even the minimum is too big
+		if (el.scrollHeight > boxH + 1) {
+			// Very long content: drop below preferred min to avoid clipping.
+			apply(hardMin);
+			if (el.scrollHeight > boxH + 1) { apply(hardMin); return; }
+			hi = lo;
+			lo = hardMin;
+		}
 		apply(hi);
-		if (el.scrollHeight <= boxH + 1) return; // the maximum already fits
+		if (el.scrollHeight <= boxH + 1) return;
 		var best = lo;
 		for (var i = 0; i < 18; i++) {
 			var mid = (lo + hi) / 2;
@@ -620,42 +627,69 @@
 		if (!(boxW > 40)) {
 			boxW = Math.max(80, topW - (parseFloat(topCs.paddingLeft) || 0) - (parseFloat(topCs.paddingRight) || 0) - 8);
 		}
-		var arabicBoxH = Math.max(50, remaining * 0.75);
-		var transBoxH = Math.max(30, remaining * 0.25);
-
-		// A very long translation can need more than a quarter of the screen.
-		// Give it the height it needs at the smallest readable size and take
-		// that from the Arabic block, so nothing is ever clipped on the
-		// opening scene. Short verses keep the exact 75 / 25 split.
-		var tMin = Math.max(11, boxW * 0.02);
+		var aMin = Math.max(10, Math.min(18, boxW * 0.03));
+		var tMin = Math.max(10, Math.min(12, boxW * 0.022));
 		var tLine = function (px) { return px < 14 ? '1.35' : (px < 22 ? '1.45' : '1.55'); };
-		if ((tEl.textContent || '').trim()) {
-			tEl.style.whiteSpace = 'normal';
-			tEl.style.overflow = 'hidden';
-			tEl.style.fontSize = tMin + 'px';
-			tEl.style.lineHeight = tLine(tMin);
-			var tNeeded = tEl.scrollHeight + 4;
-			if (tNeeded > transBoxH) {
-				transBoxH = Math.min(tNeeded, remaining * 0.55);
-				arabicBoxH = Math.max(50, remaining - transBoxH);
-			}
+		var aLine = function (px) { return px < 30 ? '1.5' : (px < 52 ? '1.65' : '1.8'); };
+
+		function neededHeight(el, px, lineFn) {
+			el.style.whiteSpace = 'normal';
+			el.style.overflow = 'hidden';
+			el.style.display = 'block';
+			el.style.fontSize = px + 'px';
+			el.style.lineHeight = lineFn(px);
+			return el.scrollHeight + 4;
+		}
+
+		var hasA = !!(aEl.textContent || '').trim();
+		var hasT = !!(tEl.textContent || '').trim();
+		var aNeed = hasA ? neededHeight(aEl, aMin, aLine) : 0;
+		var tNeed = hasT ? neededHeight(tEl, tMin, tLine) : 0;
+
+		var minA = hasA ? 50 : 0;
+		var minT = hasT ? 30 : 0;
+		var arabicBoxH = Math.max(minA, remaining * 0.75);
+		var transBoxH = Math.max(minT, remaining - arabicBoxH);
+		if (hasA && hasT) {
+			var totalNeed = Math.max(1, aNeed + tNeed);
+			arabicBoxH = remaining * (aNeed / totalNeed);
+			transBoxH = remaining - arabicBoxH;
+			if (arabicBoxH < minA) { arabicBoxH = minA; transBoxH = remaining - arabicBoxH; }
+			if (transBoxH < minT) { transBoxH = minT; arabicBoxH = remaining - transBoxH; }
+			// Keep both readable, but allow either side to grow for very long content.
+			var maxT = remaining - minA;
+			var maxA = remaining - minT;
+			arabicBoxH = Math.max(minA, Math.min(maxA, arabicBoxH));
+			transBoxH = remaining - arabicBoxH;
+			transBoxH = Math.max(minT, Math.min(maxT, transBoxH));
+			arabicBoxH = remaining - transBoxH;
+		} else if (hasA) {
+			arabicBoxH = remaining;
+			transBoxH = 0;
+		} else {
+			arabicBoxH = 0;
+			transBoxH = remaining;
 		}
 
 		// The grid rows must match the measured split, otherwise a grown
-		// translation would still be clipped by the CSS 3fr / 1fr rows.
-		top.style.gridTemplateRows = refH + 'px ' + arabicBoxH + 'px ' + transBoxH + 'px';
+		// side would still be clipped by the CSS 3fr / 1fr rows.
+		top.style.gridTemplateRows = refH + 'px ' + Math.max(0, arabicBoxH) + 'px ' + Math.max(0, transBoxH) + 'px';
 
 		// Arabic fills the top block (bottom-aligned in its cell).
-		fitTextToBox(aEl, boxW, arabicBoxH,
-			Math.max(18, boxW * 0.045),
-			Math.min(arabicBoxH * 0.62, boxW * 0.30, 220),
-			function (px) { return px < 30 ? '1.5' : (px < 52 ? '1.65' : '1.8'); });
+		if (hasA) {
+			fitTextToBox(aEl, boxW, arabicBoxH,
+				aMin,
+				Math.min(arabicBoxH * 0.62, boxW * 0.30, 220),
+				aLine);
+		}
 
 		// Translation fills the bottom block (top-aligned in its cell).
-		fitTextToBox(tEl, boxW, transBoxH,
-			tMin,
-			Math.min(transBoxH * 0.55, boxW * 0.07, 64),
-			tLine);
+		if (hasT) {
+			fitTextToBox(tEl, boxW, transBoxH,
+				tMin,
+				Math.min(transBoxH * 0.55, boxW * 0.07, 64),
+				tLine);
+		}
 	}
 
 	function fitOpeningScene() {
