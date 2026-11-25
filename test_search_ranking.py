@@ -16,6 +16,38 @@ from searchtool import index_search
 
 
 class SearchFormattingTests(unittest.TestCase):
+    def test_dictionary_terms_are_not_highlighted_inside_other_words(self):
+        row = self._row(89, 22, en='rank upon rank', ai='on the day')
+        item = searchtool._format([row], ['on', 'day'], whole_terms={'on', 'day'})[0]
+        self.assertEqual(item['chips'], ['AI explanation'])
+        self.assertIn('>on</span>', item['ai'])
+
+    def test_known_word_and_fragment_fallback_respects_both_terms(self):
+        conn = searchtool._connect()
+        try:
+            rows = searchtool._run_trigram(conn, 'on eward', 20, 'en_norm')
+            self.assertTrue(rows)
+            for row in rows:
+                text, _ = searchtool.normalize(row['en'])
+                self.assertIn('on', text.split())
+                self.assertIn('eward', text)
+            self.assertEqual(searchtool._run_trigram(conn, 'ward', 20, 'en_norm'), [])
+        finally:
+            conn.close()
+
+    def test_known_word_is_not_silently_corrected(self):
+        for query in ('ward', 'ward,'):
+            rows, meta = index_search(query, 10, field='translation')
+            self.assertEqual(rows, [])
+            self.assertIsNone(meta['corrected'])
+            self.assertEqual(meta['suggestions'], [])
+
+    def test_dictionary_includes_american_and_british_forms(self):
+        words = searchtool._english_words()
+        for word in ('ward', 'on', 'color', 'colour', 'judgment', 'judgement'):
+            self.assertIn(word, words)
+        self.assertNotIn('judg', words)
+
     def _row(self, surah, verse, **fields):
         row = {
             'surah': surah,
