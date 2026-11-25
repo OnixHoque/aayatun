@@ -22,24 +22,32 @@ Node.js and Chromium are needed only to reproduce browser verification.
 
 ## Install and build without downloads
 
+**Normal deployment uses the embeddings already included in this PR. You do not
+need to regenerate them or run `rebuild-embeddings`.** In the steps below, `build`
+creates the keyword-search SQLite index and checks the supplied embedding files;
+it does not calculate new embeddings.
+
+### 1. Verify files and install runtime dependencies
+
 Run from the checkout root (the manager also resolves the root itself):
 
 ```text
 python deployment/manage.py verify
-python deployment/manage.py install
+python deployment/manage.py install --runtime-only
 ```
 
 The installer creates `.venv` and uses only bundled wheels, exact version locks,
-SHA-256 hashes, `--no-index`, and `--no-cache-dir`. To deploy the prebuilt embeddings
-without installing PyTorch/Transformers, use `install --runtime-only` instead.
+SHA-256 hashes, `--no-index`, and `--no-cache-dir`. `--runtime-only` installs what
+is needed to serve the app and use its prebuilt embeddings, without installing
+the PyTorch/Transformers dependencies used to regenerate embeddings.
+
+### 2. Prepare the keyword index and validate the included embeddings
 
 Use `.venv/Scripts/python.exe` on Windows or `.venv/bin/python` on Linux for the
 following commands (shown with `PYTHON` as a placeholder):
 
 ```text
 PYTHON deployment/manage.py build
-PYTHON -m unittest test_meaning_search.py test_search_ranking.py
-PYTHON deployment/manage.py serve --listen 127.0.0.1:8000
 ```
 
 `build` rebuilds the SQLite search index from the included source databases and
@@ -48,6 +56,14 @@ always loads its model, runtime, and vectors from this app; the old local-model
 environment flag is no longer required. A first search still transfers roughly
 158 MB from your own server to a new browser.
 
+### 3. Start the application
+
+```text
+PYTHON deployment/manage.py serve --listen 127.0.0.1:8000
+```
+
+### Production configuration
+
 Use HTTPS in production (or localhost for development). Place Waitress behind
 your normal HTTPS reverse proxy, set `AAYATUN_HTTPS=1`, and provision a persistent
 `AAYATUN_SECRET_KEY` outside Git. Serve `/static/` directly when possible; `.js`
@@ -55,9 +71,26 @@ and `.mjs` need a JavaScript MIME type, `.wasm` needs `application/wasm`, and mo
 and vector files can use `application/octet-stream`. Keep the app's `db/` runtime
 directory writable. No GPU is required.
 
-## Rebuild embeddings from scratch
+### Optional: verify the application tests
 
-With the full installation:
+```text
+PYTHON -m unittest test_meaning_search.py test_search_ranking.py
+```
+
+### Optional: rebuild embeddings from scratch (maintainers only)
+
+**Skip this subsection for normal installation and deployment.** The prebuilt
+translation and all-fields vectors are already supplied under `static/meaning/`.
+Regenerate embeddings only when intentionally updating the indexed content,
+embedding model, or embedding-generation logic.
+
+First install the additional builder dependencies from the bundled wheels:
+
+```text
+python deployment/manage.py install
+```
+
+Then use the virtual environment's Python:
 
 ```text
 PYTHON deployment/manage.py smoke-model
