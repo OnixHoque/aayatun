@@ -78,9 +78,22 @@ async function main() {
         }
         const report = { query:'saw the end', refs:result.refs, posted:requests,
             cachedModelFiles:modelFiles, freshWorkerAfterReloadModelFetches:cached.modelFetches };
+        report.sourceComparison = {};
+        for (const [scope, expectedFirst] of [['translation', '22:64'], ['all-fields', '29:45']]) {
+            await evaluate(`(() => {
+                const form = document.querySelector('#result-search-mode').form;
+                const source = form.querySelector('[data-meaning-source]');
+                source.value = ${JSON.stringify(scope)}; source.dispatchEvent(new Event('change'));
+                form.elements.query_str.value = 'What is the Importance of Prayer?';
+                form.requestSubmit();
+            })()`);
+            await waitFor(`document.querySelector('.surahlink')?.textContent.trim() === ${JSON.stringify(expectedFirst)} && !document.querySelector('form[aria-busy]')`);
+            report.sourceComparison[scope] = await evaluate(`Array.from(document.querySelectorAll('.surahlink'), n => n.textContent.trim()).slice(0,5)`);
+        }
         await fs.mkdir('deployment/verification', {recursive:true});
         await fs.writeFile('deployment/verification/meaning-ui-cache.json', JSON.stringify(report,null,2));
         console.log('PASS: ten UI results; no technical copy; model reused after reload with zero model fetches.');
+        console.log('Source comparison:', JSON.stringify(report.sourceComparison));
     } finally {
         socket?.close(); await stopChild(child); await removeDirectory(profile);
     }
