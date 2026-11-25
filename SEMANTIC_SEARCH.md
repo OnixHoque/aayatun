@@ -1,24 +1,149 @@
 # Search by meaning
 
-Readers choose **Search by meaning** in the search dialog or on the results page. A browser worker embeds the question with multilingual E5-small and compares it with prebuilt verse embeddings. It ranks by cosine similarity and returns up to ten ayat from the English translation corpus. The normal Flask results page displays the Arabic verse and English translation.
+Readers choose **Search by meaning** in the search dialog or on the results page. A browser worker embeds the question once with multilingual E5-small, scores independent field indexes, and returns up to ten unique ayat. Flask validates the selected references and renders the normal Arabic-verse and English-translation results.
+
+When `static/meaning/all-fields-index.json` contains a validated frozen configuration, it is the default meaning-search scope. The original translation-only `static/meaning/index.json` remains available for compatibility and for the reproducible PR #2 baseline. A newly rebuilt all-fields manifest starts as `pending_validation`; Flask and the server-side validator hide and reject that scope until validation tuning freezes it.
+
+## Searched fields
+
+The all-fields scope indexes these fields independently:
+
+- Arabic ayah text (`ar_raw`)
+- English translation (`en`)
+- English tafsir (`en_tafsir`)
+- Bengali tafsir (`bn_tafsir`)
+- AI verse explanation/context (`verse_context`)
+- AI word meanings, including Arabic words and their English explanations (`word_meanings`)
+- Surah names (`surah_name`)
+
+The AI field is explanation/context, not a new AI translation. Bare Arabic roots remain available through keyword `root:` search.
+
+Long fields are split into deterministic 512-token passages with 64-token overlap. The score for an ayah and field is the maximum cosine similarity across that ayah's passages. Missing field text is excluded, and the remaining field weights are renormalized for that ayah. Exact ties use canonical ayah order.
+
+## Fusion
+
+Two fusion methods are implemented:
+
+- `weighted_raw`: \(\sum_f w_f \cos(v,q,f)\)
+- `weighted_z`: \(\sum_f w_f z_f(v,q)\)
+
+Weights are nonnegative and sum to one. The deployed method and weights are selected on the validation split only, then frozen before the held-out test run. The browser worker and offline evaluator use the same scoring helpers and agree exactly on references and rounded scores for the frozen configuration.
 
 ## Deploy
 
-Ship the files under `static/meaning/` with the app. They add about 2.4 MB of static files. The Flask app uses its existing dependencies, verifies the translation index, and looks up the selected references. It runs no model and needs no inference service or API key.
+Ship `static/meaning/` with the app. The all-fields vectors contain 57,090 passages and 21.92 MB of int8 data, plus the manifest and passage maps. The original translation-only vectors are reused unchanged when their corpus and model hashes match. The all-fields worker verifies each downloaded vector file against its manifest SHA-256 hash.
 
-The browser fetches the pinned Transformers.js runtime from jsDelivr and the pinned ONNX model from Hugging Face. The first use transfers about 140 MB and can take longer on slow connections or devices. The browser can cache model files. Each new results page starts a new worker when a reader next chooses meaning search. The question goes to the Aayatun results page. The model asset hosts receive download requests without the question.
+Flask runs no model and needs no inference service or API key. It verifies the current searchable corpus, rejects stale or unknown references, and falls back cleanly when an index is incomplete. The browser loads the pinned Transformers.js 3.7.2 runtime, ONNX/WASM, and ONNX model from the app itself. Remote model loading is disabled. The first use transfers about 140 MB for the model and can take longer on slow connections or devices.
 
-To serve the same model from the app, copy these files to `static/meaning/models/Xenova/multilingual-e5-small/`. [Pinned ONNX model files](https://huggingface.co/Xenova/multilingual-e5-small/tree/761b726dd34fb83930e26aab4e9ac3899aa1fa78)
+These files are included under `static/meaning/models/Xenova/multilingual-e5-small/` (the large ONNX file uses Git LFS):
 
 - `config.json`
 - `tokenizer_config.json`
 - `tokenizer.json`
 - `onnx/model_int8.onnx`
 
-Set `AAYATUN_LOCAL_MEANING_MODEL=1` in Flask's environment. Serve the large files through static hosting when possible. The model is published under the [upstream MIT license](https://huggingface.co/intfloat/multilingual-e5-small).
+Local model loading is the default; no environment flag is needed. The service worker precaches the local-model worker URL. The model is published under the [upstream MIT license](https://huggingface.co/intfloat/multilingual-e5-small). The pinned original checkpoint, tokenizer, and offline Python wheel sets for CPython 3.12 on Windows/Linux x64 are included too. Follow [the self-contained installation and build instructions](deployment/README.md); `python deployment/manage.py install` installs without package-index access. This replaces the old Python 3.10 setup guidance for this PR.
 
-## Rebuild the verse embeddings
+Pinned model revisions:
 
-When the English translation changes, rebuild `db/search.db`, then run `python build_meaning_index.py` from the app folder in an offline build environment with NumPy, PyTorch, Transformers, and the pinned E5 checkpoint cached. Publish the generated manifest and vector file together. Flask rejects verse lists from an index based on a different translation corpus.
+- Runtime: `Xenova/multilingual-e5-small@761b726dd34fb83930e26aab4e9ac3899aa1fa78`
+- Offline builder: `intfloat/multilingual-e5-small@c007d7ef6fd86656326059b28395a7a03a7c5846`
 
-To hide the mode, remove the deployed `static/meaning/index.json`.
+## Rebuild the embeddings
+
+The deployment manager selects the bundled checkpoint cache and enables Hugging Face offline mode. After the full offline installation, use the virtual environment's Python:
+
+```bash
+python deployment/manage.py build
+python deployment/manage.py smoke-model
+python deployment/manage.py rebuild-embeddings
+```
+
+The builder checks all 6,236 canonical references, vector and passage-map lengths, nonzero norms, source hashes, field hashes, missing-field coverage, model metadata, and asset totals before publishing the manifest. It also refuses to publish if a source file changes during the build. The manager writes fresh embeddings to `dist/rebuilt/` to preserve the validated deployment. Publish the manifest and all referenced vector files together after validation.
+
+A rebuild produces `pending_validation` defaults. Do not manually mark them frozen. Generate validation diagnostics and run the tuning command below; the evaluator records validation provenance and freezes the selected configuration atomically.
+
+## Reproduce the benchmark
+
+The evaluator uses the provisional IslamQA v2 package. Validation contains 257 question groups and 260 English wordings; test contains 341 groups and 345 wordings. Labels are model-assisted, non-blind, and not benchmark-grade.
+
+Prepare the validation fixture and the pinned PR #1 all-fields lexical baseline:
+
+```bash
+python evaluation/islamqa_pr2.py prepare --split validation
+python evaluation/islamqa_pr2.py lexical --field all \
+  --output evaluation/islamqa_pr2_fcs_all_fields_rankings.json
+```
+
+Run the production worker twice against validation. The diagnostics contain exact query embeddings, per-field top-ten rankings, fused rankings, asset hashes, and timings:
+
+```bash
+node evaluation/islamqa_pr2_browser.cjs --scope all-fields --allow-working-tree \
+  --fixture evaluation/validation/islamqa_pr2_validation_queries.jsonl \
+  --manifest evaluation/validation/islamqa_pr2_validation_fixture_manifest.json \
+  --output evaluation/validation/islamqa_pr2_all_fields_browser.json
+
+node evaluation/islamqa_pr2_browser.cjs --scope all-fields --allow-working-tree \
+  --fixture evaluation/validation/islamqa_pr2_validation_queries.jsonl \
+  --manifest evaluation/validation/islamqa_pr2_validation_fixture_manifest.json \
+  --output evaluation/validation/islamqa_pr2_all_fields_browser_b.json
+```
+
+Tune with 0.1 weight steps and greedy coordinate search, then freeze only after the duplicate validation runs and browser/offline parity checks pass:
+
+```bash
+python evaluation/islamqa_pr2_all_fields.py tune --freeze --bootstrap 2000
+python build_meaning_index.py --validate-only
+```
+
+Run the held-out test twice with the frozen configuration, then generate its report:
+
+```bash
+node evaluation/islamqa_pr2_browser.cjs --scope all-fields --allow-working-tree \
+  --output evaluation/islamqa_pr2_all_fields_browser_a.json
+
+node evaluation/islamqa_pr2_browser.cjs --scope all-fields --allow-working-tree \
+  --output evaluation/islamqa_pr2_all_fields_browser_b.json
+
+python evaluation/islamqa_pr2_all_fields.py report --bootstrap 2000
+```
+
+The final report requires a frozen manifest whose hashes and selected configuration match the validation report. Separate validation and test reports prevent model-selection results from being confused with held-out results.
+
+Reports:
+
+- `evaluation/validation/islamqa_pr2_all_fields_validation_report.md`
+- `evaluation/islamqa_pr2_all_fields_test_report.md`
+- `evaluation/islamqa_pr2_all_fields_test_rankings.jsonl`
+
+The comparison includes deploy keyword, PR #1 translation keyword, PR #1 all-fields keyword, PR #2 translation meaning, each semantic field alone, and all-fields fused meaning. It reports Hit@5, MRR@10, NDCG@10, recall, paired question-group bootstrap intervals, wins/losses, judgment coverage, asset size, and warmed latency.
+
+## Measured held-out result
+
+The frozen validation selection is `weighted_raw` with English tafsir `0.6`, English translation `0.2`, and AI verse context `0.2`; all other weights are zero.
+
+On the 345-query held-out test, fused all-fields meaning search reached:
+
+- Relevant Hit@5: **18.8%**, versus 13.3% for translation-only meaning and 15.9% for PR #1 all-fields keyword.
+- Useful Hit@5 on useful-answerable cases: **20.7%**, versus 15.0% and 16.7% respectively.
+- Direct-answer Hit@5: **40.7%**, versus 27.8% and 14.8% respectively.
+- MRR@10: **0.1253**, versus 0.0900 and 0.1086.
+- NDCG@10: **0.1042**, versus 0.0742 and 0.0917.
+
+The fused-versus-PR #1 relevant Hit@5 delta is +2.9 percentage points, but its paired group-bootstrap 95% interval is [-2.0, +7.6] points. The useful Hit@5 delta is +4.1 points with interval [-1.4, +9.2]. The direct-answer delta is +25.9 points with interval [+13.2, +39.3]. The point estimates therefore favor all-fields fusion, while the broader relevance improvements are not statistically conclusive in this provisional sample.
+
+Measured cost is 21.92 MB of int8 vectors. A fresh Chromium run transferred 157.72 MB including the local model and semantic assets in 13 loopback requests. Warmed all-fields browser latency was p50 190 ms and p95 634 ms, excluding the first query; these are local measurements, not production latency.
+
+## Verification and limitations
+
+Run the application tests with:
+
+```bash
+python -m unittest test_meaning_search.py test_search_ranking.py
+```
+
+The all-fields translation field must reproduce all 345 existing PR #2 translation rankings exactly. Two complete builds must produce identical manifest and vector hashes, and duplicate browser runs must produce identical rankings. Browser/offline agreement is required for the frozen configuration.
+
+The two definitive builds were identical: pending manifest SHA-256 `f34405f69a24d8fbc392df15b9b791b9113e3bac3a155dbae36d2c692ff17475`, with all seven vector hashes unchanged. After validation provenance was frozen on the second build, the deployed manifest SHA-256 was `fd109a88f98322abe0fb2b534ba89a2459a64fcffb64962b5c948e1e74b48ea5`.
+
+Results establish English-query quality only. They do not establish Arabic or Bengali query quality. AI explanations and word meanings are generated content, and Bengali tafsir or surah-name weights may legitimately be zero after validation. Incomplete pooled judgments and the non-blind test split limit conclusions.

@@ -1,0 +1,580 @@
+{
+  "schema_version": 1,
+  "runtime": "Transformers.js 3.7.2 / ONNX Runtime Web 1.22.0-dev.20250409-89f8206ba4",
+  "runtime_model": "Xenova/multilingual-e5-small@761b726dd34fb83930e26aab4e9ac3899aa1fa78",
+  "builder_model": "intfloat/multilingual-e5-small@c007d7ef6fd86656326059b28395a7a03a7c5846",
+  "files": {
+    "db/ai_context.db": {
+      "bytes": 31895552,
+      "sha256": "0a334c0e376ccca777312757d8671ad08fc71803effc8fdd8644999b598ff91e"
+    },
+    "db/ayah_themes.db": {
+      "bytes": 184320,
+      "sha256": "e2f7c42f44cf7c80529eca02bf68f3077315574eb5b651d0e1de09c575f0d8be"
+    },
+    "db/bn_zakaria.db": {
+      "bytes": 20639744,
+      "sha256": "5bf5567da24df0a0207836804f24ae075996947ca2a1691e77f3b727cad95585"
+    },
+    "db/en_kathir.db": {
+      "bytes": 12650496,
+      "sha256": "5e8cf990f9e6face2e57fcad7a1ed556408c073fe81b10f6d97020080f2523c1"
+    },
+    "db/en_quran.db": {
+      "bytes": 1984512,
+      "sha256": "cd1cd1ee0bb43b75fccb0e8226af15c55a653cd7e46391f52c8dbdbdad34125a"
+    },
+    "db/mushaf_lines.json": {
+      "bytes": 1983314,
+      "sha256": "34437ff02158af8f686a7b9dcacb7a5ab0a9801453fb025d03369c60122248a1"
+    },
+    "db/page_overviews.db": {
+      "bytes": 839680,
+      "sha256": "dc5b648249e9e77ced99b2e51ed42045695d1045341e11844e16d098e95a9309"
+    },
+    "db/pos_tags_dict.txt": {
+      "bytes": 1318,
+      "sha256": "aa15e6d019e25404cc5572e9e9deadd80969d87af283b892fe58951886d082e2"
+    },
+    "db/qcf_verses.json": {
+      "bytes": 433767,
+      "sha256": "5e107d11fc615d8466d5af33afa221948e192171249f1edbc28b61b612395300"
+    },
+    "db/quran.db": {
+      "bytes": 2558976,
+      "sha256": "d3cf1507035566808a43833589bb1ad5db5964a5bad902cc7d51ef9abe0938a8"
+    },
+    "db/quran_index.txt": {
+      "bytes": 61085,
+      "sha256": "acc388963073e17bf3dd41d31f78bdde0f60daca893e82587ee5b9767b0afc31"
+    },
+    "db/quran_stat.json": {
+      "bytes": 9530,
+      "sha256": "0f0339d858b985fcd2ab70728e68fabae852ca73f56e20349c644601d6caea4e"
+    },
+    "db/ruku_index.txt": {
+      "bytes": 5388,
+      "sha256": "5d885cdd6de32f6ca29327314ab6f8164dfc076bf4bbd5db140ea2f1991b377b"
+    },
+    "db/sarf.json": {
+      "bytes": 1398645,
+      "sha256": "4a7cb74ac4552f7d37c0154e68c73d88c18969adb4419e5e0bbfcc49dfef5f04"
+    },
+    "db/search_synonyms.json": {
+      "bytes": 2982,
+      "sha256": "1ae9f58db9fff3b471d4c39e486f33b473af289bcdaa143a83703a4255e010f1"
+    },
+    "db/surah_overviews.db": {
+      "bytes": 180224,
+      "sha256": "7a3e90240c92c729406b4109afda8fb3566e334ffdc90eb72d28eb17ee5c9ade"
+    },
+    "db/verse_quizzes.db": {
+      "bytes": 21708800,
+      "sha256": "093ff949de543ddd94d136eddc20622b9e8a607a3646b29d7656e9b0073e2778"
+    },
+    "db2/quran_metadata.db": {
+      "bytes": 311238656,
+      "sha256": "cff182a5efac0e77e07c53d73d79fa9ec5e79954216f76cc11968dc02ed2fd70"
+    },
+    "deployment/licenses/DataTables-LICENSE.txt": {
+      "bytes": 1096,
+      "sha256": "4f6610cece9940c3bf3de202a920e7b69491e7947d968330f03db592caa456dd"
+    },
+    "deployment/licenses/E5-MIT-LICENSE.txt": {
+      "bytes": 1104,
+      "sha256": "904dc4d8749877f1dba1cda48200d2462dccbeb7c134d5e4ef6fa75e0198c8fe"
+    },
+    "deployment/licenses/Fomantic-UI-LICENSE.md": {
+      "bytes": 1049,
+      "sha256": "20a7cde0809fde6bf497360ba56ab2c08c9f39631415170e09d8c2ff5d00dc23"
+    },
+    "deployment/licenses/Font-Awesome-LICENSE.txt": {
+      "bytes": 1548,
+      "sha256": "e779748dfe75e84f974df3c7bc07f842011a100159158b0f1f49b2f2a5a515cb"
+    },
+    "deployment/licenses/jQuery-LICENSE.txt": {
+      "bytes": 1605,
+      "sha256": "2b3ed8ba424423a50b023e728530d94bc385cfc7c328ad65a3dfee9c7c0531c5"
+    },
+    "deployment/licenses/ONNX-Runtime-LICENSE": {
+      "bytes": 1073,
+      "sha256": "2f07c72751aed99790b8a4869cf2311df85a860b22ded05fa22803587a48922c"
+    },
+    "deployment/licenses/ONNX-Runtime-ThirdPartyNotices.txt": {
+      "bytes": 316114,
+      "sha256": "8c06e8cff286a4a117b3b246a4c7da68428a144af757823db50e3d6520941ec6"
+    },
+    "deployment/licenses/Transformers.js-LICENSE.txt": {
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    "deployment/wheels/linux-cp312/blinker-1.9.0-py3-none-any.whl": {
+      "bytes": 8458,
+      "sha256": "ba0efaa9080b619ff2f3459d1d500c57bddea4a6b424b60a91141db6fd2f08bc"
+    },
+    "deployment/wheels/linux-cp312/certifi-2026.11.20-py3-none-any.whl": {
+      "bytes": 127913,
+      "sha256": "7422df25243767b9877031a2248cb14d09ddac9beee846f4cef3d5c9191d488f"
+    },
+    "deployment/wheels/linux-cp312/charset_normalizer-3.5.3-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl": {
+      "bytes": 257134,
+      "sha256": "e5e4785d8a0adeadfbdf75f4efc357911842674651cbafd7e97f69b11ec3cbc6"
+    },
+    "deployment/wheels/linux-cp312/click-8.2.1-py3-none-any.whl": {
+      "bytes": 102215,
+      "sha256": "61a3265b914e850b85317d0b3109c7f8cd35a670f963866005d6ef1d5175a12b"
+    },
+    "deployment/wheels/linux-cp312/colorama-0.4.6-py2.py3-none-any.whl": {
+      "bytes": 25335,
+      "sha256": "4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6"
+    },
+    "deployment/wheels/linux-cp312/filelock-4.3.1-py3-none-any.whl": {
+      "bytes": 244559,
+      "sha256": "79e43df8e9fe509cd83a3899a7c186c8077cbbe4d200a1ed3705c2f3bb6bc487"
+    },
+    "deployment/wheels/linux-cp312/flask-2.3.3-py3-none-any.whl": {
+      "bytes": 96112,
+      "sha256": "f69fcd559dc907ed196ab9df0e48471709175e696d6e698dd4dbe940f96ce66b"
+    },
+    "deployment/wheels/linux-cp312/fsspec-2026.9.0-py3-none-any.whl": {
+      "bytes": 221738,
+      "sha256": "8dd6e646e99ea382bd85f97a45e6b526a442d79423a7dc673f1e2756d05fcb5f"
+    },
+    "deployment/wheels/linux-cp312/huggingface_hub-0.36.2-py3-none-any.whl": {
+      "bytes": 566395,
+      "sha256": "48f0c8eac16145dfce371e9d2d7772854a4f591bcb56c9cf548accf531d54270"
+    },
+    "deployment/wheels/linux-cp312/idna-3.20-py3-none-any.whl": {
+      "bytes": 69583,
+      "sha256": "ab7ae7122974553370f0bdb919e1a960b2cd1bc1ef0276416d896db81c14582c"
+    },
+    "deployment/wheels/linux-cp312/itsdangerous-2.2.0-py3-none-any.whl": {
+      "bytes": 16234,
+      "sha256": "c6242fc49e35958c8b15141343aa660db5fc54d4f13a1db01a3f5891b98700ef"
+    },
+    "deployment/wheels/linux-cp312/jinja2-3.1.6-py3-none-any.whl": {
+      "bytes": 134899,
+      "sha256": "85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67"
+    },
+    "deployment/wheels/linux-cp312/MarkupSafe-3.0.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl": {
+      "bytes": 23118,
+      "sha256": "e17c96c14e19278594aa4841ec148115f9c7615a47382ecb6b82bd8fea3ab0c8"
+    },
+    "deployment/wheels/linux-cp312/mpmath-1.3.0-py3-none-any.whl": {
+      "bytes": 536198,
+      "sha256": "a0b2b9fe80bbcd81a6647ff13108738cfb482d481d826cc0e02f5b35e5c88d2c"
+    },
+    "deployment/wheels/linux-cp312/networkx-3.7-py3-none-any.whl": {
+      "bytes": 2142205,
+      "sha256": "e3fd2c13a7814cee3746340d8d7f8598a67f16a58bf47fb7f8793fab6efca1b0"
+    },
+    "deployment/wheels/linux-cp312/numpy-2.2.6-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl": {
+      "bytes": 16527618,
+      "sha256": "fd83c01228a688733f1ded5201c678f0c53ecc1006ffbc404db9f7a899ac6249"
+    },
+    "deployment/wheels/linux-cp312/packaging-26.4-py3-none-any.whl": {
+      "bytes": 140049,
+      "sha256": "81383611a09c1bc0b08b76e0fd5829d7c6824c65b27a6aee339da133f4233ea2"
+    },
+    "deployment/wheels/linux-cp312/pandas-2.3.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl": {
+      "bytes": 11987803,
+      "sha256": "96d31a6b4354e3b9b8a2c848af75d31da390657e3ac6f30c05c82068b9ed79b9"
+    },
+    "deployment/wheels/linux-cp312/python_dateutil-2.9.0.post0-py2.py3-none-any.whl": {
+      "bytes": 229892,
+      "sha256": "a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427"
+    },
+    "deployment/wheels/linux-cp312/pytz-2025.2-py2.py3-none-any.whl": {
+      "bytes": 509225,
+      "sha256": "5ddf76296dd8c44c26eb8f4b6f35488f3ccbf6fbbd7adee0b7262d43f0ec2f00"
+    },
+    "deployment/wheels/linux-cp312/pyyaml-6.0.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl": {
+      "bytes": 849249,
+      "sha256": "93bfb2459195406a518e2f487a9bbf01df240175f31e06f5a252ac6734c7bbf0"
+    },
+    "deployment/wheels/linux-cp312/regex-2026.11.24-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl": {
+      "bytes": 813229,
+      "sha256": "0778f76a63e677ef022087a6a49c9b82de9bb1916bd7402a25abfe9f66bdd97f"
+    },
+    "deployment/wheels/linux-cp312/requests-2.34.2-py3-none-any.whl": {
+      "bytes": 73075,
+      "sha256": "2a0d60c172f83ac6ab31e4554906c0f3b3588d37b5cb939b1c061f4907e278e0"
+    },
+    "deployment/wheels/linux-cp312/safetensors-0.8.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl": {
+      "bytes": 516040,
+      "sha256": "fd6f3f93c9a0a7cc2788ee63fb763353d4bd2e89b0751bc78fcf7dda00bea774"
+    },
+    "deployment/wheels/linux-cp312/setuptools-84.2.1-py3-none-any.whl": {
+      "bytes": 876263,
+      "sha256": "ca140b45d5325a9478f880e351484f62fef15f336462e449ca0c03c873d589c2"
+    },
+    "deployment/wheels/linux-cp312/six-1.17.0-py2.py3-none-any.whl": {
+      "bytes": 11050,
+      "sha256": "4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274"
+    },
+    "deployment/wheels/linux-cp312/sympy-1.13.1-py3-none-any.whl": {
+      "bytes": 6189177,
+      "sha256": "db36cdc64bf61b9b24578b6f7bab1ecdd2452cf008f34faa33776680c26d66f8"
+    },
+    "deployment/wheels/linux-cp312/tokenizers-0.20.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl": {
+      "bytes": 2997679,
+      "sha256": "f2b7cb962564785a83dafbba0144ecb7f579f1d57d8c406cdaa7f32fe32f18ad"
+    },
+    "deployment/wheels/linux-cp312/torch-2.5.1+cpu-cp312-cp312-linux_x86_64.whl": {
+      "bytes": 174642530,
+      "sha256": "4856f9d6925121d13c2df07aa7580b767f449dfe71ae5acde9c27535d5da4840"
+    },
+    "deployment/wheels/linux-cp312/tqdm-4.70.1-py3-none-any.whl": {
+      "bytes": 80199,
+      "sha256": "c293e525e6fef9c20e8728fd4612df02a0aa31bb5fe91ecd93e123b1b7bffa73"
+    },
+    "deployment/wheels/linux-cp312/transformers-4.46.3-py3-none-any.whl": {
+      "bytes": 10034536,
+      "sha256": "a12ef6f52841fd190a3e5602145b542d03507222f2c64ebb7ee92e8788093aef"
+    },
+    "deployment/wheels/linux-cp312/typing_extensions-4.16.0-py3-none-any.whl": {
+      "bytes": 45571,
+      "sha256": "481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8"
+    },
+    "deployment/wheels/linux-cp312/tzdata-2025.2-py2.py3-none-any.whl": {
+      "bytes": 347839,
+      "sha256": "1a403fada01ff9221ca8044d701868fa132215d84beb92242d9acd2147f667a8"
+    },
+    "deployment/wheels/linux-cp312/urllib3-2.8.0-py3-none-any.whl": {
+      "bytes": 135717,
+      "sha256": "0cf3cae568d36aa9576b28dfb35f11328f1cb974ca7647d9475ebb86c75ac6e3"
+    },
+    "deployment/wheels/linux-cp312/waitress-3.0.2-py3-none-any.whl": {
+      "bytes": 56232,
+      "sha256": "c56d67fd6e87c2ee598b76abdd4e96cfad1f24cacdea5078d382b1f9d7b5ed2e"
+    },
+    "deployment/wheels/linux-cp312/werkzeug-3.1.3-py3-none-any.whl": {
+      "bytes": 224498,
+      "sha256": "54b78bf3716d19a65be4fceccc0d1d7b89e608834989dfae50ea87564639213e"
+    },
+    "deployment/wheels/windows-cp312/blinker-1.9.0-py3-none-any.whl": {
+      "bytes": 8458,
+      "sha256": "ba0efaa9080b619ff2f3459d1d500c57bddea4a6b424b60a91141db6fd2f08bc"
+    },
+    "deployment/wheels/windows-cp312/certifi-2026.11.20-py3-none-any.whl": {
+      "bytes": 127913,
+      "sha256": "7422df25243767b9877031a2248cb14d09ddac9beee846f4cef3d5c9191d488f"
+    },
+    "deployment/wheels/windows-cp312/charset_normalizer-3.5.3-cp312-cp312-win_amd64.whl": {
+      "bytes": 214472,
+      "sha256": "40b2ba91f0851aa864994b3c7022e4d96d09026717e6a72e44410d6fb3a74a13"
+    },
+    "deployment/wheels/windows-cp312/click-8.2.1-py3-none-any.whl": {
+      "bytes": 102215,
+      "sha256": "61a3265b914e850b85317d0b3109c7f8cd35a670f963866005d6ef1d5175a12b"
+    },
+    "deployment/wheels/windows-cp312/colorama-0.4.6-py2.py3-none-any.whl": {
+      "bytes": 25335,
+      "sha256": "4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6"
+    },
+    "deployment/wheels/windows-cp312/filelock-4.3.1-py3-none-any.whl": {
+      "bytes": 244559,
+      "sha256": "79e43df8e9fe509cd83a3899a7c186c8077cbbe4d200a1ed3705c2f3bb6bc487"
+    },
+    "deployment/wheels/windows-cp312/flask-2.3.3-py3-none-any.whl": {
+      "bytes": 96112,
+      "sha256": "f69fcd559dc907ed196ab9df0e48471709175e696d6e698dd4dbe940f96ce66b"
+    },
+    "deployment/wheels/windows-cp312/fsspec-2026.9.0-py3-none-any.whl": {
+      "bytes": 221738,
+      "sha256": "8dd6e646e99ea382bd85f97a45e6b526a442d79423a7dc673f1e2756d05fcb5f"
+    },
+    "deployment/wheels/windows-cp312/huggingface_hub-0.36.2-py3-none-any.whl": {
+      "bytes": 566395,
+      "sha256": "48f0c8eac16145dfce371e9d2d7772854a4f591bcb56c9cf548accf531d54270"
+    },
+    "deployment/wheels/windows-cp312/idna-3.20-py3-none-any.whl": {
+      "bytes": 69583,
+      "sha256": "ab7ae7122974553370f0bdb919e1a960b2cd1bc1ef0276416d896db81c14582c"
+    },
+    "deployment/wheels/windows-cp312/itsdangerous-2.2.0-py3-none-any.whl": {
+      "bytes": 16234,
+      "sha256": "c6242fc49e35958c8b15141343aa660db5fc54d4f13a1db01a3f5891b98700ef"
+    },
+    "deployment/wheels/windows-cp312/jinja2-3.1.6-py3-none-any.whl": {
+      "bytes": 134899,
+      "sha256": "85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67"
+    },
+    "deployment/wheels/windows-cp312/MarkupSafe-3.0.2-cp312-cp312-win_amd64.whl": {
+      "bytes": 15601,
+      "sha256": "8e06879fc22a25ca47312fbe7c8264eb0b662f6db27cb2d3bbbc74b1df4b9b87"
+    },
+    "deployment/wheels/windows-cp312/mpmath-1.3.0-py3-none-any.whl": {
+      "bytes": 536198,
+      "sha256": "a0b2b9fe80bbcd81a6647ff13108738cfb482d481d826cc0e02f5b35e5c88d2c"
+    },
+    "deployment/wheels/windows-cp312/networkx-3.7-py3-none-any.whl": {
+      "bytes": 2142205,
+      "sha256": "e3fd2c13a7814cee3746340d8d7f8598a67f16a58bf47fb7f8793fab6efca1b0"
+    },
+    "deployment/wheels/windows-cp312/numpy-2.2.6-cp312-cp312-win_amd64.whl": {
+      "bytes": 12614190,
+      "sha256": "c1f9540be57940698ed329904db803cf7a402f3fc200bfe599334c9bd84a40b2"
+    },
+    "deployment/wheels/windows-cp312/packaging-26.4-py3-none-any.whl": {
+      "bytes": 140049,
+      "sha256": "81383611a09c1bc0b08b76e0fd5829d7c6824c65b27a6aee339da133f4233ea2"
+    },
+    "deployment/wheels/windows-cp312/pandas-2.3.2-cp312-cp312-win_amd64.whl": {
+      "bytes": 10983326,
+      "sha256": "8c13b81a9347eb8c7548f53fd9a4f08d4dfe996836543f805c987bafa03317ae"
+    },
+    "deployment/wheels/windows-cp312/python_dateutil-2.9.0.post0-py2.py3-none-any.whl": {
+      "bytes": 229892,
+      "sha256": "a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427"
+    },
+    "deployment/wheels/windows-cp312/pytz-2025.2-py2.py3-none-any.whl": {
+      "bytes": 509225,
+      "sha256": "5ddf76296dd8c44c26eb8f4b6f35488f3ccbf6fbbd7adee0b7262d43f0ec2f00"
+    },
+    "deployment/wheels/windows-cp312/pyyaml-6.0.4-cp312-cp312-win_amd64.whl": {
+      "bytes": 154452,
+      "sha256": "131d11bd9b60d705a6388366d77ed67850995a4d2be85fe149785a257c17e531"
+    },
+    "deployment/wheels/windows-cp312/regex-2026.11.24-cp312-cp312-win_amd64.whl": {
+      "bytes": 280826,
+      "sha256": "4ee28b825b3544872b1c42914709a45ddd378154c7e58df1cf8a732134e315b2"
+    },
+    "deployment/wheels/windows-cp312/requests-2.34.2-py3-none-any.whl": {
+      "bytes": 73075,
+      "sha256": "2a0d60c172f83ac6ab31e4554906c0f3b3588d37b5cb939b1c061f4907e278e0"
+    },
+    "deployment/wheels/windows-cp312/safetensors-0.8.0-cp310-abi3-win_amd64.whl": {
+      "bytes": 355540,
+      "sha256": "096ec1a98435df7beb08853bb5aa9081a84f23d0adc67ed1a0a10550f608373f"
+    },
+    "deployment/wheels/windows-cp312/setuptools-84.2.1-py3-none-any.whl": {
+      "bytes": 876263,
+      "sha256": "ca140b45d5325a9478f880e351484f62fef15f336462e449ca0c03c873d589c2"
+    },
+    "deployment/wheels/windows-cp312/six-1.17.0-py2.py3-none-any.whl": {
+      "bytes": 11050,
+      "sha256": "4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274"
+    },
+    "deployment/wheels/windows-cp312/sympy-1.13.1-py3-none-any.whl": {
+      "bytes": 6189177,
+      "sha256": "db36cdc64bf61b9b24578b6f7bab1ecdd2452cf008f34faa33776680c26d66f8"
+    },
+    "deployment/wheels/windows-cp312/tokenizers-0.20.3-cp312-none-win_amd64.whl": {
+      "bytes": 2380725,
+      "sha256": "44def74cee574d609a36e17c8914311d1b5dbcfe37c55fd29369d42591b91cf2"
+    },
+    "deployment/wheels/windows-cp312/torch-2.5.1+cpu-cp312-cp312-win_amd64.whl": {
+      "bytes": 205405035,
+      "sha256": "a6b720410350765d3d77c01a5ce098a6c45af446284e45e87a98b8a16e7d564d"
+    },
+    "deployment/wheels/windows-cp312/tqdm-4.70.1-py3-none-any.whl": {
+      "bytes": 80199,
+      "sha256": "c293e525e6fef9c20e8728fd4612df02a0aa31bb5fe91ecd93e123b1b7bffa73"
+    },
+    "deployment/wheels/windows-cp312/transformers-4.46.3-py3-none-any.whl": {
+      "bytes": 10034536,
+      "sha256": "a12ef6f52841fd190a3e5602145b542d03507222f2c64ebb7ee92e8788093aef"
+    },
+    "deployment/wheels/windows-cp312/typing_extensions-4.16.0-py3-none-any.whl": {
+      "bytes": 45571,
+      "sha256": "481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8"
+    },
+    "deployment/wheels/windows-cp312/tzdata-2025.2-py2.py3-none-any.whl": {
+      "bytes": 347839,
+      "sha256": "1a403fada01ff9221ca8044d701868fa132215d84beb92242d9acd2147f667a8"
+    },
+    "deployment/wheels/windows-cp312/urllib3-2.8.0-py3-none-any.whl": {
+      "bytes": 135717,
+      "sha256": "0cf3cae568d36aa9576b28dfb35f11328f1cb974ca7647d9475ebb86c75ac6e3"
+    },
+    "deployment/wheels/windows-cp312/waitress-3.0.2-py3-none-any.whl": {
+      "bytes": 56232,
+      "sha256": "c56d67fd6e87c2ee598b76abdd4e96cfad1f24cacdea5078d382b1f9d7b5ed2e"
+    },
+    "deployment/wheels/windows-cp312/werkzeug-3.1.3-py3-none-any.whl": {
+      "bytes": 224498,
+      "sha256": "54b78bf3716d19a65be4fceccc0d1d7b89e608834989dfae50ea87564639213e"
+    },
+    "models/hub/models--intfloat--multilingual-e5-small/snapshots/c007d7ef6fd86656326059b28395a7a03a7c5846/config.json": {
+      "bytes": 655,
+      "sha256": "69137736cab8b8903a07fe8afaafdda25aac55415a12a55d1bffa9f581abf959"
+    },
+    "models/hub/models--intfloat--multilingual-e5-small/snapshots/c007d7ef6fd86656326059b28395a7a03a7c5846/model.safetensors": {
+      "bytes": 470641600,
+      "sha256": "1a55775f53449dac10a2bcbc312469fac40b96d53198c407081a831f81c98477"
+    },
+    "models/hub/models--intfloat--multilingual-e5-small/snapshots/c007d7ef6fd86656326059b28395a7a03a7c5846/sentencepiece.bpe.model": {
+      "bytes": 5069051,
+      "sha256": "cfc8146abe2a0488e9e2a0c56de7952f7c11ab059eca145a0a727afce0db2865"
+    },
+    "models/hub/models--intfloat--multilingual-e5-small/snapshots/c007d7ef6fd86656326059b28395a7a03a7c5846/special_tokens_map.json": {
+      "bytes": 167,
+      "sha256": "d05497f1da52c5e09554c0cd874037a083e1dc1b9cfd48034d1c717f1afc07a7"
+    },
+    "models/hub/models--intfloat--multilingual-e5-small/snapshots/c007d7ef6fd86656326059b28395a7a03a7c5846/tokenizer.json": {
+      "bytes": 17082730,
+      "sha256": "0b44a9d7b51c3c62626640cda0e2c2f70fdacdc25bbbd68038369d14ebdf4c39"
+    },
+    "models/hub/models--intfloat--multilingual-e5-small/snapshots/c007d7ef6fd86656326059b28395a7a03a7c5846/tokenizer_config.json": {
+      "bytes": 443,
+      "sha256": "a1d6bc8734a6f635dc158508bef000f8e2e5a759c7d92f984b2c86e5ff53425b"
+    },
+    "models/hub/version.txt": {
+      "bytes": 1,
+      "sha256": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+    },
+    "static/meaning/all-fields-ar_raw-13b7f19b630d-e5-v1.bin": {
+      "bytes": 2398848,
+      "sha256": "0e54ea0b1cebfe1127b8c0341833c420c1e1219bd5d2ed9c3c7bf0772dd8d4e4"
+    },
+    "static/meaning/all-fields-bn_tafsir-d32de40aabc1-e5-v1.bin": {
+      "bytes": 3149952,
+      "sha256": "b8ad1bdbe670f0e942e475123ab4d7c7124b71685d51323fee7f98c6059d383a"
+    },
+    "static/meaning/all-fields-en_tafsir-0e3587b4af9e-e5-v1.bin": {
+      "bytes": 4014720,
+      "sha256": "0d85591a9d3a04f0e91a99671c6f682ff3fb1e79a24f88df6f80a673294fad81"
+    },
+    "static/meaning/all-fields-index.json": {
+      "bytes": 327346,
+      "sha256": "fd109a88f98322abe0fb2b534ba89a2459a64fcffb64962b5c948e1e74b48ea5"
+    },
+    "static/meaning/all-fields-surah_name-fe4282d95768-e5-v1.bin": {
+      "bytes": 2394624,
+      "sha256": "efe7e91e5bd7c75b69b40d7b1f7e77f4b8da0887179b6d9f6fdfc15dd1650654"
+    },
+    "static/meaning/all-fields-verse_context-34d8bcc3e537-e5-v1.bin": {
+      "bytes": 2351232,
+      "sha256": "462cd027fcb341a3694b1dde4762ed7529097e9dced445d233c197b3afd92d6a"
+    },
+    "static/meaning/all-fields-word_meanings-c875970b4af2-e5-v1.bin": {
+      "bytes": 5218560,
+      "sha256": "99837d8e30d5f5d1d1086f0ddb7d8307adfb9ad8f883d69258949acb2da45329"
+    },
+    "static/meaning/index.json": {
+      "bytes": 48757,
+      "sha256": "f96386fa56d44f87c26933e35673816750b2862ccd46d2ac3303ea78b932d6de"
+    },
+    "static/meaning/models/Xenova/multilingual-e5-small/config.json": {
+      "bytes": 658,
+      "sha256": "cb99455288675345e1a4f411438d5d0adbba5fbd3a67ea4fb03c015433b996c1"
+    },
+    "static/meaning/models/Xenova/multilingual-e5-small/onnx/model_int8.onnx": {
+      "bytes": 118054593,
+      "sha256": "4d24e2bc01a447951524466ef533e52944bf48509e6552810bcee1a2711cb02c"
+    },
+    "static/meaning/models/Xenova/multilingual-e5-small/tokenizer.json": {
+      "bytes": 17082730,
+      "sha256": "0b44a9d7b51c3c62626640cda0e2c2f70fdacdc25bbbd68038369d14ebdf4c39"
+    },
+    "static/meaning/models/Xenova/multilingual-e5-small/tokenizer_config.json": {
+      "bytes": 443,
+      "sha256": "a1d6bc8734a6f635dc158508bef000f8e2e5a759c7d92f984b2c86e5ff53425b"
+    },
+    "static/meaning/vendor/transformers-3.7.2/ort-wasm-simd-threaded.jsep.mjs": {
+      "bytes": 44484,
+      "sha256": "08fb86ec433c78bfb032c5d84a68b8e8e5a8d81268fa39e24314179a5767a5b9"
+    },
+    "static/meaning/vendor/transformers-3.7.2/ort-wasm-simd-threaded.jsep.wasm": {
+      "bytes": 21596019,
+      "sha256": "c46655e8a94afc45338d4cb2b840475f88e5012d524509916e505079c00bfa39"
+    },
+    "static/meaning/vendor/transformers-3.7.2/transformers.min.js": {
+      "bytes": 871803,
+      "sha256": "489ae9fa3deae4eed28f83b9f94a32342c63cffdabd56ad990f76d28c858a1c2"
+    },
+    "static/meaning/verses-d1c40be0bef5-e5-v1.bin": {
+      "bytes": 2394624,
+      "sha256": "0cad61636eb49d656fb65e705da4b84f2038c2a771a10bc6bf3d57e16fc071e5"
+    },
+    "static/vendor/datatables-1.10.22/dataTables.semanticui.min.css": {
+      "bytes": 2625,
+      "sha256": "489a55d810018deb277658f4bddb51a63e0b1387a28283d95634cd43a70cb32f"
+    },
+    "static/vendor/datatables-1.10.22/dataTables.semanticui.min.js": {
+      "bytes": 2457,
+      "sha256": "9f18fcf89d259618fcd55105694d42c50f79c2e359940105ed5770fe11fb3c2d"
+    },
+    "static/vendor/datatables-1.10.22/jquery.dataTables.min.js": {
+      "bytes": 83597,
+      "sha256": "8fd44a290480b21cf6c3c3918302d2bde9cc3a1651e5500e64edae3cf5dd9fb1"
+    },
+    "static/vendor/fomantic-2.8.6/semantic.min.css": {
+      "bytes": 1361707,
+      "sha256": "039805ec035dc8dccd7641489320654c98bedf7a11088544bf35d4e2c69745fd"
+    },
+    "static/vendor/fomantic-2.8.6/semantic.min.js": {
+      "bytes": 357311,
+      "sha256": "f47dc75989cf2766c41e090eaf0fb8f0a85e3aa6334ef25dd616de53db040c59"
+    },
+    "static/vendor/fomantic-2.8.6/themes/default/assets/fonts/brand-icons.eot": {
+      "bytes": 133034,
+      "sha256": "811e1577184066108ceca86d5a624a9012303df5206c5cb0b27d5e3fedcba5a3"
+    },
+    "static/vendor/fomantic-2.8.6/themes/default/assets/fonts/brand-icons.svg": {
+      "bytes": 719460,
+      "sha256": "980a773627e3fc82248a99c21a6763bcccc1d04d2fbf22af74274f2381270158"
+    },
+    "static/vendor/fomantic-2.8.6/themes/default/assets/fonts/brand-icons.ttf": {
+      "bytes": 132728,
+      "sha256": "a0c145382acfe59767d1487d6505f349665b685c2885cd91b621d141a292b0f8"
+    },
+    "static/vendor/fomantic-2.8.6/themes/default/assets/fonts/brand-icons.woff": {
+      "bytes": 89824,
+      "sha256": "e836c5d5dfc13e18170c5bddefb4fdac7c65ac0ad43a4b431acdc4a98865a260"
+    },
+    "static/vendor/fomantic-2.8.6/themes/default/assets/fonts/brand-icons.woff2": {
+      "bytes": 76612,
+      "sha256": "5d9190292acdd48ba0fc35080f7e7448f3cdf0d79199a4d23f0f49b5341fdf29"
+    },
+    "static/vendor/fomantic-2.8.6/themes/default/assets/fonts/icons.eot": {
+      "bytes": 202902,
+      "sha256": "32501727bb23fc77615b1ec76b5f298ec22198c0f3d6a3e7d6fe4ac3cf315db9"
+    },
+    "static/vendor/fomantic-2.8.6/themes/default/assets/fonts/icons.svg": {
+      "bytes": 902364,
+      "sha256": "96b9988db47361f88539a3bb4d0750bb7dd5cab3f8435cd941d00f97da1ad4bd"
+    },
+    "static/vendor/fomantic-2.8.6/themes/default/assets/fonts/icons.ttf": {
+      "bytes": 202616,
+      "sha256": "231d68cefbc6846fb78cafca8467401a4f371e226418662e8900e3d52adc00ab"
+    },
+    "static/vendor/fomantic-2.8.6/themes/default/assets/fonts/icons.woff": {
+      "bytes": 103300,
+      "sha256": "352f8ead280419dd953d2bc7843386bb9430e8152c2dbd2c2d2494f6b9567ee7"
+    },
+    "static/vendor/fomantic-2.8.6/themes/default/assets/fonts/icons.woff2": {
+      "bytes": 79444,
+      "sha256": "7f4d3fd0a705dbf8403298aad91d5de6972e6b5d536068eba8b24954a5a0a8c7"
+    },
+    "static/vendor/fomantic-2.8.6/themes/default/assets/fonts/outline-icons.eot": {
+      "bytes": 34390,
+      "sha256": "01f4416f5db59e2dd6b6fbd9dc32336d99db18f7eb623a49f584d04afd279473"
+    },
+    "static/vendor/fomantic-2.8.6/themes/default/assets/fonts/outline-icons.svg": {
+      "bytes": 145125,
+      "sha256": "9a5dd62ffcb96d027ac0db084eebac320bad33e267ff5d56a685702cc3209f1c"
+    },
+    "static/vendor/fomantic-2.8.6/themes/default/assets/fonts/outline-icons.ttf": {
+      "bytes": 34092,
+      "sha256": "f32b94a29060dfec0c797a1dfe111357eb1d682f1aca4ac4b95cf0f4c3e2bfa9"
+    },
+    "static/vendor/fomantic-2.8.6/themes/default/assets/fonts/outline-icons.woff": {
+      "bytes": 16800,
+      "sha256": "8e2d96198711b63752e5f2f5987b8ffc536df6156a065bdbe28cb7231cad793d"
+    },
+    "static/vendor/fomantic-2.8.6/themes/default/assets/fonts/outline-icons.woff2": {
+      "bytes": 13584,
+      "sha256": "6a8c8e9e1e7f692c21af1956de163f3d026778e6449fe93a09a671847ca1ae65"
+    },
+    "static/vendor/fomantic-2.8.6/themes/default/assets/images/flags.png": {
+      "bytes": 28123,
+      "sha256": "94d5c7f1661301c4a6dc491d72dd559a0620cd917a826f0df1b023bb96ea9ddd"
+    },
+    "static/vendor/jquery-3.3.1/jquery.min.js": {
+      "bytes": 86927,
+      "sha256": "160a426ff2894252cd7cebbdd6d6b7da8fcd319c65b70468f10b6690c45d02ef"
+    }
+  }
+}

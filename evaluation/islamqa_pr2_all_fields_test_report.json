@@ -1,0 +1,2456 @@
+{
+  "purpose": "held_out_test_no_tuning",
+  "split": "test",
+  "fixture": "islamqa_pr2_test_queries.jsonl",
+  "fixture_sha256": "cb33c2b58d229caac4c8374af7a857cbd93a4578833592fcac1afd4e4ab5ab25",
+  "fixture_manifest": {
+    "dataset_version": "2.0.0",
+    "package_commit": "7484cfa2eae1cfa399e1c46ad656396b2c9d4b0e",
+    "release_status": "provisional",
+    "benchmark_grade": false,
+    "curation_change_required": false,
+    "adapter": "External query-level fixture; group-level qrels unchanged.",
+    "split": "test",
+    "package_files": {
+      "manifest.json": "916dfe70eb9f3d4a5aed0a88d7896a0697330f30563e6c662338568d715ba104",
+      "schema.json": "f98aa2c47b1e46404c608b3cc39d65e83815d98f54598efbfc94f56d04bca26b",
+      "dataset_common.py": "98cd8ac0795423c676e5b780b0537771cd2e1e7fe7b9fa9275c5a323c32797d7",
+      "load_dataset.py": "6c3bc15caaccc6678af5d4adbc7b295a4db10960cf0b350bd14332a118b4ac27",
+      "validate_dataset.py": "8a0aaf18ed94bf1d145f1da6e6aa07f98c9ee0e645e1629395d37a05d8fdf8d0",
+      "evaluate_search.py": "e4319e8df17cd33f7c7a01f07cffd2a9f2ea190ee94506c5b70ba9f63e0c4ced",
+      "test/questions.jsonl": "972562e6647737b69e44dd4eaf66a29cac36b3d1dd92b1652cc6b7bd58e85ebd",
+      "test/grades.jsonl": "f028b8d18576c9ee6383f993d4c9fc13adfeb0e91cabf246df8668aee392eaf3"
+    },
+    "corpus": {
+      "verses": 6236,
+      "sha256": "d1c40be0bef518288500f3940d4419b3516c2497b7285f5dcbd22802487e34e0",
+      "dataset_search_equal": true
+    },
+    "counts": {
+      "query_cases": 345,
+      "question_groups": 341,
+      "multi_query_groups": 4,
+      "useful_answerable_cases": 294,
+      "direct_answerable_cases": 54
+    },
+    "by_language": {
+      "en": 345
+    },
+    "by_best_settled_label": {
+      "background": 51,
+      "direct": 54,
+      "partial": 240
+    },
+    "success_definitions": {
+      "positive_hit@5": "At least one settled grade-1, grade-2, or grade-3 ayah in the first five results.",
+      "useful_hit@5": "At least one settled grade-2 or grade-3 ayah in the first five results.",
+      "direct_hit@5": "At least one settled grade-3 ayah in the first five results."
+    },
+    "notes": [
+      "Query wordings are evaluation cases; qrels remain question-group level.",
+      "Confidence intervals must resample question groups, not query wordings.",
+      "The test split is held out but not blind, and labels remain provisional."
+    ],
+    "fixture_sha256": "cb33c2b58d229caac4c8374af7a857cbd93a4578833592fcac1afd4e4ab5ab25"
+  },
+  "fusion": {
+    "candidates": [
+      "weighted_raw",
+      "weighted_z"
+    ],
+    "direct_hit_guardrail_pp": 2.0,
+    "method": "weighted_raw",
+    "missing_fields": "exclude_and_renormalize_per_ayah",
+    "selection_metric_order": [
+      "useful_hit@5",
+      "positive_hit@5",
+      "ndcg@10"
+    ],
+    "status": "frozen",
+    "tie_break": "canonical_ayah_order",
+    "validation": {
+      "diagnostics_sha256": "7ea8f193d9d017a93b2a867944689fca062354d8a53424a00896f1fd430bc6ed",
+      "duplicate_diagnostics": {
+        "file": "islamqa_pr2_all_fields_browser_b.json",
+        "score_cache_fingerprint": "17edfa2abdd31e97a31729db5cc395276aae24d9e76a60c314154188cf843084",
+        "sha256": "7160544227e642022d45af4b0285e284cda7bf481ef9e241aebcf148c46658ff"
+      },
+      "fixture_sha256": "1ae65f7cca2e2aa811b0b62e331d43fc98c78f62a7d23546ffa5109eab0a6cfe",
+      "guardrail": {
+        "maximum_drop_percentage_points": 2.0,
+        "metric": "direct_hit@5",
+        "pass": true,
+        "selected": 0.25,
+        "translation_only": 0.125
+      },
+      "score_cache_fingerprint": "17edfa2abdd31e97a31729db5cc395276aae24d9e76a60c314154188cf843084",
+      "selected": {
+        "guardrail_pass": true,
+        "method": "weighted_raw",
+        "metrics": {
+          "direct_hit@5": 0.038462,
+          "mrr@10": 0.157384,
+          "ndcg@10": 0.134189,
+          "positive_hit@5": 0.25,
+          "recall@10": 0.176149,
+          "recall@5": 0.139476,
+          "useful_hit@5": 0.234615
+        },
+        "selection_metrics": {
+          "direct_answer_hit@5": 0.25,
+          "ndcg@10": 0.134189,
+          "positive_hit@5": 0.25,
+          "useful_answerable_hit@5": 0.276018
+        },
+        "weights": {
+          "ar_raw": 0.0,
+          "bn_tafsir": 0.0,
+          "en": 0.2,
+          "en_tafsir": 0.6,
+          "surah_name": 0.0,
+          "verse_context": 0.2,
+          "word_meanings": 0.0
+        }
+      }
+    },
+    "weights": {
+      "ar_raw": 0.0,
+      "bn_tafsir": 0.0,
+      "en": 0.2,
+      "en_tafsir": 0.6,
+      "surah_name": 0.0,
+      "verse_context": 0.2,
+      "word_meanings": 0.0
+    }
+  },
+  "index_sha256": "fd109a88f98322abe0fb2b534ba89a2459a64fcffb64962b5c948e1e74b48ea5",
+  "diagnostics": [
+    "islamqa_pr2_all_fields_browser_a.json",
+    "islamqa_pr2_all_fields_browser_b.json"
+  ],
+  "diagnostics_sha256": [
+    "0484d5d79bad32c92bdb792b0f6d544f2132841fc1060f9a15d83cd2185e2dcc",
+    "85e66cfdf93efd1ecfc7cc0a8d05aa8e93bb3260d6e5379bccbef648dfe60448"
+  ],
+  "score_cache_fingerprints": [
+    "6342fdfd13decec45e89c592fd73f62a7afe90fa52beb6ceeb8b7acb88840a87",
+    "6342fdfd13decec45e89c592fd73f62a7afe90fa52beb6ceeb8b7acb88840a87"
+  ],
+  "validation_provenance": {
+    "file": "islamqa_pr2_all_fields_validation_report.json",
+    "sha256": "b6954d9934617ce73ff85a1e05073191e2548ef33012b69c5e693f0c5b9d96eb",
+    "fixture_sha256": "1ae65f7cca2e2aa811b0b62e331d43fc98c78f62a7d23546ffa5109eab0a6cfe",
+    "diagnostics_sha256": "7ea8f193d9d017a93b2a867944689fca062354d8a53424a00896f1fd430bc6ed",
+    "selected": {
+      "method": "weighted_raw",
+      "weights": {
+        "ar_raw": 0.0,
+        "en": 0.2,
+        "en_tafsir": 0.6,
+        "bn_tafsir": 0.0,
+        "verse_context": 0.2,
+        "word_meanings": 0.0,
+        "surah_name": 0.0
+      },
+      "metrics": {
+        "positive_hit@5": 0.25,
+        "useful_hit@5": 0.234615,
+        "direct_hit@5": 0.038462,
+        "mrr@10": 0.157384,
+        "ndcg@10": 0.134189,
+        "recall@5": 0.139476,
+        "recall@10": 0.176149
+      },
+      "selection_metrics": {
+        "useful_answerable_hit@5": 0.276018,
+        "positive_hit@5": 0.25,
+        "ndcg@10": 0.134189,
+        "direct_answer_hit@5": 0.25
+      },
+      "guardrail_pass": true
+    },
+    "verified": true
+  },
+  "verification": {
+    "browser_offline_exact": true,
+    "duplicate_runs_identical": true,
+    "duplicate_browser_offline_exact": true,
+    "translation_baseline_exact": true,
+    "translation_baseline_queries": 345
+  },
+  "runs": {
+    "deploy_keyword_translation": {
+      "queries": 345,
+      "groups": 341,
+      "metrics": {
+        "positive_hit@5": 0.069565,
+        "useful_hit@5": 0.066667,
+        "direct_hit@5": 0.023188,
+        "mrr@10": 0.050537,
+        "ndcg@10": 0.03729,
+        "recall@5": 0.035198,
+        "recall@10": 0.046132
+      },
+      "slices": {
+        "all_queries": {
+          "queries": 345,
+          "groups": 341,
+          "metrics": {
+            "positive_hit@5": 0.069565,
+            "useful_hit@5": 0.066667,
+            "direct_hit@5": 0.023188,
+            "mrr@10": 0.050537,
+            "ndcg@10": 0.03729,
+            "recall@5": 0.035198,
+            "recall@10": 0.046132
+          }
+        },
+        "useful_answerable": {
+          "queries": 294,
+          "groups": 290,
+          "metrics": {
+            "positive_hit@5": 0.081633,
+            "useful_hit@5": 0.078231,
+            "direct_hit@5": 0.027211,
+            "mrr@10": 0.059304,
+            "ndcg@10": 0.043758,
+            "recall@5": 0.041304,
+            "recall@10": 0.054134
+          }
+        },
+        "direct_answer_groups": {
+          "queries": 54,
+          "groups": 51,
+          "metrics": {
+            "positive_hit@5": 0.166667,
+            "useful_hit@5": 0.166667,
+            "direct_hit@5": 0.148148,
+            "mrr@10": 0.098707,
+            "ndcg@10": 0.053143,
+            "recall@5": 0.038383,
+            "recall@10": 0.061069
+          }
+        }
+      },
+      "ci95": {
+        "positive_hit@5": [
+          0.043478,
+          0.096491
+        ],
+        "useful_hit@5": [
+          0.040698,
+          0.093023
+        ],
+        "direct_hit@5": [
+          0.008671,
+          0.038173
+        ],
+        "mrr@10": [
+          0.032135,
+          0.070936
+        ],
+        "ndcg@10": [
+          0.022904,
+          0.054141
+        ],
+        "recall@5": [
+          0.019426,
+          0.054435
+        ],
+        "recall@10": [
+          0.029156,
+          0.065804
+        ]
+      },
+      "coverage": {
+        "total_results": 3450,
+        "unjudged_results": 3406,
+        "settled_judged_results": 42,
+        "disputed_results": 2
+      },
+      "source": {
+        "file": "islamqa_pr2_deploy_rankings.json",
+        "sha256": "999fa6b4198ab556154a20690bfa4cfb88451eaa6468fdd4a0cbb7a9d1c7ae78"
+      }
+    },
+    "pr1_keyword_translation": {
+      "queries": 345,
+      "groups": 341,
+      "metrics": {
+        "positive_hit@5": 0.072464,
+        "useful_hit@5": 0.069565,
+        "direct_hit@5": 0.02029,
+        "mrr@10": 0.050252,
+        "ndcg@10": 0.037558,
+        "recall@5": 0.036055,
+        "recall@10": 0.047181
+      },
+      "slices": {
+        "all_queries": {
+          "queries": 345,
+          "groups": 341,
+          "metrics": {
+            "positive_hit@5": 0.072464,
+            "useful_hit@5": 0.069565,
+            "direct_hit@5": 0.02029,
+            "mrr@10": 0.050252,
+            "ndcg@10": 0.037558,
+            "recall@5": 0.036055,
+            "recall@10": 0.047181
+          }
+        },
+        "useful_answerable": {
+          "queries": 294,
+          "groups": 290,
+          "metrics": {
+            "positive_hit@5": 0.085034,
+            "useful_hit@5": 0.081633,
+            "direct_hit@5": 0.02381,
+            "mrr@10": 0.058969,
+            "ndcg@10": 0.044073,
+            "recall@5": 0.042309,
+            "recall@10": 0.055366
+          }
+        },
+        "direct_answer_groups": {
+          "queries": 54,
+          "groups": 51,
+          "metrics": {
+            "positive_hit@5": 0.148148,
+            "useful_hit@5": 0.148148,
+            "direct_hit@5": 0.12963,
+            "mrr@10": 0.092563,
+            "ndcg@10": 0.053015,
+            "recall@5": 0.03684,
+            "recall@10": 0.066933
+          }
+        }
+      },
+      "ci95": {
+        "positive_hit@5": [
+          0.046373,
+          0.099125
+        ],
+        "useful_hit@5": [
+          0.043478,
+          0.09621
+        ],
+        "direct_hit@5": [
+          0.005831,
+          0.034884
+        ],
+        "mrr@10": [
+          0.032002,
+          0.070229
+        ],
+        "ndcg@10": [
+          0.023136,
+          0.054644
+        ],
+        "recall@5": [
+          0.020172,
+          0.05597
+        ],
+        "recall@10": [
+          0.029686,
+          0.068091
+        ]
+      },
+      "coverage": {
+        "total_results": 3450,
+        "unjudged_results": 3406,
+        "settled_judged_results": 42,
+        "disputed_results": 2
+      },
+      "source": {
+        "file": "islamqa_pr2_fcs_rankings.json",
+        "sha256": "dd1643b067a4ef7e0398d28a1cac627aa80ea1a8b230ef55ac8ef6838e7adb8b"
+      }
+    },
+    "pr1_keyword_all_fields": {
+      "queries": 345,
+      "groups": 341,
+      "metrics": {
+        "positive_hit@5": 0.15942,
+        "useful_hit@5": 0.142029,
+        "direct_hit@5": 0.023188,
+        "mrr@10": 0.108596,
+        "ndcg@10": 0.091701,
+        "recall@5": 0.092228,
+        "recall@10": 0.120295
+      },
+      "slices": {
+        "all_queries": {
+          "queries": 345,
+          "groups": 341,
+          "metrics": {
+            "positive_hit@5": 0.15942,
+            "useful_hit@5": 0.142029,
+            "direct_hit@5": 0.023188,
+            "mrr@10": 0.108596,
+            "ndcg@10": 0.091701,
+            "recall@5": 0.092228,
+            "recall@10": 0.120295
+          }
+        },
+        "useful_answerable": {
+          "queries": 294,
+          "groups": 290,
+          "metrics": {
+            "positive_hit@5": 0.176871,
+            "useful_hit@5": 0.166667,
+            "direct_hit@5": 0.027211,
+            "mrr@10": 0.118388,
+            "ndcg@10": 0.098546,
+            "recall@5": 0.099723,
+            "recall@10": 0.126877
+          }
+        },
+        "direct_answer_groups": {
+          "queries": 54,
+          "groups": 51,
+          "metrics": {
+            "positive_hit@5": 0.185185,
+            "useful_hit@5": 0.185185,
+            "direct_hit@5": 0.148148,
+            "mrr@10": 0.146113,
+            "ndcg@10": 0.108997,
+            "recall@5": 0.075539,
+            "recall@10": 0.130866
+          }
+        }
+      },
+      "ci95": {
+        "positive_hit@5": [
+          0.121387,
+          0.2
+        ],
+        "useful_hit@5": [
+          0.104651,
+          0.180233
+        ],
+        "direct_hit@5": [
+          0.008696,
+          0.038014
+        ],
+        "mrr@10": [
+          0.080808,
+          0.137577
+        ],
+        "ndcg@10": [
+          0.068577,
+          0.116747
+        ],
+        "recall@5": [
+          0.065493,
+          0.120975
+        ],
+        "recall@10": [
+          0.091292,
+          0.150811
+        ]
+      },
+      "coverage": {
+        "total_results": 3450,
+        "unjudged_results": 3352,
+        "settled_judged_results": 94,
+        "disputed_results": 4
+      },
+      "source": {
+        "file": "islamqa_pr2_fcs_all_fields_rankings.json",
+        "sha256": "01f73880237d3a8e7ae0856e8a82073601239924610f903563769d4085d4a595"
+      }
+    },
+    "pr2_meaning_translation": {
+      "queries": 345,
+      "groups": 341,
+      "metrics": {
+        "positive_hit@5": 0.133333,
+        "useful_hit@5": 0.127536,
+        "direct_hit@5": 0.043478,
+        "mrr@10": 0.090045,
+        "ndcg@10": 0.074181,
+        "recall@5": 0.075602,
+        "recall@10": 0.101442
+      },
+      "slices": {
+        "all_queries": {
+          "queries": 345,
+          "groups": 341,
+          "metrics": {
+            "positive_hit@5": 0.133333,
+            "useful_hit@5": 0.127536,
+            "direct_hit@5": 0.043478,
+            "mrr@10": 0.090045,
+            "ndcg@10": 0.074181,
+            "recall@5": 0.075602,
+            "recall@10": 0.101442
+          }
+        },
+        "useful_answerable": {
+          "queries": 294,
+          "groups": 290,
+          "metrics": {
+            "positive_hit@5": 0.153061,
+            "useful_hit@5": 0.14966,
+            "direct_hit@5": 0.05102,
+            "mrr@10": 0.104418,
+            "ndcg@10": 0.084522,
+            "recall@5": 0.085315,
+            "recall@10": 0.112236
+          }
+        },
+        "direct_answer_groups": {
+          "queries": 54,
+          "groups": 51,
+          "metrics": {
+            "positive_hit@5": 0.296296,
+            "useful_hit@5": 0.296296,
+            "direct_hit@5": 0.277778,
+            "mrr@10": 0.193952,
+            "ndcg@10": 0.115584,
+            "recall@5": 0.105133,
+            "recall@10": 0.124984
+          }
+        }
+      },
+      "ci95": {
+        "positive_hit@5": [
+          0.097421,
+          0.171512
+        ],
+        "useful_hit@5": [
+          0.092754,
+          0.164277
+        ],
+        "direct_hit@5": [
+          0.023053,
+          0.066667
+        ],
+        "mrr@10": [
+          0.063924,
+          0.117453
+        ],
+        "ndcg@10": [
+          0.053943,
+          0.097006
+        ],
+        "recall@5": [
+          0.051983,
+          0.102898
+        ],
+        "recall@10": [
+          0.075114,
+          0.131619
+        ]
+      },
+      "coverage": {
+        "total_results": 3450,
+        "unjudged_results": 3377,
+        "settled_judged_results": 72,
+        "disputed_results": 1
+      },
+      "source": {
+        "file": "islamqa_pr2_meaning_rankings.json",
+        "sha256": "5e99e70d6479291402248964c14074d3ab4adaef0d3d36e74d65435185e72b6a"
+      }
+    },
+    "semantic_ar_raw": {
+      "queries": 345,
+      "groups": 341,
+      "metrics": {
+        "positive_hit@5": 0.008696,
+        "useful_hit@5": 0.005797,
+        "direct_hit@5": 0.005797,
+        "mrr@10": 0.002899,
+        "ndcg@10": 0.001465,
+        "recall@5": 0.000858,
+        "recall@10": 0.000974
+      },
+      "slices": {
+        "all_queries": {
+          "queries": 345,
+          "groups": 341,
+          "metrics": {
+            "positive_hit@5": 0.008696,
+            "useful_hit@5": 0.005797,
+            "direct_hit@5": 0.005797,
+            "mrr@10": 0.002899,
+            "ndcg@10": 0.001465,
+            "recall@5": 0.000858,
+            "recall@10": 0.000974
+          }
+        },
+        "useful_answerable": {
+          "queries": 294,
+          "groups": 290,
+          "metrics": {
+            "positive_hit@5": 0.006803,
+            "useful_hit@5": 0.006803,
+            "direct_hit@5": 0.006803,
+            "mrr@10": 0.001701,
+            "ndcg@10": 0.001246,
+            "recall@5": 0.000697,
+            "recall@10": 0.000833
+          }
+        },
+        "direct_answer_groups": {
+          "queries": 54,
+          "groups": 51,
+          "metrics": {
+            "positive_hit@5": 0.037037,
+            "useful_hit@5": 0.037037,
+            "direct_hit@5": 0.037037,
+            "mrr@10": 0.009259,
+            "ndcg@10": 0.006785,
+            "recall@5": 0.003796,
+            "recall@10": 0.004537
+          }
+        }
+      },
+      "ci95": {
+        "positive_hit@5": [
+          0.0,
+          0.020231
+        ],
+        "useful_hit@5": [
+          0.0,
+          0.014535
+        ],
+        "direct_hit@5": [
+          0.0,
+          0.014535
+        ],
+        "mrr@10": [
+          0.0,
+          0.007184
+        ],
+        "ndcg@10": [
+          0.0,
+          0.003397
+        ],
+        "recall@5": [
+          0.0,
+          0.001967
+        ],
+        "recall@10": [
+          0.0,
+          0.002211
+        ]
+      },
+      "coverage": {
+        "total_results": 3450,
+        "unjudged_results": 3445,
+        "settled_judged_results": 5
+      },
+      "source": "offline scoring of saved browser query embeddings"
+    },
+    "semantic_en": {
+      "queries": 345,
+      "groups": 341,
+      "metrics": {
+        "positive_hit@5": 0.133333,
+        "useful_hit@5": 0.127536,
+        "direct_hit@5": 0.043478,
+        "mrr@10": 0.090045,
+        "ndcg@10": 0.074181,
+        "recall@5": 0.075602,
+        "recall@10": 0.101442
+      },
+      "slices": {
+        "all_queries": {
+          "queries": 345,
+          "groups": 341,
+          "metrics": {
+            "positive_hit@5": 0.133333,
+            "useful_hit@5": 0.127536,
+            "direct_hit@5": 0.043478,
+            "mrr@10": 0.090045,
+            "ndcg@10": 0.074181,
+            "recall@5": 0.075602,
+            "recall@10": 0.101442
+          }
+        },
+        "useful_answerable": {
+          "queries": 294,
+          "groups": 290,
+          "metrics": {
+            "positive_hit@5": 0.153061,
+            "useful_hit@5": 0.14966,
+            "direct_hit@5": 0.05102,
+            "mrr@10": 0.104418,
+            "ndcg@10": 0.084522,
+            "recall@5": 0.085315,
+            "recall@10": 0.112236
+          }
+        },
+        "direct_answer_groups": {
+          "queries": 54,
+          "groups": 51,
+          "metrics": {
+            "positive_hit@5": 0.296296,
+            "useful_hit@5": 0.296296,
+            "direct_hit@5": 0.277778,
+            "mrr@10": 0.193952,
+            "ndcg@10": 0.115584,
+            "recall@5": 0.105133,
+            "recall@10": 0.124984
+          }
+        }
+      },
+      "ci95": {
+        "positive_hit@5": [
+          0.097421,
+          0.171512
+        ],
+        "useful_hit@5": [
+          0.092754,
+          0.164277
+        ],
+        "direct_hit@5": [
+          0.023053,
+          0.066667
+        ],
+        "mrr@10": [
+          0.063924,
+          0.117453
+        ],
+        "ndcg@10": [
+          0.053943,
+          0.097006
+        ],
+        "recall@5": [
+          0.051983,
+          0.102898
+        ],
+        "recall@10": [
+          0.075114,
+          0.131619
+        ]
+      },
+      "coverage": {
+        "total_results": 3450,
+        "unjudged_results": 3377,
+        "settled_judged_results": 72,
+        "disputed_results": 1
+      },
+      "source": "offline scoring of saved browser query embeddings"
+    },
+    "semantic_en_tafsir": {
+      "queries": 345,
+      "groups": 341,
+      "metrics": {
+        "positive_hit@5": 0.156522,
+        "useful_hit@5": 0.144928,
+        "direct_hit@5": 0.046377,
+        "mrr@10": 0.099036,
+        "ndcg@10": 0.086038,
+        "recall@5": 0.083238,
+        "recall@10": 0.124212
+      },
+      "slices": {
+        "all_queries": {
+          "queries": 345,
+          "groups": 341,
+          "metrics": {
+            "positive_hit@5": 0.156522,
+            "useful_hit@5": 0.144928,
+            "direct_hit@5": 0.046377,
+            "mrr@10": 0.099036,
+            "ndcg@10": 0.086038,
+            "recall@5": 0.083238,
+            "recall@10": 0.124212
+          }
+        },
+        "useful_answerable": {
+          "queries": 294,
+          "groups": 290,
+          "metrics": {
+            "positive_hit@5": 0.173469,
+            "useful_hit@5": 0.170068,
+            "direct_hit@5": 0.054422,
+            "mrr@10": 0.105587,
+            "ndcg@10": 0.092317,
+            "recall@5": 0.090874,
+            "recall@10": 0.135555
+          }
+        },
+        "direct_answer_groups": {
+          "queries": 54,
+          "groups": 51,
+          "metrics": {
+            "positive_hit@5": 0.314815,
+            "useful_hit@5": 0.314815,
+            "direct_hit@5": 0.296296,
+            "mrr@10": 0.205423,
+            "ndcg@10": 0.140835,
+            "recall@5": 0.104072,
+            "recall@10": 0.162604
+          }
+        }
+      },
+      "ci95": {
+        "positive_hit@5": [
+          0.116959,
+          0.19829
+        ],
+        "useful_hit@5": [
+          0.107239,
+          0.184756
+        ],
+        "direct_hit@5": [
+          0.025858,
+          0.072254
+        ],
+        "mrr@10": [
+          0.072557,
+          0.129575
+        ],
+        "ndcg@10": [
+          0.065069,
+          0.10987
+        ],
+        "recall@5": [
+          0.058659,
+          0.111376
+        ],
+        "recall@10": [
+          0.09346,
+          0.157807
+        ]
+      },
+      "coverage": {
+        "total_results": 3450,
+        "unjudged_results": 3352,
+        "settled_judged_results": 96,
+        "disputed_results": 2
+      },
+      "source": "offline scoring of saved browser query embeddings"
+    },
+    "semantic_bn_tafsir": {
+      "queries": 345,
+      "groups": 341,
+      "metrics": {
+        "positive_hit@5": 0.043478,
+        "useful_hit@5": 0.043478,
+        "direct_hit@5": 0.008696,
+        "mrr@10": 0.026304,
+        "ndcg@10": 0.020625,
+        "recall@5": 0.020704,
+        "recall@10": 0.025949
+      },
+      "slices": {
+        "all_queries": {
+          "queries": 345,
+          "groups": 341,
+          "metrics": {
+            "positive_hit@5": 0.043478,
+            "useful_hit@5": 0.043478,
+            "direct_hit@5": 0.008696,
+            "mrr@10": 0.026304,
+            "ndcg@10": 0.020625,
+            "recall@5": 0.020704,
+            "recall@10": 0.025949
+          }
+        },
+        "useful_answerable": {
+          "queries": 294,
+          "groups": 290,
+          "metrics": {
+            "positive_hit@5": 0.05102,
+            "useful_hit@5": 0.05102,
+            "direct_hit@5": 0.010204,
+            "mrr@10": 0.030867,
+            "ndcg@10": 0.024203,
+            "recall@5": 0.024296,
+            "recall@10": 0.030451
+          }
+        },
+        "direct_answer_groups": {
+          "queries": 54,
+          "groups": 51,
+          "metrics": {
+            "positive_hit@5": 0.055556,
+            "useful_hit@5": 0.055556,
+            "direct_hit@5": 0.055556,
+            "mrr@10": 0.033951,
+            "ndcg@10": 0.015608,
+            "recall@5": 0.009099,
+            "recall@10": 0.009099
+          }
+        }
+      },
+      "ci95": {
+        "positive_hit@5": [
+          0.022989,
+          0.06414
+        ],
+        "useful_hit@5": [
+          0.022989,
+          0.06414
+        ],
+        "direct_hit@5": [
+          0.0,
+          0.020231
+        ],
+        "mrr@10": [
+          0.012149,
+          0.041596
+        ],
+        "ndcg@10": [
+          0.010298,
+          0.031619
+        ],
+        "recall@5": [
+          0.008387,
+          0.034036
+        ],
+        "recall@10": [
+          0.012451,
+          0.04099
+        ]
+      },
+      "coverage": {
+        "total_results": 3450,
+        "unjudged_results": 3429,
+        "settled_judged_results": 21
+      },
+      "source": "offline scoring of saved browser query embeddings"
+    },
+    "semantic_verse_context": {
+      "queries": 345,
+      "groups": 341,
+      "metrics": {
+        "positive_hit@5": 0.072464,
+        "useful_hit@5": 0.063768,
+        "direct_hit@5": 0.02029,
+        "mrr@10": 0.039218,
+        "ndcg@10": 0.025316,
+        "recall@5": 0.02766,
+        "recall@10": 0.033703
+      },
+      "slices": {
+        "all_queries": {
+          "queries": 345,
+          "groups": 341,
+          "metrics": {
+            "positive_hit@5": 0.072464,
+            "useful_hit@5": 0.063768,
+            "direct_hit@5": 0.02029,
+            "mrr@10": 0.039218,
+            "ndcg@10": 0.025316,
+            "recall@5": 0.02766,
+            "recall@10": 0.033703
+          }
+        },
+        "useful_answerable": {
+          "queries": 294,
+          "groups": 290,
+          "metrics": {
+            "positive_hit@5": 0.078231,
+            "useful_hit@5": 0.07483,
+            "direct_hit@5": 0.02381,
+            "mrr@10": 0.04432,
+            "ndcg@10": 0.026778,
+            "recall@5": 0.025655,
+            "recall@10": 0.032747
+          }
+        },
+        "direct_answer_groups": {
+          "queries": 54,
+          "groups": 51,
+          "metrics": {
+            "positive_hit@5": 0.166667,
+            "useful_hit@5": 0.166667,
+            "direct_hit@5": 0.12963,
+            "mrr@10": 0.07353,
+            "ndcg@10": 0.047881,
+            "recall@5": 0.044281,
+            "recall@10": 0.055582
+          }
+        }
+      },
+      "ci95": {
+        "positive_hit@5": [
+          0.045799,
+          0.101744
+        ],
+        "useful_hit@5": [
+          0.037681,
+          0.092486
+        ],
+        "direct_hit@5": [
+          0.00578,
+          0.039889
+        ],
+        "mrr@10": [
+          0.023512,
+          0.056413
+        ],
+        "ndcg@10": [
+          0.015346,
+          0.036243
+        ],
+        "recall@5": [
+          0.014125,
+          0.042287
+        ],
+        "recall@10": [
+          0.020018,
+          0.049281
+        ]
+      },
+      "coverage": {
+        "total_results": 3450,
+        "unjudged_results": 3408,
+        "settled_judged_results": 41,
+        "disputed_results": 1
+      },
+      "source": "offline scoring of saved browser query embeddings"
+    },
+    "semantic_word_meanings": {
+      "queries": 345,
+      "groups": 341,
+      "metrics": {
+        "positive_hit@5": 0.023188,
+        "useful_hit@5": 0.023188,
+        "direct_hit@5": 0.005797,
+        "mrr@10": 0.01437,
+        "ndcg@10": 0.011087,
+        "recall@5": 0.009023,
+        "recall@10": 0.018083
+      },
+      "slices": {
+        "all_queries": {
+          "queries": 345,
+          "groups": 341,
+          "metrics": {
+            "positive_hit@5": 0.023188,
+            "useful_hit@5": 0.023188,
+            "direct_hit@5": 0.005797,
+            "mrr@10": 0.01437,
+            "ndcg@10": 0.011087,
+            "recall@5": 0.009023,
+            "recall@10": 0.018083
+          }
+        },
+        "useful_answerable": {
+          "queries": 294,
+          "groups": 290,
+          "metrics": {
+            "positive_hit@5": 0.027211,
+            "useful_hit@5": 0.027211,
+            "direct_hit@5": 0.006803,
+            "mrr@10": 0.016862,
+            "ndcg@10": 0.01301,
+            "recall@5": 0.010589,
+            "recall@10": 0.02122
+          }
+        },
+        "direct_answer_groups": {
+          "queries": 54,
+          "groups": 51,
+          "metrics": {
+            "positive_hit@5": 0.037037,
+            "useful_hit@5": 0.037037,
+            "direct_hit@5": 0.037037,
+            "mrr@10": 0.036155,
+            "ndcg@10": 0.026557,
+            "recall@5": 0.005401,
+            "recall@10": 0.030478
+          }
+        }
+      },
+      "ci95": {
+        "positive_hit@5": [
+          0.008721,
+          0.040462
+        ],
+        "useful_hit@5": [
+          0.008721,
+          0.040462
+        ],
+        "direct_hit@5": [
+          0.0,
+          0.014535
+        ],
+        "mrr@10": [
+          0.006251,
+          0.024234
+        ],
+        "ndcg@10": [
+          0.005076,
+          0.018504
+        ],
+        "recall@5": [
+          0.001897,
+          0.018465
+        ],
+        "recall@10": [
+          0.007264,
+          0.032102
+        ]
+      },
+      "coverage": {
+        "total_results": 3450,
+        "unjudged_results": 3430,
+        "settled_judged_results": 18,
+        "disputed_results": 2
+      },
+      "source": "offline scoring of saved browser query embeddings"
+    },
+    "semantic_surah_name": {
+      "queries": 345,
+      "groups": 341,
+      "metrics": {
+        "positive_hit@5": 0.014493,
+        "useful_hit@5": 0.011594,
+        "direct_hit@5": 0.002899,
+        "mrr@10": 0.007258,
+        "ndcg@10": 0.004855,
+        "recall@5": 0.003321,
+        "recall@10": 0.008152
+      },
+      "slices": {
+        "all_queries": {
+          "queries": 345,
+          "groups": 341,
+          "metrics": {
+            "positive_hit@5": 0.014493,
+            "useful_hit@5": 0.011594,
+            "direct_hit@5": 0.002899,
+            "mrr@10": 0.007258,
+            "ndcg@10": 0.004855,
+            "recall@5": 0.003321,
+            "recall@10": 0.008152
+          }
+        },
+        "useful_answerable": {
+          "queries": 294,
+          "groups": 290,
+          "metrics": {
+            "positive_hit@5": 0.017007,
+            "useful_hit@5": 0.013605,
+            "direct_hit@5": 0.003401,
+            "mrr@10": 0.008517,
+            "ndcg@10": 0.005698,
+            "recall@5": 0.003897,
+            "recall@10": 0.009566
+          }
+        },
+        "direct_answer_groups": {
+          "queries": 54,
+          "groups": 51,
+          "metrics": {
+            "positive_hit@5": 0.055556,
+            "useful_hit@5": 0.055556,
+            "direct_hit@5": 0.018519,
+            "mrr@10": 0.025206,
+            "ndcg@10": 0.015503,
+            "recall@5": 0.002701,
+            "recall@10": 0.024306
+          }
+        }
+      },
+      "ci95": {
+        "positive_hit@5": [
+          0.002898,
+          0.031519
+        ],
+        "useful_hit@5": [
+          0.0,
+          0.026089
+        ],
+        "direct_hit@5": [
+          0.0,
+          0.008746
+        ],
+        "mrr@10": [
+          0.001458,
+          0.015198
+        ],
+        "ndcg@10": [
+          0.001304,
+          0.009564
+        ],
+        "recall@5": [
+          0.000182,
+          0.007828
+        ],
+        "recall@10": [
+          0.001635,
+          0.017078
+        ]
+      },
+      "coverage": {
+        "total_results": 3450,
+        "unjudged_results": 3434,
+        "settled_judged_results": 14,
+        "disputed_results": 2
+      },
+      "source": "offline scoring of saved browser query embeddings"
+    },
+    "pr2_meaning_all_fields": {
+      "queries": 345,
+      "groups": 341,
+      "metrics": {
+        "positive_hit@5": 0.188406,
+        "useful_hit@5": 0.176812,
+        "direct_hit@5": 0.063768,
+        "mrr@10": 0.125276,
+        "ndcg@10": 0.104183,
+        "recall@5": 0.097218,
+        "recall@10": 0.144532
+      },
+      "slices": {
+        "all_queries": {
+          "queries": 345,
+          "groups": 341,
+          "metrics": {
+            "positive_hit@5": 0.188406,
+            "useful_hit@5": 0.176812,
+            "direct_hit@5": 0.063768,
+            "mrr@10": 0.125276,
+            "ndcg@10": 0.104183,
+            "recall@5": 0.097218,
+            "recall@10": 0.144532
+          }
+        },
+        "useful_answerable": {
+          "queries": 294,
+          "groups": 290,
+          "metrics": {
+            "positive_hit@5": 0.214286,
+            "useful_hit@5": 0.207483,
+            "direct_hit@5": 0.07483,
+            "mrr@10": 0.141268,
+            "ndcg@10": 0.115192,
+            "recall@5": 0.10898,
+            "recall@10": 0.156565
+          }
+        },
+        "direct_answer_groups": {
+          "queries": 54,
+          "groups": 51,
+          "metrics": {
+            "positive_hit@5": 0.462963,
+            "useful_hit@5": 0.462963,
+            "direct_hit@5": 0.407407,
+            "mrr@10": 0.315013,
+            "ndcg@10": 0.199366,
+            "recall@5": 0.144948,
+            "recall@10": 0.202128
+          }
+        }
+      },
+      "ci95": {
+        "positive_hit@5": [
+          0.145773,
+          0.234298
+        ],
+        "useful_hit@5": [
+          0.135447,
+          0.22029
+        ],
+        "direct_hit@5": [
+          0.037791,
+          0.092492
+        ],
+        "mrr@10": [
+          0.095176,
+          0.1586
+        ],
+        "ndcg@10": [
+          0.080912,
+          0.12854
+        ],
+        "recall@5": [
+          0.07041,
+          0.126972
+        ],
+        "recall@10": [
+          0.113658,
+          0.179551
+        ]
+      },
+      "coverage": {
+        "total_results": 3450,
+        "unjudged_results": 3335,
+        "settled_judged_results": 112,
+        "disputed_results": 3
+      },
+      "source": "offline scoring of saved browser query embeddings"
+    }
+  },
+  "comparisons": {
+    "deploy_keyword_translation_vs_pr1_keyword_all_fields": {
+      "positive_hit@5": {
+        "baseline_mean": 0.15942,
+        "candidate_mean": 0.069565,
+        "delta_mean": -0.089855,
+        "delta_ci95": [
+          -0.127907,
+          -0.054598
+        ],
+        "wins": 6,
+        "losses": 37,
+        "ties": 302
+      },
+      "useful_hit@5": {
+        "baseline_mean": 0.166667,
+        "candidate_mean": 0.078231,
+        "delta_mean": -0.088435,
+        "delta_ci95": [
+          -0.126723,
+          -0.04811
+        ],
+        "wins": 5,
+        "losses": 31,
+        "ties": 258
+      },
+      "direct_hit@5": {
+        "baseline_mean": 0.148148,
+        "candidate_mean": 0.148148,
+        "delta_mean": 0.0,
+        "delta_ci95": [
+          -0.113208,
+          0.115385
+        ],
+        "wins": 5,
+        "losses": 5,
+        "ties": 44
+      },
+      "mrr@10": {
+        "baseline_mean": 0.108596,
+        "candidate_mean": 0.050537,
+        "delta_mean": -0.058058,
+        "delta_ci95": [
+          -0.0839,
+          -0.035731
+        ],
+        "wins": 17,
+        "losses": 60,
+        "ties": 268
+      },
+      "ndcg@10": {
+        "baseline_mean": 0.091701,
+        "candidate_mean": 0.03729,
+        "delta_mean": -0.054412,
+        "delta_ci95": [
+          -0.073513,
+          -0.036263
+        ],
+        "wins": 17,
+        "losses": 62,
+        "ties": 266
+      },
+      "recall@5": {
+        "baseline_mean": 0.092228,
+        "candidate_mean": 0.035198,
+        "delta_mean": -0.057029,
+        "delta_ci95": [
+          -0.081305,
+          -0.035217
+        ],
+        "wins": 7,
+        "losses": 39,
+        "ties": 299
+      },
+      "recall@10": {
+        "baseline_mean": 0.120295,
+        "candidate_mean": 0.046132,
+        "delta_mean": -0.074163,
+        "delta_ci95": [
+          -0.099427,
+          -0.050576
+        ],
+        "wins": 9,
+        "losses": 51,
+        "ties": 285
+      }
+    },
+    "pr1_keyword_translation_vs_pr1_keyword_all_fields": {
+      "positive_hit@5": {
+        "baseline_mean": 0.15942,
+        "candidate_mean": 0.072464,
+        "delta_mean": -0.086957,
+        "delta_ci95": [
+          -0.124277,
+          -0.054594
+        ],
+        "wins": 5,
+        "losses": 35,
+        "ties": 305
+      },
+      "useful_hit@5": {
+        "baseline_mean": 0.166667,
+        "candidate_mean": 0.081633,
+        "delta_mean": -0.085034,
+        "delta_ci95": [
+          -0.122449,
+          -0.047458
+        ],
+        "wins": 4,
+        "losses": 29,
+        "ties": 261
+      },
+      "direct_hit@5": {
+        "baseline_mean": 0.148148,
+        "candidate_mean": 0.12963,
+        "delta_mean": -0.018519,
+        "delta_ci95": [
+          -0.12963,
+          0.092593
+        ],
+        "wins": 4,
+        "losses": 5,
+        "ties": 45
+      },
+      "mrr@10": {
+        "baseline_mean": 0.108596,
+        "candidate_mean": 0.050252,
+        "delta_mean": -0.058344,
+        "delta_ci95": [
+          -0.084579,
+          -0.036738
+        ],
+        "wins": 15,
+        "losses": 60,
+        "ties": 270
+      },
+      "ndcg@10": {
+        "baseline_mean": 0.091701,
+        "candidate_mean": 0.037558,
+        "delta_mean": -0.054143,
+        "delta_ci95": [
+          -0.073345,
+          -0.036102
+        ],
+        "wins": 15,
+        "losses": 62,
+        "ties": 268
+      },
+      "recall@5": {
+        "baseline_mean": 0.092228,
+        "candidate_mean": 0.036055,
+        "delta_mean": -0.056173,
+        "delta_ci95": [
+          -0.080953,
+          -0.034607
+        ],
+        "wins": 6,
+        "losses": 37,
+        "ties": 302
+      },
+      "recall@10": {
+        "baseline_mean": 0.120295,
+        "candidate_mean": 0.047181,
+        "delta_mean": -0.073113,
+        "delta_ci95": [
+          -0.098841,
+          -0.048856
+        ],
+        "wins": 8,
+        "losses": 51,
+        "ties": 286
+      }
+    },
+    "pr2_meaning_translation_vs_pr1_keyword_all_fields": {
+      "positive_hit@5": {
+        "baseline_mean": 0.15942,
+        "candidate_mean": 0.133333,
+        "delta_mean": -0.026087,
+        "delta_ci95": [
+          -0.072254,
+          0.017544
+        ],
+        "wins": 25,
+        "losses": 34,
+        "ties": 286
+      },
+      "useful_hit@5": {
+        "baseline_mean": 0.166667,
+        "candidate_mean": 0.14966,
+        "delta_mean": -0.017007,
+        "delta_ci95": [
+          -0.068259,
+          0.033898
+        ],
+        "wins": 24,
+        "losses": 29,
+        "ties": 241
+      },
+      "direct_hit@5": {
+        "baseline_mean": 0.148148,
+        "candidate_mean": 0.277778,
+        "delta_mean": 0.12963,
+        "delta_ci95": [
+          0.018519,
+          0.25
+        ],
+        "wins": 9,
+        "losses": 2,
+        "ties": 43
+      },
+      "mrr@10": {
+        "baseline_mean": 0.108596,
+        "candidate_mean": 0.090045,
+        "delta_mean": -0.018551,
+        "delta_ci95": [
+          -0.052373,
+          0.013709
+        ],
+        "wins": 44,
+        "losses": 57,
+        "ties": 244
+      },
+      "ndcg@10": {
+        "baseline_mean": 0.091701,
+        "candidate_mean": 0.074181,
+        "delta_mean": -0.01752,
+        "delta_ci95": [
+          -0.04181,
+          0.007568
+        ],
+        "wins": 44,
+        "losses": 58,
+        "ties": 243
+      },
+      "recall@5": {
+        "baseline_mean": 0.092228,
+        "candidate_mean": 0.075602,
+        "delta_mean": -0.016626,
+        "delta_ci95": [
+          -0.043471,
+          0.010627
+        ],
+        "wins": 25,
+        "losses": 38,
+        "ties": 282
+      },
+      "recall@10": {
+        "baseline_mean": 0.120295,
+        "candidate_mean": 0.101442,
+        "delta_mean": -0.018853,
+        "delta_ci95": [
+          -0.049982,
+          0.010869
+        ],
+        "wins": 35,
+        "losses": 49,
+        "ties": 261
+      }
+    },
+    "semantic_ar_raw_vs_pr1_keyword_all_fields": {
+      "positive_hit@5": {
+        "baseline_mean": 0.15942,
+        "candidate_mean": 0.008696,
+        "delta_mean": -0.150725,
+        "delta_ci95": [
+          -0.190058,
+          -0.110779
+        ],
+        "wins": 2,
+        "losses": 54,
+        "ties": 289
+      },
+      "useful_hit@5": {
+        "baseline_mean": 0.166667,
+        "candidate_mean": 0.006803,
+        "delta_mean": -0.159864,
+        "delta_ci95": [
+          -0.204778,
+          -0.115646
+        ],
+        "wins": 1,
+        "losses": 48,
+        "ties": 245
+      },
+      "direct_hit@5": {
+        "baseline_mean": 0.148148,
+        "candidate_mean": 0.037037,
+        "delta_mean": -0.111111,
+        "delta_ci95": [
+          -0.211538,
+          -0.018182
+        ],
+        "wins": 1,
+        "losses": 7,
+        "ties": 46
+      },
+      "mrr@10": {
+        "baseline_mean": 0.108596,
+        "candidate_mean": 0.002899,
+        "delta_mean": -0.105697,
+        "delta_ci95": [
+          -0.134069,
+          -0.078159
+        ],
+        "wins": 2,
+        "losses": 76,
+        "ties": 267
+      },
+      "ndcg@10": {
+        "baseline_mean": 0.091701,
+        "candidate_mean": 0.001465,
+        "delta_mean": -0.090237,
+        "delta_ci95": [
+          -0.114499,
+          -0.067077
+        ],
+        "wins": 3,
+        "losses": 75,
+        "ties": 267
+      },
+      "recall@5": {
+        "baseline_mean": 0.092228,
+        "candidate_mean": 0.000858,
+        "delta_mean": -0.09137,
+        "delta_ci95": [
+          -0.119643,
+          -0.064793
+        ],
+        "wins": 3,
+        "losses": 54,
+        "ties": 288
+      },
+      "recall@10": {
+        "baseline_mean": 0.120295,
+        "candidate_mean": 0.000974,
+        "delta_mean": -0.119321,
+        "delta_ci95": [
+          -0.150535,
+          -0.091231
+        ],
+        "wins": 3,
+        "losses": 75,
+        "ties": 267
+      }
+    },
+    "semantic_en_vs_pr1_keyword_all_fields": {
+      "positive_hit@5": {
+        "baseline_mean": 0.15942,
+        "candidate_mean": 0.133333,
+        "delta_mean": -0.026087,
+        "delta_ci95": [
+          -0.072254,
+          0.017544
+        ],
+        "wins": 25,
+        "losses": 34,
+        "ties": 286
+      },
+      "useful_hit@5": {
+        "baseline_mean": 0.166667,
+        "candidate_mean": 0.14966,
+        "delta_mean": -0.017007,
+        "delta_ci95": [
+          -0.068259,
+          0.033898
+        ],
+        "wins": 24,
+        "losses": 29,
+        "ties": 241
+      },
+      "direct_hit@5": {
+        "baseline_mean": 0.148148,
+        "candidate_mean": 0.277778,
+        "delta_mean": 0.12963,
+        "delta_ci95": [
+          0.018519,
+          0.25
+        ],
+        "wins": 9,
+        "losses": 2,
+        "ties": 43
+      },
+      "mrr@10": {
+        "baseline_mean": 0.108596,
+        "candidate_mean": 0.090045,
+        "delta_mean": -0.018551,
+        "delta_ci95": [
+          -0.052373,
+          0.013709
+        ],
+        "wins": 44,
+        "losses": 57,
+        "ties": 244
+      },
+      "ndcg@10": {
+        "baseline_mean": 0.091701,
+        "candidate_mean": 0.074181,
+        "delta_mean": -0.01752,
+        "delta_ci95": [
+          -0.04181,
+          0.007568
+        ],
+        "wins": 44,
+        "losses": 58,
+        "ties": 243
+      },
+      "recall@5": {
+        "baseline_mean": 0.092228,
+        "candidate_mean": 0.075602,
+        "delta_mean": -0.016626,
+        "delta_ci95": [
+          -0.043471,
+          0.010627
+        ],
+        "wins": 25,
+        "losses": 38,
+        "ties": 282
+      },
+      "recall@10": {
+        "baseline_mean": 0.120295,
+        "candidate_mean": 0.101442,
+        "delta_mean": -0.018853,
+        "delta_ci95": [
+          -0.049982,
+          0.010869
+        ],
+        "wins": 35,
+        "losses": 49,
+        "ties": 261
+      }
+    },
+    "semantic_en_tafsir_vs_pr1_keyword_all_fields": {
+      "positive_hit@5": {
+        "baseline_mean": 0.15942,
+        "candidate_mean": 0.156522,
+        "delta_mean": -0.002899,
+        "delta_ci95": [
+          -0.043605,
+          0.037356
+        ],
+        "wins": 23,
+        "losses": 24,
+        "ties": 298
+      },
+      "useful_hit@5": {
+        "baseline_mean": 0.166667,
+        "candidate_mean": 0.170068,
+        "delta_mean": 0.003401,
+        "delta_ci95": [
+          -0.040681,
+          0.050336
+        ],
+        "wins": 22,
+        "losses": 21,
+        "ties": 251
+      },
+      "direct_hit@5": {
+        "baseline_mean": 0.148148,
+        "candidate_mean": 0.296296,
+        "delta_mean": 0.148148,
+        "delta_ci95": [
+          0.037037,
+          0.264151
+        ],
+        "wins": 9,
+        "losses": 1,
+        "ties": 44
+      },
+      "mrr@10": {
+        "baseline_mean": 0.108596,
+        "candidate_mean": 0.099036,
+        "delta_mean": -0.009559,
+        "delta_ci95": [
+          -0.037865,
+          0.018818
+        ],
+        "wins": 48,
+        "losses": 45,
+        "ties": 252
+      },
+      "ndcg@10": {
+        "baseline_mean": 0.091701,
+        "candidate_mean": 0.086038,
+        "delta_mean": -0.005664,
+        "delta_ci95": [
+          -0.024065,
+          0.013192
+        ],
+        "wins": 52,
+        "losses": 46,
+        "ties": 247
+      },
+      "recall@5": {
+        "baseline_mean": 0.092228,
+        "candidate_mean": 0.083238,
+        "delta_mean": -0.00899,
+        "delta_ci95": [
+          -0.032111,
+          0.012047
+        ],
+        "wins": 25,
+        "losses": 27,
+        "ties": 293
+      },
+      "recall@10": {
+        "baseline_mean": 0.120295,
+        "candidate_mean": 0.124212,
+        "delta_mean": 0.003918,
+        "delta_ci95": [
+          -0.020091,
+          0.029017
+        ],
+        "wins": 35,
+        "losses": 34,
+        "ties": 276
+      }
+    },
+    "semantic_bn_tafsir_vs_pr1_keyword_all_fields": {
+      "positive_hit@5": {
+        "baseline_mean": 0.15942,
+        "candidate_mean": 0.043478,
+        "delta_mean": -0.115942,
+        "delta_ci95": [
+          -0.158971,
+          -0.074464
+        ],
+        "wins": 9,
+        "losses": 49,
+        "ties": 287
+      },
+      "useful_hit@5": {
+        "baseline_mean": 0.166667,
+        "candidate_mean": 0.05102,
+        "delta_mean": -0.115646,
+        "delta_ci95": [
+          -0.163265,
+          -0.070464
+        ],
+        "wins": 9,
+        "losses": 43,
+        "ties": 242
+      },
+      "direct_hit@5": {
+        "baseline_mean": 0.148148,
+        "candidate_mean": 0.055556,
+        "delta_mean": -0.092593,
+        "delta_ci95": [
+          -0.2,
+          0.017552
+        ],
+        "wins": 2,
+        "losses": 7,
+        "ties": 45
+      },
+      "mrr@10": {
+        "baseline_mean": 0.108596,
+        "candidate_mean": 0.026304,
+        "delta_mean": -0.082291,
+        "delta_ci95": [
+          -0.113476,
+          -0.05047
+        ],
+        "wins": 14,
+        "losses": 72,
+        "ties": 259
+      },
+      "ndcg@10": {
+        "baseline_mean": 0.091701,
+        "candidate_mean": 0.020625,
+        "delta_mean": -0.071076,
+        "delta_ci95": [
+          -0.095948,
+          -0.046749
+        ],
+        "wins": 14,
+        "losses": 72,
+        "ties": 259
+      },
+      "recall@5": {
+        "baseline_mean": 0.092228,
+        "candidate_mean": 0.020704,
+        "delta_mean": -0.071523,
+        "delta_ci95": [
+          -0.099347,
+          -0.045471
+        ],
+        "wins": 10,
+        "losses": 51,
+        "ties": 284
+      },
+      "recall@10": {
+        "baseline_mean": 0.120295,
+        "candidate_mean": 0.025949,
+        "delta_mean": -0.094345,
+        "delta_ci95": [
+          -0.125582,
+          -0.066331
+        ],
+        "wins": 12,
+        "losses": 70,
+        "ties": 263
+      }
+    },
+    "semantic_verse_context_vs_pr1_keyword_all_fields": {
+      "positive_hit@5": {
+        "baseline_mean": 0.15942,
+        "candidate_mean": 0.072464,
+        "delta_mean": -0.086957,
+        "delta_ci95": [
+          -0.133721,
+          -0.040816
+        ],
+        "wins": 18,
+        "losses": 48,
+        "ties": 279
+      },
+      "useful_hit@5": {
+        "baseline_mean": 0.166667,
+        "candidate_mean": 0.07483,
+        "delta_mean": -0.091837,
+        "delta_ci95": [
+          -0.140906,
+          -0.040675
+        ],
+        "wins": 15,
+        "losses": 42,
+        "ties": 237
+      },
+      "direct_hit@5": {
+        "baseline_mean": 0.148148,
+        "candidate_mean": 0.12963,
+        "delta_mean": -0.018519,
+        "delta_ci95": [
+          -0.12963,
+          0.089286
+        ],
+        "wins": 3,
+        "losses": 4,
+        "ties": 47
+      },
+      "mrr@10": {
+        "baseline_mean": 0.108596,
+        "candidate_mean": 0.039218,
+        "delta_mean": -0.069378,
+        "delta_ci95": [
+          -0.100188,
+          -0.040605
+        ],
+        "wins": 25,
+        "losses": 66,
+        "ties": 254
+      },
+      "ndcg@10": {
+        "baseline_mean": 0.091701,
+        "candidate_mean": 0.025316,
+        "delta_mean": -0.066385,
+        "delta_ci95": [
+          -0.09014,
+          -0.042354
+        ],
+        "wins": 25,
+        "losses": 67,
+        "ties": 253
+      },
+      "recall@5": {
+        "baseline_mean": 0.092228,
+        "candidate_mean": 0.02766,
+        "delta_mean": -0.064568,
+        "delta_ci95": [
+          -0.093865,
+          -0.034547
+        ],
+        "wins": 18,
+        "losses": 51,
+        "ties": 276
+      },
+      "recall@10": {
+        "baseline_mean": 0.120295,
+        "candidate_mean": 0.033703,
+        "delta_mean": -0.086591,
+        "delta_ci95": [
+          -0.119537,
+          -0.05721
+        ],
+        "wins": 18,
+        "losses": 62,
+        "ties": 265
+      }
+    },
+    "semantic_word_meanings_vs_pr1_keyword_all_fields": {
+      "positive_hit@5": {
+        "baseline_mean": 0.15942,
+        "candidate_mean": 0.023188,
+        "delta_mean": -0.136232,
+        "delta_ci95": [
+          -0.178687,
+          -0.095652
+        ],
+        "wins": 6,
+        "losses": 53,
+        "ties": 286
+      },
+      "useful_hit@5": {
+        "baseline_mean": 0.166667,
+        "candidate_mean": 0.027211,
+        "delta_mean": -0.139456,
+        "delta_ci95": [
+          -0.187713,
+          -0.09215
+        ],
+        "wins": 6,
+        "losses": 47,
+        "ties": 241
+      },
+      "direct_hit@5": {
+        "baseline_mean": 0.148148,
+        "candidate_mean": 0.037037,
+        "delta_mean": -0.111111,
+        "delta_ci95": [
+          -0.230769,
+          0.0
+        ],
+        "wins": 2,
+        "losses": 8,
+        "ties": 44
+      },
+      "mrr@10": {
+        "baseline_mean": 0.108596,
+        "candidate_mean": 0.01437,
+        "delta_mean": -0.094226,
+        "delta_ci95": [
+          -0.122659,
+          -0.065764
+        ],
+        "wins": 9,
+        "losses": 74,
+        "ties": 262
+      },
+      "ndcg@10": {
+        "baseline_mean": 0.091701,
+        "candidate_mean": 0.011087,
+        "delta_mean": -0.080614,
+        "delta_ci95": [
+          -0.104026,
+          -0.058534
+        ],
+        "wins": 9,
+        "losses": 74,
+        "ties": 262
+      },
+      "recall@5": {
+        "baseline_mean": 0.092228,
+        "candidate_mean": 0.009023,
+        "delta_mean": -0.083204,
+        "delta_ci95": [
+          -0.110316,
+          -0.057782
+        ],
+        "wins": 6,
+        "losses": 53,
+        "ties": 286
+      },
+      "recall@10": {
+        "baseline_mean": 0.120295,
+        "candidate_mean": 0.018083,
+        "delta_mean": -0.102212,
+        "delta_ci95": [
+          -0.132246,
+          -0.075675
+        ],
+        "wins": 8,
+        "losses": 68,
+        "ties": 269
+      }
+    },
+    "semantic_surah_name_vs_pr1_keyword_all_fields": {
+      "positive_hit@5": {
+        "baseline_mean": 0.15942,
+        "candidate_mean": 0.014493,
+        "delta_mean": -0.144928,
+        "delta_ci95": [
+          -0.18732,
+          -0.102551
+        ],
+        "wins": 3,
+        "losses": 53,
+        "ties": 289
+      },
+      "useful_hit@5": {
+        "baseline_mean": 0.166667,
+        "candidate_mean": 0.013605,
+        "delta_mean": -0.153061,
+        "delta_ci95": [
+          -0.197952,
+          -0.106645
+        ],
+        "wins": 2,
+        "losses": 47,
+        "ties": 245
+      },
+      "direct_hit@5": {
+        "baseline_mean": 0.148148,
+        "candidate_mean": 0.018519,
+        "delta_mean": -0.12963,
+        "delta_ci95": [
+          -0.240741,
+          -0.035088
+        ],
+        "wins": 1,
+        "losses": 8,
+        "ties": 45
+      },
+      "mrr@10": {
+        "baseline_mean": 0.108596,
+        "candidate_mean": 0.007258,
+        "delta_mean": -0.101338,
+        "delta_ci95": [
+          -0.130551,
+          -0.072998
+        ],
+        "wins": 5,
+        "losses": 74,
+        "ties": 266
+      },
+      "ndcg@10": {
+        "baseline_mean": 0.091701,
+        "candidate_mean": 0.004855,
+        "delta_mean": -0.086846,
+        "delta_ci95": [
+          -0.111194,
+          -0.064428
+        ],
+        "wins": 6,
+        "losses": 73,
+        "ties": 266
+      },
+      "recall@5": {
+        "baseline_mean": 0.092228,
+        "candidate_mean": 0.003321,
+        "delta_mean": -0.088907,
+        "delta_ci95": [
+          -0.117051,
+          -0.062884
+        ],
+        "wins": 3,
+        "losses": 53,
+        "ties": 289
+      },
+      "recall@10": {
+        "baseline_mean": 0.120295,
+        "candidate_mean": 0.008152,
+        "delta_mean": -0.112143,
+        "delta_ci95": [
+          -0.143444,
+          -0.084424
+        ],
+        "wins": 4,
+        "losses": 72,
+        "ties": 269
+      }
+    },
+    "pr2_meaning_all_fields_vs_pr1_keyword_all_fields": {
+      "positive_hit@5": {
+        "baseline_mean": 0.15942,
+        "candidate_mean": 0.188406,
+        "delta_mean": 0.028986,
+        "delta_ci95": [
+          -0.020116,
+          0.075802
+        ],
+        "wins": 37,
+        "losses": 27,
+        "ties": 281
+      },
+      "useful_hit@5": {
+        "baseline_mean": 0.166667,
+        "candidate_mean": 0.207483,
+        "delta_mean": 0.040816,
+        "delta_ci95": [
+          -0.013652,
+          0.091525
+        ],
+        "wins": 35,
+        "losses": 23,
+        "ties": 236
+      },
+      "direct_hit@5": {
+        "baseline_mean": 0.148148,
+        "candidate_mean": 0.407407,
+        "delta_mean": 0.259259,
+        "delta_ci95": [
+          0.132075,
+          0.392857
+        ],
+        "wins": 15,
+        "losses": 1,
+        "ties": 38
+      },
+      "mrr@10": {
+        "baseline_mean": 0.108596,
+        "candidate_mean": 0.125276,
+        "delta_mean": 0.01668,
+        "delta_ci95": [
+          -0.015274,
+          0.048849
+        ],
+        "wins": 60,
+        "losses": 41,
+        "ties": 244
+      },
+      "ndcg@10": {
+        "baseline_mean": 0.091701,
+        "candidate_mean": 0.104183,
+        "delta_mean": 0.012481,
+        "delta_ci95": [
+          -0.008736,
+          0.034148
+        ],
+        "wins": 62,
+        "losses": 44,
+        "ties": 239
+      },
+      "recall@5": {
+        "baseline_mean": 0.092228,
+        "candidate_mean": 0.097218,
+        "delta_mean": 0.00499,
+        "delta_ci95": [
+          -0.021422,
+          0.029799
+        ],
+        "wins": 37,
+        "losses": 30,
+        "ties": 278
+      },
+      "recall@10": {
+        "baseline_mean": 0.120295,
+        "candidate_mean": 0.144532,
+        "delta_mean": 0.024237,
+        "delta_ci95": [
+          -0.000593,
+          0.050494
+        ],
+        "wins": 46,
+        "losses": 27,
+        "ties": 272
+      }
+    },
+    "pr2_meaning_all_fields_vs_pr2_meaning_translation": {
+      "positive_hit@5": {
+        "baseline_mean": 0.133333,
+        "candidate_mean": 0.188406,
+        "delta_mean": 0.055072,
+        "delta_ci95": [
+          0.020115,
+          0.095108
+        ],
+        "wins": 30,
+        "losses": 11,
+        "ties": 304
+      },
+      "useful_hit@5": {
+        "baseline_mean": 0.14966,
+        "candidate_mean": 0.207483,
+        "delta_mean": 0.057823,
+        "delta_ci95": [
+          0.017005,
+          0.098305
+        ],
+        "wins": 28,
+        "losses": 11,
+        "ties": 255
+      },
+      "direct_hit@5": {
+        "baseline_mean": 0.277778,
+        "candidate_mean": 0.407407,
+        "delta_mean": 0.12963,
+        "delta_ci95": [
+          0.034483,
+          0.240741
+        ],
+        "wins": 8,
+        "losses": 1,
+        "ties": 45
+      },
+      "mrr@10": {
+        "baseline_mean": 0.090045,
+        "candidate_mean": 0.125276,
+        "delta_mean": 0.035231,
+        "delta_ci95": [
+          0.007881,
+          0.062464
+        ],
+        "wins": 66,
+        "losses": 33,
+        "ties": 246
+      },
+      "ndcg@10": {
+        "baseline_mean": 0.074181,
+        "candidate_mean": 0.104183,
+        "delta_mean": 0.030002,
+        "delta_ci95": [
+          0.010862,
+          0.050509
+        ],
+        "wins": 69,
+        "losses": 34,
+        "ties": 242
+      },
+      "recall@5": {
+        "baseline_mean": 0.075602,
+        "candidate_mean": 0.097218,
+        "delta_mean": 0.021616,
+        "delta_ci95": [
+          0.000426,
+          0.043163
+        ],
+        "wins": 34,
+        "losses": 11,
+        "ties": 300
+      },
+      "recall@10": {
+        "baseline_mean": 0.101442,
+        "candidate_mean": 0.144532,
+        "delta_mean": 0.04309,
+        "delta_ci95": [
+          0.014688,
+          0.071338
+        ],
+        "wins": 53,
+        "losses": 21,
+        "ties": 271
+      }
+    }
+  },
+  "assets": {
+    "vector_bytes": 21922560,
+    "vector_files": 7,
+    "field_passages": {
+      "ar_raw": 6247,
+      "en": 6236,
+      "en_tafsir": 10455,
+      "bn_tafsir": 8203,
+      "verse_context": 6123,
+      "word_meanings": 13590,
+      "surah_name": 6236
+    },
+    "translation_baseline_bytes": 2394624,
+    "index_sha256": "fd109a88f98322abe0fb2b534ba89a2459a64fcffb64962b5c948e1e74b48ea5",
+    "vector_sha256": {
+      "ar_raw": "0e54ea0b1cebfe1127b8c0341833c420c1e1219bd5d2ed9c3c7bf0772dd8d4e4",
+      "en": "0cad61636eb49d656fb65e705da4b84f2038c2a771a10bc6bf3d57e16fc071e5",
+      "en_tafsir": "0d85591a9d3a04f0e91a99671c6f682ff3fb1e79a24f88df6f80a673294fad81",
+      "bn_tafsir": "b8ad1bdbe670f0e942e475123ab4d7c7124b71685d51323fee7f98c6059d383a",
+      "verse_context": "462cd027fcb341a3694b1dde4762ed7529097e9dced445d233c197b3afd92d6a",
+      "word_meanings": "99837d8e30d5f5d1d1086f0ddb7d8307adfb9ad8f883d69258949acb2da45329",
+      "surah_name": "efe7e91e5bd7c75b69b40d7b1f7e77f4b8da0887179b6d9f6fdfc15dd1650654"
+    }
+  },
+  "latency_ms": {
+    "all_fields": {
+      "p50": 190,
+      "p95": 634
+    },
+    "all_fields_worker": {
+      "load_ms": {
+        "p50": 0,
+        "p95": 0.10000002384185791
+      },
+      "embedding_ms": {
+        "p50": 105.69999992847443,
+        "p95": 553.7000000476837
+      },
+      "scoring_ms": {
+        "p50": 83.09999990463257,
+        "p95": 96.5
+      }
+    },
+    "pr2_meaning_translation": {
+      "p50": 46,
+      "p95": 221
+    },
+    "deploy_keyword_translation": {
+      "p50": 104.01,
+      "p95": 223.275
+    },
+    "pr1_keyword_translation": {
+      "p50": 75.943,
+      "p95": 472.505
+    },
+    "pr1_keyword_all_fields": {
+      "p50": 785.88,
+      "p95": 5892.642
+    }
+  },
+  "cold_asset_transfer": {
+    "bytes": 157715676,
+    "server_ms": 1956.2531,
+    "requests": 13,
+    "resources": {
+      "/static/meaning/all-fields-index.json": {
+        "bytes": 654692,
+        "server_ms": 18.281999999999698,
+        "requests": 2
+      },
+      "/static/meaning/all-fields-ar_raw-13b7f19b630d-e5-v1.bin": {
+        "bytes": 2398848,
+        "server_ms": 55.08230000000003,
+        "requests": 1
+      },
+      "/static/meaning/all-fields-verse_context-34d8bcc3e537-e5-v1.bin": {
+        "bytes": 2351232,
+        "server_ms": 51.95360000000005,
+        "requests": 1
+      },
+      "/static/meaning/verses-d1c40be0bef5-e5-v1.bin": {
+        "bytes": 2394624,
+        "server_ms": 56.41409999999996,
+        "requests": 1
+      },
+      "/static/meaning/all-fields-bn_tafsir-d32de40aabc1-e5-v1.bin": {
+        "bytes": 3149952,
+        "server_ms": 65.99549999999999,
+        "requests": 1
+      },
+      "/static/meaning/all-fields-en_tafsir-0e3587b4af9e-e5-v1.bin": {
+        "bytes": 4014720,
+        "server_ms": 75.35410000000002,
+        "requests": 1
+      },
+      "/static/meaning/all-fields-surah_name-fe4282d95768-e5-v1.bin": {
+        "bytes": 2394624,
+        "server_ms": 24.87889999999993,
+        "requests": 1
+      },
+      "/static/meaning/all-fields-word_meanings-c875970b4af2-e5-v1.bin": {
+        "bytes": 5218560,
+        "server_ms": 79.3424,
+        "requests": 1
+      },
+      "/static/meaning/models/Xenova/multilingual-e5-small/tokenizer_config.json": {
+        "bytes": 443,
+        "server_ms": 3.260099999999966,
+        "requests": 1
+      },
+      "/static/meaning/models/Xenova/multilingual-e5-small/config.json": {
+        "bytes": 658,
+        "server_ms": 4.268700000000081,
+        "requests": 1
+      },
+      "/static/meaning/models/Xenova/multilingual-e5-small/tokenizer.json": {
+        "bytes": 17082730,
+        "server_ms": 110.4322000000002,
+        "requests": 1
+      },
+      "/static/meaning/models/Xenova/multilingual-e5-small/onnx/model_int8.onnx": {
+        "bytes": 118054593,
+        "server_ms": 1410.9892,
+        "requests": 1
+      }
+    },
+    "browser_resources": [],
+    "basis": "fresh Chromium profile, loopback static server, no-store responses"
+  },
+  "limitations": [
+    "The IslamQA package is provisional and not benchmark-grade.",
+    "Test questions were visible during model-assisted review; the split is not blind.",
+    "Labels and citation corrections lack independent scholarly review.",
+    "Pooled judgments are incomplete; unjudged results earn no gain.",
+    "The evaluation is English-only and does not establish Arabic or Bengali query quality.",
+    "Cold transfer uses a fresh browser and loopback server; warmed timings are not production latency."
+  ]
+}

@@ -11,5 +11,11 @@ db/.secret_key
 # generated search index + typo vocabulary (rebuilt by build_search.py)
 db/search.db
 db/search_vocab.pkl
+db/*-journal
+db/*-wal
+db/*-shm
 db/translation_vectors.npz
-static/meaning/models/
+/.venv/
+/dist/
+/deployment/verification/
+evaluation/.cache/

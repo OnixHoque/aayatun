@@ -1,4 +1,4 @@
-// Run the exact PR #2 browser meaning worker against the IslamQA test fixture.
+// Run the production meaning worker against an IslamQA validation or test fixture.
 const fs = require('node:fs');
 const fsp = fs.promises;
 const http = require('node:http');
@@ -10,7 +10,7 @@ const { spawn, execFileSync } = require('node:child_process');
 const HERE = __dirname;
 const WORKSPACE = path.resolve(HERE, '..', '..');
 const DEFAULT_ROOT = path.resolve(HERE, '..');
-const DEFAULT_MODEL_ROOT = path.join(WORKSPACE, 'aayatun-research', 'static', 'meaning', 'models');
+const DEFAULT_MODEL_ROOT = path.join(DEFAULT_ROOT, 'static', 'meaning', 'models');
 const DEFAULT_FIXTURE = path.join(HERE, 'islamqa_pr2_test_queries.jsonl');
 const DEFAULT_MANIFEST = path.join(HERE, 'islamqa_pr2_fixture_manifest.json');
 const DEFAULT_OUTPUT = path.join(HERE, 'islamqa_pr2_meaning_rankings.json');
@@ -90,6 +90,7 @@ function contentType(filename) {
     const types = {
         '.html': 'text/html; charset=utf-8',
         '.js': 'text/javascript; charset=utf-8',
+        '.mjs': 'text/javascript; charset=utf-8',
         '.json': 'application/json; charset=utf-8',
         '.css': 'text/css; charset=utf-8',
         '.bin': 'application/octet-stream',
@@ -109,6 +110,7 @@ function safeFile(root, relative) {
 
 async function serve(appRoot, modelRoot) {
     const modelPrefix = '/static/meaning/models/';
+    const transfers = {};
     const server = http.createServer(async (request, response) => {
         try {
             const url = new URL(request.url, 'http://127.0.0.1');
@@ -155,6 +157,14 @@ async function serve(appRoot, modelRoot) {
                 headers['Content-Range'] = `bytes ${start}-${end}/${stat.size}`;
                 headers['Content-Length'] = end - start + 1;
             }
+            const transferStarted = performance.now();
+            response.on('finish', () => {
+                const previous = transfers[url.pathname] || { bytes: 0, server_ms: 0, requests: 0 };
+                previous.bytes += request.method === 'HEAD' ? 0 : end - start + 1;
+                previous.server_ms += performance.now() - transferStarted;
+                previous.requests += 1;
+                transfers[url.pathname] = previous;
+            });
             response.writeHead(status, headers);
             if (request.method === 'HEAD') {
                 response.end();
@@ -173,7 +183,7 @@ async function serve(appRoot, modelRoot) {
     });
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
     const address = server.address();
-    return { server, base: `http://127.0.0.1:${address.port}` };
+    return { server, base: `http://127.0.0.1:${address.port}`, transfers };
 }
 
 async function waitForPort(userDataDir, timeoutMs) {
@@ -282,6 +292,9 @@ async function main() {
     const fixturePath = path.resolve(args.fixture || DEFAULT_FIXTURE);
     const manifestPath = path.resolve(args.manifest || DEFAULT_MANIFEST);
     const outputPath = path.resolve(args.output || DEFAULT_OUTPUT);
+    const scope = args.scope || 'translation';
+    if (!['translation', 'all-fields'].includes(scope)) throw new Error('--scope must be translation or all-fields');
+    const fusion = args.fusion ? JSON.parse(fs.readFileSync(path.resolve(args.fusion), 'utf8')) : null;
     const chromePath = args.chrome || process.env.AAYATUN_CHROME || DEFAULT_CHROME;
     const timeoutMs = Number(args.timeout || 180000);
     const attempts = Number(args.attempts || 2);
@@ -292,22 +305,44 @@ async function main() {
         encoding: 'utf8',
     }).trim();
     const { cases, manifest, digest } = readFixture(fixturePath, manifestPath);
-    const selected = args.limit ? cases.slice(0, Number(args.limit)) : cases;
+    const selected = args.query ? [{ id: 'manual-query', query: args.query }]
+        : args.limit ? cases.slice(0, Number(args.limit)) : cases;
 
     const workerPath = path.join(root, 'static', 'js', 'meaning-worker.js');
-    const indexPath = path.join(root, 'static', 'meaning', 'index.json');
+    const indexRelative = scope === 'all-fields' ? 'static/meaning/all-fields-index.json' : 'static/meaning/index.json';
+    const indexPath = path.join(root, indexRelative);
     const index = JSON.parse(await fsp.readFile(indexPath, 'utf8'));
-    if (index.corpus !== manifest.corpus.sha256) throw new Error('Meaning index corpus mismatch');
-    const vectorsPath = path.join(root, 'static', 'meaning', index.file);
-    assertPinnedAsset(root, 'static/js/meaning-worker.js');
-    assertPinnedAsset(root, 'static/meaning/index.json');
-    assertPinnedAsset(root, `static/meaning/${index.file}`);
+    const vectorHashes = {};
+    if (scope === 'translation') {
+        if (index.corpus !== manifest.corpus.sha256) throw new Error('Meaning index corpus mismatch');
+        vectorHashes.translation = sha256File(path.join(root, 'static', 'meaning', index.file));
+        if (!args['allow-working-tree']) {
+            assertPinnedAsset(root, 'static/js/meaning-worker.js');
+            assertPinnedAsset(root, indexRelative);
+            assertPinnedAsset(root, `static/meaning/${index.file}`);
+        }
+    } else {
+        if (index.scope !== 'all-fields' || index.schema_version !== 2) throw new Error('Invalid all-fields index');
+        const translation = index.fields.find(field => field.name === 'en');
+        if (!translation || translation.corpus_sha256 !== manifest.corpus.sha256) {
+            throw new Error('All-fields translation corpus mismatch');
+        }
+        for (const field of index.fields) {
+            const actual = sha256File(path.join(root, 'static', 'meaning', field.file));
+            if (actual !== field.sha256) throw new Error(`${field.name} vector hash mismatch`);
+            vectorHashes[field.name] = actual;
+        }
+    }
     const workerHash = textSha256File(workerPath);
+    const coreHash = scope === 'all-fields'
+        ? textSha256File(path.join(root, 'static', 'js', 'meaning-core.mjs')) : null;
     const indexHash = textSha256File(indexPath);
-    const vectorsHash = sha256File(vectorsPath);
+    const vectorsHash = scope === 'translation'
+        ? vectorHashes.translation
+        : crypto.createHash('sha256').update(JSON.stringify(vectorHashes)).digest('hex');
     const modelFiles = verifyModelFiles(modelRoot);
 
-    const { server, base } = await serve(root, modelRoot);
+    const { server, base, transfers } = await serve(root, modelRoot);
     const chromeErrors = [];
     let userDataDir;
     let child;
@@ -320,6 +355,7 @@ async function main() {
             '--headless=new',
             '--no-sandbox',
             '--disable-dev-shm-usage',
+            ...(args.offline ? ['--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1, EXCLUDE localhost', '--disable-background-networking'] : []),
             '--remote-debugging-port=0',
             '--remote-allow-origins=*',
             `--user-data-dir=${userDataDir}`,
@@ -344,7 +380,7 @@ async function main() {
                 resolve();
             });
         });
-        await client.send('Page.navigate', { url: `${base}/static/meaning/index.json` });
+        await client.send('Page.navigate', { url: `${base}/${indexRelative}` });
         await loaded;
         const workerSetup = `
             window.meaningWorker = new Worker('/static/js/meaning-worker.js?local-model', { type: 'module' });
@@ -353,14 +389,17 @@ async function main() {
                 const timer = setTimeout(() => reject(new Error('Meaning worker timed out')), ${timeoutMs});
                 window.meaningWorker.onmessage = ({ data }) => {
                     clearTimeout(timer);
-                    if (data.error) reject(new Error('Meaning worker failed'));
+                    if (data.error) reject(new Error(data.message || 'Meaning worker failed'));
                     else resolve({ ...data, ms: Math.round(performance.now() - start) });
                 };
                 window.meaningWorker.onerror = event => reject(new Error(event.message || 'Meaning worker error'));
-                window.meaningWorker.postMessage(query);
+                window.meaningWorker.postMessage(${scope === 'translation' ? 'query' : `{ query, scope: 'all-fields', diagnostics: true${fusion ? `, fusion: ${JSON.stringify(fusion)}` : ''} }`});
             });
         `;
-        await client.send('Runtime.evaluate', { expression: workerSetup });
+        const setupResponse = await client.send('Runtime.evaluate', { expression: workerSetup });
+        if (setupResponse.exceptionDetails) {
+            throw new Error(setupResponse.exceptionDetails.exception?.description || 'Worker setup failed');
+        }
 
         const runs = {};
         const timings = [];
@@ -387,9 +426,12 @@ async function main() {
                 } catch (error) {
                     errors.push(error.message);
                     if (attempt < attempts) {
-                        await client.send('Runtime.evaluate', {
+                        const retryResponse = await client.send('Runtime.evaluate', {
                             expression: `window.meaningWorker.terminate();\n${workerSetup}`,
                         });
+                        if (retryResponse.exceptionDetails) {
+                            throw new Error(retryResponse.exceptionDetails.exception?.description || 'Worker retry setup failed');
+                        }
                     }
                 }
             }
@@ -398,20 +440,51 @@ async function main() {
             if (result.refs.length !== 10 || new Set(result.refs).size !== 10) {
                 throw new Error(`${testCase.id}: expected ten unique ranked ayat`);
             }
-            runs[testCase.id] = { refs: result.refs, ms: result.ms, attempts: errors.length + 1 };
+            if (scope === 'all-fields' && (
+                result.scope !== 'all-fields' || result.diagnostics?.embedding?.length !== 384 ||
+                result.diagnostics?.field_rankings?.length !== index.fields.length ||
+                result.diagnostics?.fused_ranking?.length !== 10
+            )) {
+                throw new Error(`${testCase.id}: incomplete all-fields diagnostics`);
+            }
+            runs[testCase.id] = {
+                query: testCase.query,
+                refs: result.refs, ms: result.ms, attempts: errors.length + 1,
+                worker_timings: result.timings,
+                ...(scope === 'all-fields' ? {
+                    embedding: result.diagnostics.embedding,
+                    field_rankings: result.diagnostics.field_rankings,
+                    fused_ranking: result.diagnostics.fused_ranking,
+                    fusion: result.fusion,
+                } : {}),
+            };
             timings.push(result.ms);
             if (position === 0 || (position + 1) % 25 === 0) {
                 console.log(`Meaning queries ${position + 1}/${selected.length}, last ${result.ms} ms`);
             }
         }
         const warm = timings.slice(1).sort((a, b) => a - b);
+        const coldTransfers = Object.fromEntries(Object.entries(transfers).filter(([name]) =>
+            name.startsWith('/static/meaning/')));
+        const resourceTimings = await client.send('Runtime.evaluate', {
+            expression: `performance.getEntriesByType('resource')
+                .filter(entry => entry.name.includes('/static/meaning/'))
+                .map(entry => ({name: entry.name, duration_ms: entry.duration,
+                    transfer_size: entry.transferSize, decoded_body_size: entry.decodedBodySize}))`,
+            returnByValue: true,
+        });
         const report = {
             engine: 'Aayatun PR #2 Search by meaning',
-            product_commit: PRODUCT_COMMIT,
+            external_dns_blocked: Boolean(args.offline),
+            product_commit: scope === 'translation' ? PRODUCT_COMMIT : rootRevision,
             root_revision: rootRevision,
+            scope,
+            working_tree_assets: scope === 'all-fields' || Boolean(args['allow-working-tree']),
             worker_sha256: workerHash,
+            worker_core_sha256: coreHash,
             index_sha256: indexHash,
             vectors_sha256: vectorsHash,
+            asset_hashes: { index_sha256: indexHash, vectors: vectorHashes },
             model_config_sha256: modelFiles['Xenova/multilingual-e5-small/config.json'],
             model_tokenizer_sha256: modelFiles['Xenova/multilingual-e5-small/tokenizer.json'],
             model_tokenizer_config_sha256: modelFiles['Xenova/multilingual-e5-small/tokenizer_config.json'],
@@ -424,11 +497,19 @@ async function main() {
             model_revision: '761b726dd34fb83930e26aab4e9ac3899aa1fa78',
             dtype: 'int8',
             model_delivery: 'local static mirror',
-            runtime_delivery: 'jsDelivr Transformers.js 3.7.2',
+            runtime_delivery: 'bundled same-origin Transformers.js 3.7.2 and ONNX/WASM',
             browser: version.product,
             first_query_ms: timings[0],
-            warm_p50_ms: warm[Math.ceil(warm.length * 0.5) - 1],
-            warm_p95_ms: warm[Math.ceil(warm.length * 0.95) - 1],
+            warm_p50_ms: warm.length ? warm[Math.ceil(warm.length * 0.5) - 1] : null,
+            warm_p95_ms: warm.length ? warm[Math.ceil(warm.length * 0.95) - 1] : null,
+            cold_asset_transfer: {
+                bytes: Object.values(coldTransfers).reduce((sum, row) => sum + row.bytes, 0),
+                server_ms: Object.values(coldTransfers).reduce((sum, row) => sum + row.server_ms, 0),
+                requests: Object.values(coldTransfers).reduce((sum, row) => sum + row.requests, 0),
+                resources: coldTransfers,
+                browser_resources: resourceTimings.result?.value || [],
+                basis: 'fresh Chromium profile, loopback static server, no-store responses',
+            },
             runs,
         };
         await fsp.mkdir(path.dirname(outputPath), { recursive: true });

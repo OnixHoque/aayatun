@@ -167,7 +167,7 @@ def git_blob(repo: Path, revision: str, path: str) -> str:
 def prepare(args: argparse.Namespace) -> None:
     Dataset, _, _ = package_modules(args.package)
     dataset = Dataset.load(args.package)
-    test = dataset.splits["test"]
+    split = dataset.splits[args.split]
     try:
         package_commit = subprocess.check_output(
             ["git", "-C", str(args.package), "rev-parse", "HEAD"],
@@ -188,10 +188,10 @@ def prepare(args: argparse.Namespace) -> None:
 
     cases: list[dict[str, Any]] = []
     query_ids: set[str] = set()
-    for group_id, question in sorted(test.questions.items()):
-        qrels = dict(sorted(test.qrels[group_id].items()))
+    for group_id, question in sorted(split.questions.items()):
+        qrels = dict(sorted(split.qrels[group_id].items()))
         if not any(grade > 0 for grade in qrels.values()):
-            raise ValueError(f"Test group {group_id} has no settled positive")
+            raise ValueError(f"{args.split.title()} group {group_id} has no settled positive")
         disputed = sorted(dataset.judged_pairs_for(group_id) - set(qrels))
         missing = (set(qrels) | set(disputed)) - set(dataset_corpus)
         if missing:
@@ -224,7 +224,7 @@ def prepare(args: argparse.Namespace) -> None:
         "benchmark_grade": dataset.manifest["benchmark_grade"],
         "curation_change_required": False,
         "adapter": "External query-level fixture; group-level qrels unchanged.",
-        "split": "test",
+        "split": args.split,
         "package_files": {
             relative: text_sha256(args.package / relative)
             for relative in (
@@ -234,8 +234,8 @@ def prepare(args: argparse.Namespace) -> None:
                 "load_dataset.py",
                 "validate_dataset.py",
                 "evaluate_search.py",
-                "test/questions.jsonl",
-                "test/grades.jsonl",
+                f"{args.split}/questions.jsonl",
+                f"{args.split}/grades.jsonl",
             )
         },
         "corpus": {
@@ -272,8 +272,9 @@ def prepare(args: argparse.Namespace) -> None:
         ],
     }
 
-    fixture_path = args.output_dir / FIXTURE_NAME
-    manifest_path = args.output_dir / MANIFEST_NAME
+    output_dir = args.output_dir or (HERE if args.split == "test" else HERE / args.split)
+    fixture_path = output_dir / f"islamqa_pr2_{args.split}_queries.jsonl"
+    manifest_path = output_dir / f"islamqa_pr2_{args.split}_fixture_manifest.json"
     write_jsonl(fixture_path, cases)
     manifest["fixture_sha256"] = file_sha256(fixture_path)
     write_json(manifest_path, manifest)
@@ -318,7 +319,9 @@ def materialize_revision(repo: Path, revision: str, destination: Path) -> None:
         bundle.extractall(destination, filter="data")
 
 
-def run_lexical_queries(runtime: Path, revision: str, engine_name: str) -> dict[str, Any]:
+def run_lexical_queries(
+    runtime: Path, revision: str, engine_name: str, field: str = "translation",
+) -> dict[str, Any]:
     """Run in a child process so Windows releases SQLite handles before cleanup."""
     norm_source = (runtime / "searchnorm.py").read_text(encoding="utf8")
     search_source = (runtime / "searchtool.py").read_text(encoding="utf8")
@@ -340,13 +343,13 @@ def run_lexical_queries(runtime: Path, revision: str, engine_name: str) -> dict[
         sys.path.insert(0, str(runtime))
     engine._load_vocab()
     engine._load_bk_tree()
-    engine.index_search("mercy", 10, field="translation")
+    engine.index_search("mercy", 10, field=field)
 
     cases = read_jsonl(runtime / "queries.jsonl")
     runs: dict[str, dict[str, Any]] = {}
     for index, case in enumerate(cases):
         started = time.perf_counter()
-        hits, _ = engine.index_search(case["query"], 10, field="translation")
+        hits, _ = engine.index_search(case["query"], 10, field=field)
         elapsed = round((time.perf_counter() - started) * 1000, 3)
         refs = [f"{hit['surah']}:{hit['verse']}" for hit in hits]
         if len(refs) != len(set(refs)):
@@ -384,6 +387,8 @@ def run_lexical(args: argparse.Namespace) -> None:
                 revision,
                 "--engine-name",
                 args.engine_name,
+                "--field",
+                args.field,
             ],
             cwd=runtime,
             check=True,
@@ -408,7 +413,7 @@ def run_lexical(args: argparse.Namespace) -> None:
             "runtime_index": "built from pinned revision",
             "search_db_sha256": file_sha256(runtime / "db" / "search.db"),
             "vocab_sha256": file_sha256(runtime / "db" / "search_vocab.pkl"),
-            "field": "translation",
+            "field": args.field,
             "fixture": args.fixture.name,
             "fixture_sha256": file_sha256(args.fixture),
             "corpus": {"verses": len(corpus), "sha256": digest},
@@ -894,7 +899,8 @@ def main() -> None:
     prepare_parser.add_argument(
         "--search-db", type=Path, default=DEFAULT_REPO / "db" / "search.db"
     )
-    prepare_parser.add_argument("--output-dir", type=Path, default=HERE)
+    prepare_parser.add_argument("--split", choices=("validation", "test"), default="test")
+    prepare_parser.add_argument("--output-dir", type=Path)
     prepare_parser.set_defaults(func=prepare)
 
     lexical_parser = subparsers.add_parser("lexical", help="Run a pinned lexical revision")
@@ -903,6 +909,7 @@ def main() -> None:
     lexical_parser.add_argument("--repo", type=Path, default=DEFAULT_REPO)
     lexical_parser.add_argument("--revision", default=BASELINE_REVISION)
     lexical_parser.add_argument("--engine-name", default="latest pushed FCS")
+    lexical_parser.add_argument("--field", choices=("translation", "all"), default="translation")
     lexical_parser.add_argument("--output", type=Path, default=HERE / FCS_NAME)
     lexical_parser.set_defaults(func=run_lexical)
 
@@ -910,9 +917,10 @@ def main() -> None:
     query_parser.add_argument("--runtime", type=Path, required=True)
     query_parser.add_argument("--revision", required=True)
     query_parser.add_argument("--engine-name", required=True)
+    query_parser.add_argument("--field", choices=("translation", "all"), default="translation")
     query_parser.set_defaults(func=lambda args: write_json(
         args.runtime / "runs.json",
-        run_lexical_queries(args.runtime, args.revision, args.engine_name),
+        run_lexical_queries(args.runtime, args.revision, args.engine_name, args.field),
     ))
 
 

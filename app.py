@@ -31,11 +31,48 @@ RUKU_LIST = getRukuList()
 
 app = Flask(__name__)
 
+@lru_cache(maxsize=4)
+def _meaning_manifest(scope, version):
+	path = Path(app.static_folder) / 'meaning' / (
+		'all-fields-index.json' if scope == 'all-fields' else 'index.json')
+	try:
+		if not path.is_file():
+			return None
+		manifest = json.loads(path.read_text(encoding='utf8'))
+		if scope == 'all-fields':
+			if manifest.get('fusion', {}).get('status') != 'frozen':
+				return None
+			files = {field['file'] for field in manifest['fields']}
+			labels = [field['label'] for field in manifest['fields']]
+		else:
+			files = {manifest['file']}
+			labels = ['English translations']
+		return {
+			'scope': scope,
+			'fields': labels,
+			'asset_mb': sum((path.parent / name).stat().st_size for name in files) / 1e6,
+		}
+	except (OSError, ValueError, KeyError, TypeError):
+		return None
+
+
 @app.context_processor
 def search_modes():
+	info = None
+	for scope in ('all-fields', 'translation'):
+		path = Path(app.static_folder) / 'meaning' / (
+			'all-fields-index.json' if scope == 'all-fields' else 'index.json')
+		if path.is_file():
+			stat = path.stat()
+			info = _meaning_manifest(scope, (stat.st_ino, stat.st_mtime_ns, stat.st_size))
+			if info is not None:
+				break
 	return {
-		'meaning_search_enabled': (Path(app.static_folder) / 'meaning/index.json').is_file(),
-		'local_meaning_model': os.environ.get('AAYATUN_LOCAL_MEANING_MODEL') == '1',
+		'meaning_search_enabled': info is not None,
+		'meaning_scope': info['scope'] if info else 'translation',
+		'meaning_fields': info['fields'] if info else [],
+		'meaning_asset_mb': info['asset_mb'] if info else 0,
+		'local_meaning_model': True,
 	}
 
 # Session signing key for the nav API token. Prefer an env var; otherwise keep
@@ -186,11 +223,23 @@ def search():
 	mode = request.form.get('search_mode', 'keyword')
 	if mode == 'meaning':
 		import meaning_search
+		scope = request.form.get('meaning_scope') or 'translation'
 		results, meta = meaning_search.search(
-			request.form.getlist('meaning_ref'), request.form.get('meaning_corpus'))
+			request.form.getlist('meaning_ref'), request.form.get('meaning_corpus'), scope=scope)
+		meaning_info = None
+		if scope in ('all-fields', 'translation'):
+			path = Path(app.static_folder) / 'meaning' / (
+				'all-fields-index.json' if scope == 'all-fields' else 'index.json')
+			if path.is_file():
+				stat = path.stat()
+				meaning_info = _meaning_manifest(scope, (stat.st_ino, stat.st_mtime_ns, stat.st_size))
 		return render_template('search.html', query=query_str, results=results,
-			suggestions=[], corrected=None, limit_label=10, filter_value='translation:',
-			truncated=False, search_error=meta.get('error'), search_mode='meaning')
+			suggestions=[], corrected=None, limit_label=10,
+			filter_value='all:' if scope == 'all-fields' else 'translation:',
+			truncated=False, search_error=meta.get('error'), search_mode='meaning',
+			meaning_form_scope=scope,
+			meaning_form_fields=meaning_info['fields'] if meaning_info else [],
+			meaning_form_asset_mb=meaning_info['asset_mb'] if meaning_info else 0)
 	n = 25
 	field = 'all'
 

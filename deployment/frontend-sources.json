@@ -1,0 +1,15 @@
+{
+  "replacements": {
+    "https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js": "static/vendor/jquery-3.3.1/jquery.min.js",
+    "https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.6/dist/semantic.min.js": "static/vendor/fomantic-2.8.6/semantic.min.js",
+    "https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.6/dist/semantic.min.css": "static/vendor/fomantic-2.8.6/semantic.min.css",
+    "https://cdn.datatables.net/1.10.22/css/dataTables.semanticui.min.css": "static/vendor/datatables-1.10.22/dataTables.semanticui.min.css",
+    "https://cdn.datatables.net/1.10.22/js/jquery.dataTables.min.js": "static/vendor/datatables-1.10.22/jquery.dataTables.min.js",
+    "https://cdn.datatables.net/1.10.22/js/dataTables.semanticui.min.js": "static/vendor/datatables-1.10.22/dataTables.semanticui.min.js"
+  },
+  "download_sources": {
+    "dataTables.semanticui.min.css": "https://cdn.jsdelivr.net/npm/datatables.net-se@1.10.22/css/dataTables.semanticui.min.css",
+    "jquery.dataTables.min.js": "https://cdn.jsdelivr.net/npm/datatables.net@1.10.22/js/jquery.dataTables.min.js",
+    "dataTables.semanticui.min.js": "https://cdn.jsdelivr.net/npm/datatables.net-se@1.10.22/js/dataTables.semanticui.min.js"
+  }
+}

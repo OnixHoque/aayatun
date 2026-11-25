@@ -40,6 +40,7 @@ function initializeWorker() {
         }
         for (const [name, values] of Object.entries({
             meaning_corpus: [data.corpus], meaning_ref: data.refs,
+            meaning_scope: [data.scope || form.dataset.meaningScope || 'translation'],
         })) {
             for (const value of values) {
                 const input = document.createElement('input');
@@ -64,8 +65,10 @@ document.querySelectorAll('select[name=search_mode]').forEach(mode => {
         const controls = form.querySelector('[data-keyword-controls]');
         if (controls) controls.hidden = meaning;
         input.placeholder = meaning ? 'Ask a question or describe a topic' : 'Enter a keyword...';
+        const fields = form.dataset.meaningFields || 'English translations';
+        const assetMb = form.dataset.meaningAssetMb || '2.39';
         status.textContent = meaning
-            ? 'Searches English translations. The first search downloads about 140 MB.'
+            ? `Searches ${fields}. Vectors are about ${assetMb} MB; the first use may also download the E5 model.`
             : '';
     };
     sync();
@@ -90,7 +93,10 @@ document.querySelectorAll('select[name=search_mode]').forEach(mode => {
             activeForm = form;
             setBusy(form, true);
             status.textContent = 'Preparing meaning search…';
-            worker.postMessage(query);
+            worker.postMessage({
+                query,
+                scope: form.dataset.meaningScope || 'translation',
+            });
         } catch {
             activeForm = undefined;
             fail(form);

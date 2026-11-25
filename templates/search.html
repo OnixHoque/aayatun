@@ -23,7 +23,7 @@
 {% block content %}
 
 <!-- <link href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.css" rel="stylesheet"> -->
-<link href="https://cdn.datatables.net/1.10.22/css/dataTables.semanticui.min.css" rel="stylesheet">
+<link href="/static/vendor/datatables-1.10.22/dataTables.semanticui.min.css" rel="stylesheet">
 
 <style>
 	* {
@@ -41,7 +41,10 @@
 <!-- <div style=""> -->
 	<br>
 	<!-- <a href=""><h4 style="text-align: center; font-size: 150%; font-family: 'Merriweather', serif;"> Surah Name</h4></a>  -->
-	<form class="ui form" method="POST" action="/search">
+	<form class="ui form" method="POST" action="/search"
+		data-meaning-scope="{{ meaning_form_scope|default(meaning_scope) }}"
+		data-meaning-fields="{{ meaning_form_fields|default(meaning_fields)|join(', ') }}"
+		data-meaning-asset-mb="{{ '%.2f'|format(meaning_form_asset_mb|default(meaning_asset_mb)) }}">
 		{% if meaning_search_enabled %}
 		<label for="result-search-mode">Search mode</label>
 		<select id="result-search-mode" name="search_mode">
@@ -265,8 +268,8 @@
 
 
 	<!-- <script src="https://code.jquery.com/jquery-3.5.1.js"></script> -->
-	<script defer src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.min.js"></script>
-	<script defer src="https://cdn.datatables.net/1.10.22/js/dataTables.semanticui.min.js"></script>
+	<script defer src="/static/vendor/datatables-1.10.22/jquery.dataTables.min.js"></script>
+	<script defer src="/static/vendor/datatables-1.10.22/dataTables.semanticui.min.js"></script>
 
 
 	<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.js"></script> -->

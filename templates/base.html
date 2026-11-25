@@ -114,14 +114,14 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.6/dist/semantic.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/vendor/fomantic-2.8.6/semantic.min.css">
   <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename= 'images/favicon.png') }}"/>
   <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename= 'images/apple-touch-icon.png') }}">
 
 
-  <script defer src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.6/dist/semantic.min.js"></script>
+  <script defer src="/static/vendor/jquery-3.3.1/jquery.min.js"></script>
+  <script defer src="/static/vendor/fomantic-2.8.6/semantic.min.js"></script>
   <script defer src="{{ url_for('static', filename='js/pull-refresh.js') }}"></script>
   <script defer src="{{ url_for('static', filename='js/recent.js') }}"></script>
   <script defer src="{{ url_for('static', filename='js/quiz-attend.js') }}"></script>
@@ -353,7 +353,10 @@
     <p style="font-family: Open Sans">Search the Entire Quran</p>
   </div>
   <div class="content">
-    <form class="ui form" method="POST" action="/search">
+    <form class="ui form" method="POST" action="/search"
+      data-meaning-scope="{{ meaning_scope }}"
+      data-meaning-fields="{{ meaning_fields|join(', ') }}"
+      data-meaning-asset-mb="{{ '%.2f'|format(meaning_asset_mb) }}">
       {% if meaning_search_enabled %}
       <label for="dialog-search-mode">Search mode</label>
       <select id="dialog-search-mode" name="search_mode">
