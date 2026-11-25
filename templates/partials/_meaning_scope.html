@@ -1,0 +1,7 @@
+<div class="field" data-meaning-scope-control hidden>
+  <label>Search in</label>
+  <select data-meaning-source aria-label="Meaning search sources">
+    <option value="all-fields" {% if meaning_form_scope|default(meaning_scope) == 'all-fields' %}selected{% endif %}>All sources</option>
+    <option value="translation" {% if meaning_form_scope|default(meaning_scope) == 'translation' %}selected{% endif %}>English translation only</option>
+  </select>
+</div>

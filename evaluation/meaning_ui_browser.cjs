@@ -62,7 +62,7 @@ async function main() {
         await client.send('Page.reload');
         await waitFor('document.readyState === "complete" && document.querySelector("#result-search-mode")');
         const cached = await evaluate(`new Promise((resolve, reject) => {
-            const source = 'const originalFetch = self.fetch; let modelFetches = 0; self.fetch = (...args) => { if (String(args[0]).includes("/meaning/models/")) modelFetches++; return originalFetch(...args); }; const send = self.postMessage.bind(self); self.postMessage = data => send({...data, modelFetches}); await import(' + JSON.stringify(location.origin + '/static/js/meaning-worker.js?v=3') + '); send({ready:true});';
+            const source = 'const originalFetch = self.fetch; let modelFetches = 0; const phases = []; self.fetch = (...args) => { if (String(args[0]).includes("/meaning/models/")) modelFetches++; return originalFetch(...args); }; const send = self.postMessage.bind(self); self.postMessage = data => { if (data.type === "progress") phases.push(data.phase); send({...data, modelFetches, phases}); }; await import(' + JSON.stringify(location.origin + '/static/js/meaning-worker.js?v=5') + '); send({ready:true});';
             const url = URL.createObjectURL(new Blob([source], {type:'text/javascript'}));
             const worker = new Worker(url, {type:'module'});
             const timer = setTimeout(() => reject(new Error('Cache probe timed out')), 90000);
@@ -73,7 +73,7 @@ async function main() {
                 clearTimeout(timer); worker.terminate(); URL.revokeObjectURL(url); resolve(data);
             };
         })`);
-        if (cached.error || cached.modelFetches !== 0 || cached.refs.length !== 10) {
+        if (cached.error || cached.modelFetches !== 0 || cached.phases.includes('download') || cached.refs.length !== 10) {
             throw new Error('Cache reuse failed: ' + JSON.stringify(cached));
         }
         const report = { query:'saw the end', refs:result.refs, posted:requests,

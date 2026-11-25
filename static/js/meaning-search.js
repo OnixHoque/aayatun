@@ -1,4 +1,4 @@
-const workerUrl = new URL('./meaning-worker.js?v=4', import.meta.url);
+const workerUrl = new URL('./meaning-worker.js?v=5', import.meta.url);
 let worker;
 let activeForm;
 
@@ -54,7 +54,7 @@ function initializeWorker() {
                 ? 'Finding related verses…'
                 : Number.isFinite(data.progress)
                     ? `Downloading search model… ${Math.round(data.progress)}%`
-                    : 'Preparing search…');
+                    : 'Finding related verses…');
             return;
         }
         activeForm = undefined;
@@ -85,8 +85,12 @@ document.querySelectorAll('select[name=search_mode]').forEach(mode => {
     const form = mode.form;
     const input = form.elements.query_str;
     const status = form.querySelector('[data-meaning-status]');
+    const source = form.querySelector('[data-meaning-source]');
     const sync = () => {
         const meaning = mode.value === 'meaning';
+        const sourceControl = form.querySelector('[data-meaning-scope-control]');
+        if (sourceControl) sourceControl.hidden = !meaning;
+        if (source) form.dataset.meaningScope = source.value;
         const controls = form.querySelector('[data-keyword-controls]');
         if (controls) controls.hidden = meaning;
         input.placeholder = meaning ? 'Ask a question or describe a topic' : 'Enter a keyword...';
@@ -95,6 +99,7 @@ document.querySelectorAll('select[name=search_mode]').forEach(mode => {
     };
     sync();
     mode.addEventListener('change', sync);
+    source?.addEventListener('change', sync);
     window.addEventListener('pageshow', () => {
         form.querySelectorAll('[data-meaning-payload]').forEach(node => node.remove());
         setBusy(form, false);
@@ -114,7 +119,7 @@ document.querySelectorAll('select[name=search_mode]').forEach(mode => {
             worker ??= initializeWorker();
             activeForm = form;
             setBusy(form, true);
-            showProgress(form, 'Preparing search…');
+            showProgress(form, 'Finding related verses…');
             worker.postMessage({
                 query,
                 scope: form.dataset.meaningScope || 'translation',

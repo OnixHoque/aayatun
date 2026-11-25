@@ -10,6 +10,12 @@ let encoderPromise;
 const indexPromises = {};
 
 async function loadEncoder() {
+    let modelCached = false;
+    try {
+        const cache = await caches.open('transformers-cache');
+        modelCached = Boolean(await cache.match(new URL(
+            '../meaning/models/Xenova/multilingual-e5-small/onnx/model_int8.onnx', import.meta.url).href));
+    } catch { /* Search still works when persistent storage is unavailable. */ }
     const { env, pipeline } = await import(
         '../meaning/vendor/transformers-3.7.2/transformers.min.js'
     );
@@ -23,7 +29,7 @@ async function loadEncoder() {
     return pipeline('feature-extraction', model, {
         revision, device: 'wasm', dtype: 'int8',
         progress_callback: event => {
-            if (event.status === 'progress' && event.file?.endsWith('.onnx')) {
+            if (!modelCached && event.status === 'progress' && event.file?.endsWith('.onnx')) {
                 self.postMessage({ type: 'progress', phase: 'download', progress: event.progress });
             }
         },

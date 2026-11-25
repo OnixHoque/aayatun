@@ -61,6 +61,7 @@
 			<option value="keyword" {% if search_mode != 'meaning' %}selected{% endif %}>Keyword search</option>
 			<option value="meaning" {% if search_mode == 'meaning' %}selected{% endif %}>Search by meaning</option>
 		</select>
+		{% include 'partials/_meaning_scope.html' %}
 		<p data-meaning-status role="status"></p>
 		{% endif %}
 		<div class="field" style="width: 100%;">
