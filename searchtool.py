@@ -50,6 +50,13 @@ BM25 = 'bm25(docs, 10.0, 10.0, 1.5, 2.0, 2.0, 3.0)'
 _ALL_COLUMNS = ['ar_norm', 'en_norm', 'ai_norm', 'en_tafsir_norm', 'bn_tafsir_norm', 'surah_name']
 _CONTENT_COLUMNS = _ALL_COLUMNS[:-1]
 _ENGLISH_STEM_COLUMNS = ['en_norm', 'ai_norm', 'en_tafsir_norm']
+# Lexical rule for plain English queries, rather than contextual POS tagging.
+_EXACT_PREPOSITIONS = frozenset((
+	'about above across after against along among around as at before behind below '
+	'beneath beside between beyond by despite down during except for from in inside '
+	'into near of off on onto out outside over past per since through throughout '
+	'till to toward towards under underneath until up upon via with within without'
+).split())
 SEARCH_CROSS_FIELD_AND = True
 SEARCH_ENGLISH_STEMMING = True
 SEARCH_AI_TAFSIR_TIERS = True
@@ -428,12 +435,20 @@ def _english_stem_columns(conn):
 
 
 def _stem_expr(words, columns, gloss, join='AND'):
-	expanded = [_expand(word, gloss) for word in words]
+	"""Build a Porter expression, or a plan with literal preposition constraints."""
+	exact = [word for word in words if word in _EXACT_PREPOSITIONS]
+	expanded = [word if word in _EXACT_PREPOSITIONS else _expand(word, gloss) for word in words]
 	if len(columns) == 1:
-		return f'{columns[0]} : (' + f' {join} '.join(expanded) + ')'
-	field_set = '{' + ' '.join(columns) + '}'
-	return f' {join} '.join(
-		f'{field_set} : ({term})' for term in expanded)
+		expr = f'{columns[0]} : (' + f' {join} '.join(expanded) + ')'
+	else:
+		field_set = '{' + ' '.join(columns) + '}'
+		expr = f' {join} '.join(f'{field_set} : ({term})' for term in expanded)
+	if not exact:
+		return expr
+	# Prepositions use literal constraints; only content terms enter Porter.
+	content = [word for word in words if word not in _EXACT_PREPOSITIONS]
+	return {'exact': exact, 'columns': columns, 'join': join,
+		'content': _stem_expr(content, columns, gloss, join) if content else None}
 
 
 def _surah_stem_tiers(conn, words, columns, gloss):
@@ -480,7 +495,13 @@ def _matched_term_masks(conn, words, rows, col=None):
 	if col is not None:
 		stem_columns = [col] if col in stem_columns else []
 	for index, word in enumerate(words):
-		if re.fullmatch(r'[a-z]+', word) and stem_columns:
+		if word in _EXACT_PREPOSITIONS and stem_columns:
+			fields = [_CHIP_TO_RAW[column] for column in stem_columns]
+			if col is None:
+				fields.append('surah_name')
+			matches = {row['rowid'] for row in rows
+				if any(_row_has_exact_term(row, word, field) for field in fields)}
+		elif re.fullmatch(r'[a-z]+', word) and stem_columns:
 			field_set = (stem_columns[0] if len(stem_columns) == 1 else
 					 '{' + ' '.join(stem_columns) + '}')
 			matches = {row[0] for row in conn.execute(
@@ -653,9 +674,20 @@ def _ranked_queries(raw, col, gloss, full_expr, match_expr, conn=None):
 
 
 def _run_stem_query(conn, match_expr, limit, surah=None, col=None):
+	query = match_expr if isinstance(match_expr, dict) else None
+	content_rows = []
+	if query:
+		match_expr = query['content']
+		if match_expr and query['join'] == 'OR':
+			# Content matches have negative BM25 scores. Exact-only matches
+			# follow them, so fetch those only when the content pool has room.
+			content_rows = _run_stem_query(conn, match_expr, limit, surah, col)
+			if len(content_rows) == limit:
+				return content_rows
+			match_expr = None
 	table_columns = [row[1] for row in conn.execute('PRAGMA table_info(english_stem)')]
 	highlights = ', '.join(
-		f"highlight(english_stem, {index}, '[', ']') AS stem_{column}"
+		(f"highlight(english_stem, {index}, '[', ']')" if match_expr else "''") + f" AS stem_{column}"
 		for index, column in enumerate(table_columns)
 		if col is None or column == col)
 	if col is None:
@@ -666,17 +698,29 @@ def _run_stem_query(conn, match_expr, limit, surah=None, col=None):
 		selected = 'docs.rowid AS rowid, docs.surah, docs.verse, docs.surah_name, docs.en'
 		if raw != 'en':
 			selected += f', docs.{raw} AS {raw}'
-	sql = ('SELECT ' + selected + (
-		', ' + highlights if highlights else '') +
-		' FROM english_stem JOIN docs ON docs.rowid = english_stem.rowid '
-		'WHERE english_stem MATCH ?')
-	params = [match_expr]
+	sql = 'SELECT ' + selected + (', ' + highlights if highlights else '')
+	params = []
+	if match_expr:
+		sql += ' FROM english_stem JOIN docs ON docs.rowid=english_stem.rowid WHERE english_stem MATCH ?'
+		params.append(match_expr)
+	else:
+		sql += ' FROM docs WHERE 1'
+	if query:
+		clauses = []
+		for word in query['exact']:
+			clauses.append('(' + ' OR '.join(
+				f"instr(' ' || docs.{column} || ' ', ?) > 0" for column in query['columns']) + ')')
+			params.extend([' ' + word + ' '] * len(query['columns']))
+		sql += ' AND (' + (' ' + query['join'] + ' ').join(clauses) + ')'
+	if content_rows:
+		sql += ' AND docs.rowid NOT IN (' + ','.join('?' for _ in content_rows) + ')'
+		params.extend(row['rowid'] for row in content_rows)
 	if surah is not None:
 		sql += ' AND docs.surah = ?'
 		params.append(surah)
-	sql += ' ORDER BY english_stem.rank, english_stem.rowid LIMIT ?'
-	params.append(int(limit))
-	return conn.execute(sql, params).fetchall()
+	sql += ' ORDER BY ' + ('english_stem.rank, english_stem.rowid' if match_expr else 'docs.rowid') + ' LIMIT ?'
+	params.append(int(limit) - len(content_rows))
+	return content_rows + conn.execute(sql, params).fetchall()
 
 
 def _merge_stem_metadata(row, stem_row):
