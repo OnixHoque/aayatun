@@ -1,32 +1,23 @@
-# Instructions to create and activate the Python 3.10 Virtual Environment
+# Run the self-contained PR #2 app
 
-1. **Install Python 3.10:**
-   ```bash
-   sudo apt-get update
-   sudo apt-get install python3.10
-   ```
+Use CPython 3.12 x64. First obtain the complete checkout, including `git lfs pull`.
+Then the following installation uses only the included files:
 
-2. **Create a virtual environment:**
-   ```bash
-   python3.10 -m venv venv
-   ```
+```text
+python deployment/manage.py install
+```
 
-3. **Activate the virtual environment:**
-   ```bash
-   source venv/bin/activate
-   ```
+On Windows:
 
-4. **Install dependencies from requirements.txt:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+```text
+.venv/Scripts/python.exe deployment/manage.py build
+.venv/Scripts/python.exe deployment/manage.py serve --listen 127.0.0.1:8000
+```
 
-5. **To deactivate the virtual environment when done:**
-   ```bash
-   deactivate
-   ```
+On Linux x64 (glibc 2.28+), use `.venv/bin/python` instead.
+`install --runtime-only` skips the embedding rebuild dependencies when using the
+included prebuilt vectors. Use `python deployment/manage.py verify` to check all
+assets, including the models and both platform wheel sets.
 
-
-# Run the app for testing
-
-flask --app app.py run --debug
+See [deployment/README.md](deployment/README.md) for production settings, offline
+rebuilds, browser verification, supported platforms, and portable ZIP packaging.
