@@ -477,10 +477,6 @@
 		return sp;
 	}
 
-	function progressDots() {
-		return progressEl ? progressEl.querySelectorAll('.reel-progress-dot') : [];
-	}
-
 	function wordCount() {
 		return (state.data && state.data.words) ? state.data.words.length : 0;
 	}
@@ -501,27 +497,28 @@
 	function buildProgressPills() {
 		if (!progressEl) return;
 		progressEl.innerHTML = '';
-		var count = progressTotal();
-		for (var i = 0; i < count; i++) {
-			var dot = document.createElement('span');
-			dot.className = 'reel-progress-dot';
-			dot.setAttribute('data-i', String(i));
-			progressEl.appendChild(dot);
-		}
+		progressEl.classList.remove('is-dense', 'is-compact');
+		var fill = document.createElement('span');
+		fill.className = 'reel-progress-fill';
+		fill.style.width = '0%';
+		progressEl.appendChild(fill);
+		progressEl.setAttribute('data-total', String(progressTotal()));
+		progressEl.setAttribute('data-filled', '0');
 	}
 
 	function setProgressFilledUpTo(n) {
-		var dots = progressDots();
-		for (var i = 0; i < dots.length; i++) {
-			if (i < n) dots[i].classList.add('is-done');
-			else dots[i].classList.remove('is-done');
-		}
+		if (!progressEl) return;
+		var total = progressTotal();
+		var filled = Math.max(0, Math.min(n, total));
+		progressEl.setAttribute('data-filled', String(filled));
+		var fill = progressEl.querySelector('.reel-progress-fill');
+		if (fill) fill.style.width = total > 0 ? ((filled / total) * 100) + '%' : '0%';
 	}
 
 	function markProgressDone(i) {
-		var dots = progressDots();
 		if (i < 0) return;
-		if (dots[i]) dots[i].classList.add('is-done');
+		var cur = parseInt(progressEl ? progressEl.getAttribute('data-filled') : '0', 10) || 0;
+		if (i + 1 > cur) setProgressFilledUpTo(i + 1);
 	}
 
 	function syncEndProgressPills() {
