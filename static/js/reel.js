@@ -16,13 +16,17 @@
 	var nextPane = document.getElementById('reel-pane-next');
 	var verseBox = document.getElementById('reel-verse');
 	var verseMeaning = document.getElementById('reel-verse-meaning');
+	var actualTranslationEl = document.getElementById('reel-actual-translation');
 	var refNum = document.getElementById('reel-ref-num');
 	var wordAr = document.getElementById('reel-word-ar');
 	var wordMeaning = document.getElementById('reel-word-meaning');
 	var chipsEl = document.getElementById('reel-chips');
 	var middleEl = document.querySelector('#reel-stage .reel-middle');
-	var defHead = document.getElementById('reel-def-head');
+	var defRoot = document.getElementById('reel-def-root');
+	var defSep = document.getElementById('reel-def-sep');
 	var defText = document.getElementById('reel-def-text');
+	var defLine = document.getElementById('reel-def-line');
+	var morphCredit = document.getElementById('reel-morph-credit');
 	var playBtn = document.getElementById('reel-play');
 	var playIcon = document.getElementById('reel-play-icon');
 	var prevPartBtn = document.getElementById('reel-prev-part');
@@ -80,16 +84,17 @@
 	var reduced = false;
 	try { reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
 
-	// Shuffle (random next/prev reel). Persisted; on by default.
+	// Shuffle: one reel session keeps a linear back/forward history. Down at
+	// history end picks an unseen verse (Surprise Me source: read map v2), else
+	// any random verse; up goes back. Swipe up then down returns the same verse.
 	var SHUFFLE_KEY = 'aayatun_reel_shuffle_v1';
-	var shuffleOn = true;
+	var shuffleOn = false;
 	try {
-		var _shuffleSaved = localStorage.getItem(SHUFFLE_KEY);
-		if (_shuffleSaved === '0') shuffleOn = false;
-		else if (_shuffleSaved === '1') shuffleOn = true;
+		if (localStorage.getItem(SHUFFLE_KEY) === '1') shuffleOn = true;
 	} catch (e) {}
-	var shuffleTargets = { prev: null, next: null };
-	var shuffleVerseKey = '';
+	var shuffleHistory = []; // [[surah, verse], ...], session-only
+	var shuffleCursor = -1;
+	var shuffleNext = null; // pre-picked next verse when cursor is at history end
 
 	function saveShuffle() {
 		try { localStorage.setItem(SHUFFLE_KEY, shuffleOn ? '1' : '0'); } catch (e) {}
@@ -104,6 +109,15 @@
 		shuffleBtn.setAttribute('title', label);
 	}
 	syncShuffleBtn();
+
+	function verseFromIndex(idx) {
+		var starts = window.AAYATUN_SURAH_STARTS;
+		if (!Array.isArray(starts) || starts.length !== 114) return [1, 1];
+		for (var s = 114; s >= 1; s--) {
+			if (starts[s - 1] <= idx) return [s, idx - starts[s - 1] + 1];
+		}
+		return [1, 1];
+	}
 
 	function randomVerse(exclude) {
 		var starts = window.AAYATUN_SURAH_STARTS || [];
@@ -132,32 +146,75 @@
 		return [fs, fv];
 	}
 
-	function getShuffleTarget(dir) {
-		if (!shuffleTargets) shuffleTargets = { prev: null, next: null };
-		if (shuffleTargets[dir] && shuffleTargets[dir][0]) return shuffleTargets[dir];
-		var ex = state.data ? [state.data.surah, state.data.verse] : null;
-		shuffleTargets[dir] = randomVerse(ex);
-		return shuffleTargets[dir];
-	}
-
-	function pickShuffleTargets() {
-		var ex = state.data ? [state.data.surah, state.data.verse] : null;
-		shuffleTargets = {
-			next: randomVerse(ex),
-			prev: randomVerse(ex)
-		};
-		shuffleVerseKey = state.data ? key(state.data.surah, state.data.verse) : '';
-	}
-
-	function ensureShuffleTargets() {
-		var k = state.data ? key(state.data.surah, state.data.verse) : '';
-		if (shuffleVerseKey !== k || !shuffleTargets || !shuffleTargets.next || !shuffleTargets.prev) {
-			pickShuffleTargets();
+	function pickSurpriseVerse(exclude) {
+		var starts = window.AAYATUN_SURAH_STARTS;
+		var exKey = exclude && exclude[0] ? (exclude[0] + ':' + exclude[1]) : '';
+		var seen = {};
+		if (exKey) seen[exKey] = 1;
+		for (var i = 0; i < shuffleHistory.length; i++) {
+			var h = shuffleHistory[i];
+			if (h && h[0]) seen[h[0] + ':' + h[1]] = 1;
 		}
+		try {
+			if (window.AayatunRecent && window.AayatunRecent.map && Array.isArray(starts) && starts.length === 114) {
+				var m = window.AayatunRecent.map();
+				if (m && m.level && m.level.length >= 6236) {
+					var unseen = [];
+					for (var j = 0; j < 6236; j++) {
+						if (!m.level[j]) {
+							var sv = verseFromIndex(j);
+							if (!seen[sv[0] + ':' + sv[1]]) unseen.push(j);
+						}
+					}
+					if (unseen.length) return verseFromIndex(unseen[Math.floor(Math.random() * unseen.length)]);
+				}
+			}
+		} catch (e) {}
+		for (var tries = 0; tries < 30; tries++) {
+			var pick = randomVerse(exclude);
+			if (!seen[pick[0] + ':' + pick[1]]) return pick;
+		}
+		return randomVerse(exclude);
+	}
+
+	function seedShuffleHistory(data) {
+		var d = data || state.data;
+		if (!d) { shuffleHistory = []; shuffleCursor = -1; shuffleNext = null; return; }
+		shuffleHistory = [[d.surah, d.verse]];
+		shuffleCursor = 0;
+		shuffleNext = null;
+	}
+
+	function syncShuffleHistory(data) {
+		if (!shuffleOn) return;
+		var d = data || state.data;
+		if (!d) return;
+		var k = key(d.surah, d.verse);
+		if (shuffleCursor >= 0 && shuffleHistory[shuffleCursor] && key(shuffleHistory[shuffleCursor][0], shuffleHistory[shuffleCursor][1]) === k) return;
+		if (shuffleCursor > 0 && shuffleHistory[shuffleCursor - 1] && key(shuffleHistory[shuffleCursor - 1][0], shuffleHistory[shuffleCursor - 1][1]) === k) {
+			shuffleCursor--;
+			return;
+		}
+		if (shuffleCursor >= 0 && shuffleCursor < shuffleHistory.length - 1 && shuffleHistory[shuffleCursor + 1] && key(shuffleHistory[shuffleCursor + 1][0], shuffleHistory[shuffleCursor + 1][1]) === k) {
+			shuffleCursor++;
+			return;
+		}
+		seedShuffleHistory(d);
+	}
+
+	function ensureShuffleNext() {
+		if (!shuffleOn || !state.data) return null;
+		if (shuffleCursor < shuffleHistory.length - 1) return shuffleHistory[shuffleCursor + 1];
+		if (shuffleNext && shuffleNext[0]) return shuffleNext;
+		shuffleNext = pickSurpriseVerse([state.data.surah, state.data.verse]);
+		return shuffleNext;
 	}
 
 	function getNeighborTarget(dir) {
-		if (shuffleOn) return getShuffleTarget(dir);
+		if (shuffleOn) {
+			if (dir === 'prev') return shuffleCursor > 0 ? shuffleHistory[shuffleCursor - 1] : null;
+			return ensureShuffleNext();
+		}
 		return dir === 'next' ? (state.data && state.data.next) : (state.data && state.data.prev);
 	}
 
@@ -189,8 +246,9 @@
 
 	function prefetchNeighbors() {
 		if (shuffleOn) {
-			ensureShuffleTargets();
-			var p = shuffleTargets.prev, n = shuffleTargets.next;
+			syncShuffleHistory();
+			var p = getNeighborTarget('prev');
+			var n = getNeighborTarget('next');
 			if (p && p[0]) fetchVerse(p[0], p[1]).catch(function () {});
 			if (n && n[0]) fetchVerse(n[0], n[1]).catch(function () {});
 			updateNeighborPreviews();
@@ -275,8 +333,11 @@
 	}
 
 	function applyTopFontSizes(v, m) {
+		var actualMode = stage && stage.classList.contains('show-actual-translation');
+		if (actualMode) return;
 		if (verseBox) verseBox.style.fontSize = v + 'rem';
 		if (verseMeaning) verseMeaning.style.fontSize = m + 'rem';
+		if (actualTranslationEl) actualTranslationEl.style.fontSize = '';
 	}
 
 	function fitVerseFont() {
@@ -289,12 +350,14 @@
 		if (top.scrollHeight > top.clientHeight + 1) return true;
 		if (verseBox && verseBox.scrollHeight > verseBox.clientHeight + 1) return true;
 		if (verseMeaning && verseMeaning.scrollHeight > verseMeaning.clientHeight + 1) return true;
+		if (actualTranslationEl && actualTranslationEl.scrollHeight > actualTranslationEl.clientHeight + 1) return true;
 		return false;
 	}
 
 	function fitTopToContainer() {
 		var top = verseBox ? verseBox.closest('.reel-top') : null;
 		if (!top || !verseBox) return;
+		if (stage && stage.classList.contains('show-actual-translation')) return;
 		var b = baseTopFontSizes();
 		var v = b.v, m = b.m;
 		applyTopFontSizes(v, m);
@@ -315,12 +378,18 @@
 				verseBox.style.lineHeight = String(lh);
 			}
 		}
-		if (topOverflows(top) && verseMeaning) {
-			verseMeaning.style.marginTop = '2px';
-			verseMeaning.style.lineHeight = '1.3';
-		} else if (verseMeaning) {
-			verseMeaning.style.marginTop = '';
-			verseMeaning.style.lineHeight = '';
+		var trEl = (stage && stage.classList.contains('show-actual-translation')) ? actualTranslationEl : verseMeaning;
+		if (topOverflows(top) && trEl) {
+			trEl.style.marginTop = '2px';
+			trEl.style.lineHeight = '1.3';
+		}
+		if (verseMeaning) {
+			if (trEl !== verseMeaning) { verseMeaning.style.marginTop = ''; verseMeaning.style.lineHeight = ''; }
+			else if (!topOverflows(top)) { verseMeaning.style.marginTop = ''; verseMeaning.style.lineHeight = ''; }
+		}
+		if (actualTranslationEl) {
+			if (trEl !== actualTranslationEl) { actualTranslationEl.style.marginTop = ''; actualTranslationEl.style.lineHeight = ''; }
+			else if (!topOverflows(top)) { actualTranslationEl.style.marginTop = ''; actualTranslationEl.style.lineHeight = ''; }
 		}
 	}
 
@@ -365,6 +434,7 @@
 		if (verseMeaning) verseMeaning.innerHTML = '';
 		if (verseBox) verseBox.style.lineHeight = '';
 		if (verseMeaning) { verseMeaning.style.marginTop = ''; verseMeaning.style.lineHeight = ''; }
+		if (actualTranslationEl) { actualTranslationEl.style.marginTop = ''; actualTranslationEl.style.lineHeight = ''; }
 		scheduleTopFit();
 	}
 
@@ -703,12 +773,43 @@
 	}
 
 	function clearBottom() {
-		if (defHead) defHead.innerHTML = '';
+		if (defRoot) defRoot.textContent = '';
+		if (defSep) defSep.textContent = '';
 		if (defText) defText.textContent = '';
+		if (morphCredit) morphCredit.hidden = true;
+	}
+
+	function setTopActualTranslation(on) {
+		var turningOn = !!on && !(stage && stage.classList.contains('show-actual-translation'));
+		if (turningOn) {
+			// Keep AI-mode top sizes locked to the final word-by-word layout.
+			if (actualTranslationEl && verseMeaning) {
+				var fs = verseMeaning.style.fontSize;
+				if (!fs) {
+					try { fs = window.getComputedStyle(verseMeaning).fontSize; } catch (e) { fs = ''; }
+				}
+				if (fs) actualTranslationEl.style.fontSize = fs;
+			}
+			if (verseBox) {
+				var vfs = verseBox.style.fontSize;
+				if (!vfs) {
+					try { vfs = window.getComputedStyle(verseBox).fontSize; } catch (e) { vfs = ''; }
+				}
+				if (vfs) verseBox.style.fontSize = vfs;
+			}
+		}
+		if (!on) {
+			if (actualTranslationEl) actualTranslationEl.style.fontSize = '';
+			if (verseBox) verseBox.style.fontSize = '';
+		}
+		if (stage) stage.classList.toggle('show-actual-translation', !!on);
+		if (actualTranslationEl && state.data) actualTranslationEl.textContent = state.data.translation || '';
+		scheduleTopFit();
 	}
 
 	function resetEndPanel() {
 		if (stage) stage.classList.remove('is-ended');
+		setTopActualTranslation(false);
 		if (endPanel) endPanel.hidden = true;
 		if (endScroll) endScroll.scrollTop = 0;
 		if (endContext) endContext.textContent = '';
@@ -724,7 +825,8 @@
 			resetEndPanel();
 			return;
 		}
-		// ended layout: top 25% keeps built verse/translation, lower 75% shows end panel
+		// ended layout: top 25% keeps built verse/actual translation, lower 75% shows end panel
+		setTopActualTranslation(true);
 		clearMiddle({ immediate: true });
 		if (wordAr) wordAr.style.display = 'none';
 		if (wordMeaning) wordMeaning.style.display = 'none';
@@ -956,9 +1058,7 @@
 	function renderPreview(dir, data) {
 		var pane = dir === 'prev' ? prevPane : nextPane;
 		if (!pane) return;
-		var target = shuffleOn
-			? (shuffleTargets && shuffleTargets[dir])
-			: (dir === 'prev' ? (state.data && state.data.prev) : (state.data && state.data.next));
+		var target = getNeighborTarget(dir);
 		var nameEl = pane.querySelector(dir === 'prev' ? '.reel-prev-name' : '.reel-next-name');
 		var numEl = pane.querySelector(dir === 'prev' ? '.reel-prev-num' : '.reel-next-num');
 		var vEl = pane.querySelector(dir === 'prev' ? '.reel-prev-verse' : '.reel-next-verse');
@@ -979,26 +1079,10 @@
 	}
 
 	function updateNeighborPreviews() {
-		if (shuffleOn) {
-			ensureShuffleTargets();
-			var prevTarget = shuffleTargets.prev;
-			var nextTarget = shuffleTargets.next;
-			renderPreview('prev', (prevTarget && prevTarget[0]) ? (cache[key(prevTarget[0], prevTarget[1])] || null) : null);
-			renderPreview('next', (nextTarget && nextTarget[0]) ? (cache[key(nextTarget[0], nextTarget[1])] || null) : null);
-			return;
-		}
-		var prevTarget = state.data && state.data.prev;
-		var nextTarget = state.data && state.data.next;
-		if (prevTarget && prevTarget[0]) {
-			renderPreview('prev', cache[key(prevTarget[0], prevTarget[1])] || null);
-		} else {
-			renderPreview('prev', null);
-		}
-		if (nextTarget && nextTarget[0]) {
-			renderPreview('next', cache[key(nextTarget[0], nextTarget[1])] || null);
-		} else {
-			renderPreview('next', null);
-		}
+		var prevTarget = getNeighborTarget('prev');
+		var nextTarget = getNeighborTarget('next');
+		renderPreview('prev', (prevTarget && prevTarget[0]) ? (cache[key(prevTarget[0], prevTarget[1])] || null) : null);
+		renderPreview('next', (nextTarget && nextTarget[0]) ? (cache[key(nextTarget[0], nextTarget[1])] || null) : null);
 	}
 
 	function escapeHtml(s) {
@@ -1034,15 +1118,18 @@
 		var key = word.defKey;
 		var root = state.data.roots && key ? state.data.roots[key] : null;
 		if (root) {
+			var text = String(root.text || '').replace(/<br\s*\/?>/gi, '\n');
+			if (root.meaning && !root.v2) text = String(root.meaning) + (text ? ' — ' + text : '');
 			return {
-				headHtml: '<span class="root-ar">' + escapeHtml(root.ar || word.root || '') + '</span>' +
-					(root.meaning ? ' — ' + escapeHtml(root.meaning) : ''),
-				text: String(root.text || '').replace(/<br\s*\/?>/gi, '\n')
+				root: root.ar || word.root || word.lemma || '',
+				text: text,
+				v2: !!root.v2
 			};
 		}
 		return {
-			headHtml: '<span class="root-ar">' + escapeHtml(word.lemma || word.root || word.ar || '') + '</span>',
-			text: word.meaning || ''
+			root: word.lemma || word.root || word.ar || '',
+			text: word.meaning || '',
+			v2: false
 		};
 	}
 
@@ -1066,11 +1153,11 @@
 		var target = state.twTarget || defText;
 		if (target) target.textContent = state.twText.slice(0, next);
 		// Keep typing position in view.
-		if (target === defText && defText) defText.scrollTop = defText.scrollHeight;
+		if (target === defText && defLine) defLine.scrollTop = defLine.scrollHeight;
 		if (state.phase === 'end-wm-type' && endScroll) endScroll.scrollTop = endScroll.scrollHeight;
 		if (state.phase === 'end-context' && endScroll) endScroll.scrollTop = endScroll.scrollHeight;
 		if (state.twPos < state.twText.length) {
-			state.twTimer = setTimeout(typeStep, ms(18));
+			state.twTimer = setTimeout(typeStep, ms(21));
 		} else {
 			onTypewriterDone();
 		}
@@ -1088,7 +1175,7 @@
 			onTypewriterDone();
 			return;
 		}
-		state.twTimer = setTimeout(typeStep, ms(18));
+		state.twTimer = setTimeout(typeStep, ms(21));
 	}
 	function pauseTypewriter() {
 		if (state.twTimer) { clearTimeout(state.twTimer); state.twTimer = null; }
@@ -1286,6 +1373,7 @@
 
 	function leaveEndDone() {
 		state.ended = true;
+		setTopActualTranslation(true);
 		if (endHint) { endHint.hidden = true; endHint.classList.remove('is-overlay'); }
 		if (stage) stage.classList.add('is-ended');
 		if (endPanel) endPanel.hidden = false;
@@ -1575,8 +1663,11 @@
 			});
 		} else if (phase === 'rootmeaning') {
 			var def = defForWord(w);
-			if (defHead) defHead.innerHTML = def.headHtml;
+			if (defRoot) defRoot.textContent = def.root || '';
+			if (defSep) defSep.textContent = def.root ? ': ' : '';
 			if (bottom) bottom.scrollTop = 0;
+			if (morphCredit) morphCredit.hidden = !def.v2;
+			scheduleMiddleFit();
 			startTypewriter(def.text, defText);
 			// advance on typewriter completion (onTypewriterDone)
 		} else if (phase === 'fly') {
@@ -1649,8 +1740,11 @@
 				// typewriter not started yet (e.g. paused immediately)
 				var w = (state.data.words || [])[state.idx] || {};
 				var def = defForWord(w);
-				if (defHead) defHead.innerHTML = def.headHtml;
+				if (defRoot) defRoot.textContent = def.root || '';
+				if (defSep) defSep.textContent = def.root ? ': ' : '';
 				if (bottom) bottom.scrollTop = 0;
+				if (morphCredit) morphCredit.hidden = !def.v2;
+				scheduleMiddleFit();
 				startTypewriter(def.text, defText);
 			}
 			return;
@@ -1803,6 +1897,7 @@
 		state.idx = 0;
 		state.ended = false;
 		state.phase = 'idle';
+		if (actualTranslationEl) actualTranslationEl.textContent = data.translation || '';
 		cache[key(data.surah, data.verse)] = data;
 		updateMeta(data);
 		buildProgressPills();
@@ -1815,6 +1910,7 @@
 		// Keep a single reel history entry to avoid stacking; URL follows current verse.
 		try { history.replaceState({ surah: data.surah, verse: data.verse }, '', '/reel/' + data.surah + '/' + data.verse); } catch (e) {}
 		emitVerse(data);
+		syncShuffleHistory(data);
 		prefetchNeighbors();
 	}
 
@@ -1828,7 +1924,26 @@
 
 	function navigate(dir) {
 		if (shuffleOn) {
-			var target = getShuffleTarget(dir);
+			syncShuffleHistory();
+			var target = null;
+			if (dir === 'prev') {
+				if (shuffleCursor > 0) {
+					shuffleCursor--;
+					target = shuffleHistory[shuffleCursor];
+				}
+			} else {
+				if (shuffleCursor < shuffleHistory.length - 1) {
+					shuffleCursor++;
+					target = shuffleHistory[shuffleCursor];
+				} else {
+					target = ensureShuffleNext();
+					if (target && target[0]) {
+						shuffleHistory.push([target[0], target[1]]);
+						shuffleCursor = shuffleHistory.length - 1;
+						shuffleNext = null;
+					}
+				}
+			}
 			if (target && target[0]) goTo(target[0], target[1], true);
 			return;
 		}
@@ -1863,9 +1978,8 @@
 		shuffleOn = !shuffleOn;
 		saveShuffle();
 		syncShuffleBtn();
-		// Reset targets so a fresh pair is picked for the current verse/mode.
-		shuffleTargets = { prev: null, next: null };
-		shuffleVerseKey = '';
+		if (shuffleOn) seedShuffleHistory(state.data);
+		else shuffleNext = null;
 		prefetchNeighbors();
 	});
 
@@ -1880,7 +1994,10 @@
 
 	// Swipe (vertical carousel with prev/next peek)
 	function hasNeighbor(dir) {
-		if (shuffleOn) return true;
+		if (shuffleOn) {
+			if (dir === 'prev') return shuffleCursor > 0;
+			return true;
+		}
 		var t = dir === 'next' ? (state.data && state.data.next) : (state.data && state.data.prev);
 		return !!(t && t[0]);
 	}
@@ -1894,8 +2011,8 @@
 		var overlayHint = target.closest ? target.closest('.reel-end-hint.is-overlay') : null;
 		if (overlayHint) return true;
 
-		if (defText && target.closest && target.closest('#reel-bottom')) {
-			if (defText.scrollHeight > defText.clientHeight + 4) return false;
+		if (defLine && target.closest && target.closest('#reel-bottom')) {
+			if (defLine.scrollHeight > defLine.clientHeight + 4) return false;
 		}
 		if (endPanel && target.closest && target.closest('#reel-end-panel')) {
 			// Keep verse swipe working in AI context word-meaning boxes (including headings/brackets).
@@ -1956,7 +2073,30 @@
 	}
 
 	function commitSwipe(dir) {
-		var target = shuffleOn ? getShuffleTarget(dir) : (dir === 'next' ? (state.data && state.data.next) : (state.data && state.data.prev));
+		var target = null;
+		if (shuffleOn) {
+			syncShuffleHistory();
+			if (dir === 'prev') {
+				if (shuffleCursor > 0) {
+					shuffleCursor--;
+					target = shuffleHistory[shuffleCursor];
+				}
+			} else {
+				if (shuffleCursor < shuffleHistory.length - 1) {
+					shuffleCursor++;
+					target = shuffleHistory[shuffleCursor];
+				} else {
+					target = ensureShuffleNext();
+					if (target && target[0]) {
+						shuffleHistory.push([target[0], target[1]]);
+						shuffleCursor = shuffleHistory.length - 1;
+						shuffleNext = null;
+					}
+				}
+			}
+		} else {
+			target = dir === 'next' ? (state.data && state.data.next) : (state.data && state.data.prev);
+		}
 		if (!target || !target[0]) { cancelSwipe(); return; }
 		carousel.animating = true;
 		var h = paneHeight();
@@ -2172,6 +2312,8 @@
 	clearBottom();
 	showEnd(false);
 	centerTrack(false);
+	if (actualTranslationEl) actualTranslationEl.textContent = (state.data && state.data.translation) || '';
+	seedShuffleHistory(state.data);
 	prefetchNeighbors();
 	emitVerse(state.data);
 	requestWakeSafe();

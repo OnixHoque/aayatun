@@ -29,6 +29,8 @@
 	var hasThemes = themes.length === 12 && themeVerse.length === VERSE_COUNT;
 	var themesOn = false;
 	var themeFocus = null;
+	// Precomputed DOM cells per theme for instant focus highlighting.
+	var themeCells = null;
 	var quizOn = false;
 
 	// Capture the surah table before the dropdown plugin touches the select.
@@ -217,7 +219,10 @@
 	var legendUnattended = document.getElementById('reading-map-legend-unattended');
 	var legendAttended = document.getElementById('reading-map-legend-attended');
 	var visitedKey = document.getElementById('map-fs-visited-key');
+	var fsReadKey = document.getElementById('map-fs-read-key');
 	var legendUnread = document.getElementById('reading-map-legend-unread');
+	var legendRead = document.getElementById('reading-map-legend-read');
+	var legendStats = document.getElementById('reading-map-legend-stats');
 	var readingLegend = document.querySelector('.reading-map-legend');
 	var legendPage = document.getElementById('reading-map-legend-page');
 	var legendScale = document.getElementById('reading-map-legend-scale');
@@ -272,6 +277,10 @@
 	function build()
 	{
 		var frag = document.createDocumentFragment();
+		if (hasThemes) {
+			themeCells = [];
+			for (var t = 0; t < themes.length; t++) themeCells.push([]);
+		}
 		for (var i = 0; i < VERSE_COUNT; i++) {
 			if (i && starts[i]) {
 				var brk = document.createElement('span');
@@ -282,6 +291,7 @@
 			cell.className = 'rg-cell' + (hasThemes ? ' t' + themeVerse[i] : '');
 			cell.setAttribute('data-i', i);
 			frag.appendChild(cell);
+			if (themeCells) themeCells[themeVerse[i]].push(cell);
 		}
 		grid.appendChild(frag);
 		built = true;
@@ -341,6 +351,7 @@
 			}
 			cell.className = 'rg-cell' +
 				(hasThemes ? ' t' + themeVerse[i] : '') +
+				(themeFocus !== null && themeVerse[i] !== themeFocus ? ' rg-dim' : '') +
 				(state ? ' is-' + STATE_CLASS[state] : '') +
 				(i === selected ? ' is-selected' : '');
 		}
@@ -390,19 +401,44 @@
 
 	function setThemeFocus(id)
 	{
-		themeFocus = (id === null || id === undefined) ? null : Number(id);
-		if (grid) {
-			if (themeFocus === null) grid.removeAttribute('data-theme-focus');
-			else grid.setAttribute('data-theme-focus', String(themeFocus));
+		var next = (id === null || id === undefined) ? null : Number(id);
+		if (next === themeFocus) return;
+		var prev = themeFocus;
+		themeFocus = next;
+		if (themeCells) {
+			var bulk = prev === null || next === null;
+			if (bulk && grid) grid.classList.add('rg-focus-bulk');
+			if (prev === null) {
+				for (var t = 0; t < themeCells.length; t++) {
+					if (t === next) continue;
+					var arr = themeCells[t];
+					for (var i = 0; i < arr.length; i++) arr[i].classList.add('rg-dim');
+				}
+			} else if (next === null) {
+				for (var t = 0; t < themeCells.length; t++) {
+					if (t === prev) continue;
+					var arr = themeCells[t];
+					for (var i = 0; i < arr.length; i++) arr[i].classList.remove('rg-dim');
+				}
+			} else {
+				var prevCells = themeCells[prev];
+				var nextCells = themeCells[next];
+				for (var i = 0; i < prevCells.length; i++) prevCells[i].classList.add('rg-dim');
+				for (var j = 0; j < nextCells.length; j++) nextCells[j].classList.remove('rg-dim');
+			}
+			if (bulk && grid) {
+				grid.offsetHeight;
+				grid.classList.remove('rg-focus-bulk');
+			}
 		}
 		if (themeLegend) {
 			themeLegend.classList.toggle('has-selection', themeFocus !== null);
 			var buttons = themeLegend.querySelectorAll('.rg-theme-key');
 			for (var b = 0; b < buttons.length; b++) {
-				var on = themeFocus !== null &&
+				var onBtn = themeFocus !== null &&
 					Number(buttons[b].getAttribute('data-theme')) === themeFocus;
-				buttons[b].classList.toggle('is-selected', on);
-				buttons[b].setAttribute('aria-pressed', on ? 'true' : 'false');
+				buttons[b].classList.toggle('is-selected', onBtn);
+				buttons[b].setAttribute('aria-pressed', onBtn ? 'true' : 'false');
 			}
 		}
 	}
@@ -510,8 +546,11 @@
 		if (themesOn && quizOn) applyQuizMode(false);
 		if (grid) grid.classList.toggle('themes-on', themesOn);
 		if (readingLegend) readingLegend.classList.toggle('themes-on', themesOn);
+		if (fsReadKey) fsReadKey.classList.toggle('themes-on', themesOn);
 		showFade(legendPage, !themesOn);
 		showFade(legendScale, !themesOn);
+		showFade(legendRead, themesOn);
+		showFade(legendStats, themesOn);
 		if (themeSwitchInput) themeSwitchInput.checked = themesOn;
 		if (themeToggle) themeToggle.classList.toggle('is-on', themesOn);
 		if (fsThemesInput) fsThemesInput.checked = themesOn;
@@ -525,6 +564,7 @@
 		} catch (e) {}
 		// The visited key shows only in plain reading mode.
 		if (visitedKey) showFade(visitedKey, !themesOn && !quizOn);
+		if (fsReadKey) showFade(fsReadKey, themesOn && !quizOn);
 		if (grid && grid.getBoundingClientRect().width > 0) layoutMap();
 	}
 
@@ -551,6 +591,7 @@
 		showFade(legendPage, !quizOn && !themesOn);
 		showFade(legendScale, !quizOn && !themesOn);
 		showFade(visitedKey, !quizOn && !themesOn);
+		if (fsReadKey) showFade(fsReadKey, !quizOn && themesOn);
 		showFade(themeToggle, !quizOn);
 		if (quizOn) {
 			showFade(themeLegend, false);
@@ -602,24 +643,21 @@
 		}
 		// A selected theme is a temporary highlight, not a filter: tapping a
 		// legend swatch again (or switching themes off) restores every colour.
+		// Theme focus uses precomputed per-theme cell lists, so the delta
+		// update is immediate (same DOM in the fullscreen popup).
 		if (themeLegend) {
 			themeLegend.addEventListener('click', function (evt) {
 				var clearBtn = evt.target && evt.target.closest
 					? evt.target.closest('.rg-theme-clear') : null;
 				if (clearBtn) {
-					withThemeSwap(function () { setThemeFocus(null); });
+					setThemeFocus(null);
 					return;
 				}
 				var btn = evt.target && evt.target.closest
 					? evt.target.closest('.rg-theme-key') : null;
 				if (!btn) return;
 				var id = Number(btn.getAttribute('data-theme'));
-				// Selecting/unselecting a theme dims 6,236 cells —
-				// treat it like switching theme mode and show the
-				// loading bar for the repaint.
-				withThemeSwap(function () {
-					setThemeFocus(themeFocus === id ? null : id);
-				});
+				setThemeFocus(themeFocus === id ? null : id);
 			});
 		}
 	}

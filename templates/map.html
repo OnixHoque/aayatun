@@ -570,6 +570,23 @@
     .rg-swatch.deep-3 { background: #216e39; box-shadow: none; }
     .rg-swatch.light { background: #9be9a8; box-shadow: none; }
 
+    .rg-swatch-read {
+        position: relative;
+    }
+
+    .rg-swatch-read::after {
+        content: '';
+        position: absolute;
+        left: 3px;
+        top: 1px;
+        width: 2.5px;
+        height: 4.5px;
+        border: solid rgba(27, 31, 36, .75);
+        border-width: 0 1.5px 1.5px 0;
+        transform: rotate(45deg);
+        box-sizing: content-box;
+    }
+
     .reading-map-legend .rg-scale {
         display: inline-flex;
         align-items: center;
@@ -750,19 +767,36 @@
     .reading-map-grid.themes-on .rg-cell.t10 { background: #a0cbe8; }
     .reading-map-grid.themes-on .rg-cell.t11 { background: #6b6b6b; }
 
-    /* A selected theme dims every other theme so its verses stand out. */
-    .reading-map-grid[data-theme-focus="0"] .rg-cell:not(.t0) { opacity: .2; }
-    .reading-map-grid[data-theme-focus="1"] .rg-cell:not(.t1) { opacity: .2; }
-    .reading-map-grid[data-theme-focus="2"] .rg-cell:not(.t2) { opacity: .2; }
-    .reading-map-grid[data-theme-focus="3"] .rg-cell:not(.t3) { opacity: .2; }
-    .reading-map-grid[data-theme-focus="4"] .rg-cell:not(.t4) { opacity: .2; }
-    .reading-map-grid[data-theme-focus="5"] .rg-cell:not(.t5) { opacity: .2; }
-    .reading-map-grid[data-theme-focus="6"] .rg-cell:not(.t6) { opacity: .2; }
-    .reading-map-grid[data-theme-focus="7"] .rg-cell:not(.t7) { opacity: .2; }
-    .reading-map-grid[data-theme-focus="8"] .rg-cell:not(.t8) { opacity: .2; }
-    .reading-map-grid[data-theme-focus="9"] .rg-cell:not(.t9) { opacity: .2; }
-    .reading-map-grid[data-theme-focus="10"] .rg-cell:not(.t10) { opacity: .2; }
-    .reading-map-grid[data-theme-focus="11"] .rg-cell:not(.t11) { opacity: .2; }
+    /* A selected theme dims every other theme so its verses stand out.
+       JS precomputes per-theme cell lists and toggles .rg-dim on the delta,
+       so focus changes stay instant in both the main map and fullscreen. */
+    .reading-map-grid.themes-on .rg-cell.rg-dim { opacity: .2; }
+
+    /* Theme mode read marker: a white tick over read/theme-colored cells. */
+    .reading-map-grid.themes-on .rg-cell.is-light::after,
+    .reading-map-grid.themes-on .rg-cell.is-deep-1::after,
+    .reading-map-grid.themes-on .rg-cell.is-deep-2::after,
+    .reading-map-grid.themes-on .rg-cell.is-deep-3::after {
+        content: '';
+        position: absolute;
+        left: calc(3px * var(--map-zoom, 1));
+        top: calc(1.5px * var(--map-zoom, 1));
+        width: calc(2.5px * var(--map-zoom, 1));
+        height: calc(4.5px * var(--map-zoom, 1));
+        border: solid #fff;
+        border-width: 0 calc(1.5px * var(--map-zoom, 1)) calc(1.5px * var(--map-zoom, 1)) 0;
+        transform: rotate(45deg);
+        pointer-events: none;
+        box-sizing: content-box;
+    }
+
+    .reading-map-grid.is-fs .rg-cell::after {
+        display: none;
+    }
+
+    .reading-map-grid.rg-focus-bulk .rg-cell {
+        transition: none !important;
+    }
 
     /* Theme mode legend: a neutral ring for Unread. */
     .reading-map-legend.themes-on .rg-swatch {
@@ -1001,6 +1035,10 @@
     html.dark-theme .rg-cell.is-light,
     html.dark-theme .rg-swatch.light { background: #0e4429; box-shadow: none; }
 
+    html.dark-theme .rg-swatch-read::after {
+        border-color: rgba(255, 255, 255, .85);
+    }
+
     html.dark-theme .rg-cell.is-deep-1,
     html.dark-theme .rg-swatch.deep-1 { background: #006d32; box-shadow: none; }
 
@@ -1162,7 +1200,8 @@
         padding: 0;
     }
 
-    .map-fs-visited-key {
+    .map-fs-visited-key,
+    .map-fs-read-key {
         flex: none;
         display: inline-flex;
         align-items: center;
@@ -1367,6 +1406,7 @@
 
     html.dark-theme .map-fs-key,
     html.dark-theme .map-fs-visited-key,
+    html.dark-theme .map-fs-read-key,
     html.dark-theme #map-fullscreen-modal .reading-map-theme-legend,
     html.dark-theme #map-fullscreen-modal .reading-map-theme-attribution {
         color: #d7d7d7;
@@ -1476,8 +1516,10 @@
 					<div class="reading-map-scrollbar-thumb"></div>
 				</div>
 				<div class="reading-map-legend">
+					<span class="reading-map-legend-item" id="reading-map-legend-stats" hidden>Verse Read Statistics:</span>
 					<span class="reading-map-legend-item" id="reading-map-legend-unattended" hidden><i class="rg-swatch"></i>Not attended</span>
 					<span class="reading-map-legend-item" id="reading-map-legend-unread"><i class="rg-swatch"></i>Unread</span>
+					<span class="reading-map-legend-item" id="reading-map-legend-read" hidden><i class="rg-swatch rg-swatch-read"></i>Read</span>
 					<span class="reading-map-legend-item" id="reading-map-legend-attended" hidden><i class="rg-swatch rg-swatch-quiz"></i>Attended</span>
 						<span class="reading-map-legend-item" id="reading-map-legend-page"><i class="rg-swatch light"></i>Page visited</span>
 					<span class="rg-scale" id="reading-map-legend-scale" title="Opened once, twice, 3+ times"><span>Less</span><i class="rg-swatch deep-1"></i><i class="rg-swatch deep-2"></i><i class="rg-swatch deep-3"></i><span>More</span></span>
@@ -1507,6 +1549,7 @@
 			<div id="map-fs-stage" class="map-fs-stage"></div>
 			<div id="map-fs-legend-row" class="map-fs-legend-row">
 				<span id="map-fs-visited-key" class="reading-map-legend map-fs-visited-key"><span class="reading-map-legend-item"><i class="rg-swatch"></i>Unread</span><span class="reading-map-legend-item" id="map-fs-key-page"><i class="rg-swatch light"></i>Page visited</span><span class="rg-scale" title="Opened once, twice, 3+ times"><span>Less</span><i class="rg-swatch deep-1"></i><i class="rg-swatch deep-2"></i><i class="rg-swatch deep-3"></i><span>More</span></span></span>
+				<span id="map-fs-read-key" class="reading-map-legend map-fs-read-key" hidden><span class="reading-map-legend-item">Verse Read Statistics:</span><span class="reading-map-legend-item"><i class="rg-swatch"></i>Unread</span><span class="reading-map-legend-item"><i class="rg-swatch rg-swatch-read"></i>Read</span></span>
 				<span id="map-fs-key" class="reading-map-legend map-fs-key"></span>
 				<label class="reading-map-switch" id="map-fs-themes">
 					<input type="checkbox" id="map-fs-themes-input">

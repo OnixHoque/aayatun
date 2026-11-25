@@ -363,11 +363,9 @@ dialog[open] { animation: dlg-in .16s ease-out; }
 .btn.small { min-height: 36px; padding: 6px 12px; border-radius: 10px; font-size: .8rem; }
 @media (max-width: 480px) { .archive-row { flex-wrap: wrap; } .archive-actions { width: 100%; justify-content: flex-end; } }
 
-/* Toast with undo */
-.toast { position: fixed; left: 50%; bottom: max(18px, calc(env(safe-area-inset-bottom) + 10px)); transform: translateX(-50%); z-index: 20; display: flex; align-items: center; gap: 14px; max-width: calc(100% - 32px); padding: 11px 12px 11px 18px; border-radius: 999px; background: rgba(228,240,255,.94); color: #0f1b33; font-size: .85rem; font-weight: 600; box-shadow: 0 10px 30px rgba(0,8,25,.3); animation: dlg-in .16s ease-out; }
+/* Toast */
+.toast { position: fixed; left: 50%; bottom: max(18px, calc(env(safe-area-inset-bottom) + 10px)); transform: translateX(-50%); z-index: 20; display: flex; align-items: center; max-width: calc(100% - 32px); padding: 11px 18px; border-radius: 999px; background: rgba(228,240,255,.94); color: #0f1b33; font-size: .85rem; font-weight: 600; box-shadow: 0 10px 30px rgba(0,8,25,.3); animation: dlg-in .16s ease-out; }
 .toast span { min-width: 0; overflow-wrap: anywhere; }
-.toast-undo { flex: none; min-height: 32px; padding: 4px 14px; border: 0; border-radius: 999px; background: rgba(15,27,51,.1); color: #0f1b33; font-weight: 700; }
-.toast-undo:focus-visible { outline-color: #0f1b33; }
 
 /* No focus rectangles for mouse, touch or dialog focus-restore (e.g. the pencil after renaming).
    The ring appears only after a keyboard Tab/arrow key, tracked by the .kbd class below. */
@@ -390,7 +388,15 @@ button, .tile, input, [tabindex] { -webkit-tap-highlight-color: transparent; }
 .io-textarea { box-sizing: border-box; width: 100%; min-height: 96px; resize: vertical; padding: 10px 12px; background: rgba(255,255,255,.06); border: 1px solid var(--edge); border-radius: 12px; color: var(--fg); font: 400 .78rem/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; }
 .io-textarea:focus-visible { outline: 2px solid #d5f5f3; outline-offset: 2px; }
 .io-error { margin: 0; color: #ffc9c9; font-size: .8rem; line-height: 1.45; }
+.io-warn { margin: 0; color: #ffd7a8; font-size: .8rem; line-height: 1.5; }
 .io-confirm-text { margin: 6px 0 14px; font-size: .92rem; line-height: 1.6; }
+.io-diff-wrap { margin: 0 0 14px; overflow-x: auto; }
+.io-diff { width: 100%; border-collapse: collapse; font-size: .78rem; line-height: 1.4; }
+.io-diff th, .io-diff td { padding: 7px 8px; text-align: left; border-bottom: 1px solid var(--edge); vertical-align: top; }
+.io-diff th { color: var(--muted); font-weight: 600; font-size: .72rem; text-transform: uppercase; letter-spacing: .03em; }
+.io-diff td:first-child { font-weight: 600; word-break: break-word; }
+.io-diff-muted { color: var(--muted); }
+.io-diff-more { margin: 8px 0 0; color: var(--muted); font-size: .76rem; }
 @media (max-width: 560px) {
   .top { flex-wrap: wrap; }
   .top-actions { width: 100%; justify-content: space-between; }
@@ -480,10 +486,10 @@ button, .tile, input, [tabindex] { -webkit-tap-highlight-color: transparent; }
 <dialog id="focusDialog" class="focus-dialog" aria-labelledby="focusTitle"><div class="dialog-card focus-card"><div class="modal-heading focus-heading"><div><h2 id="focusTitle"></h2></div><button type="button" class="icon-btn x" data-close="focusDialog" aria-label="Close focus mode">×</button></div><div class="focus-center"><p class="focus-date" id="focusDate"></p><button type="button" id="focusTap" class="focus-tap" aria-label="Add one to today's count"><span class="timer-badge" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="7.5"/><path class="badge-hand badge-hand-long" d="M12 13V8.5"/><path class="badge-hand badge-hand-short" d="M12 13l2 2"/><path d="M9 3h6"/><path d="M12 3v2"/></svg></span><span class="focus-count" id="focusCount">0</span></button><p class="focus-hint" id="focusHint" hidden></p></div><div class="focus-bottom"><button type="button" id="focusMinus" class="btn" aria-label="Subtract one">−1</button></div></div></dialog>
 <dialog id="newDialog" aria-labelledby="newTitle"><div class="dialog-card"><div class="modal-heading"><div><p>CREATE</p><h2 id="newTitle">New habit</h2></div><button type="button" class="icon-btn x" data-close="newDialog" aria-label="Close">×</button></div><form id="newForm"><label class="field-label" for="counterName">Habit name</label><input id="counterName" type="text" maxlength="65" placeholder="e.g. Dhikr, Water, Reading" required autocomplete="off"><div class="field-group"><span class="field-label">Color tag (optional)</span><div class="choice-row" id="newColorRow" role="group" aria-label="Color tag"></div></div><div class="field-group"><span class="field-label">Type</span><div class="type-toggle" id="newTypeRow" role="group" aria-label="Habit type"><button type="button" data-type="count" class="on" aria-pressed="true">Counter</button><button type="button" data-type="timer" aria-pressed="false">Timer</button></div><p class="field-hint">Timer counts up by seconds while started (Start/Stop). Both types store the same integer day counts.</p></div><div class="dialog-actions"><button type="button" class="btn" data-close="newDialog">Cancel</button><button class="btn primary" type="submit">Create habit</button></div></form></div></dialog>
 <dialog id="statsDialog" aria-labelledby="statsTitle"><div class="dialog-card"><div class="modal-heading stats-heading"><div class="stats-heading-title"><p>DAILY HISTORY</p><div class="stats-title-line"><h2 id="statsTitle" tabindex="-1"></h2><button type="button" class="icon-btn stats-rename" id="editBtn" aria-label="Edit habit" title="Edit habit"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L9 17l-4 1 1-4Z"/></svg></button></div></div><div class="stats-heading-actions"><button type="button" class="icon-btn stats-archive" id="archiveBtn" aria-label="Archive habit" title="Archive habit (history is kept)"></button><button type="button" class="icon-btn x" data-close="statsDialog" aria-label="Close">×</button></div></div><div class="stats-overview"><div class="stat"><b id="statToday">0</b><span>Today</span></div><div class="stat"><b id="statSeven">0</b><span>Last 7 days</span></div><div class="stat"><b id="statAll">0</b><span>All time</span></div></div><div class="seg" id="statsTabs" role="tablist" aria-label="Statistics range"><button type="button" role="tab" data-view="14">14D</button><button type="button" role="tab" data-view="30">30D</button><button type="button" role="tab" data-view="90">90D</button><button type="button" role="tab" data-view="cal">Calendar</button></div><p class="section-title" id="rangeTitle"></p><div class="stats-overview stats-range"><div class="stat"><b id="statAvg">0</b><span>Weekly avg</span></div><div class="stat"><b id="statBest">—</b><span id="statBestDate">Best day</span></div><div class="stat"><b id="statActive">0</b><span>Active days</span></div></div><div class="chart" id="statsChart" role="img" aria-label="Bar chart of daily counts"></div><div class="chart-labels" id="chartLabels"><span id="chartStart"></span><span>Today</span></div><div class="heat" id="statsHeat" hidden><div class="heat-corner"></div><div class="heat-months" id="heatMonths"></div><div class="heat-days" aria-hidden="true"><span></span><span>Mon</span><span></span><span>Wed</span><span></span><span>Fri</span><span></span></div><div class="heat-grid" id="heatGrid" role="img" aria-label="Calendar heatmap of daily counts"></div></div><div class="heat-legend" id="heatLegend" hidden><span>Less</span><i class="heat-cell" data-l="0"></i><i class="heat-cell" data-l="1"></i><i class="heat-cell" data-l="2"></i><i class="heat-cell" data-l="3"></i><i class="heat-cell" data-l="4"></i><span>More</span></div><p class="stats-readout" id="statsReadout" aria-live="polite"></p><p class="stats-note">History is kept day-by-day for the latest 20 weeks (the Calendar view); older days are folded into your All time total and never lost from it. Export in Backup keeps the fullest copy on this device.</p></div></dialog>
-<div class="toast" id="toast" role="status" aria-live="polite" hidden><span id="toastText"></span><button type="button" class="toast-undo" id="toastUndo">Undo</button></div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden><span id="toastText"></span></div>
 <dialog id="editDialog" aria-labelledby="editTitle"><div class="dialog-card"><div class="modal-heading"><div><p>EDIT</p><h2 id="editTitle">Edit habit</h2></div><button type="button" class="icon-btn x" data-close="editDialog" aria-label="Close">×</button></div><form id="editForm"><label class="field-label" for="editName">Habit name</label><input id="editName" type="text" maxlength="65" required autocomplete="off"><div class="field-group"><span class="field-label">Color tag (optional)</span><div class="choice-row" id="editColorRow" role="group" aria-label="Color tag"></div></div><div class="field-group"><span class="field-label">Type</span><div class="type-toggle" id="editTypeRow" role="group" aria-label="Habit type"><button type="button" data-type="count" aria-pressed="false">Counter</button><button type="button" data-type="timer" aria-pressed="false">Timer</button></div><p class="field-hint">Changing type keeps the same stored numbers — as raw counts or as seconds.</p></div><div class="dialog-actions"><button type="button" class="btn" data-close="editDialog">Cancel</button><button class="btn primary" type="submit">Save</button></div></form></div></dialog>
 <dialog id="deleteDialog" class="confirm-dialog" aria-labelledby="deleteTitle"><div class="dialog-card"><div class="modal-heading"><div><p>DELETE</p><h2 id="deleteTitle">Delete habit?</h2></div><button type="button" class="icon-btn x" data-close="deleteDialog" aria-label="Close">×</button></div><p class="confirm-text">“<b id="deleteName"></b>” and all of its recorded counts will be removed. This can’t be undone.</p><div class="dialog-actions"><button type="button" class="btn" data-close="deleteDialog">Keep it</button><button type="button" class="btn danger" id="deleteConfirm">Delete</button></div></div></dialog>
-<dialog id="ioDialog" aria-labelledby="ioTitle"><div class="dialog-card"><div class="modal-heading"><div><p>BACKUP</p><h2 id="ioTitle">Import / export</h2></div><button type="button" class="icon-btn x" data-close="ioDialog" aria-label="Close">×</button></div><div id="ioMain"><div class="io-section"><div><p class="io-head">Export</p><p class="io-sub">Copies your stored habit history as JSON — names, color tags, types and day-by-day counts for the latest 20 weeks (older days are folded into each habit’s All time total, exactly as you see them here). Anyone you paste this to can read these counts.</p></div><button type="button" class="btn primary" id="ioExportBtn">Copy to clipboard</button></div><div class="io-section"><div><p class="io-head">Import</p><p class="io-sub">Pasted day-counts replace the counts already saved for the same dates, and matching habits also take the backup’s color tag and type. Your current data is backed up automatically before anything changes.</p></div><textarea id="ioPaste" class="io-textarea" rows="5" spellcheck="false" autocomplete="off" placeholder='Paste backup JSON, e.g. [{"name":"Dhikr","days":{"2026-11-13":3}}]'></textarea><p class="io-error" id="ioError" hidden></p><div class="dialog-actions" style="margin-top:0"><button type="button" class="btn primary" id="ioImportBtn">Import</button></div></div></div><div id="ioConfirm" hidden><p class="io-confirm-text" id="ioConfirmText"></p><div class="dialog-actions"><button type="button" class="btn" id="ioCancelImport">Cancel</button><button type="button" class="btn primary" id="ioConfirmImport">Import</button></div></div></div></dialog>
+<dialog id="ioDialog" aria-labelledby="ioTitle"><div class="dialog-card"><div class="modal-heading"><div><p>BACKUP</p><h2 id="ioTitle">Import / export</h2></div><button type="button" class="icon-btn x" data-close="ioDialog" aria-label="Close">×</button></div><div id="ioMain"><div class="io-section"><div><p class="io-head">Export</p><p class="io-sub">Copies your stored habit history as JSON — names, color tags, types and day-by-day counts for the latest 20 weeks (older days are folded into each habit’s All time total, exactly as you see them here). Anyone you paste this to can read these counts.</p></div><button type="button" class="btn primary" id="ioExportBtn">Copy to clipboard</button></div><div class="io-section"><div><p class="io-head">Import</p><p class="io-sub">Pasted day-counts replace the counts already saved for the same dates, and matching habits also take the backup’s color tag and type. Your current data is backed up automatically before anything changes. After an import, you can revert it here while that backup is available.</p></div><textarea id="ioPaste" class="io-textarea" rows="5" spellcheck="false" autocomplete="off" placeholder='Paste backup JSON, e.g. [{"name":"Dhikr","days":{"2026-11-13":3}}]'></textarea><p class="io-error" id="ioError" hidden></p><div class="dialog-actions" style="margin-top:0"><button type="button" class="btn primary" id="ioImportBtn">Import</button></div></div><div class="io-section" id="ioRevertSection" hidden><div><p class="io-head">Revert last import</p><p class="io-sub" id="ioRevertSummary">A backup from your last import is available.</p></div><p class="io-warn" id="ioRevertWarn">Reverting replaces your current habit data with that backup. Any changes made since that import will be lost.</p><p class="io-error" id="ioRevertError" hidden></p><div class="dialog-actions" style="margin-top:0"><button type="button" class="btn danger" id="ioRevertBtn">Revert last import</button></div></div></div><div id="ioConfirm" hidden><p class="io-confirm-text" id="ioConfirmText"></p><div class="io-diff-wrap" id="ioConfirmDiff" hidden></div><div class="dialog-actions"><button type="button" class="btn" id="ioCancelImport">Cancel</button><button type="button" class="btn primary" id="ioConfirmImport">Import</button></div></div><div id="ioRevertConfirm" hidden><p class="io-confirm-text" id="ioRevertConfirmText"></p><div class="io-diff-wrap" id="ioRevertConfirmDiff" hidden></div><div class="dialog-actions"><button type="button" class="btn" id="ioRevertCancel">Cancel</button><button type="button" class="btn danger" id="ioRevertConfirmBtn">Revert</button></div></div></div></dialog>
 <script>
 (()=>{'use strict';
 const KEY='daily-counter-v1';
@@ -738,9 +744,8 @@ $('statsTabs').addEventListener('click',e=>{const b=e.target.closest('button[dat
 $('heatGrid').addEventListener('click',e=>{const cell=e.target.closest('.heat-cell');if(!cell||!cell.dataset.key)return;$('heatGrid').querySelector('.sel')?.classList.remove('sel');cell.classList.add('sel');showDay(cell.dataset.key)});
 
 /* ---- Archive: hide a finished habit, keep its history ---- */
-let archiveOpen=false,deleteTarget=null,toastTimer=0,toastUndo=null;
-function toast(msg,undo){$('toastText').textContent=msg;toastUndo=undo||null;$('toastUndo').hidden=!undo;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>{$('toast').hidden=true;toastUndo=null},6000)}
-$('toastUndo').addEventListener('click',()=>{const f=toastUndo;clearTimeout(toastTimer);$('toast').hidden=true;toastUndo=null;if(f)f()});
+let archiveOpen=false,deleteTarget=null,toastTimer=0;
+function toast(msg){$('toastText').textContent=msg;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>{$('toast').hidden=true},6000)}
 function setArchived(c,flag,closeStats){if(flag&&running.has(c.id))stopTimer(c.id,false);c.archived=flag;save();if(closeStats){$('statsDialog').close();selected=null}render();toast(flag?`Archived “${c.name}” · history kept`:`Restored “${c.name}”`,()=>setArchived(c,!flag,false))}
 function renderArchive(){
  const list=counters.filter(c=>c.archived),sec=$('archiveSection');
@@ -813,8 +818,88 @@ function planImport(habits){
   }
   return { entries, newCount, updatedHabits, countsToWrite, replacedCounts };
 }
+function readBackup(){
+  try{
+    const raw=localStorage.getItem(BAK_KEY); if(!raw) return null;
+    const v=JSON.parse(raw);
+    if(!Array.isArray(v)) return null;
+    const habits=v.filter(c=>c&&typeof c.id==='string'&&typeof c.name==='string'&&c.days&&typeof c.days==='object').map(normalizeHabit);
+    return {habits};
+  }catch(e){ return null }
+}
+function refreshRevertSection(){
+  const sec=$('ioRevertSection'), err=$('ioRevertError');
+  err.hidden=true; err.textContent='';
+  const bak=readBackup();
+  if(!bak){ sec.hidden=true; $('ioRevertConfirm').hidden=true; return }
+  const n=bak.habits.length;
+  $('ioRevertSummary').textContent=`A backup from your last import is available (${n} ${n===1?'habit':'habits'}).`;
+  $('ioRevertWarn').textContent='Reverting replaces your current habit data with that backup. Any changes made since that import will be lost. The backup is removed after a successful revert.';
+  sec.hidden=false;
+}
+function habitDiffSummary(c){
+  if(!c) return 'Not present';
+  let all=(c.older?Number(c.older.n)||0:0), days=0;
+  for(const k of Object.keys(c.days)){const n=safeCount(c,k); if(n>0){all+=n; days++}}
+  const bits=[c.type==='timer'?'Timer':'Counter'];
+  if(c.color&&TAG_META[c.color]) bits.push(TAG_META[c.color].name);
+  bits.push(`${days} ${days===1?'day':'days'}`);
+  bits.push(`${disp(c,all)} total`);
+  if(c.archived) bits.push('archived');
+  return bits.join(', ');
+}
+function renderDiff(el, rows, afterLabel){
+  if(!rows.length){ el.hidden=true; el.replaceChildren(); return }
+  const cap=10, show=rows.slice(0,cap);
+  const table=document.createElement('table'); table.className='io-diff';
+  const thead=document.createElement('thead'), hr=document.createElement('tr');
+  ['Habit','Current','After '+afterLabel].forEach(h=>{const th=document.createElement('th'); th.scope='col'; th.textContent=h; hr.append(th)});
+  thead.append(hr); table.append(thead);
+  const tbody=document.createElement('tbody');
+  for(const r of show){
+    const tr=document.createElement('tr');
+    const td1=document.createElement('td'); td1.textContent=r.name;
+    const td2=document.createElement('td'); td2.textContent=r.before; if(r.before==='Not present'||r.before==='Removed') td2.className='io-diff-muted';
+    const td3=document.createElement('td'); td3.textContent=r.after; if(r.after==='Not present'||r.after==='Removed') td3.className='io-diff-muted';
+    tr.append(td1,td2,td3); tbody.append(tr);
+  }
+  table.append(tbody);
+  el.replaceChildren(table);
+  if(rows.length>cap){ const more=document.createElement('p'); more.className='io-diff-more'; more.textContent=`…and ${rows.length-cap} more ${rows.length-cap===1?'change':'changes'}.`; el.append(more) }
+  el.hidden=false;
+}
+function importDiffRows(plan){
+  const rows=[];
+  for(const {inc,target} of plan.entries){
+    if(!target){
+      rows.push({name:inc.name, before:'Not present', after:habitDiffSummary(inc)});
+    } else {
+      const before=habitDiffSummary(target);
+      const sim=normalizeHabit({ ...target, days:{...target.days}, older:target.older?{...target.older}:undefined });
+      for(const [k,v] of Object.entries(inc.days)) sim.days[k]=v;
+      sim.color=inc.color; sim.type=inc.type;
+      mergeOlder(sim,inc);
+      const after=habitDiffSummary(sim);
+      const changed=before!==after || target.name!==sim.name;
+      if(changed) rows.push({name:target.name, before, after});
+    }
+  }
+  return rows;
+}
+function revertDiffRows(bakHabits){
+  const rows=[], curById=new Map(counters.map(c=>[c.id,c])), bakById=new Map(bakHabits.map(c=>[c.id,c]));
+  const ids=new Set([...counters.map(c=>c.id),...bakHabits.map(c=>c.id)]);
+  for(const id of ids){
+    const cur=curById.get(id)||null, bak=bakById.get(id)||null;
+    const before=habitDiffSummary(cur), after=habitDiffSummary(bak);
+    if(before!==after || (cur&&bak&&cur.name!==bak.name)){
+      rows.push({name:(bak||cur).name, before:cur?before:'Not present', after:bak?after:'Removed'});
+    }
+  }
+  return rows;
+}
 let pendingPlan=null;
-$('ioOpenBtn').addEventListener('click',()=>{ $('ioError').hidden=true; $('ioMain').hidden=false; $('ioConfirm').hidden=true; $('ioDialog').showModal() });
+$('ioOpenBtn').addEventListener('click',()=>{ $('ioError').hidden=true; $('ioMain').hidden=false; $('ioConfirm').hidden=true; $('ioRevertConfirm').hidden=true; refreshRevertSection(); $('ioDialog').showModal() });
 $('ioExportBtn').addEventListener('click',async ()=>{
   const ok=await copyText(JSON.stringify(counters,null,2));
   if(ok){ $('ioDialog').close(); toast('Habit history copied to clipboard.'); }
@@ -830,7 +915,8 @@ $('ioImportBtn').addEventListener('click',()=>{
   pendingPlan=planImport(parsed.habits);
   pendingPlan.skipped=parsed.skipped;
   const r=pendingPlan;
-  $('ioConfirmText').textContent=`${r.updatedHabits} ${r.updatedHabits===1?'habit':'habits'} updated · ${r.newCount} new ${r.newCount===1?'habit':'habits'} added · ${r.countsToWrite} day-count${r.countsToWrite===1?'':'s'} written (${r.replacedCounts} replacing existing).${r.skipped?` ${r.skipped} ${r.skipped===1?'entry':'entries'} skipped.`:''} A backup of your current data is kept automatically — you can undo afterwards.`;
+  $('ioConfirmText').textContent=`${r.updatedHabits} ${r.updatedHabits===1?'habit':'habits'} updated · ${r.newCount} new ${r.newCount===1?'habit':'habits'} added · ${r.countsToWrite} day-count${r.countsToWrite===1?'':'s'} written (${r.replacedCounts} replacing existing).${r.skipped?` ${r.skipped} ${r.skipped===1?'entry':'entries'} skipped.`:''} A backup of your current data is kept automatically — you can revert it from this Import / export dialog while that backup is available.`;
+  renderDiff($('ioConfirmDiff'), importDiffRows(pendingPlan), 'import');
   $('ioMain').hidden=true; $('ioConfirm').hidden=false;
 });
 $('ioCancelImport').addEventListener('click',()=>{ pendingPlan=null; $('ioConfirm').hidden=true; $('ioMain').hidden=false });
@@ -848,15 +934,34 @@ $('ioConfirmImport').addEventListener('click',()=>{
   }
   pendingPlan=null;
   save(); render(); $('ioDialog').close(); $('ioPaste').value='';
-  toast(`Imported — ${created} new · ${updated} updated · ${written} counts written.`, ()=>{
-    try{
-      const bak=localStorage.getItem(BAK_KEY); if(!bak) return;
-      const v=JSON.parse(bak);
-      if(!Array.isArray(v)) return;
-      counters=v.filter(c=>c&&typeof c.id==='string'&&typeof c.name==='string'&&c.days&&typeof c.days==='object').map(normalizeHabit);
-      save(); render(); toast('Import undone — your previous data was restored.');
-    }catch(e){}
-  });
+  toast(`Imported — ${created} new · ${updated} updated · ${written} counts written.`);
+});
+$('ioRevertBtn').addEventListener('click',()=>{
+  const bak=readBackup();
+  const err=$('ioRevertError'); err.hidden=true; err.textContent='';
+  if(!bak){ err.textContent='No import backup was found. Nothing was reverted.'; err.hidden=false; refreshRevertSection(); return }
+  const n=bak.habits.length;
+  $('ioRevertConfirmText').textContent=`Restore the backup from your last import (${n} ${n===1?'habit':'habits'})? This replaces your current habit data with that backup. Any changes made since that import will be lost, and the backup will be removed after revert.`;
+  renderDiff($('ioRevertConfirmDiff'), revertDiffRows(bak.habits), 'revert');
+  $('ioMain').hidden=true; $('ioRevertConfirm').hidden=false;
+});
+$('ioRevertCancel').addEventListener('click',()=>{ $('ioRevertConfirm').hidden=true; $('ioMain').hidden=false; refreshRevertSection(); });
+$('ioRevertConfirmBtn').addEventListener('click',()=>{
+  const err=$('ioRevertError'); err.hidden=true; err.textContent='';
+  const bak=readBackup();
+  if(!bak){ $('ioRevertConfirm').hidden=true; $('ioMain').hidden=false; err.textContent='No import backup was found. Nothing was reverted.'; err.hidden=false; refreshRevertSection(); return }
+  for(const id of [...running.keys()])stopTimer(id,false);
+  try{
+    counters=bak.habits;
+    save();
+    try{ localStorage.removeItem(BAK_KEY) }catch(e){}
+    render();
+    $('ioRevertConfirm').hidden=true; $('ioMain').hidden=false; $('ioDialog').close();
+    toast('Import reverted — your previous data was restored.');
+  }catch(e){
+    $('ioRevertConfirm').hidden=true; $('ioMain').hidden=false;
+    err.textContent='Could not revert the import backup.'; err.hidden=false;
+  }
 });
 let newColor=null,newType='count',editColor=null,editType='count',editingId=null;
 function paintChoices(row,color){row.querySelectorAll('.swatch-btn').forEach(b=>{const on=(b.dataset.color==='none'?color===null:b.dataset.color===color);b.classList.toggle('on',on);b.setAttribute('aria-pressed',String(on))})}

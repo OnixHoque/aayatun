@@ -48,7 +48,10 @@ window.AAYATUN_SURAH_STARTS = {{ surah_starts|tojson }};
             <div class="reel-opening-verse" id="reel-opening-verse" dir="rtl" lang="ar" aria-label="Arabic verse"></div>
             <div class="reel-opening-translation" id="reel-opening-translation"></div>
             <div class="reel-verse" id="reel-verse" dir="rtl" lang="ar" aria-label="Arabic verse"></div>
-            <div class="reel-verse-meaning" id="reel-verse-meaning" aria-live="polite"></div>
+            <div class="reel-top-translation" id="reel-top-translation">
+              <div class="reel-verse-meaning" id="reel-verse-meaning" aria-live="polite"></div>
+              <div class="reel-actual-translation" id="reel-actual-translation" aria-live="off"></div>
+            </div>
           </section>
 
           <section class="reel-opening-translation-section" id="reel-opening-translation-section" aria-hidden="true"></section>
@@ -60,8 +63,8 @@ window.AAYATUN_SURAH_STARTS = {{ surah_starts|tojson }};
           </section>
 
           <section class="reel-bottom" id="reel-bottom" aria-label="Definition">
-            <div class="reel-def-head" id="reel-def-head"></div>
-            <div class="reel-def-text" id="reel-def-text"></div>
+            <div class="reel-def-line" id="reel-def-line"><span class="reel-def-root" id="reel-def-root"></span><span class="reel-def-sep" id="reel-def-sep"></span><span class="reel-def-text" id="reel-def-text"></span></div>
+            <div class="reel-morph-credit" id="reel-morph-credit" hidden>[Source: <a href="https://studyquran.org/PRL/PRLonline.htm" target="_blank" rel="noopener">StudyQuran.org</a> through Lisan App]</div>
           </section>
 
           <section class="reel-end-panel" id="reel-end-panel" aria-label="Verse overview" hidden>

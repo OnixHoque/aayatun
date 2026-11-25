@@ -24,6 +24,14 @@
       "bytes": 1984512,
       "sha256": "cd1cd1ee0bb43b75fccb0e8226af15c55a653cd7e46391f52c8dbdbdad34125a"
     },
+    "db/english_words.README.txt": {
+      "bytes": 528,
+      "sha256": "d071610866ce0429d0c4aba67c7865c88479ef28b401b623f0ab30027b89f1e3"
+    },
+    "db/english_words.txt": {
+      "bytes": 3864805,
+      "sha256": "643c7f71d5caee9806be56f5ed83ba36e2246a06a04bcf4aaa0576790bb90d66"
+    },
     "db/mushaf_lines.json": {
       "bytes": 1983314,
       "sha256": "34437ff02158af8f686a7b9dcacb7a5ab0a9801453fb025d03369c60122248a1"
@@ -51,6 +59,10 @@
     "db/quran_stat.json": {
       "bytes": 9530,
       "sha256": "0f0339d858b985fcd2ab70728e68fabae852ca73f56e20349c644601d6caea4e"
+    },
+    "db/root_meanings.json": {
+      "bytes": 358571,
+      "sha256": "fed71281ba3dc8e8685db400e0003290b5bf90f78ed113a602ed6d3f2848281d"
     },
     "db/ruku_index.txt": {
       "bytes": 5388,

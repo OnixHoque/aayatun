@@ -35,6 +35,16 @@
 		padding: 0 1px;
 		border-radius: 2px;
 	}
+	.ui.popup {
+		max-width: calc(100vw - 32px);
+		box-sizing: border-box;
+	}
+	.search-tips-content {
+		width: min(640px, calc(100vw - 48px));
+		max-width: calc(100vw - 48px);
+		box-sizing: border-box;
+		overflow-wrap: anywhere;
+	}
 </style>
 
 
@@ -64,8 +74,9 @@
 			</div>
 			<!-- <div class="ui error message" style="font-family: Open Sans"></div> -->
 		</div>
-		<p class="search-hint" style="margin: 8px 2px 0; font-size: 84%; line-height: 1.45; opacity: .78; font-family: 'Open Sans'">Tip: jump straight to a verse by typing <b>Surah:Verse</b> — e.g. <b>2:255</b> or <b>2 255</b> — or to a surah with just <b>2</b>. Or search English or Arabic keywords, e.g. “mercy” / “رحمة”, “Abraham” / “إبراهيم”, “charity” / “صدقة”, “Paradise” / “جنة”.</p>
-		<p class="search-hint">Search an Arabic root with <b>root:رحم</b>, or restrict it to a surah with <b>surah:fatiha root:رحم</b>.</p>
+		<!-- <p class="search-hint" style="margin: 8px 2px 0; font-size: 84%; line-height: 1.45; opacity: .78; font-family: 'Open Sans'">Tip: search words, phrases, Arabic roots, or verse references, e.g., “rope of Allah”, luqman parent, Fatiha رحم, root:رحم, surah:fatiha root:رحم, or 2:255. Use the field filter to explore translations, tafsir, and AI explanations.</p>
+		  -->
+		<p class="search-hint" style="margin: 8px 2px 0; font-size: 84%; line-height: 1.45; opacity: .78; font-family: 'Open Sans'">Tip: jump straight to a verse by typing <b>Surah:Verse</b> — e.g. <b>2:255</b> or <b>2 255</b> — or to a surah with just <b>2</b>. Or search English or Arabic keywords, e.g. “mercy” / “رحمة”, “Abraham” / “إبراهيم”, “charity” / “صدقة”, “Paradise” / “جنة”, “rope of Allah”, “luqman parent”, Fatiha رحم, root:رحم, surah:fatiha root:رحم.</p>
 		{% if search_error %}<div class="ui warning message" role="alert">{{ search_error }}</div>{% endif %}
 		<div data-keyword-controls {% if search_mode == 'meaning' %}hidden{% endif %} style="text-align: center;">
 
@@ -134,9 +145,9 @@
 		class="idea circular blue icon"
 		id="tips"
 		data-variation="wide"
-		data-position="bottom right"
+		data-position="bottom center"
 		data-html=
-		"<div class='ui basic segment' style='font-size: 90%; max-height: 50vh; overflow-y:auto; font-family: Open Sans'>
+		"<div class='ui basic segment search-tips-content' style='font-size: 90%; max-height: 50vh; overflow-y:auto; font-family: Open Sans'>
 			<h4>Jump to a verse or surah</h4>
 				<p>Verses: <strong>2:255</strong>, <strong>2/255</strong> or <strong>2 255</strong></p>
 				<p>Whole surah: <strong>2</strong></p>

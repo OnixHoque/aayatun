@@ -19,6 +19,7 @@ import sqlite3
 import threading
 from contextlib import closing
 from pathlib import Path
+from functools import lru_cache
 
 from markupsafe import Markup
 
@@ -46,6 +47,22 @@ FIELD_COLS = {
 
 # BM25 column order: ar_norm, en_norm, ai_norm, en_tafsir_norm, bn_tafsir_norm, surah_name
 BM25 = 'bm25(docs, 10.0, 10.0, 1.5, 2.0, 2.0, 3.0)'
+_ALL_COLUMNS = ['ar_norm', 'en_norm', 'ai_norm', 'en_tafsir_norm', 'bn_tafsir_norm', 'surah_name']
+_CONTENT_COLUMNS = _ALL_COLUMNS[:-1]
+_ENGLISH_STEM_COLUMNS = ['en_norm', 'ai_norm', 'en_tafsir_norm']
+# Lexical rule for plain English queries, rather than contextual POS tagging.
+_EXACT_PREPOSITIONS = frozenset((
+	'about above across after against along among around as at before behind below '
+	'beneath beside between beyond by despite down during except for from in inside '
+	'into near of off on onto out outside over past per since through throughout '
+	'till to toward towards under underneath until up upon via with within without'
+).split())
+SEARCH_CROSS_FIELD_AND = True
+SEARCH_ENGLISH_STEMMING = True
+SEARCH_AI_TAFSIR_TIERS = True
+SEARCH_MMR_LAMBDA = 0.7
+SEARCH_TOP5_COVERAGE = True
+MMR_CANDIDATE_POOL = 50
 
 CHIP_LABELS = {
 	'ar_norm': 'Verse',
@@ -113,20 +130,24 @@ def _ensure_root_index(conn):
 
 
 def _surah_number(conn, name):
-	"""Resolve a unique indexed surah name, allowing common article and h variants."""
+	"""Resolve a unique surah name through its FTS index, not a docs table scan."""
 	if name.isdecimal():
 		return int(name) if 1 <= int(name) <= 114 else None
-	wanted = normalize(name)[0].replace(' ', '')
+	wanted = normalize(name)[0].strip()
+	if not wanted:
+		return None
+	variants = {wanted}
+	if wanted.startswith(('al', 'an', 'ar', 'as', 'az')):
+		variants.add(wanted[2:])
+	variants |= {value[:-1] for value in variants if value.endswith('h')}
 	matches = set()
-	for row in conn.execute('SELECT surah, surah_name FROM docs GROUP BY surah'):
-		name = (row['surah_name'] or '').split('(')[0]
-		canonical = normalize(name)[0].replace(' ', '')
-		variants = {canonical}
-		if canonical.startswith(('al', 'an', 'ar', 'as', 'az')):
-			variants.add(canonical[2:])
-		variants |= {value[:-1] for value in variants if value.endswith('h')}
-		if wanted in variants:
-			matches.add(row['surah'])
+	for variant in variants:
+		rows = conn.execute(
+			'SELECT surah FROM docs WHERE docs MATCH ? GROUP BY surah LIMIT 2',
+			(f'surah_name : ("{variant}"*)',)).fetchall()
+		matches.update(row['surah'] for row in rows)
+		if len(matches) > 1:
+			return None
 	return next(iter(matches)) if len(matches) == 1 else None
 
 
@@ -335,77 +356,445 @@ def _build_match(raw, col, gloss, join='OR'):
 		# of all phrase sets, which flattens column weights; per-column OR'ed
 		# clauses keep the weighted scores additive and restore the intended
 		# translation-over-AI ranking.
-		cols = ['ar_norm', 'en_norm', 'ai_norm', 'en_tafsir_norm', 'bn_tafsir_norm', 'surah_name']
-		expr = ' OR '.join(f'{c} : ({expr})' for c in cols)
+		expr = ' OR '.join(f'{c} : ({expr})' for c in _ALL_COLUMNS)
 	return expr, terms
 
 
 def _run_query(conn, match_expr, limit):
 	"""Run the FTS5 query. `limit` is the SQL LIMIT: pass None for unlimited
 	(use only when the caller guarantees a small row count)."""
-	sql = f'SELECT surah, verse, surah_name, ar_orig, en, en_tafsir, bn_tafsir, ai, {BM25} AS score FROM docs WHERE docs MATCH ? ORDER BY score'
+	sql = f'SELECT rowid AS rowid, surah, verse, surah_name, ar_orig, en, en_tafsir, bn_tafsir, ai, {BM25} AS score FROM docs WHERE docs MATCH ? ORDER BY score'
 	if limit is None:
 		return conn.execute(sql, (match_expr,)).fetchall()
 	return conn.execute(sql + ' LIMIT ?', (match_expr, int(limit))).fetchall()
 
 
-def _ranked_queries(raw, col, gloss, full_expr, match_expr):
-	"""Return retrieval tiers in priority order for ordinary text queries."""
+def _plain_keywords(raw):
+	"""Normalized keywords for the automatic multi-word tiers."""
+	if re.search(r'["()*]|\b(?:AND|OR|NOT)\b', raw):
+		return []
+	normalized, _ = normalize(raw)
+	words = normalized.split()
+	return words if 2 <= len(words) <= 12 else []
+
+
+def _cross_field_expr(words, columns, gloss, prefix_latin=False):
+	"""Require every keyword, allowing each one to match a different column."""
+	field_set = '{' + ' '.join(columns) + '}'
+	parts = []
+	for word in words:
+		if prefix_latin and re.fullmatch(r'[a-z]+', word) and len(word) >= 4:
+			parts.append(f'{field_set} : ({_expand_prefix(word, gloss)})')
+		else:
+			parts.append(f'{field_set} : ({_expand(word, gloss)})')
+	return ' AND '.join(parts)
+
+
+def _surah_cross_field_exprs(conn, words, gloss):
+	"""Scope a recognized surah name while matching other terms across fields."""
+	for index, word in enumerate(words):
+		if _surah_number(conn, word) is None:
+			continue
+		remaining = words[:index] + words[index + 1:]
+		if not remaining:
+			continue
+		name = f'surah_name : ({_expand(word, gloss)})'
+		exact = _cross_field_expr(remaining, _CONTENT_COLUMNS, gloss)
+		prefix = _cross_field_expr(remaining, _CONTENT_COLUMNS, gloss, prefix_latin=True)
+		yield name + ' AND ' + exact
+		if prefix != exact:
+			yield name + ' AND ' + prefix
+
+
+def _latin_keywords(raw):
+	words = _plain_keywords(raw)
+	return words if words and all(re.fullmatch(r'[a-z]+', word) for word in words) else []
+
+
+def _phrase_columns(words, col):
+	"""Phrase-match only the content fields relevant to the query scripts."""
+	if col:
+		return [col]
+	normalized = ' '.join(words)
+	columns = []
+	if re.search(r'[\u0600-\u06ff]', normalized):
+		columns.append('ar_norm')
+	if re.search(r'[a-z]', normalized):
+		columns.extend(_ENGLISH_STEM_COLUMNS)
+	if re.search(r'[\u0980-\u09ff]', normalized):
+		columns.append('bn_tafsir_norm')
+	return columns
+
+
+def _english_stem_columns(conn):
+	if conn is None or not conn.execute(
+			"SELECT 1 FROM sqlite_master WHERE name='english_stem'").fetchone():
+		return []
+	current = [row[1] for row in conn.execute('PRAGMA table_info(english_stem)')]
+	return [column for column in _ENGLISH_STEM_COLUMNS if column in current]
+
+
+def _stem_expr(words, columns, gloss, join='AND'):
+	"""Build a Porter expression, or a plan with literal preposition constraints."""
+	exact = [word for word in words if word in _EXACT_PREPOSITIONS]
+	expanded = [word if word in _EXACT_PREPOSITIONS else _expand(word, gloss) for word in words]
+	if len(columns) == 1:
+		expr = f'{columns[0]} : (' + f' {join} '.join(expanded) + ')'
+	else:
+		field_set = '{' + ' '.join(columns) + '}'
+		expr = f' {join} '.join(f'{field_set} : ({term})' for term in expanded)
+	if not exact:
+		return expr
+	# Prepositions use literal constraints; only content terms enter Porter.
+	content = [word for word in words if word not in _EXACT_PREPOSITIONS]
+	return {'exact': exact, 'columns': columns, 'join': join,
+		'content': _stem_expr(content, columns, gloss, join) if content else None}
+
+
+def _surah_stem_tiers(conn, words, columns, gloss):
+	for index, word in enumerate(words):
+		surah = _surah_number(conn, word)
+		if surah is None:
+			continue
+		remaining = words[:index] + words[index + 1:]
+		if remaining:
+			yield _stem_expr(remaining, columns, gloss), surah
+
+
+def _mmr_keywords(raw, col, limit):
+	"""Keywords eligible for field-aware coverage-first lexical MMR reranking."""
+	if col not in (None, 'en_norm', 'ai_norm', 'en_tafsir_norm'):
+		return []
+	if limit is None or limit <= 0:
+		return []
+	if not isinstance(SEARCH_MMR_LAMBDA, (int, float)) or not 0 < SEARCH_MMR_LAMBDA < 1:
+		return []
+	return _latin_keywords(raw)
+
+
+def _row_has_exact_term(row, term, col=None):
+	fields = ([col] if col else
+		  ['ar_orig', 'en', 'ai', 'en_tafsir', 'bn_tafsir', 'surah_name'])
+	for field in fields:
+		if field not in row.keys():
+			continue
+		normalized, _ = normalize(row[field] or '')
+		if term in normalized.split():
+			return True
+	return False
+
+
+def _matched_term_masks(conn, words, rows, col=None):
+	"""Return query-term bitmasks using Porter matches in the selected scope."""
+	masks = {row['rowid']: 0 for row in rows}
+	rowids = list(masks)
+	if not rowids:
+		return []
+	placeholders = ','.join('?' for _ in rowids)
+	stem_columns = _english_stem_columns(conn)
+	if col is not None:
+		stem_columns = [col] if col in stem_columns else []
+	for index, word in enumerate(words):
+		if word in _EXACT_PREPOSITIONS and stem_columns:
+			fields = [_CHIP_TO_RAW[column] for column in stem_columns]
+			if col is None:
+				fields.append('surah_name')
+			matches = {row['rowid'] for row in rows
+				if any(_row_has_exact_term(row, word, field) for field in fields)}
+		elif re.fullmatch(r'[a-z]+', word) and stem_columns:
+			field_set = (stem_columns[0] if len(stem_columns) == 1 else
+					 '{' + ' '.join(stem_columns) + '}')
+			matches = {row[0] for row in conn.execute(
+				'SELECT rowid FROM english_stem WHERE english_stem MATCH ? '
+				'AND rowid IN (' + placeholders + ')',
+				[f'{field_set} : ({word})'] + rowids)}
+			if col is None:
+				matches.update(row['rowid'] for row in rows
+						   if _row_has_exact_term(row, word, 'surah_name'))
+		else:
+			matches = {row['rowid'] for row in rows
+					   if _row_has_exact_term(row, word, col)}
+		for rowid in matches:
+			masks[rowid] |= 1 << index
+	return [masks[row['rowid']] for row in rows]
+
+
+def _mask_size(mask):
+	return bin(mask).count('1')
+
+
+def _jaccard(left, right):
+	union = left | right
+	return _mask_size(left & right) / _mask_size(union) if union else 0.0
+
+
+def _mmr_rerank(rows, words, masks, limit, lambda_value=None, top5_coverage=False,
+				 preserve_baseline=False):
+	"""Greedily balance coverage, early term diversity, and redundancy."""
+	if not rows or limit <= 0:
+		return []
+	if not words:
+		return rows[:limit]
+	if lambda_value is None:
+		lambda_value = SEARCH_MMR_LAMBDA
+	remaining = list(range(len(rows)))
+	selected, selected_masks, selected_indices = [], [], []
+	covered_mask = 0
+	full_mask = (1 << len(words)) - 1
+	while remaining and len(selected) < limit:
+		candidates = remaining
+		if top5_coverage and 0 < len(selected) < 5:
+			# Preserve complete matches, then prefer new term coverage.
+			complete = [
+				index for index in remaining
+				if (masks[index] if index < len(masks) else 0) == full_mask]
+			if complete:
+				candidates = complete
+			else:
+				prioritized = [
+					index for index in remaining
+					if (masks[index] if index < len(masks) else 0) & ~covered_mask]
+				if prioritized:
+					candidates = prioritized
+		best_index, best_key = None, None
+		for index in candidates:
+			mask = masks[index] if index < len(masks) else 0
+			coverage = _mask_size(mask) / len(words)
+			relevance = 2 * coverage + 1 / (1 + index)
+			similarity = max((_jaccard(mask, chosen) for chosen in selected_masks), default=0.0)
+			score = lambda_value * relevance - (1 - lambda_value) * similarity
+			key = (score, -index)
+			if best_key is None or key > best_key:
+				best_index, best_key = index, key
+		chosen_mask = masks[best_index] if best_index < len(masks) else 0
+		selected.append(rows[best_index])
+		selected_masks.append(chosen_mask)
+		selected_indices.append(best_index)
+		covered_mask |= chosen_mask
+		remaining.remove(best_index)
+	if (top5_coverage and preserve_baseline and
+			not any(mask == full_mask for mask in masks)):
+		# Translation paraphrases can be lexically sparse. Keep the four
+		# strongest literal matches stable and let coverage compete for the
+		# remaining top-five slot instead of displacing all BM25 anchors.
+		protected = list(range(min(4, limit, len(rows))))
+		protected.extend(index for index in selected_indices if index not in protected)
+		return [rows[index] for index in protected[:limit]]
+	return selected
+
+
+def _ranked_tiers(raw, col, gloss, full_expr, match_expr, conn=None):
+	"""Return (source, expression, surah) tiers in priority order."""
 	queries = []
+
+	def add(source, expr, surah=None):
+		item = (source, expr, surah)
+		if expr and item not in queries:
+			queries.append(item)
+
 	# Preserve the meaning of explicit FTS syntax and wildcard queries.
-	if not re.search(r'["()*]|\b(?:AND|OR|NOT)\b', raw):
-		normalized, _ = normalize(raw)
-		words = normalized.split()
-		if 1 < len(words) <= 12:
-			phrase_text = '"' + ' '.join(words) + '"'
-			columns = [col] if col else ['ar_norm', 'en_norm']
-			phrases = [_build_match(phrase_text, column, gloss)[0] for column in columns]
-			phrase = ' OR '.join(p for p in phrases if p)
-			if phrase:
-				queries.append(phrase)
-			# A Latin surah name and Arabic terms may occur in different fields.
-			# Arabic prefixes support inflected words such as حمل in حملته.
-			if not col and all(re.fullmatch(r'[a-z]+|[\u0600-\u06ff]+', word) for word in words):
-				latin = [word for word in words if re.fullmatch(r'[a-z]+', word)]
-				arabic = [word for word in words if re.fullmatch(r'[\u0600-\u06ff]+', word)]
-				if latin and arabic and all(len(word) >= 3 for word in arabic):
-					name_expr = ' AND '.join('"' + word + '"' for word in latin)
-					exact_arabic = ' AND '.join('"' + word + '"' for word in arabic)
-					arabic_expr = ' AND '.join('"' + word + '"*' for word in arabic)
-					queries.append(f'surah_name : ({name_expr}) AND ar_norm : ({exact_arabic})')
-					queries.append(f'surah_name : ({name_expr}) AND ar_norm : ({arabic_expr})')
-			# In All fields, a bilingual query can describe the same verse in
-			# its Arabic text, English translation and Bengali commentary.
-			if not col:
-				scripts = [r'[a-z]', r'[\u0600-\u06ff]', r'[\u0980-\u09ff]']
-				if sum(bool(re.search(script, normalized)) for script in scripts) >= 2:
-					combined = _bare(raw, gloss, [], join='AND')
-					columns = 'ar_norm en_norm'
-					if re.search(r'[\u0980-\u09ff]', normalized):
-						columns += ' bn_tafsir_norm'
-					queries.append('{' + columns + '} : (' + combined + ')')
-	for expr in (full_expr, match_expr):
-		if expr and expr not in queries:
-			queries.append(expr)
+	words = _plain_keywords(raw)
+	latin_words = _latin_keywords(raw)
+	english_scope = col in (None, 'en_norm', 'ai_norm', 'en_tafsir_norm')
+	stem_columns = _english_stem_columns(conn) if latin_words and english_scope else []
+	stem_ready = bool(latin_words and SEARCH_ENGLISH_STEMMING and (
+		(col is None and stem_columns == _ENGLISH_STEM_COLUMNS) or
+		(col in ('en_norm', 'ai_norm', 'en_tafsir_norm') and col in stem_columns)))
+	legacy_stem_ready = bool(latin_words and col == 'en_norm' and 'en_norm' in stem_columns)
+	if words:
+		normalized = ' '.join(words)
+		phrase_text = '"' + ' '.join(words) + '"'
+		columns = (_phrase_columns(words, col) if SEARCH_AI_TAFSIR_TIERS else
+			   [col] if col else ['ar_norm', 'en_norm'])
+		phrases = [_build_match(phrase_text, column, gloss)[0] for column in columns]
+		phrase = ' OR '.join(p for p in phrases if p)
+		if phrase:
+			add('docs', phrase)
+		# A Latin surah name and Arabic terms may occur in different fields.
+		# Arabic prefixes support inflected words such as حمل in حملته.
+		if not col and all(re.fullmatch(r'[a-z]+|[\u0600-\u06ff]+', word) for word in words):
+			latin = [word for word in words if re.fullmatch(r'[a-z]+', word)]
+			arabic = [word for word in words if re.fullmatch(r'[\u0600-\u06ff]+', word)]
+			if latin and arabic and all(len(word) >= 3 for word in arabic):
+				name_expr = ' AND '.join('"' + word + '"' for word in latin)
+				exact_arabic = ' AND '.join('"' + word + '"' for word in arabic)
+				arabic_expr = ' AND '.join('"' + word + '"*' for word in arabic)
+				add('docs', f'surah_name : ({name_expr}) AND ar_norm : ({exact_arabic})')
+				add('docs', f'surah_name : ({name_expr}) AND ar_norm : ({arabic_expr})')
+		# In All fields, a bilingual query can describe the same verse in
+		# its Arabic text, English translation and Bengali commentary.
+		if not col:
+			scripts = [r'[a-z]', r'[\u0600-\u06ff]', r'[\u0980-\u09ff]']
+			if sum(bool(re.search(script, normalized)) for script in scripts) >= 2:
+				combined = _bare(raw, gloss, [], join='AND')
+				columns = 'ar_norm en_norm'
+				if re.search(r'[\u0980-\u09ff]', normalized):
+					columns += ' bn_tafsir_norm'
+				add('docs', '{' + columns + '} : (' + combined + ')')
+		if stem_ready and conn is not None and col in (None, 'en_norm'):
+			# A recognized surah can scope Translation matches without searching
+			# commentary columns or treating the surah name as translated content.
+			for expr, surah in _surah_stem_tiers(conn, latin_words, ['en_norm'], gloss):
+				add('stem', expr, surah)
+		if not col:
+			if SEARCH_CROSS_FIELD_AND and conn is not None:
+				for expr in _surah_cross_field_exprs(conn, words, gloss):
+					add('docs', expr)
+			if stem_ready and conn is not None:
+				for expr, surah in _surah_stem_tiers(conn, latin_words, stem_columns, gloss):
+					add('stem', expr, surah)
+			if SEARCH_AI_TAFSIR_TIERS and latin_words:
+				# English terms may be split between translation and commentary.
+				add('docs', _cross_field_expr(latin_words, _ENGLISH_STEM_COLUMNS, gloss))
+			if SEARCH_CROSS_FIELD_AND:
+				generic = _cross_field_expr(words, _ALL_COLUMNS, gloss)
+				add('docs', generic)
+	add('docs', full_expr)
+	if col == 'en_norm':
+		# Literal Translation matches retain priority inside the bounded MMR
+		# pool; stemming expands the candidate set without displacing it.
+		add('docs', match_expr)
+	if stem_ready:
+		columns = stem_columns if col is None else [col]
+		add('stem', _stem_expr(latin_words, columns, gloss))
+		if col in ('en_norm', 'ai_norm', 'en_tafsir_norm'):
+			add('stem', _stem_expr(latin_words, columns, gloss, join='OR'))
+	elif legacy_stem_ready:
+		add('stem', _stem_expr(latin_words, ['en_norm'], gloss, join='OR'))
+	add('docs', match_expr)
+	if stem_ready and col is None:
+		add('stem', _stem_expr(latin_words, stem_columns, gloss, join='OR'))
 	return queries
 
 
+def _ranked_queries(raw, col, gloss, full_expr, match_expr, conn=None):
+	"""Return docs-index retrieval tiers for compatibility and inspection."""
+	return [expr for source, expr, _ in _ranked_tiers(
+		raw, col, gloss, full_expr, match_expr, conn) if source == 'docs']
+
+
+def _run_stem_query(conn, match_expr, limit, surah=None, col=None):
+	query = match_expr if isinstance(match_expr, dict) else None
+	content_rows = []
+	if query:
+		match_expr = query['content']
+		if match_expr and query['join'] == 'OR':
+			# Content matches have negative BM25 scores. Exact-only matches
+			# follow them, so fetch those only when the content pool has room.
+			content_rows = _run_stem_query(conn, match_expr, limit, surah, col)
+			if len(content_rows) == limit:
+				return content_rows
+			match_expr = None
+	table_columns = [row[1] for row in conn.execute('PRAGMA table_info(english_stem)')]
+	highlights = ', '.join(
+		(f"highlight(english_stem, {index}, '[', ']')" if match_expr else "''") + f" AS stem_{column}"
+		for index, column in enumerate(table_columns)
+		if col is None or column == col)
+	if col is None:
+		selected = ('docs.rowid AS rowid, docs.surah, docs.verse, docs.surah_name, '
+			    'docs.ar_orig, docs.en, docs.ai, docs.en_tafsir, docs.bn_tafsir')
+	else:
+		raw = _CHIP_TO_RAW[col]
+		selected = 'docs.rowid AS rowid, docs.surah, docs.verse, docs.surah_name, docs.en'
+		if raw != 'en':
+			selected += f', docs.{raw} AS {raw}'
+	sql = 'SELECT ' + selected + (', ' + highlights if highlights else '')
+	params = []
+	if match_expr:
+		sql += ' FROM english_stem JOIN docs ON docs.rowid=english_stem.rowid WHERE english_stem MATCH ?'
+		params.append(match_expr)
+	else:
+		sql += ' FROM docs WHERE 1'
+	if query:
+		clauses = []
+		for word in query['exact']:
+			clauses.append('(' + ' OR '.join(
+				f"instr(' ' || docs.{column} || ' ', ?) > 0" for column in query['columns']) + ')')
+			params.extend([' ' + word + ' '] * len(query['columns']))
+		sql += ' AND (' + (' ' + query['join'] + ' ').join(clauses) + ')'
+	if content_rows:
+		sql += ' AND docs.rowid NOT IN (' + ','.join('?' for _ in content_rows) + ')'
+		params.extend(row['rowid'] for row in content_rows)
+	if surah is not None:
+		sql += ' AND docs.surah = ?'
+		params.append(surah)
+	sql += ' ORDER BY ' + ('english_stem.rank, english_stem.rowid' if match_expr else 'docs.rowid') + ' LIMIT ?'
+	params.append(int(limit) - len(content_rows))
+	return content_rows + conn.execute(sql, params).fetchall()
+
+
+def _merge_stem_metadata(row, stem_row):
+	merged = dict(row)
+	for key in stem_row.keys():
+		if key.startswith('stem_'):
+			merged[key] = stem_row[key]
+	return merged
+
+
+def _ranked_row_tiers(conn, raw, col, gloss, full_expr, match_expr, limit):
+	for source, expr, surah in _ranked_tiers(raw, col, gloss, full_expr, match_expr, conn):
+		rows = (_run_stem_query(conn, expr, limit, surah, col) if source == 'stem' else
+				_run_query(conn, expr, limit))
+		for row in rows:
+			yield source, row
+
+
 def _ranked_rows(conn, raw, col, gloss, full_expr, match_expr, limit):
-	queries = _ranked_queries(raw, col, gloss, full_expr, match_expr)
+	for _, row in _ranked_row_tiers(conn, raw, col, gloss, full_expr, match_expr, limit):
+		yield row
+
+
+def _baseline_all_rows(conn, raw, gloss, full_expr, match_expr, limit):
+	"""Return the pre-FCS All-fields BM25 order for plain keyword queries."""
+	words = _plain_keywords(raw)
+	if not words:
+		return []
+	phrase_text = '"' + ' '.join(words) + '"'
+	phrases = [_build_match(phrase_text, column, gloss)[0]
+			   for column in ('ar_norm', 'en_norm')]
+	queries = [' OR '.join(p for p in phrases if p), full_expr, match_expr]
+	rows, seen = [], set()
 	for expr in queries:
-		# Exact phrases and full literal matches retain their existing priority.
-		if (expr == match_expr and expr != full_expr and col == 'en_norm'
-				and re.fullmatch(r'[A-Za-z]+(?:\s+[A-Za-z]+){1,11}', raw)
-				and not re.search(r'\b(?:AND|OR|NOT)\b', raw)
-				and conn.execute("SELECT 1 FROM sqlite_master WHERE name='english_stem'").fetchone()):
-			stem_expr = ' OR '.join('"' + word + '"' for word in raw.split())
-			yield from conn.execute(
-				"SELECT docs.surah, docs.verse, docs.surah_name, docs.ar_orig, docs.en, docs.ai, "
-				"docs.en_tafsir, docs.bn_tafsir, highlight(english_stem, 0, '[', ']') AS stem_matches "
-				"FROM english_stem JOIN docs ON docs.rowid = english_stem.rowid "
-				"WHERE english_stem MATCH ? ORDER BY english_stem.rank, english_stem.rowid LIMIT ?",
-				(stem_expr, limit))
-		yield from _run_query(conn, expr, limit)
+		if not expr:
+			continue
+		for row in _run_query(conn, expr, limit):
+			key = (row['surah'], row['verse'])
+			if key in seen:
+				continue
+			seen.add(key)
+			rows.append(row)
+			if len(rows) == limit:
+				return rows
+	return rows
+
+
+def _translation_candidate_rows(conn, raw, gloss, full_expr, match_expr, limit):
+	"""Keep literal top-five order and reserve the rest of the pool for stemming."""
+	literal, stem = [], []
+	positions = {}
+	for source, row in _ranked_row_tiers(
+			conn, raw, 'en_norm', gloss, full_expr, match_expr, limit):
+		key = (row['surah'], row['verse'])
+		if key in positions:
+			if source == 'stem':
+				target, index = positions[key]
+				target[index] = _merge_stem_metadata(target[index], row)
+			continue
+		target = stem if source == 'stem' else literal
+		if len(target) < limit:
+			positions[key] = (target, len(target))
+			target.append(row)
+	baseline = literal[:min(5, limit)]
+	rows = baseline + stem[:max(0, limit - len(baseline))]
+	selected = {(row['surah'], row['verse']) for row in rows}
+	for row in literal[len(baseline):]:
+		key = (row['surah'], row['verse'])
+		if key not in selected:
+			rows.append(row)
+			selected.add(key)
+			if len(rows) == limit:
+				break
+	return rows
 
 
 # Hard cap on rendered rows: "Show all results" with a broad query would
@@ -427,19 +816,42 @@ def _trgm_ok(conn):
 	return _trgm_available
 
 
-def _run_trigram(conn, raw, limit):
-	"""Substring fallback for zero-hit queries (Arabic roots, partial words)."""
-	if not _trgm_ok(conn):
+@lru_cache(maxsize=1)
+def _english_words():
+	return frozenset(Path(__file__).with_name('db').joinpath('english_words.txt').read_text(encoding='utf8').splitlines())
+
+
+def _plain_english_query(raw):
+	return bool(re.fullmatch(r"[A-Za-z\s,.;:!?'-]+", raw)) and not re.search(r'\b(?:AND|OR|NOT)\b', raw)
+
+
+def _run_trigram(conn, raw, limit, col=None):
+	"""Substring fallback for zero-hit queries in indexed trigram fields."""
+	if col not in (None, 'ar_norm', 'en_norm') or not _trgm_ok(conn):
 		return []
 	n, _ = normalize(raw)
 	toks = [t for t in n.split() if len(t) >= 3]
 	if not toks:
 		return []
-	expr = ' AND '.join(toks)
+	plain_english = _plain_english_query(raw)
+	known = [t for t in n.split() if t in _english_words()] if plain_english and col in (None, 'en_norm') else []
+	fragments = [t for t in toks if t not in known]
+	if known and not fragments:
+		return []
+	expr = ' AND '.join(fragments if known else toks)
+	if col or known:
+		expr = f'{col or "en_norm"} : ({expr})'
 	try:
-		rows = conn.execute(
-			'SELECT surah, verse FROM docs_trgm WHERE docs_trgm MATCH ? LIMIT ?',
-			(expr, limit if limit is not None else TRUNC_MAX + 1)).fetchall()
+		if known:
+			word_expr = 'en_norm : (' + ' AND '.join(known) + ')'
+			rows = conn.execute(
+				'SELECT t.surah, t.verse FROM docs_trgm t JOIN docs d ON d.rowid=t.rowid '
+				'WHERE docs_trgm MATCH ? AND docs MATCH ? LIMIT ?',
+				(expr, word_expr, limit if limit is not None else TRUNC_MAX + 1)).fetchall()
+		else:
+			rows = conn.execute(
+				'SELECT surah, verse FROM docs_trgm WHERE docs_trgm MATCH ? LIMIT ?',
+				(expr, limit if limit is not None else TRUNC_MAX + 1)).fetchall()
 	except sqlite3.OperationalError:
 		return []
 	if not rows:
@@ -478,30 +890,47 @@ _CHIP_TO_ITEM = {
 }
 
 
-def _matched_columns(row, terms):
+def _matched_columns(row, terms, whole_terms=frozenset()):
 	chips = []
 	for col in CHIP_LABELS:
 		field = _CHIP_TO_RAW[col]
 		text = row[field] or ''
 		if not text:
 			continue
-		n, _ = normalize(text)
-		if any(t in n for t in terms):
+		n, imap = normalize(text)
+		if searchnorm.spans_for(n, imap, terms, text, whole_terms if col in _ENGLISH_STEM_COLUMNS else frozenset()):
 			chips.append(col)
 	return chips
 
 
-def _format(rows, highlight_terms, offset=0):
+def _format(rows, highlight_terms, offset=0, col=None, whole_terms=frozenset()):
 	results = []
 	for i, r in enumerate(rows, offset + 1):
-		matched = _matched_columns(r, highlight_terms) if highlight_terms else ['ar_norm', 'en_norm']
-		terms = highlight_terms
-		if 'stem_matches' in r.keys():
-			terms = terms + re.findall(r'\[([^\]]+)\]', r['stem_matches'])
-			if 'en_norm' not in matched:
-				matched.append('en_norm')
-		def field(col):
-			return r[_CHIP_TO_RAW[col]] or ''
+		if col:
+			# Scoped retrieval already guarantees a match in this column.
+			matched = [col] if r[_CHIP_TO_RAW[col]] else []
+		elif highlight_terms:
+			matched = _matched_columns(r, highlight_terms, whole_terms)
+		else:
+			matched = ['ar_norm', 'en_norm']
+		field_terms = {column: list(highlight_terms) for column in matched}
+		for column in _ENGLISH_STEM_COLUMNS:
+			if col is not None and column != col:
+				continue
+			key = 'stem_' + column
+			if key in r.keys():
+				found = re.findall(r'\[([^\]]+)\]', r[key] or '')
+				if found:
+					field_terms.setdefault(column, []).extend(found)
+					if column not in matched:
+						matched.append(column)
+		if 'stem_matches' in r.keys() and col in (None, 'en_norm'):
+			found = re.findall(r'\[([^\]]+)\]', r['stem_matches'])
+			if found:
+				field_terms.setdefault('en_norm', []).extend(found)
+				if 'en_norm' not in matched:
+					matched.append('en_norm')
+		matched = [column for column in CHIP_LABELS if column in matched]
 
 		item = {
 			'ser': str(i),
@@ -516,8 +945,10 @@ def _format(rows, highlight_terms, offset=0):
 			'bn_tafsir': '',
 			'ai': '',
 		}
-		for col in matched:
-			item[_CHIP_TO_ITEM[col]] = Markup(snippet(field(col), terms))
+		for matched_col in matched:
+			text = r[_CHIP_TO_RAW[matched_col]] or ''
+			item[_CHIP_TO_ITEM[matched_col]] = Markup(
+				snippet(text, field_terms[matched_col], whole_terms=whole_terms if matched_col in _ENGLISH_STEM_COLUMNS else frozenset()))
 		results.append(item)
 	return results
 
@@ -533,8 +964,9 @@ def _correct_query(raw, max_tokens=6):
 	if not vocab:
 		return None
 	corrected, changed = [], False
+	plain_english = _plain_english_query(raw) and len(n.split()) == 1
 	for t in n.split()[:max_tokens]:
-		if len(t) < 4:
+		if len(t) < 4 or (plain_english and t in _english_words()):
 			corrected.append(t)
 			continue
 		max_dist = 2 if len(t) >= 6 else 1
@@ -586,20 +1018,47 @@ def index_search(search_query, result_limit=10, dirname=None, search_fields=None
 	# SQL fetch limit: one extra row so we can detect that "show all" overran
 	# the render cap.
 	need_all = result_limit is None
-	sql_limit = (TRUNC_MAX + 1) if need_all else result_limit
+	mmr_words = _mmr_keywords(raw, col, result_limit)
 	conn = _connect()
 	try:
+		stem_columns = _english_stem_columns(conn)
+		if mmr_words and (col is None and stem_columns != _ENGLISH_STEM_COLUMNS or
+				col is not None and col not in stem_columns):
+			mmr_words = []
+		sql_limit = MMR_CANDIDATE_POOL if mmr_words else ((TRUNC_MAX + 1) if need_all else result_limit)
 		rows = []
 		seen = set()
+		baseline_rows = []
 		if match_expr:
 			try:
-				for row in _ranked_rows(conn, raw, col, gloss, full_expr, match_expr, sql_limit):
-					key = (row['surah'], row['verse'])
-					if key not in seen:
-						rows.append(row)
-						seen.add(key)
-						if len(rows) == sql_limit:
-							break
+				if mmr_words and col == 'en_norm':
+					rows = _translation_candidate_rows(
+						conn, raw, gloss, full_expr, match_expr, sql_limit)
+				else:
+					positions = {}
+					for source, row in _ranked_row_tiers(
+							conn, raw, col, gloss, full_expr, match_expr, sql_limit):
+						key = (row['surah'], row['verse'])
+						if key in positions:
+							if source == 'stem':
+								rows[positions[key]] = _merge_stem_metadata(
+									rows[positions[key]], row)
+							continue
+						if len(rows) < sql_limit:
+							positions[key] = len(rows)
+							rows.append(row)
+							seen.add(key)
+							if len(rows) == sql_limit:
+								break
+				if mmr_words and col is None and SEARCH_TOP5_COVERAGE:
+					baseline_rows = _baseline_all_rows(
+						conn, raw, gloss, full_expr, match_expr, 5)
+					positions = {(row['surah'], row['verse']) for row in rows}
+					for row in baseline_rows:
+						key = (row['surah'], row['verse'])
+						if key not in positions and len(rows) < sql_limit:
+							rows.append(row)
+							positions.add(key)
 			except sqlite3.OperationalError:
 				# Malformed boolean/paren mix the user typed: plain OR of tokens.
 				n, _ = normalize(raw)
@@ -615,7 +1074,9 @@ def index_search(search_query, result_limit=10, dirname=None, search_fields=None
 		else:
 			rows = []
 		if not rows:
-			tri = _run_trigram(conn, raw, sql_limit)
+			# MMR applies to ranked keyword candidates, not spelling/substring fallbacks.
+			mmr_words = []
+			tri = _run_trigram(conn, raw, sql_limit, col)
 			if tri:
 				rows = tri
 				terms = terms or normalize(raw)[0].split()
@@ -641,12 +1102,32 @@ def index_search(search_query, result_limit=10, dirname=None, search_fields=None
 						terms = t2
 					else:
 						meta['suggestions'] = corrected
+		if mmr_words and rows:
+			masks = _matched_term_masks(conn, mmr_words, rows, col)
+			preserve_baseline_top5 = False
+			if baseline_rows:
+				baseline_masks = _matched_term_masks(
+					conn, mmr_words, baseline_rows, 'en_norm')
+				covered = 0
+				for mask in baseline_masks[:min(5, int(result_limit))]:
+					covered |= mask
+				preserve_baseline_top5 = covered == (1 << len(mmr_words)) - 1
+			if preserve_baseline_top5:
+				baseline_keys = {(row['surah'], row['verse']) for row in baseline_rows}
+				rows = baseline_rows + [row for row in rows
+					if (row['surah'], row['verse']) not in baseline_keys]
+			else:
+				rows = _mmr_rerank(
+					rows, mmr_words, masks, min(int(result_limit), MMR_CANDIDATE_POOL),
+					SEARCH_MMR_LAMBDA, top5_coverage=SEARCH_TOP5_COVERAGE,
+					preserve_baseline=col == 'en_norm')
 		if not need_all and len(rows) > result_limit:
 			rows = rows[:result_limit]
 		if need_all and len(rows) > TRUNC_MAX:
 			rows = rows[:TRUNC_MAX]
 			meta['truncated'] = True
-		return _format(rows, terms), meta
+		whole_terms = frozenset(t for t in terms if t in _english_words()) if _plain_english_query(raw) else frozenset()
+		return _format(rows, terms, col=col, whole_terms=whole_terms), meta
 	finally:
 		conn.close()
 
