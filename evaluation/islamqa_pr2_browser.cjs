@@ -388,6 +388,7 @@ async function main() {
                 const start = performance.now();
                 const timer = setTimeout(() => reject(new Error('Meaning worker timed out')), ${timeoutMs});
                 window.meaningWorker.onmessage = ({ data }) => {
+                    if (data.type === 'progress') return;
                     clearTimeout(timer);
                     if (data.error) reject(new Error(data.message || 'Meaning worker failed'));
                     else resolve({ ...data, ms: Math.round(performance.now() - start) });
@@ -546,7 +547,9 @@ async function main() {
     }
 }
 
-main().catch(error => {
+module.exports = { connect, waitForPort, stopChild, removeDirectory };
+
+if (require.main === module) main().catch(error => {
     console.error(error);
     process.exitCode = 1;
 });

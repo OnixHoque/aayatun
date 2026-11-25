@@ -193,7 +193,7 @@
 	{% block content3 %}
 	{% include 'partials/_verse_modal.html' %}
 
-	<div class="ui container" style="padding: 0 5%;">
+	<div class="ui container" data-search-results style="padding: 0 5%;">
 		<!-- <h3 style="font-family: Open Sans">Search result for "{{ query }}"</h3> -->
 		{% if corrected %}
 			<div class="ui info message" style="font-family: Open Sans;">Showing results for <strong>{{ corrected }}</strong> — no exact matches for &quot;{{ query }}&quot;.</div>
@@ -221,7 +221,7 @@
 					<th class="ui one wide column" >Ser</th>
 					<th class="ui two wide column" >Verse</th>
 					<th class="ui five wide column" >Translation</th>
-					<th>Match</th>
+					<th>{{ 'Context' if search_mode == 'meaning' else 'Match' }}</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -238,14 +238,14 @@
 		    			{% endif %}
 
 		    			{% if x.ayah %}
-		    				<h4 style="font-family: Open Sans">Matched in the verse</h4>
+		    				<h4 style="font-family: Open Sans">{{ 'Arabic verse' if search_mode == 'meaning' else 'Matched in the verse' }}</h4>
 
 		    				<p style="font-family: 'Scheherazade', serif; font-size: 225%; text-align: right; "> ...{{ x.ayah }}... </p>
 		    				<hr style="width: 50%; color: lightgray; opacity: 50%;">
 		    			{% endif %}
 
 		    			{% if x.translation %}
-		    				<h4 style="font-family: Open Sans">Matched in English Translation</h4>
+		    				<h4 style="font-family: Open Sans">{{ 'English translation' if search_mode == 'meaning' else 'Matched in English Translation' }}</h4>
 		    				<p> ...{{ x.translation }}... </p>
 		    				<hr style="width: 50%; color: lightgray; opacity: 50%;">
 		    			{% endif %}
@@ -256,6 +256,16 @@
 		    				<hr style="width: 50%; color: lightgray; opacity: 50%;">
 		    			{% endif %}
 
+					{% if x.semantic_tafsir %}
+						<h4>Tafsir Ibn Kathir</h4>
+						<p>{{ x.semantic_tafsir|truncate(450, true) }}</p>
+						{% if x.semantic_tafsir|length > 450 %}<details><summary>Read full tafsir</summary><p style="white-space: pre-line">{{ x.semantic_tafsir }}</p></details>{% endif %}
+					{% endif %}
+					{% if x.semantic_ai %}
+						<h4>AI explanation <small style="font-weight:normal">AI-generated</small></h4>
+						<p>{{ x.semantic_ai|truncate(450, true) }}</p>
+						{% if x.semantic_ai|length > 450 %}<details><summary>Read full explanation</summary><p style="white-space: pre-line">{{ x.semantic_ai }}</p></details>{% endif %}
+					{% endif %}
 		    			{% if x.en_tafsir %}
 		    				<h4 style="font-family: Open Sans">Matched in Tafsir Ibn Kathir</h4>
 		    				<p> ...{{ x.en_tafsir }}... </p>

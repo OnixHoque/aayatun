@@ -133,4 +133,25 @@ def search(refs, browser_corpus, scope="translation"):
     if any(rowid not in rows for rowid in ids):
         meta["error"] = "The meaning-search index needs refreshing. Keyword search is available."
         return [], meta
-    return searchtool._format([rows[rowid] for rowid in ids], []), meta
+    results = searchtool._format([rows[rowid] for rowid in ids], [])
+    if scope == 'all-fields':
+        with closing(sqlite3.connect('db/en_kathir.db')) as tafsir_db, \
+                closing(sqlite3.connect('db/ai_context.db')) as ai_db:
+            from build_search import strip_markup
+            for item in results:
+                s, v = item['surah'], item['verse']
+                tafsir = tafsir_db.execute(
+                    'SELECT tafsir_text FROM tafsir_kathir WHERE surah=? AND ayah=?', (s, v)).fetchone()
+                context = ai_db.execute(
+                    'SELECT content FROM verse_analysis WHERE surah=? AND verse=?', (s, v - 1)).fetchone()
+                item['semantic_tafsir'] = strip_markup(tafsir[0]) if tafsir else ''
+                try:
+                    item['semantic_ai'] = json.loads(context[0]).get('verse_context', '') if context else ''
+                except (ValueError, TypeError):
+                    item['semantic_ai'] = ''
+                item['chips'] = ['Translation']
+                if item['semantic_tafsir']:
+                    item['chips'].append('Tafsir Ibn Kathir')
+                if item['semantic_ai']:
+                    item['chips'].append('AI explanation')
+    return results, meta

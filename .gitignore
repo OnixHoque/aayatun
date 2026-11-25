@@ -19,3 +19,7 @@ db/translation_vectors.npz
 /dist/
 /deployment/verification/
 evaluation/.cache/
+
+# Optional offline build kit, downloaded separately.
+/models/
+/deployment/wheels/

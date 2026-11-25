@@ -382,7 +382,7 @@
 </div>
 <div class="ui basic segment" style="padding: 0 !important; margin: 0 !important;">
 {% if meaning_search_enabled %}
-<script type="module" src="{{ url_for('static', filename='js/meaning-search.js') }}"
+<script type="module" src="{{ url_for('static', filename='js/meaning-search.js', v='4') }}"
   {% if local_meaning_model %}data-local-meaning-model{% endif %}></script>
 {% endif %}
 

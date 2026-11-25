@@ -1,0 +1,321 @@
+{
+  "schema_version": 1,
+  "files": {
+    "deployment/wheels/linux-cp312/blinker-1.9.0-py3-none-any.whl": {
+      "bytes": 8458,
+      "sha256": "ba0efaa9080b619ff2f3459d1d500c57bddea4a6b424b60a91141db6fd2f08bc"
+    },
+    "deployment/wheels/linux-cp312/certifi-2026.11.20-py3-none-any.whl": {
+      "bytes": 127913,
+      "sha256": "7422df25243767b9877031a2248cb14d09ddac9beee846f4cef3d5c9191d488f"
+    },
+    "deployment/wheels/linux-cp312/charset_normalizer-3.5.3-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl": {
+      "bytes": 257134,
+      "sha256": "e5e4785d8a0adeadfbdf75f4efc357911842674651cbafd7e97f69b11ec3cbc6"
+    },
+    "deployment/wheels/linux-cp312/click-8.2.1-py3-none-any.whl": {
+      "bytes": 102215,
+      "sha256": "61a3265b914e850b85317d0b3109c7f8cd35a670f963866005d6ef1d5175a12b"
+    },
+    "deployment/wheels/linux-cp312/colorama-0.4.6-py2.py3-none-any.whl": {
+      "bytes": 25335,
+      "sha256": "4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6"
+    },
+    "deployment/wheels/linux-cp312/filelock-4.3.1-py3-none-any.whl": {
+      "bytes": 244559,
+      "sha256": "79e43df8e9fe509cd83a3899a7c186c8077cbbe4d200a1ed3705c2f3bb6bc487"
+    },
+    "deployment/wheels/linux-cp312/flask-2.3.3-py3-none-any.whl": {
+      "bytes": 96112,
+      "sha256": "f69fcd559dc907ed196ab9df0e48471709175e696d6e698dd4dbe940f96ce66b"
+    },
+    "deployment/wheels/linux-cp312/fsspec-2026.9.0-py3-none-any.whl": {
+      "bytes": 221738,
+      "sha256": "8dd6e646e99ea382bd85f97a45e6b526a442d79423a7dc673f1e2756d05fcb5f"
+    },
+    "deployment/wheels/linux-cp312/huggingface_hub-0.36.2-py3-none-any.whl": {
+      "bytes": 566395,
+      "sha256": "48f0c8eac16145dfce371e9d2d7772854a4f591bcb56c9cf548accf531d54270"
+    },
+    "deployment/wheels/linux-cp312/idna-3.20-py3-none-any.whl": {
+      "bytes": 69583,
+      "sha256": "ab7ae7122974553370f0bdb919e1a960b2cd1bc1ef0276416d896db81c14582c"
+    },
+    "deployment/wheels/linux-cp312/itsdangerous-2.2.0-py3-none-any.whl": {
+      "bytes": 16234,
+      "sha256": "c6242fc49e35958c8b15141343aa660db5fc54d4f13a1db01a3f5891b98700ef"
+    },
+    "deployment/wheels/linux-cp312/jinja2-3.1.6-py3-none-any.whl": {
+      "bytes": 134899,
+      "sha256": "85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67"
+    },
+    "deployment/wheels/linux-cp312/MarkupSafe-3.0.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl": {
+      "bytes": 23118,
+      "sha256": "e17c96c14e19278594aa4841ec148115f9c7615a47382ecb6b82bd8fea3ab0c8"
+    },
+    "deployment/wheels/linux-cp312/mpmath-1.3.0-py3-none-any.whl": {
+      "bytes": 536198,
+      "sha256": "a0b2b9fe80bbcd81a6647ff13108738cfb482d481d826cc0e02f5b35e5c88d2c"
+    },
+    "deployment/wheels/linux-cp312/networkx-3.7-py3-none-any.whl": {
+      "bytes": 2142205,
+      "sha256": "e3fd2c13a7814cee3746340d8d7f8598a67f16a58bf47fb7f8793fab6efca1b0"
+    },
+    "deployment/wheels/linux-cp312/numpy-2.2.6-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl": {
+      "bytes": 16527618,
+      "sha256": "fd83c01228a688733f1ded5201c678f0c53ecc1006ffbc404db9f7a899ac6249"
+    },
+    "deployment/wheels/linux-cp312/packaging-26.4-py3-none-any.whl": {
+      "bytes": 140049,
+      "sha256": "81383611a09c1bc0b08b76e0fd5829d7c6824c65b27a6aee339da133f4233ea2"
+    },
+    "deployment/wheels/linux-cp312/pandas-2.3.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl": {
+      "bytes": 11987803,
+      "sha256": "96d31a6b4354e3b9b8a2c848af75d31da390657e3ac6f30c05c82068b9ed79b9"
+    },
+    "deployment/wheels/linux-cp312/python_dateutil-2.9.0.post0-py2.py3-none-any.whl": {
+      "bytes": 229892,
+      "sha256": "a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427"
+    },
+    "deployment/wheels/linux-cp312/pytz-2025.2-py2.py3-none-any.whl": {
+      "bytes": 509225,
+      "sha256": "5ddf76296dd8c44c26eb8f4b6f35488f3ccbf6fbbd7adee0b7262d43f0ec2f00"
+    },
+    "deployment/wheels/linux-cp312/pyyaml-6.0.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl": {
+      "bytes": 849249,
+      "sha256": "93bfb2459195406a518e2f487a9bbf01df240175f31e06f5a252ac6734c7bbf0"
+    },
+    "deployment/wheels/linux-cp312/regex-2026.11.24-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl": {
+      "bytes": 813229,
+      "sha256": "0778f76a63e677ef022087a6a49c9b82de9bb1916bd7402a25abfe9f66bdd97f"
+    },
+    "deployment/wheels/linux-cp312/requests-2.34.2-py3-none-any.whl": {
+      "bytes": 73075,
+      "sha256": "2a0d60c172f83ac6ab31e4554906c0f3b3588d37b5cb939b1c061f4907e278e0"
+    },
+    "deployment/wheels/linux-cp312/safetensors-0.8.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl": {
+      "bytes": 516040,
+      "sha256": "fd6f3f93c9a0a7cc2788ee63fb763353d4bd2e89b0751bc78fcf7dda00bea774"
+    },
+    "deployment/wheels/linux-cp312/setuptools-84.2.1-py3-none-any.whl": {
+      "bytes": 876263,
+      "sha256": "ca140b45d5325a9478f880e351484f62fef15f336462e449ca0c03c873d589c2"
+    },
+    "deployment/wheels/linux-cp312/six-1.17.0-py2.py3-none-any.whl": {
+      "bytes": 11050,
+      "sha256": "4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274"
+    },
+    "deployment/wheels/linux-cp312/sympy-1.13.1-py3-none-any.whl": {
+      "bytes": 6189177,
+      "sha256": "db36cdc64bf61b9b24578b6f7bab1ecdd2452cf008f34faa33776680c26d66f8"
+    },
+    "deployment/wheels/linux-cp312/tokenizers-0.20.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl": {
+      "bytes": 2997679,
+      "sha256": "f2b7cb962564785a83dafbba0144ecb7f579f1d57d8c406cdaa7f32fe32f18ad"
+    },
+    "deployment/wheels/linux-cp312/torch-2.5.1+cpu-cp312-cp312-linux_x86_64.whl": {
+      "bytes": 174642530,
+      "sha256": "4856f9d6925121d13c2df07aa7580b767f449dfe71ae5acde9c27535d5da4840"
+    },
+    "deployment/wheels/linux-cp312/tqdm-4.70.1-py3-none-any.whl": {
+      "bytes": 80199,
+      "sha256": "c293e525e6fef9c20e8728fd4612df02a0aa31bb5fe91ecd93e123b1b7bffa73"
+    },
+    "deployment/wheels/linux-cp312/transformers-4.46.3-py3-none-any.whl": {
+      "bytes": 10034536,
+      "sha256": "a12ef6f52841fd190a3e5602145b542d03507222f2c64ebb7ee92e8788093aef"
+    },
+    "deployment/wheels/linux-cp312/typing_extensions-4.16.0-py3-none-any.whl": {
+      "bytes": 45571,
+      "sha256": "481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8"
+    },
+    "deployment/wheels/linux-cp312/tzdata-2025.2-py2.py3-none-any.whl": {
+      "bytes": 347839,
+      "sha256": "1a403fada01ff9221ca8044d701868fa132215d84beb92242d9acd2147f667a8"
+    },
+    "deployment/wheels/linux-cp312/urllib3-2.8.0-py3-none-any.whl": {
+      "bytes": 135717,
+      "sha256": "0cf3cae568d36aa9576b28dfb35f11328f1cb974ca7647d9475ebb86c75ac6e3"
+    },
+    "deployment/wheels/linux-cp312/waitress-3.0.2-py3-none-any.whl": {
+      "bytes": 56232,
+      "sha256": "c56d67fd6e87c2ee598b76abdd4e96cfad1f24cacdea5078d382b1f9d7b5ed2e"
+    },
+    "deployment/wheels/linux-cp312/werkzeug-3.1.3-py3-none-any.whl": {
+      "bytes": 224498,
+      "sha256": "54b78bf3716d19a65be4fceccc0d1d7b89e608834989dfae50ea87564639213e"
+    },
+    "deployment/wheels/windows-cp312/blinker-1.9.0-py3-none-any.whl": {
+      "bytes": 8458,
+      "sha256": "ba0efaa9080b619ff2f3459d1d500c57bddea4a6b424b60a91141db6fd2f08bc"
+    },
+    "deployment/wheels/windows-cp312/certifi-2026.11.20-py3-none-any.whl": {
+      "bytes": 127913,
+      "sha256": "7422df25243767b9877031a2248cb14d09ddac9beee846f4cef3d5c9191d488f"
+    },
+    "deployment/wheels/windows-cp312/charset_normalizer-3.5.3-cp312-cp312-win_amd64.whl": {
+      "bytes": 214472,
+      "sha256": "40b2ba91f0851aa864994b3c7022e4d96d09026717e6a72e44410d6fb3a74a13"
+    },
+    "deployment/wheels/windows-cp312/click-8.2.1-py3-none-any.whl": {
+      "bytes": 102215,
+      "sha256": "61a3265b914e850b85317d0b3109c7f8cd35a670f963866005d6ef1d5175a12b"
+    },
+    "deployment/wheels/windows-cp312/colorama-0.4.6-py2.py3-none-any.whl": {
+      "bytes": 25335,
+      "sha256": "4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6"
+    },
+    "deployment/wheels/windows-cp312/filelock-4.3.1-py3-none-any.whl": {
+      "bytes": 244559,
+      "sha256": "79e43df8e9fe509cd83a3899a7c186c8077cbbe4d200a1ed3705c2f3bb6bc487"
+    },
+    "deployment/wheels/windows-cp312/flask-2.3.3-py3-none-any.whl": {
+      "bytes": 96112,
+      "sha256": "f69fcd559dc907ed196ab9df0e48471709175e696d6e698dd4dbe940f96ce66b"
+    },
+    "deployment/wheels/windows-cp312/fsspec-2026.9.0-py3-none-any.whl": {
+      "bytes": 221738,
+      "sha256": "8dd6e646e99ea382bd85f97a45e6b526a442d79423a7dc673f1e2756d05fcb5f"
+    },
+    "deployment/wheels/windows-cp312/huggingface_hub-0.36.2-py3-none-any.whl": {
+      "bytes": 566395,
+      "sha256": "48f0c8eac16145dfce371e9d2d7772854a4f591bcb56c9cf548accf531d54270"
+    },
+    "deployment/wheels/windows-cp312/idna-3.20-py3-none-any.whl": {
+      "bytes": 69583,
+      "sha256": "ab7ae7122974553370f0bdb919e1a960b2cd1bc1ef0276416d896db81c14582c"
+    },
+    "deployment/wheels/windows-cp312/itsdangerous-2.2.0-py3-none-any.whl": {
+      "bytes": 16234,
+      "sha256": "c6242fc49e35958c8b15141343aa660db5fc54d4f13a1db01a3f5891b98700ef"
+    },
+    "deployment/wheels/windows-cp312/jinja2-3.1.6-py3-none-any.whl": {
+      "bytes": 134899,
+      "sha256": "85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67"
+    },
+    "deployment/wheels/windows-cp312/MarkupSafe-3.0.2-cp312-cp312-win_amd64.whl": {
+      "bytes": 15601,
+      "sha256": "8e06879fc22a25ca47312fbe7c8264eb0b662f6db27cb2d3bbbc74b1df4b9b87"
+    },
+    "deployment/wheels/windows-cp312/mpmath-1.3.0-py3-none-any.whl": {
+      "bytes": 536198,
+      "sha256": "a0b2b9fe80bbcd81a6647ff13108738cfb482d481d826cc0e02f5b35e5c88d2c"
+    },
+    "deployment/wheels/windows-cp312/networkx-3.7-py3-none-any.whl": {
+      "bytes": 2142205,
+      "sha256": "e3fd2c13a7814cee3746340d8d7f8598a67f16a58bf47fb7f8793fab6efca1b0"
+    },
+    "deployment/wheels/windows-cp312/numpy-2.2.6-cp312-cp312-win_amd64.whl": {
+      "bytes": 12614190,
+      "sha256": "c1f9540be57940698ed329904db803cf7a402f3fc200bfe599334c9bd84a40b2"
+    },
+    "deployment/wheels/windows-cp312/packaging-26.4-py3-none-any.whl": {
+      "bytes": 140049,
+      "sha256": "81383611a09c1bc0b08b76e0fd5829d7c6824c65b27a6aee339da133f4233ea2"
+    },
+    "deployment/wheels/windows-cp312/pandas-2.3.2-cp312-cp312-win_amd64.whl": {
+      "bytes": 10983326,
+      "sha256": "8c13b81a9347eb8c7548f53fd9a4f08d4dfe996836543f805c987bafa03317ae"
+    },
+    "deployment/wheels/windows-cp312/python_dateutil-2.9.0.post0-py2.py3-none-any.whl": {
+      "bytes": 229892,
+      "sha256": "a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427"
+    },
+    "deployment/wheels/windows-cp312/pytz-2025.2-py2.py3-none-any.whl": {
+      "bytes": 509225,
+      "sha256": "5ddf76296dd8c44c26eb8f4b6f35488f3ccbf6fbbd7adee0b7262d43f0ec2f00"
+    },
+    "deployment/wheels/windows-cp312/pyyaml-6.0.4-cp312-cp312-win_amd64.whl": {
+      "bytes": 154452,
+      "sha256": "131d11bd9b60d705a6388366d77ed67850995a4d2be85fe149785a257c17e531"
+    },
+    "deployment/wheels/windows-cp312/regex-2026.11.24-cp312-cp312-win_amd64.whl": {
+      "bytes": 280826,
+      "sha256": "4ee28b825b3544872b1c42914709a45ddd378154c7e58df1cf8a732134e315b2"
+    },
+    "deployment/wheels/windows-cp312/requests-2.34.2-py3-none-any.whl": {
+      "bytes": 73075,
+      "sha256": "2a0d60c172f83ac6ab31e4554906c0f3b3588d37b5cb939b1c061f4907e278e0"
+    },
+    "deployment/wheels/windows-cp312/safetensors-0.8.0-cp310-abi3-win_amd64.whl": {
+      "bytes": 355540,
+      "sha256": "096ec1a98435df7beb08853bb5aa9081a84f23d0adc67ed1a0a10550f608373f"
+    },
+    "deployment/wheels/windows-cp312/setuptools-84.2.1-py3-none-any.whl": {
+      "bytes": 876263,
+      "sha256": "ca140b45d5325a9478f880e351484f62fef15f336462e449ca0c03c873d589c2"
+    },
+    "deployment/wheels/windows-cp312/six-1.17.0-py2.py3-none-any.whl": {
+      "bytes": 11050,
+      "sha256": "4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274"
+    },
+    "deployment/wheels/windows-cp312/sympy-1.13.1-py3-none-any.whl": {
+      "bytes": 6189177,
+      "sha256": "db36cdc64bf61b9b24578b6f7bab1ecdd2452cf008f34faa33776680c26d66f8"
+    },
+    "deployment/wheels/windows-cp312/tokenizers-0.20.3-cp312-none-win_amd64.whl": {
+      "bytes": 2380725,
+      "sha256": "44def74cee574d609a36e17c8914311d1b5dbcfe37c55fd29369d42591b91cf2"
+    },
+    "deployment/wheels/windows-cp312/torch-2.5.1+cpu-cp312-cp312-win_amd64.whl": {
+      "bytes": 205405035,
+      "sha256": "a6b720410350765d3d77c01a5ce098a6c45af446284e45e87a98b8a16e7d564d"
+    },
+    "deployment/wheels/windows-cp312/tqdm-4.70.1-py3-none-any.whl": {
+      "bytes": 80199,
+      "sha256": "c293e525e6fef9c20e8728fd4612df02a0aa31bb5fe91ecd93e123b1b7bffa73"
+    },
+    "deployment/wheels/windows-cp312/transformers-4.46.3-py3-none-any.whl": {
+      "bytes": 10034536,
+      "sha256": "a12ef6f52841fd190a3e5602145b542d03507222f2c64ebb7ee92e8788093aef"
+    },
+    "deployment/wheels/windows-cp312/typing_extensions-4.16.0-py3-none-any.whl": {
+      "bytes": 45571,
+      "sha256": "481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8"
+    },
+    "deployment/wheels/windows-cp312/tzdata-2025.2-py2.py3-none-any.whl": {
+      "bytes": 347839,
+      "sha256": "1a403fada01ff9221ca8044d701868fa132215d84beb92242d9acd2147f667a8"
+    },
+    "deployment/wheels/windows-cp312/urllib3-2.8.0-py3-none-any.whl": {
+      "bytes": 135717,
+      "sha256": "0cf3cae568d36aa9576b28dfb35f11328f1cb974ca7647d9475ebb86c75ac6e3"
+    },
+    "deployment/wheels/windows-cp312/waitress-3.0.2-py3-none-any.whl": {
+      "bytes": 56232,
+      "sha256": "c56d67fd6e87c2ee598b76abdd4e96cfad1f24cacdea5078d382b1f9d7b5ed2e"
+    },
+    "deployment/wheels/windows-cp312/werkzeug-3.1.3-py3-none-any.whl": {
+      "bytes": 224498,
+      "sha256": "54b78bf3716d19a65be4fceccc0d1d7b89e608834989dfae50ea87564639213e"
+    },
+    "models/hub/models--intfloat--multilingual-e5-small/snapshots/c007d7ef6fd86656326059b28395a7a03a7c5846/config.json": {
+      "bytes": 655,
+      "sha256": "69137736cab8b8903a07fe8afaafdda25aac55415a12a55d1bffa9f581abf959"
+    },
+    "models/hub/models--intfloat--multilingual-e5-small/snapshots/c007d7ef6fd86656326059b28395a7a03a7c5846/model.safetensors": {
+      "bytes": 470641600,
+      "sha256": "1a55775f53449dac10a2bcbc312469fac40b96d53198c407081a831f81c98477"
+    },
+    "models/hub/models--intfloat--multilingual-e5-small/snapshots/c007d7ef6fd86656326059b28395a7a03a7c5846/sentencepiece.bpe.model": {
+      "bytes": 5069051,
+      "sha256": "cfc8146abe2a0488e9e2a0c56de7952f7c11ab059eca145a0a727afce0db2865"
+    },
+    "models/hub/models--intfloat--multilingual-e5-small/snapshots/c007d7ef6fd86656326059b28395a7a03a7c5846/special_tokens_map.json": {
+      "bytes": 167,
+      "sha256": "d05497f1da52c5e09554c0cd874037a083e1dc1b9cfd48034d1c717f1afc07a7"
+    },
+    "models/hub/models--intfloat--multilingual-e5-small/snapshots/c007d7ef6fd86656326059b28395a7a03a7c5846/tokenizer.json": {
+      "bytes": 17082730,
+      "sha256": "0b44a9d7b51c3c62626640cda0e2c2f70fdacdc25bbbd68038369d14ebdf4c39"
+    },
+    "models/hub/models--intfloat--multilingual-e5-small/snapshots/c007d7ef6fd86656326059b28395a7a03a7c5846/tokenizer_config.json": {
+      "bytes": 443,
+      "sha256": "a1d6bc8734a6f635dc158508bef000f8e2e5a759c7d92f984b2c86e5ff53425b"
+    },
+    "models/hub/version.txt": {
+      "bytes": 1,
+      "sha256": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+    }
+  }
+}

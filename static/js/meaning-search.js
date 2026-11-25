@@ -1,16 +1,33 @@
-const workerUrl = new URL('./meaning-worker.js', import.meta.url);
+const workerUrl = new URL('./meaning-worker.js?v=4', import.meta.url);
 let worker;
 let activeForm;
 
 function setBusy(form, busy) {
     form.toggleAttribute('aria-busy', busy);
+    const previousResults = document.querySelector('[data-search-results]');
+    if (previousResults) previousResults.hidden = busy;
     form.querySelector('[type=submit]').disabled = busy;
+    form.querySelector('[type=submit]').classList.toggle('loading', busy);
     form.elements.query_str.readOnly = busy;
     form.elements.search_mode.disabled = busy;
     if (!busy) {
         form.querySelector('[type=submit]').classList.remove('loading');
         form.querySelector('[type=submit] i')?.classList.replace('loading', 'search');
     }
+}
+
+function showProgress(form, message) {
+    const status = form.querySelector('[data-meaning-status]');
+    if (!status.querySelector('[data-progress-text]')) {
+        const spinner = document.createElement('span');
+        spinner.className = 'ui active inline mini loader';
+        spinner.setAttribute('aria-hidden', 'true');
+        spinner.style.marginRight = '0.6em';
+        const label = document.createElement('span');
+        label.dataset.progressText = '';
+        status.replaceChildren(spinner, label);
+    }
+    status.querySelector('[data-progress-text]').textContent = message;
 }
 
 function fail(form) {
@@ -32,6 +49,14 @@ function initializeWorker() {
     };
     instance.onmessage = ({ data }) => {
         const form = activeForm;
+        if (data.type === 'progress') {
+            if (form) showProgress(form, data.phase === 'search'
+                ? 'Finding related verses…'
+                : Number.isFinite(data.progress)
+                    ? `Downloading search model… ${Math.round(data.progress)}%`
+                    : 'Preparing search…');
+            return;
+        }
         activeForm = undefined;
         if (!form) return;
         if (data.error) {
@@ -65,11 +90,8 @@ document.querySelectorAll('select[name=search_mode]').forEach(mode => {
         const controls = form.querySelector('[data-keyword-controls]');
         if (controls) controls.hidden = meaning;
         input.placeholder = meaning ? 'Ask a question or describe a topic' : 'Enter a keyword...';
-        const fields = form.dataset.meaningFields || 'English translations';
-        const assetMb = form.dataset.meaningAssetMb || '2.39';
-        status.textContent = meaning
-            ? `Searches ${fields}. Vectors are about ${assetMb} MB; the first use may also download the E5 model.`
-            : '';
+        form.querySelectorAll('.search-hint').forEach(hint => { hint.hidden = meaning; });
+        status.textContent = '';
     };
     sync();
     mode.addEventListener('change', sync);
@@ -92,7 +114,7 @@ document.querySelectorAll('select[name=search_mode]').forEach(mode => {
             worker ??= initializeWorker();
             activeForm = form;
             setBusy(form, true);
-            status.textContent = 'Preparing meaning search…';
+            showProgress(form, 'Preparing search…');
             worker.postMessage({
                 query,
                 scope: form.dataset.meaningScope || 'translation',

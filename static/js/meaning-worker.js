@@ -16,10 +16,17 @@ async function loadEncoder() {
     env.allowLocalModels = true;
     env.localModelPath = new URL('../meaning/models/', import.meta.url).href;
     env.allowRemoteModels = false;
+    // Cache model/tokenizer responses across workers, page loads and app updates.
+    env.useBrowserCache = typeof caches !== 'undefined';
     env.backends.onnx.wasm.wasmPaths = new URL('../meaning/vendor/transformers-3.7.2/', import.meta.url).href;
     env.backends.onnx.wasm.numThreads = 1;
     return pipeline('feature-extraction', model, {
         revision, device: 'wasm', dtype: 'int8',
+        progress_callback: event => {
+            if (event.status === 'progress' && event.file?.endsWith('.onnx')) {
+                self.postMessage({ type: 'progress', phase: 'download', progress: event.progress });
+            }
+        },
     });
 }
 
@@ -99,6 +106,7 @@ self.onmessage = async ({ data }) => {
         encoderPromise ??= loadEncoder();
         indexPromises[scope] ??= loadIndex(scope);
         const [encoder, index] = await Promise.all([encoderPromise, indexPromises[scope]]);
+        self.postMessage({ type: 'progress', phase: 'search' });
         const loadMs = performance.now() - loadStarted;
         const embeddingStarted = performance.now();
         const { data: embedding } = await encoder('query: ' + request.query, {

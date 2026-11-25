@@ -9,11 +9,8 @@ build_meaning_index.py -text
 static/meaning/** -text
 static/vendor/** -text
 db/** -text
-models/** -text
 deployment/licenses/** -text
 static/meaning/models/**/model_int8.onnx filter=lfs diff=lfs merge=lfs -text
-models/**/*.safetensors filter=lfs diff=lfs merge=lfs -text
-deployment/wheels/**/*.whl filter=lfs diff=lfs merge=lfs -text
 static/meaning/vendor/**/*.wasm filter=lfs diff=lfs merge=lfs -text
 evaluation/*_browser*.json filter=lfs diff=lfs merge=lfs -text
 evaluation/validation/*_browser*.json filter=lfs diff=lfs merge=lfs -text

@@ -42,7 +42,7 @@ These files are included under `static/meaning/models/Xenova/multilingual-e5-sma
 - `tokenizer.json`
 - `onnx/model_int8.onnx`
 
-Local model loading is the default; no environment flag is needed. The service worker precaches the local-model worker URL. The model is published under the [upstream MIT license](https://huggingface.co/intfloat/multilingual-e5-small). The pinned original checkpoint, tokenizer, and offline Python wheel sets for CPython 3.12 on Windows/Linux x64 are included too. Follow [the self-contained installation and build instructions](deployment/README.md); `python deployment/manage.py install` installs without package-index access. This replaces the old Python 3.10 setup guidance for this PR.
+Local model loading is the default; no environment flag is needed. The service worker precaches the local-model worker URL. The model is published under the [upstream MIT license](https://huggingface.co/intfloat/multilingual-e5-small). The original checkpoint and offline Python wheels are available as a separate optional build kit. Follow [the deployment guide](deployment/README.md); normal installation uses `requirements.txt`, while `install --offline` uses the optional kit without package-index access. This replaces the old Python 3.10 setup guidance for this PR.
 
 Pinned model revisions:
 

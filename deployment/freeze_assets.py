@@ -16,7 +16,7 @@ def digest(path):
         return hashlib.file_digest(handle, 'sha256').hexdigest()
 
 
-for directory in sorted((ROOT / 'deployment/wheels').iterdir()):
+for directory in sorted((ROOT / 'deployment/wheels').glob('*')):
     full, minimal = [], []
     for wheel in sorted(directory.glob('*.whl')):
         with zipfile.ZipFile(wheel) as archive:
@@ -31,7 +31,7 @@ for directory in sorted((ROOT / 'deployment/wheels').iterdir()):
             '# Exact bundled wheels; install using --no-index --require-hashes.\n' + ''.join(lines), encoding='utf8')
 
 files = []
-for pattern in ('static/meaning/**/*', 'static/vendor/**/*', 'models/**/*', 'deployment/wheels/**/*', 'deployment/licenses/*'):
+for pattern in ('static/meaning/**/*', 'static/vendor/**/*', 'deployment/licenses/*'):
     files.extend(path for path in ROOT.glob(pattern) if path.is_file())
 tracked_data = subprocess.check_output(['git', 'ls-files', '-z', 'db', 'db2'], cwd=ROOT).decode().split('\0')
 files.extend(ROOT / name for name in tracked_data if name)
@@ -44,4 +44,4 @@ entries = {path.relative_to(ROOT).as_posix(): {'bytes': path.stat().st_size, 'sh
     'builder_model': 'intfloat/multilingual-e5-small@c007d7ef6fd86656326059b28395a7a03a7c5846',
     'files': entries,
 }, indent=2) + '\n', encoding='utf8')
-print(f'Locked {len(entries)} assets, including both platform wheel sets.')
+print(f'Locked {len(entries)} required runtime/data assets. Optional build assets are tracked separately.')

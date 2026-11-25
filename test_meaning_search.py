@@ -16,6 +16,20 @@ import meaning_search
 
 
 class MeaningSearchTests(unittest.TestCase):
+    def test_all_fields_results_include_tafsir_and_correctly_aligned_ai_context(self):
+        import sqlite3
+        manifest = json.loads(Path('static/meaning/all-fields-index.json').read_text(encoding='utf8'))
+        results, meta = meaning_search.search(['75:6'], manifest['corpus'], scope='all-fields')
+        self.assertIsNone(meta['error'])
+        with sqlite3.connect('db/ai_context.db') as conn:
+            expected = json.loads(conn.execute(
+                'SELECT content FROM verse_analysis WHERE surah=75 AND verse=5').fetchone()[0])['verse_context']
+            wrong = json.loads(conn.execute(
+                'SELECT content FROM verse_analysis WHERE surah=75 AND verse=6').fetchone()[0])['verse_context']
+        self.assertEqual(results[0]['semantic_ai'], expected)
+        self.assertNotEqual(results[0]['semantic_ai'], wrong)
+        self.assertIn('denying its occurrence', results[0]['semantic_tafsir'])
+
     def test_verses_render_in_browser_order_without_keyword_search(self):
         manifest = json.loads(Path("static/meaning/index.json").read_text(encoding="utf8"))
         with patch("searchtool.index_search", side_effect=AssertionError("keyword ranking called")):

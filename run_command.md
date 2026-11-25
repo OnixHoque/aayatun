@@ -1,7 +1,7 @@
 # Run the self-contained PR #2 app
 
 Use CPython 3.12 x64. First obtain the complete checkout, including `git lfs pull`.
-Then the following installation uses only the included files:
+Then install the normal application dependencies (requires package-index access):
 
 ```text
 python deployment/manage.py install
@@ -15,9 +15,8 @@ On Windows:
 ```
 
 On Linux x64 (glibc 2.28+), use `.venv/bin/python` instead.
-`install --runtime-only` skips the embedding rebuild dependencies when using the
-included prebuilt vectors. Use `python deployment/manage.py verify` to check all
-assets, including the models and both platform wheel sets.
+Runtime-only installation is the default. The separate optional offline kit is only
+needed for offline dependency installation or regenerating embeddings.
 
 See [deployment/README.md](deployment/README.md) for production settings, offline
 rebuilds, browser verification, supported platforms, and portable ZIP packaging.

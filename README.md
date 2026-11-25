@@ -112,7 +112,7 @@ The application uses relative data paths such as `db/...` and `db2/...`.
 
 ## Run Locally
 
-This PR includes self-contained meaning search, model weights, and offline wheels.
+This PR includes self-contained meaning search, runtime model weights, and optional offline rebuild tooling.
 Use **CPython 3.12 x64** and obtain all Git LFS files before disconnecting:
 
 ```text
@@ -171,7 +171,7 @@ The upgrade switches require an existing `db/search.db`.
 
 Use [the self-contained deployment instructions](deployment/README.md). They cover
 Waitress, HTTPS/reverse proxy settings, persistent secrets and static model hosting.
-The bundled dependencies do not require an online `pip install` or model download.
+Runtime model assets are included. Normal Python dependencies install through `requirements.txt`; a separate optional offline kit is available.
 
 ## Architecture Diagram
 

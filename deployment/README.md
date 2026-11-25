@@ -1,147 +1,128 @@
-# Self-contained search deployment
+# Deploy meaning search
 
-PR #2 includes the prebuilt translation and all-fields embeddings, their validated
-fusion configuration, the quantized browser model/tokenizer, the original builder
-checkpoint/tokenizer, Transformers.js, ONNX/WASM, the search UI libraries, and
-complete Python wheel sets. Models and wheels use Git LFS.
+## Normal deployment: use the included embeddings
 
-## Obtain all files
+The PR includes precomputed embeddings, the browser ONNX model/tokenizer, the
+JavaScript/WASM inference runtime, search UI assets, and the app's source databases.
+**Normal deployment does not rebuild embeddings or need PyTorch, Transformers,
+Python wheel archives, or the original training-format checkpoint.**
 
-Fetch the PR branch and run `git lfs pull` while connected. GitHub's default source
-ZIP can contain LFS pointers instead of weights; use a clone with LFS, or the
-expanded ZIP produced below. `deployment/assets.json` records SHA-256 checksums
-and byte sizes and detects missing downloads and LFS pointers before installation.
-No API key, embedding API, vector database, Hugging Face cache, npm install,
-compiler, or model download is needed after the files have been obtained.
-
-Prerequisites supplied by the host are **CPython 3.12 x64 with venv/ensurepip**,
-the operating system, and a browser supporting WebAssembly and module workers.
-Bundled wheels target Windows x64 and glibc Linux x64 (glibc 2.28 or newer).
-macOS, ARM, Alpine/musl, and other Python versions need their own wheel set.
-Node.js and Chromium are needed only to reproduce browser verification.
-
-## Install and build without downloads
-
-**Normal deployment uses the embeddings already included in this PR. You do not
-need to regenerate them or run `rebuild-embeddings`.** In the steps below, `build`
-creates the keyword-search SQLite index and checks the supplied embedding files;
-it does not calculate new embeddings.
-
-### 1. Verify files and install runtime dependencies
-
-Run from the checkout root (the manager also resolves the root itself):
+Obtain the branch and its Git LFS runtime files while connected:
 
 ```text
+git lfs pull
 python deployment/manage.py verify
-python deployment/manage.py install --runtime-only
+python deployment/manage.py install
 ```
 
-The installer creates `.venv` and uses only bundled wheels, exact version locks,
-SHA-256 hashes, `--no-index`, and `--no-cache-dir`. `--runtime-only` installs what
-is needed to serve the app and use its prebuilt embeddings, without installing
-the PyTorch/Transformers dependencies used to regenerate embeddings.
+The installer creates `.venv` and installs the normal Flask/SQLite application
+requirements from the Python package index. Python 3.12 is the tested version.
+You can instead use an existing environment with `pip install -r requirements.txt`.
 
-### 2. Prepare the keyword index and validate the included embeddings
+Use `.venv/Scripts/python.exe` on Windows or `.venv/bin/python` on Linux below
+(`PYTHON` is a placeholder for that executable):
 
-Use `.venv/Scripts/python.exe` on Windows or `.venv/bin/python` on Linux for the
-following commands (shown with `PYTHON` as a placeholder):
+### Prepare the keyword index and check the supplied embeddings
 
 ```text
 PYTHON deployment/manage.py build
 ```
 
-`build` rebuilds the SQLite search index from the included source databases and
-validates every field's precomputed embeddings against those sources. The browser
-always loads its model, runtime, and vectors from this app; the old local-model
-environment flag is no longer required. A first search still transfers roughly
-158 MB from your own server to a new browser.
+This builds the SQLite keyword-search index and validates the shipped embeddings.
+It does not run an embedding model or generate new vectors.
 
-### 3. Start the application
+### Start the website
 
 ```text
-PYTHON deployment/manage.py serve --listen 127.0.0.1:8000
+PYTHON -m flask --app app.py run --host 127.0.0.1 --port 8000
 ```
 
-### Production configuration
+Open http://127.0.0.1:8000. For production use
+`PYTHON deployment/manage.py serve --listen 127.0.0.1:8000` (Waitress) behind your
+HTTPS reverse proxy. Set `AAYATUN_HTTPS=1` and a persistent `AAYATUN_SECRET_KEY`
+outside Git. Serve `/static/` directly where possible; `.mjs` needs JavaScript MIME
+and `.wasm` needs `application/wasm`. Keep the runtime `db/` directory writable.
 
-Use HTTPS in production (or localhost for development). Place Waitress behind
-your normal HTTPS reverse proxy, set `AAYATUN_HTTPS=1`, and provision a persistent
-`AAYATUN_SECRET_KEY` outside Git. Serve `/static/` directly when possible; `.js`
-and `.mjs` need a JavaScript MIME type, `.wasm` needs `application/wasm`, and model
-and vector files can use `application/octet-stream`. Keep the app's `db/` runtime
-directory writable. No GPU is required.
+### Browser download and cache
 
-### Optional: verify the application tests
+The first uncached search downloads about 180 MB of model, tokenizer, vectors and
+runtime from your own server. The page shows a spinner and model download progress.
+Query embedding and ranking run on the visitor's device; Flask validates verse
+references and renders results. No server GPU, inference API, or vector database
+is needed.
+
+Transformers.js stores the model/tokenizer in the browser's `transformers-cache`.
+The service worker caches the versioned runtime and hashed vector assets separately
+and preserves model caches across app updates. Later searches and page reloads
+reuse these files. Clearing site data, private browsing, storage restrictions or
+browser eviction can require another download. Cached files still have to be loaded
+into a new worker's memory; caching avoids transfer, not all initialization work.
+
+## Optional: offline installation and embedding rebuild kit
+
+These large files are **not required by, or checked into, the normal deployment**:
+
+- Original E5 checkpoint/tokenizer under `models/hub/` (about 493 MB).
+- Windows and Linux CPython 3.12 x64 wheel sets under `deployment/wheels/`
+  (about 488 MB combined).
+
+Download the [optional offline build kit](https://github.com/Mehrab-Tanjim/aayatun/releases/download/meaning-search-offline-build-v1/aayatun-optional-offline-build.zip)
+and its [SHA-256 checksum](https://github.com/Mehrab-Tanjim/aayatun/releases/download/meaning-search-offline-build-v1/aayatun-optional-offline-build.zip.sha256).
+Extract it into the checkout root so `models/` and `deployment/wheels/` are present.
+These directories are gitignored; production verification does not require them.
+The optional wheel set supports Windows x64 and glibc Linux x64 (glibc 2.28+).
+Other targets need their own compatible dependencies.
+
+### Install without package-index downloads (optional)
 
 ```text
-PYTHON -m unittest test_meaning_search.py test_search_ranking.py
+python deployment/manage.py install --offline
 ```
+
+This uses only the downloaded kit, exact wheel locks and SHA-256 hashes, with
+`--no-index --no-cache-dir --require-hashes`.
 
 <a id="rebuild-embeddings-from-scratch"></a>
 
-### Optional: rebuild embeddings from scratch (maintainers only)
+### Regenerate embeddings (maintainers only; not a deployment step)
 
-**Skip this subsection for normal installation and deployment.** The prebuilt
-translation and all-fields vectors are already supplied under `static/meaning/`.
-Regenerate embeddings only when intentionally updating the indexed content,
-embedding model, or embedding-generation logic.
-
-First install the additional builder dependencies from the bundled wheels:
+Only use this when intentionally changing the source corpus or builder:
 
 ```text
-python deployment/manage.py install
-```
-
-Then use the virtual environment's Python:
-
-```text
+python deployment/manage.py install --offline --build-deps
 PYTHON deployment/manage.py smoke-model
 PYTHON deployment/manage.py rebuild-embeddings
 ```
 
-The smoke test denies socket connections and runs the real local tokenizer,
-checkpoint and passage encoder. A full CPU rebuild takes considerably longer.
-The manager uses the included pinned checkpoint cache with offline mode enabled.
-Rebuilt assets are written to `dist/rebuilt/`; the existing frozen deployment is
-preserved. New source content or fusion choices require fresh validation before
-replacing the deployed manifest. See `SEMANTIC_SEARCH.md` for validation provenance.
+The manager selects the optional pinned checkpoint and disables external model
+access. The smoke test runs the real encoder with sockets disabled. Full rebuilding
+can take considerably longer. New vectors go to `dist/rebuilt/`; they need fresh
+validation before deployment. See `SEMANTIC_SEARCH.md` for provenance and tuning.
+The known zero-based AI verse-mapping issue remains unresolved in the ranked index;
+the results page shows correctly aligned per-verse AI context separately.
 
-## Verify a question with external DNS blocked
-
-```text
-node evaluation/islamqa_pr2_browser.cjs --scope all-fields --allow-working-tree --offline --query "what questions will be asked on the day of judgement" --chrome PATH_TO_CHROMIUM --output deployment/verification/day-of-judgement.json
-```
-
-This uses a fresh browser profile and blocks external DNS while allowing loopback.
-The report contains actual ranked references, field scores, model and vector hashes,
-and locally served assets. `deployment/examples/day-of-judgement.json` records the
-observed result for comparison. Similarity scores are not probabilities or a
-religious ruling; inspect the referenced verses for relevance.
-
-## Create a portable expanded package
-
-After building, from a committed checkout:
+## Verification and portable packaging
 
 ```text
+PYTHON -m unittest test_meaning_search.py test_search_ranking.py
 PYTHON deployment/manage.py package
 ```
 
-`dist/aayatun-offline.zip` contains tracked application files, actual LFS payloads,
-both platform wheel sets, and the generated SQLite index/vocabulary. It excludes
-secrets, virtual environments, and unrelated research caches. Install the extracted
-package with the same commands above. Store and serve large weights securely as
-ordinary static files; do not expose the `models/` builder checkpoint directory.
+`dist/aayatun-runtime.zip` contains the application, actual runtime LFS files and
+any built SQLite index/vocabulary. It excludes the optional checkpoint/wheels,
+virtual environments and secrets. GitHub's default source ZIP may contain LFS
+pointers instead of model payloads.
 
-The core search flow and its UI libraries are local. Existing optional services
-(Google web fonts, emoji images, recitation audio, prayer services and external
-reader content fetched on demand) retain their existing network behavior; this
-package does not mirror every third-party content service. Model and Python
-dependencies are fully included. Licenses are under `deployment/licenses/` and
-inside each wheel. ONNX notices are from the 1.21.0 source release; the shipped
-Web runtime is the pinned 1.22.0 development build used by Transformers.js 3.7.2.
+To reproduce the actual UI and model-cache check with Node.js and Chromium, set
+`AAYATUN_CHROME` to your Chromium executable, run the website on port 8000, and run
+`node evaluation/meaning_ui_browser.cjs`.
 
-## Maintainers
+Existing optional web fonts, emoji images, recitation/prayer services and on-demand
+external reader content retain their existing network behavior. Licenses are under
+`deployment/licenses/` and inside optional wheels. No embedding model API key is
+required. Windows execution is tested; Linux wheels resolve but Linux runtime
+execution has not been tested here.
 
-`python deployment/freeze_assets.py` regenerates the platform locks and asset
-checksums after an intentional dependency/asset update. Review those changes and
-repeat offline installation, builder validation, Flask tests, and browser checks.
+Maintainers: `python deployment/freeze_assets.py` records required runtime/data
+checksums and refreshes optional wheel locks if the optional kit is present.
+`PYTHON deployment/manage.py package --optional` creates a separate offline kit.

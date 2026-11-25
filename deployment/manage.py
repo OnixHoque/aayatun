@@ -23,12 +23,13 @@ os.environ['TRANSFORMERS_OFFLINE'] = '1'
 os.environ['HF_HUB_DISABLE_TELEMETRY'] = '1'
 
 
-def verify():
-    entries = json.loads((ROOT / 'deployment/assets.json').read_text(encoding='utf8'))['files']
+def verify(optional=False):
+    manifest = "deployment/optional-assets.json" if optional else "deployment/assets.json"
+    entries = json.loads((ROOT / manifest).read_text(encoding="utf8"))["files"]
     for relative, expected in entries.items():
         path = ROOT / relative
         if not path.is_file():
-            raise SystemExit(f'Missing asset: {relative}. Run git lfs pull before disconnecting.')
+            raise SystemExit(f'Missing asset: {relative}. See deployment/README.md for the runtime files or optional build kit.')
         with path.open('rb') as handle:
             digest = hashlib.file_digest(handle, 'sha256').hexdigest()
         if path.stat().st_size != expected['bytes'] or digest != expected['sha256']:
@@ -57,44 +58,60 @@ def smoke_model():
     print('Offline builder smoke: local tokenizer + checkpoint + passage encoder, 384 dimensions.')
 
 
-def install(runtime_only):
-    if sys.version_info[:2] != (3, 12) or platform.machine().lower() not in ('amd64', 'x86_64'):
-        raise SystemExit('Bundled wheels require CPython 3.12 x64 (Windows or glibc Linux >= 2.28).')
-    target = 'windows-cp312' if sys.platform == 'win32' else 'linux-cp312' if sys.platform == 'linux' else None
-    if target is None:
-        raise SystemExit('No bundled wheels for this operating system.')
+def install(offline=False, build_deps=False):
     venv.EnvBuilder(with_pip=True).create(ROOT / '.venv')
     executable = ROOT / ('.venv/Scripts/python.exe' if sys.platform == 'win32' else '.venv/bin/python')
-    lock = ROOT / 'deployment' / f'{target}{"-runtime" if runtime_only else ""}.lock'
-    subprocess.run([str(executable), '-m', 'pip', 'install', '--no-index', '--no-cache-dir',
-                    '--find-links', str(ROOT / 'deployment/wheels' / target), '--require-hashes',
-                    '-r', str(lock)], check=True)
-    print(f'Installed entirely from bundled wheels. Python: {executable}')
+    command = [str(executable), '-m', 'pip', 'install']
+    if offline:
+        verify(optional=True)
+        if sys.version_info[:2] != (3, 12) or platform.machine().lower() not in ('amd64', 'x86_64'):
+            raise SystemExit('Optional offline wheels require CPython 3.12 x64.')
+        target = 'windows-cp312' if sys.platform == 'win32' else 'linux-cp312' if sys.platform == 'linux' else None
+        if target is None:
+            raise SystemExit('No optional offline wheels for this OS.')
+        lock = ROOT / 'deployment' / f'{target}{"" if build_deps else "-runtime"}.lock'
+        command += ['--no-index', '--no-cache-dir', '--find-links', str(ROOT / 'deployment/wheels' / target),
+                    '--require-hashes', '-r', str(lock)]
+    else:
+        command += ['-r', str(ROOT / ('requirements-build.txt' if build_deps else 'requirements-runtime.txt'))]
+        if build_deps:
+            command += ['--extra-index-url', 'https://download.pytorch.org/whl/cpu']
+    subprocess.run(command, check=True)
+    print(f'Installed {"build" if build_deps else "runtime"} dependencies. Python: {executable}')
 
 
-def package():
+def package(optional=False):
     files = subprocess.check_output(['git', 'ls-files', '-z'], cwd=ROOT).decode().split('\0')
     files = [name for name in files if name]
+    if optional:
+        files = list(json.loads((ROOT / 'deployment/optional-assets.json').read_text())["files"])
+        files += [path.relative_to(ROOT).as_posix() for path in (ROOT / 'deployment').glob('*.lock')]
+        files.append('deployment/optional-assets.json')
     for name in ('db/search.db', 'db/search_vocab.pkl'):
-        if (ROOT / name).is_file():
+        if not optional and (ROOT / name).is_file():
             files.append(name)
-    output = ROOT / 'dist/aayatun-offline.zip'
+    output = ROOT / ('dist/aayatun-optional-offline-build.zip' if optional else 'dist/aayatun-runtime.zip')
     output.parent.mkdir(exist_ok=True)
     with zipfile.ZipFile(output, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=1) as archive:
         for name in sorted(set(files)):
-            archive.write(ROOT / name, 'aayatun/' + name)
+            archive.write(ROOT / name, name if optional else 'aayatun/' + name)
     print(f'Packaged actual LFS contents and application files: {output}')
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=['verify', 'install', 'build', 'smoke-model', 'rebuild-embeddings', 'serve', 'package'])
-    parser.add_argument('--runtime-only', action='store_true')
+    parser.add_argument('--runtime-only', action='store_true', help='Compatibility alias; runtime is already the default')
+    parser.add_argument('--offline', action='store_true', help='Install from the separately downloaded optional kit')
+    parser.add_argument('--build-deps', action='store_true', help='Install optional embedding-builder dependencies')
+    parser.add_argument('--optional', action='store_true', help='Verify/package the optional offline build kit')
     parser.add_argument('--listen', default='127.0.0.1:8000')
     args = parser.parse_args()
     verify()
+    if args.optional or args.command in ("smoke-model", "rebuild-embeddings"):
+        verify(optional=True)
     if args.command == 'install':
-        install(args.runtime_only)
+        install(args.offline, args.build_deps)
     elif args.command == 'build':
         run('build_search.py')
         run('build_meaning_index.py', '--validate-only')
@@ -114,7 +131,7 @@ def main():
         host, port = args.listen.rsplit(':', 1)
         serve(app, host=host, port=int(port))
     elif args.command == 'package':
-        package()
+        package(args.optional)
 
 
 if __name__ == '__main__':
