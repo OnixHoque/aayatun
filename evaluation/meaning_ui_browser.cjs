@@ -62,7 +62,7 @@ async function main() {
         await client.send('Page.reload');
         await waitFor('document.readyState === "complete" && document.querySelector("#result-search-mode")');
         const cached = await evaluate(`new Promise((resolve, reject) => {
-            const source = 'const originalFetch = self.fetch; let modelFetches = 0; const phases = []; self.fetch = (...args) => { if (String(args[0]).includes("/meaning/models/")) modelFetches++; return originalFetch(...args); }; const send = self.postMessage.bind(self); self.postMessage = data => { if (data.type === "progress") phases.push(data.phase); send({...data, modelFetches, phases}); }; await import(' + JSON.stringify(location.origin + '/static/js/meaning-worker.js?v=5') + '); send({ready:true});';
+            const source = 'const originalFetch = self.fetch; let modelFetches = 0; const phases = []; self.fetch = (...args) => { if (String(args[0]).includes("/meaning/models/")) modelFetches++; return originalFetch(...args); }; const send = self.postMessage.bind(self); self.postMessage = data => { if (data.type === "progress") phases.push(data.phase); send({...data, modelFetches, phases}); }; await import(' + JSON.stringify(location.origin + '/static/js/meaning-worker.js?v=6') + '); send({ready:true});';
             const url = URL.createObjectURL(new Blob([source], {type:'text/javascript'}));
             const worker = new Worker(url, {type:'module'});
             const timer = setTimeout(() => reject(new Error('Cache probe timed out')), 90000);
@@ -79,16 +79,22 @@ async function main() {
         const report = { query:'saw the end', refs:result.refs, posted:requests,
             cachedModelFiles:modelFiles, freshWorkerAfterReloadModelFetches:cached.modelFetches };
         report.sourceComparison = {};
-        for (const [scope, expectedFirst] of [['translation', '22:64'], ['all-fields', '29:45']]) {
+        for (const [scope, expectedFirst, action] of [['translation', '22:64', 'enter'], ['all-fields', '29:45', 'click'], ['all-fields', '29:45', 'enter'], ['translation', '22:64', 'click']]) {
             await evaluate(`(() => {
                 const form = document.querySelector('#result-search-mode').form;
                 const source = form.querySelector('[data-meaning-source]');
                 source.value = ${JSON.stringify(scope)}; source.dispatchEvent(new Event('change'));
                 form.elements.query_str.value = 'What is the Importance of Prayer?';
-                form.requestSubmit();
+                form.elements.query_str.focus();
+                if (${JSON.stringify(action)} === 'click') form.querySelector('[type=submit]').click();
             })()`);
+            if (action === 'enter') {
+                await client.send('Input.dispatchKeyEvent', {type:'keyDown', key:'Enter', code:'Enter', windowsVirtualKeyCode:13, nativeVirtualKeyCode:13, text:'\r'});
+                await client.send('Input.dispatchKeyEvent', {type:'keyUp', key:'Enter', code:'Enter', windowsVirtualKeyCode:13, nativeVirtualKeyCode:13});
+            }
             await waitFor(`document.querySelector('.surahlink')?.textContent.trim() === ${JSON.stringify(expectedFirst)} && !document.querySelector('form[aria-busy]')`);
-            report.sourceComparison[scope] = await evaluate(`Array.from(document.querySelectorAll('.surahlink'), n => n.textContent.trim()).slice(0,5)`);
+            if (!(await evaluate(`document.querySelector('#result-search-mode').form.querySelector('[data-meaning-source]').value === ${JSON.stringify(scope)}`))) throw new Error('Source selection changed after ' + action);
+            report.sourceComparison[scope + ':' + action] = await evaluate(`Array.from(document.querySelectorAll('.surahlink'), n => n.textContent.trim()).slice(0,5)`);
         }
         await fs.mkdir('deployment/verification', {recursive:true});
         await fs.writeFile('deployment/verification/meaning-ui-cache.json', JSON.stringify(report,null,2));

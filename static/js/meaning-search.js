@@ -1,4 +1,4 @@
-const workerUrl = new URL('./meaning-worker.js?v=5', import.meta.url);
+const workerUrl = new URL('./meaning-worker.js?v=6', import.meta.url);
 let worker;
 let activeForm;
 
@@ -10,6 +10,8 @@ function setBusy(form, busy) {
     form.querySelector('[type=submit]').classList.toggle('loading', busy);
     form.elements.query_str.readOnly = busy;
     form.elements.search_mode.disabled = busy;
+    const source = form.querySelector('[data-meaning-source]');
+    if (source) source.disabled = busy;
     if (!busy) {
         form.querySelector('[type=submit]').classList.remove('loading');
         form.querySelector('[type=submit] i')?.classList.replace('loading', 'search');
@@ -63,9 +65,15 @@ function initializeWorker() {
             fail(form);
             return;
         }
+        const source = form.querySelector('[data-meaning-source]');
+        const selectedScope = data.scope || form.dataset.meaningScope || 'all-fields';
+        if (source) {
+            source.value = selectedScope;
+            source.disabled = false;
+        }
         for (const [name, values] of Object.entries({
             meaning_corpus: [data.corpus], meaning_ref: data.refs,
-            meaning_scope: [data.scope || form.dataset.meaningScope || 'translation'],
+            ...(source ? {} : { meaning_scope: [selectedScope] }),
         })) {
             for (const value of values) {
                 const input = document.createElement('input');
@@ -103,12 +111,23 @@ document.querySelectorAll('select[name=search_mode]').forEach(mode => {
     window.addEventListener('pageshow', () => {
         form.querySelectorAll('[data-meaning-payload]').forEach(node => node.remove());
         setBusy(form, false);
+        sync();
     });
+    // Handle the real key event before the legacy form library can synthesize a
+    // submit that bypasses native submit listeners and omits the worker results.
+    input.addEventListener('keydown', event => {
+        if (event.key !== 'Enter' || event.isComposing || mode.value !== 'meaning') return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        if (!activeForm) form.requestSubmit(form.querySelector('[type=submit]'));
+    }, { capture: true });
     form.addEventListener('submit', event => {
         if (mode.value !== 'meaning') return;
         event.preventDefault();
         event.stopImmediatePropagation();
         if (activeForm) return;
+        form.querySelectorAll('[data-meaning-payload]').forEach(node => node.remove());
+        if (source) form.dataset.meaningScope = source.value;
         const query = input.value.trim();
         if (!query || query.length > 1000) {
             setBusy(form, false);
