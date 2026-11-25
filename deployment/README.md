@@ -77,6 +77,8 @@ directory writable. No GPU is required.
 PYTHON -m unittest test_meaning_search.py test_search_ranking.py
 ```
 
+<a id="rebuild-embeddings-from-scratch"></a>
+
 ### Optional: rebuild embeddings from scratch (maintainers only)
 
 **Skip this subsection for normal installation and deployment.** The prebuilt
