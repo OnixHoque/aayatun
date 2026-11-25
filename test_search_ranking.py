@@ -16,6 +16,14 @@ from searchtool import index_search
 
 
 class SearchFormattingTests(unittest.TestCase):
+    def test_preposition_query_does_not_highlight_one_or_inside_upon(self):
+        rows, _ = index_search('questions on judgement day', 10, field='all')
+        self.assertEqual((rows[0]['surah'], rows[0]['verse']), (89, 22))
+        for row in rows:
+            for field in ('translation', 'ai', 'en_tafsir'):
+                self.assertNotRegex(str(row[field]), r'(?i)<span class="match">one</span>')
+                self.assertNotRegex(str(row[field]), r'(?i)up<span class="match">on</span>')
+
     def test_dictionary_terms_are_not_highlighted_inside_other_words(self):
         row = self._row(89, 22, en='rank upon rank', ai='on the day')
         item = searchtool._format([row], ['on', 'day'], whole_terms={'on', 'day'})[0]
@@ -246,6 +254,44 @@ class CrossFieldRankingTests(unittest.TestCase):
 
 
 class EnglishStemmingRankingTests(unittest.TestCase):
+    def test_exact_preposition_rules_keep_field_scope_and_and_or_semantics(self):
+        with closing(self._stem_index()) as db:
+            for rowid, en, ai in [(5, 'one questions', ''), (6, 'questions', 'on'),
+                                   (7, 'on', ''), (8, 'a', ''), (9, 'as', '')]:
+                db.execute('INSERT INTO docs(rowid,en_norm,ai_norm,en,ai,surah,verse) '
+                           'VALUES (?,?,?,?,?,?,?)', (rowid, en, ai, en, ai, 1, rowid))
+                db.execute('INSERT INTO english_stem(rowid,en_norm,ai_norm) VALUES (?,?,?)',
+                           (rowid, en, ai))
+            expr = searchtool._stem_expr(['on', 'question'], ['en_norm', 'ai_norm'], {})
+            rows = searchtool._run_stem_query(db, expr, 10)
+            self.assertEqual([r['rowid'] for r in rows], [6])
+            expr = searchtool._stem_expr(['on', 'question'], ['en_norm'], {})
+            self.assertEqual(searchtool._run_stem_query(db, expr, 10, col='en_norm'), [])
+            expr = searchtool._stem_expr(['on', 'in'], ['en_norm'], {}, join='OR')
+            rows = searchtool._run_stem_query(db, expr, 10, col='en_norm')
+            self.assertEqual([r['rowid'] for r in rows], [7])
+            expr = searchtool._stem_expr(['as', 'on'], ['en_norm'], {}, join='OR')
+            rows = searchtool._run_stem_query(db, expr, 10, col='en_norm')
+            self.assertEqual([r['rowid'] for r in rows], [7, 9])
+
+    def test_prepositions_use_exact_evidence_before_limit_and_in_coverage(self):
+        with closing(self._stem_index()) as db:
+            for rowid, text in [(5, 'one questions'), (6, 'on questions')]:
+                db.execute('INSERT INTO docs(rowid,en_norm,en,surah,verse) VALUES (?,?,?,?,?)',
+                           (rowid, text, text, 1, rowid))
+                db.execute('INSERT INTO english_stem(rowid,en_norm) VALUES (?,?)', (rowid, text))
+            expr = searchtool._stem_expr(['on', 'question'], ['en_norm'], {})
+            rows = searchtool._run_stem_query(db, expr, 1, col='en_norm')
+            self.assertEqual([r['rowid'] for r in rows], [6])
+            expr = searchtool._stem_expr(['on', 'question'], ['en_norm'], {}, join='OR')
+            rows = searchtool._run_stem_query(db, expr, 10, col='en_norm')
+            by_id = {r['rowid']: r for r in rows}
+            self.assertEqual(set(by_id), {5, 6})
+            self.assertNotIn('[one]', by_id[5]['stem_en_norm'])
+            self.assertIn('[questions]', by_id[5]['stem_en_norm'])
+            self.assertEqual(searchtool._matched_term_masks(
+                db, ['on', 'question'], [by_id[5], by_id[6]], 'en_norm'), [0b10, 0b11])
+
     def _stem_index(self):
         db = sqlite3.connect(':memory:')
         db.row_factory = sqlite3.Row
