@@ -61,8 +61,8 @@
       "sha256": "4a7cb74ac4552f7d37c0154e68c73d88c18969adb4419e5e0bbfcc49dfef5f04"
     },
     "db/search_synonyms.json": {
-      "bytes": 2982,
-      "sha256": "1ae9f58db9fff3b471d4c39e486f33b473af289bcdaa143a83703a4255e010f1"
+      "bytes": 2915,
+      "sha256": "4a99245f21d7d9e18a07add3aa2acfe366a60277e12758e568f90e8f940d37af"
     },
     "db/surah_overviews.db": {
       "bytes": 180224,
@@ -81,12 +81,12 @@
       "sha256": "4f6610cece9940c3bf3de202a920e7b69491e7947d968330f03db592caa456dd"
     },
     "deployment/licenses/E5-MIT-LICENSE.txt": {
-      "bytes": 1104,
-      "sha256": "904dc4d8749877f1dba1cda48200d2462dccbeb7c134d5e4ef6fa75e0198c8fe"
+      "bytes": 1083,
+      "sha256": "b5cb7ff7859e7d282d98fc43ab081b0dda5dc659dc3385cf65740c759a7e6a6c"
     },
     "deployment/licenses/Fomantic-UI-LICENSE.md": {
-      "bytes": 1049,
-      "sha256": "20a7cde0809fde6bf497360ba56ab2c08c9f39631415170e09d8c2ff5d00dc23"
+      "bytes": 1042,
+      "sha256": "d6cb13d42f2f219555468cc9d130f6aeef0e3825d1824f9e0c643118deebb786"
     },
     "deployment/licenses/Font-Awesome-LICENSE.txt": {
       "bytes": 1548,
