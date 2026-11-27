@@ -28,3 +28,30 @@
 }
 #searchwindow [data-meaning-status]:empty { visibility: hidden; }
 #searchwindow [data-meaning-status] .loader { flex-shrink: 0; }
+
+/* On narrow dialogs the source options wrap to a second row. Let the
+   keyword tip use that space too, starting just below the mode buttons. */
+@media (max-width: 600px) {
+    #searchwindow .meaning-search-field {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto auto min-content auto;
+    }
+    #searchwindow .meaning-options,
+    #searchwindow .meaning-feedback { display: contents; }
+    #searchwindow .meaning-search-field .ui.input { grid-area: 1 / 1; }
+    #searchwindow [data-meaning-mode] {
+        grid-area: 2 / 1;
+        margin-top: .5rem;
+        font-size: .9rem;
+    }
+    #searchwindow .meaning-sources {
+        grid-area: 3 / 1;
+        margin-top: .35rem;
+        border-left: 0;
+        padding-left: 0;
+        font-size: .9rem;
+    }
+    #searchwindow [data-meaning-status] { grid-area: 4 / 1; }
+    #searchwindow .meaning-feedback > .search-hint { grid-area: 3 / 1 / 5; }
+}

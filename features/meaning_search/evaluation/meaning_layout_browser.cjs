@@ -42,8 +42,8 @@ async function main() {
         assert.ok(ready, 'Modal and search controls loaded');
         await evaluate(`jQuery('#searchwindow').modal('show'); true`);
         await pause();
-        for (const width of [1440, 768, 390, 320]) {
-            await client.send('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: false });
+        for (const width of [1440, 768, 600, 480, 390, 320]) {
+            await client.send('Emulation.setDeviceMetricsOverride', { width, height: width <= 600 ? 640 : 900, deviceScaleFactor: 1, mobile: width <= 600 });
             await pause();
             let baseline;
             for (const mode of ['keyword', 'meaning', 'keyword', 'meaning', 'keyword']) {
@@ -59,7 +59,7 @@ async function main() {
                         visible: dialog.classList.contains('visible'),
                         sourcesVisible: getComputedStyle(sources).visibility === 'visible',
                         hintVisible: getComputedStyle(hint).visibility === 'visible',
-                        tipGap: hint.getBoundingClientRect().top - dialog.querySelector('.meaning-options').getBoundingClientRect().bottom };
+                        tipGap: hint.getBoundingClientRect().top - dialog.querySelector('[data-meaning-mode]').getBoundingClientRect().bottom };
                 })()`);
                 assert.ok(layout.visible && layout.height > 0, 'Real modal is visible');
                 baseline ??= layout;
@@ -67,7 +67,10 @@ async function main() {
                 assert.equal(layout.height, baseline.height);
                 assert.equal(layout.sourcesVisible, mode === 'meaning');
                 assert.equal(layout.hintVisible, mode === 'keyword');
-                assert.ok(layout.tipGap <= 20, `Extra gap above tips at ${width}px: ${layout.tipGap}`);
+                if (mode === 'keyword') {
+                    assert.ok(layout.tipGap >= 0 && layout.tipGap <= 20,
+                        `Gap from visible mode buttons to tips at ${width}px: ${layout.tipGap}`);
+                }
             }
             await evaluate(`(() => {
                 const dialog = document.querySelector('#searchwindow');
@@ -93,13 +96,18 @@ async function main() {
                     const status = dialog.querySelector('[data-meaning-status]');
                     return {top:input.top,height:input.height,text:status.textContent,
                         spinner:!!status.querySelector('.loader'),
-                        clipped:status.scrollHeight > status.clientHeight};
+                        clipped:status.scrollHeight > status.clientHeight,
+                        gap:status.getBoundingClientRect().top - dialog.querySelector('[data-meaning-scope-control]').getBoundingClientRect().bottom};
                 })()`);
                 assert.ok(Math.abs(statusLayout.top - baseline.top) < 1,
                     `Input shifted during ${state} at ${width}px: ${JSON.stringify(statusLayout)}`);
                 assert.equal(statusLayout.height, baseline.height);
                 assert.equal(statusLayout.clipped, false);
                 assert.equal(statusLayout.spinner, state === 'search' || state === 'download');
+                if (state !== 'idle') {
+                    assert.ok(statusLayout.gap >= 0 && statusLayout.gap <= 20,
+                        `Gap from source buttons to status at ${width}px: ${statusLayout.gap}`);
+                }
                 if (state === 'download') assert.match(statusLayout.text, /42%/);
                 if (state === 'error') assert.match(statusLayout.text, /could not load/);
                 if (state === 'idle') assert.equal(statusLayout.text, '');

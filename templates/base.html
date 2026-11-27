@@ -354,7 +354,7 @@
   </div>
   <div class="content">
     <form class="ui form" method="POST" action="/search">
-      <div class="field" style="width: 100%;">
+      <div class="field{% if meaning_scopes %} meaning-search-field{% endif %}" style="width: 100%;">
         <div class="ui action large input">
           <input type="text" name="query_str" style="font-family: Open Sans" placeholder="Enter a keyword...">
           <button id="search-submit" class="ui primary large icon button"
@@ -375,7 +375,7 @@
 </div>
 <div class="ui basic segment" style="padding: 0 !important; margin: 0 !important;">
 {% if meaning_scopes %}
-<link rel="stylesheet" href="{{ url_for('meaning_search.static', filename='ui/search-options.css', v='4') }}">
+<link rel="stylesheet" href="{{ url_for('meaning_search.static', filename='ui/search-options.css', v='5') }}">
 <script type="module" src="{{ url_for('meaning_search.static', filename='js/meaning-search.js', v='9') }}"></script>
 {% endif %}
 
