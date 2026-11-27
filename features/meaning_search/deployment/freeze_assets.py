@@ -42,8 +42,15 @@ for pattern in ('static/**/*', 'deployment/licenses/*'):
     files.extend(path for path in FEATURE.glob(pattern) if path.is_file())
 tracked_data = subprocess.check_output(['git', 'ls-files', '-z', 'db', 'db2'], cwd=ROOT).decode().split('\0')
 files.extend(ROOT / name for name in tracked_data if name)
-entries = {path.relative_to(ROOT).as_posix(): {'bytes': path.stat().st_size, 'sha256': digest(path)}
-           for path in sorted(set(files))}
+entries = {}
+for path in sorted(set(files)):
+    name = path.relative_to(ROOT).as_posix()
+    if name.startswith('db/') and path.suffix in ('.json', '.txt'):
+        payload = path.read_bytes().replace(b'\r\n', b'\n')
+        entries[name] = {'bytes': len(payload), 'sha256': hashlib.sha256(payload).hexdigest(),
+                         'line_endings': 'lf'}
+    else:
+        entries[name] = {'bytes': path.stat().st_size, 'sha256': digest(path)}
 (DEPLOYMENT / 'assets.json').write_text(json.dumps({
     'schema_version': 1,
     'runtime': 'Transformers.js 3.7.2 / ONNX Runtime Web 1.22.0-dev.20250409-89f8206ba4',

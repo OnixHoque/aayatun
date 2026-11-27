@@ -35,11 +35,16 @@ def verify(optional=False):
         if not path.is_file():
             raise SystemExit(f'Missing asset: {relative}. See features/meaning_search/deployment/README.md for the runtime files or optional build kit.')
         hasher = hashlib.sha256()
-        with path.open('rb') as handle:
-            for chunk in iter(lambda: handle.read(1024 * 1024), b''):
-                hasher.update(chunk)
-        digest = hasher.hexdigest()
-        if path.stat().st_size != expected['bytes'] or digest != expected['sha256']:
+        if expected.get('line_endings') == 'lf':
+            payload = path.read_bytes().replace(b'\r\n', b'\n')
+            size = len(payload)
+            hasher.update(payload)
+        else:
+            size = path.stat().st_size
+            with path.open('rb') as handle:
+                for chunk in iter(lambda: handle.read(1024 * 1024), b''):
+                    hasher.update(chunk)
+        if size != expected['bytes'] or hasher.hexdigest() != expected['sha256']:
             raise SystemExit(f'Incomplete or modified asset: {relative}. Check Git LFS downloads.')
     print(f'Verified {len(entries)} assets; no downloads.', flush=True)
 

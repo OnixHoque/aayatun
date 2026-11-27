@@ -26,15 +26,18 @@
     },
     "db/english_words.README.txt": {
       "bytes": 528,
-      "sha256": "d071610866ce0429d0c4aba67c7865c88479ef28b401b623f0ab30027b89f1e3"
+      "sha256": "d071610866ce0429d0c4aba67c7865c88479ef28b401b623f0ab30027b89f1e3",
+      "line_endings": "lf"
     },
     "db/english_words.txt": {
       "bytes": 3864805,
-      "sha256": "643c7f71d5caee9806be56f5ed83ba36e2246a06a04bcf4aaa0576790bb90d66"
+      "sha256": "643c7f71d5caee9806be56f5ed83ba36e2246a06a04bcf4aaa0576790bb90d66",
+      "line_endings": "lf"
     },
     "db/mushaf_lines.json": {
       "bytes": 1983314,
-      "sha256": "34437ff02158af8f686a7b9dcacb7a5ab0a9801453fb025d03369c60122248a1"
+      "sha256": "34437ff02158af8f686a7b9dcacb7a5ab0a9801453fb025d03369c60122248a1",
+      "line_endings": "lf"
     },
     "db/page_overviews.db": {
       "bytes": 839680,
@@ -42,11 +45,13 @@
     },
     "db/pos_tags_dict.txt": {
       "bytes": 1318,
-      "sha256": "aa15e6d019e25404cc5572e9e9deadd80969d87af283b892fe58951886d082e2"
+      "sha256": "aa15e6d019e25404cc5572e9e9deadd80969d87af283b892fe58951886d082e2",
+      "line_endings": "lf"
     },
     "db/qcf_verses.json": {
       "bytes": 433767,
-      "sha256": "5e107d11fc615d8466d5af33afa221948e192171249f1edbc28b61b612395300"
+      "sha256": "5e107d11fc615d8466d5af33afa221948e192171249f1edbc28b61b612395300",
+      "line_endings": "lf"
     },
     "db/quran.db": {
       "bytes": 2558976,
@@ -54,27 +59,33 @@
     },
     "db/quran_index.txt": {
       "bytes": 61085,
-      "sha256": "acc388963073e17bf3dd41d31f78bdde0f60daca893e82587ee5b9767b0afc31"
+      "sha256": "acc388963073e17bf3dd41d31f78bdde0f60daca893e82587ee5b9767b0afc31",
+      "line_endings": "lf"
     },
     "db/quran_stat.json": {
       "bytes": 9530,
-      "sha256": "0f0339d858b985fcd2ab70728e68fabae852ca73f56e20349c644601d6caea4e"
+      "sha256": "0f0339d858b985fcd2ab70728e68fabae852ca73f56e20349c644601d6caea4e",
+      "line_endings": "lf"
     },
     "db/root_meanings.json": {
       "bytes": 358571,
-      "sha256": "fed71281ba3dc8e8685db400e0003290b5bf90f78ed113a602ed6d3f2848281d"
+      "sha256": "fed71281ba3dc8e8685db400e0003290b5bf90f78ed113a602ed6d3f2848281d",
+      "line_endings": "lf"
     },
     "db/ruku_index.txt": {
       "bytes": 5388,
-      "sha256": "5d885cdd6de32f6ca29327314ab6f8164dfc076bf4bbd5db140ea2f1991b377b"
+      "sha256": "5d885cdd6de32f6ca29327314ab6f8164dfc076bf4bbd5db140ea2f1991b377b",
+      "line_endings": "lf"
     },
     "db/sarf.json": {
       "bytes": 1398645,
-      "sha256": "4a7cb74ac4552f7d37c0154e68c73d88c18969adb4419e5e0bbfcc49dfef5f04"
+      "sha256": "4a7cb74ac4552f7d37c0154e68c73d88c18969adb4419e5e0bbfcc49dfef5f04",
+      "line_endings": "lf"
     },
     "db/search_synonyms.json": {
       "bytes": 2915,
-      "sha256": "4a99245f21d7d9e18a07add3aa2acfe366a60277e12758e568f90e8f940d37af"
+      "sha256": "4a99245f21d7d9e18a07add3aa2acfe366a60277e12758e568f90e8f940d37af",
+      "line_endings": "lf"
     },
     "db/surah_overviews.db": {
       "bytes": 180224,
@@ -153,8 +164,8 @@
       "sha256": "f96386fa56d44f87c26933e35673816750b2862ccd46d2ac3303ea78b932d6de"
     },
     "features/meaning_search/static/js/meaning-core.mjs": {
-      "bytes": 4056,
-      "sha256": "668cdf629dedb4ae2480e6603eb6832d39e7bb73c3df3b084ffe7c547135064a"
+      "bytes": 3957,
+      "sha256": "a83e88995a3823dd5aa9416a038387ed3de84e4f7cf9701c39a8c622ab4209f2"
     },
     "features/meaning_search/static/js/meaning-model-source.mjs": {
       "bytes": 888,
