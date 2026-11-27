@@ -172,8 +172,8 @@
       "sha256": "1fd91eb9a8b89bbc6e35e7a6e7cb9c4f99b5aec5df9e009d49e26f54067a9926"
     },
     "features/meaning_search/static/js/meaning-search.js": {
-      "bytes": 6075,
-      "sha256": "4793f0ff68bed8ce842bcfd5ab59d136c52fa15a0e6e4a96d23133c74008caa2"
+      "bytes": 5636,
+      "sha256": "708a931a2382b17b1c7a5567ba1c9d9635b2e060ee42dda268a40f4350b0c271"
     },
     "features/meaning_search/static/js/meaning-worker.js": {
       "bytes": 9057,
@@ -286,6 +286,10 @@
     "features/meaning_search/static/ui/jquery-3.3.1/jquery.min.js": {
       "bytes": 86927,
       "sha256": "160a426ff2894252cd7cebbdd6d6b7da8fcd319c65b70468f10b6690c45d02ef"
+    },
+    "features/meaning_search/static/ui/search-options.css": {
+      "bytes": 2870,
+      "sha256": "53568ecb8993c391d147d9a2f0c4459848be2a6d46344b17e0daca82f8fe7ca1"
     },
     "features/meaning_search/static/vendor/transformers-3.7.2/ort-wasm-simd-threaded.jsep.mjs": {
       "bytes": 44484,

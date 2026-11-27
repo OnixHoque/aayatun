@@ -54,8 +54,8 @@
 	<form class="ui form" method="POST" action="/search">
 		<div class="field" style="width: 100%;">
 			<div class="ui action large input">
-				<input type="text" name="query_str" style="font-family: Open Sans" value="{{ query }}" placeholder="Enter a keyword...">
-				<button id="search-submit2" class="ui primary large icon button"
+				<input type="text" name="query_str" aria-label="Search query" style="font-family: Open Sans" value="{{ query }}" placeholder="Enter a keyword...">
+				<button aria-label="Search" id="search-submit2" class="ui primary large icon button"
 		          onclick="$('#search-submit2').addClass('loading');$('#search-submit-icon2').removeClass('search').addClass('loading');" type="submit">
 		            <i id="search-submit-icon2" class="search icon"></i>
 		          </button>

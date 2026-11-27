@@ -40,7 +40,7 @@ async function main() {
             await pause();
         }
         assert.ok(ready, 'Modal and search controls loaded');
-        await evaluate(`jQuery('#searchwindow').modal('show'); true`);
+        await evaluate(`document.querySelector('#search-btn').click(); true`);
         await pause();
         for (const width of [1440, 768, 600, 480, 390, 320]) {
             await client.send('Emulation.setDeviceMetricsOverride', { width, height: width <= 600 ? 640 : 900, deviceScaleFactor: 1, mobile: width <= 600 });
@@ -57,11 +57,13 @@ async function main() {
                     const hint = dialog.querySelector('.search-hint');
                     return { top: bounds.top, height: bounds.height,
                         visible: dialog.classList.contains('visible'),
+                        isMobile: matchMedia('(max-width: 600px)').matches,
                         sourcesVisible: getComputedStyle(sources).visibility === 'visible',
                         hintVisible: getComputedStyle(hint).visibility === 'visible',
                         tipGap: hint.getBoundingClientRect().top - dialog.querySelector('[data-meaning-mode]').getBoundingClientRect().bottom };
                 })()`);
                 assert.ok(layout.visible && layout.height > 0, 'Real modal is visible');
+                assert.equal(layout.isMobile, width <= 600);
                 baseline ??= layout;
                 assert.ok(Math.abs(layout.top - baseline.top) < 1, `Search bar moved at ${width}px: ${JSON.stringify(layout)}`);
                 assert.equal(layout.height, baseline.height);

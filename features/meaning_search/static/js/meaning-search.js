@@ -2,17 +2,23 @@ const workerUrl = new URL('./meaning-worker.js?v=8', import.meta.url);
 let worker;
 let activeForm;
 
+function setOptionsDisabled(form, disabled) {
+    form.querySelectorAll('[data-meaning-mode], [data-meaning-scope-control]').forEach(group => {
+        group.disabled = disabled;
+    });
+}
+
 function setBusy(form, busy) {
-    form.toggleAttribute('aria-busy', busy);
-    const previousResults = document.querySelector('[data-search-results]');
-    if (previousResults) previousResults.hidden = busy;
-    form.querySelector('[type=submit]').disabled = busy;
-    form.querySelector('[type=submit]').classList.toggle('loading', busy);
+    const submit = form.querySelector('[type=submit]');
+    submit.setAttribute('aria-busy', String(busy));
+    submit.disabled = busy;
+    submit.classList.toggle('loading', busy);
+    if (!busy) submit.querySelector('i')?.classList.replace('loading', 'search');
     form.elements.query_str.readOnly = busy;
-    form.querySelectorAll('[name=search_mode], [data-meaning-source]').forEach(control => { control.disabled = busy; });
-    if (!busy) {
-        form.querySelector('[type=submit]').classList.remove('loading');
-        form.querySelector('[type=submit] i')?.classList.replace('loading', 'search');
+    setOptionsDisabled(form, busy);
+    if (!form.closest('#searchwindow')) {
+        const previousResults = document.querySelector('[data-search-results]');
+        if (previousResults) previousResults.hidden = busy;
     }
 }
 
@@ -60,15 +66,8 @@ function initializeWorker() {
             fail(form);
             return;
         }
-        const source = form.elements.meaning_scope;
-        const selectedScope = data.scope || form.dataset.meaningScope || 'all-fields';
-        if (source) {
-            source.value = selectedScope;
-            form.querySelectorAll('[data-meaning-source]').forEach(control => { control.disabled = false; });
-        }
         for (const [name, values] of Object.entries({
             meaning_corpus: [data.corpus], meaning_ref: data.refs,
-            ...(source ? {} : { meaning_scope: [selectedScope] }),
         })) {
             for (const value of values) {
                 const input = document.createElement('input');
@@ -78,7 +77,7 @@ function initializeWorker() {
             }
         }
         window.showLoading?.();
-        form.querySelectorAll('[name=search_mode]').forEach(control => { control.disabled = false; });
+        setOptionsDisabled(form, false);
         HTMLFormElement.prototype.submit.call(form);
     };
     return instance;
@@ -89,12 +88,10 @@ document.querySelectorAll('[data-meaning-mode]').forEach(group => {
     const mode = form.elements.search_mode;
     const input = form.elements.query_str;
     const status = form.querySelector('[data-meaning-status]');
-    const source = form.elements.meaning_scope;
+    const sourceControl = form.querySelector('[data-meaning-scope-control]');
     const sync = () => {
         const meaning = mode.value === 'meaning';
-        const sourceControl = form.querySelector('[data-meaning-scope-control]');
-        if (sourceControl) sourceControl.hidden = !meaning;
-        if (source) form.dataset.meaningScope = source.value;
+        sourceControl.hidden = !meaning;
         const controls = form.querySelector('[data-keyword-controls]');
         if (controls) controls.hidden = meaning;
         input.placeholder = meaning ? 'Ask a question or describe a topic' : 'Enter a keyword...';
@@ -124,7 +121,7 @@ document.querySelectorAll('[data-meaning-mode]').forEach(group => {
         event.stopImmediatePropagation();
         if (activeForm) return;
         form.querySelectorAll('[data-meaning-payload]').forEach(node => node.remove());
-        if (source) form.dataset.meaningScope = source.value;
+        const scope = form.elements.meaning_scope.value;
         const query = input.value.trim();
         if (!query || query.length > 1000) {
             setBusy(form, false);
@@ -136,10 +133,7 @@ document.querySelectorAll('[data-meaning-mode]').forEach(group => {
             activeForm = form;
             setBusy(form, true);
             showProgress(form, 'Finding related verses…');
-            worker.postMessage({
-                query,
-                scope: form.dataset.meaningScope || 'translation',
-            });
+            worker.postMessage({ query, scope });
         } catch {
             activeForm = undefined;
             fail(form);

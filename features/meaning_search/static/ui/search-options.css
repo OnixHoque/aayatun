@@ -6,7 +6,7 @@
 .meaning-options-row input:focus-visible { outline: 2px solid #2185d0; outline-offset: 3px; }
 .meaning-sources { border-left: 1px solid #aaa6; padding-left: 1.5rem; }
 .meaning-visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-[data-meaning-status]:empty { display: none; }
+[data-meaning-status]:empty { margin: 0; }
 @media (max-width: 480px) { .meaning-sources { flex-basis: 100%; border-left: 0; padding-left: 0; } }
 
 /* Keep the centered dialog's dimensions stable when switching search modes.
@@ -26,7 +26,6 @@
     font-size: .9rem;
     line-height: 1.5;
 }
-#searchwindow [data-meaning-status]:empty { visibility: hidden; }
 #searchwindow [data-meaning-status] .loader { flex-shrink: 0; }
 
 /* On narrow dialogs the source options wrap to a second row. Let the

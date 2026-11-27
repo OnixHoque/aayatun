@@ -1,4 +1,5 @@
 {% if meaning_scopes %}
+{% set selected_scope = selected_scope if selected_scope in meaning_scopes else meaning_scopes[0] %}
 <div class="meaning-options">
   <fieldset id="{{ mode_id }}" class="meaning-options-row" data-meaning-mode>
     <legend class="meaning-visually-hidden">Search mode</legend>

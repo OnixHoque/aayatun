@@ -20,7 +20,7 @@ class MeaningSearchTests(unittest.TestCase):
     def test_feature_assets_keep_their_public_urls_and_package_files_stay_private(self):
         client = app.test_client()
         page = client.get('/').get_data(as_text=True)
-        self.assertIn('/static/meaning/js/meaning-search.js?v=9', page)
+        self.assertIn('/static/meaning/js/meaning-search.js?v=10', page)
         for asset in ('index.json', 'js/meaning-worker.js'):
             with client.get('/static/meaning/' + asset) as response:
                 self.assertEqual(response.status_code, 200)

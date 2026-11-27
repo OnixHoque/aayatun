@@ -47,9 +47,9 @@ async function main() {
             mode.form.elements.query_str.value = 'saw the end';
             mode.form.requestSubmit();
         })()`);
-        const spinner = await evaluate(`Boolean(document.querySelector('form[aria-busy] [data-meaning-status] .loader'))`);
+        const spinner = await evaluate(`Boolean(document.querySelector('form:has(button[aria-busy=true]) [data-meaning-status] .loader'))`);
         if (!spinner) throw new Error('Loading spinner was not displayed');
-        await waitFor('document.querySelector("#result-search-mode") && !document.querySelector("form[aria-busy]")');
+        await waitFor('document.querySelector("#result-search-mode") && !document.querySelector("button[aria-busy=true]")');
         const result = await evaluate(`(async () => ({ refs: [...document.querySelectorAll('.surahlink')].map(n => n.textContent.trim()),
             alerts: [...document.querySelectorAll('[role=alert]')].map(n => n.textContent),
             text: document.body.innerText, cacheNames: await caches.keys() }))()`);
@@ -95,7 +95,7 @@ async function main() {
                 await client.send('Input.dispatchKeyEvent', {type:'keyDown', key:'Enter', code:'Enter', windowsVirtualKeyCode:13, nativeVirtualKeyCode:13, text:'\r'});
                 await client.send('Input.dispatchKeyEvent', {type:'keyUp', key:'Enter', code:'Enter', windowsVirtualKeyCode:13, nativeVirtualKeyCode:13});
             }
-            await waitFor(`document.querySelector('.surahlink')?.textContent.trim() === ${JSON.stringify(expectedFirst)} && !document.querySelector('form[aria-busy]')`);
+            await waitFor(`document.querySelector('.surahlink')?.textContent.trim() === ${JSON.stringify(expectedFirst)} && !document.querySelector('button[aria-busy=true]')`);
             if (!(await evaluate(`document.querySelector('#result-search-mode').closest('form').elements.meaning_scope.value === ${JSON.stringify(scope)}`))) throw new Error('Source selection changed after ' + action);
             report.sourceComparison[scope + ':' + action] = await evaluate(`Array.from(document.querySelectorAll('.surahlink'), n => n.textContent.trim()).slice(0,5)`);
         }
