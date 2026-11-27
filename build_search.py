@@ -44,40 +44,6 @@ def strip_markup(text):
 	return _ws_re.sub(' ', text).strip()
 
 
-def load_ai_fields():
-	"""Return the legacy combined AI text plus separate semantic fields."""
-	ai = {}
-	contexts = {}
-	word_meanings = {}
-	conn = sqlite3.connect('db/ai_context.db')
-	for surah, verse, content in conn.execute('select surah, verse, content from verse_analysis'):
-		try:
-			d = json.loads(content)
-		except Exception:
-			continue
-		key = (surah, verse)
-		context = _ws_re.sub(' ', d.get('verse_context') or '').strip()
-		parts = [context]
-		labeled = []
-		for wm in d.get('word_meanings') or []:
-			if not isinstance(wm, dict):
-				continue
-			word = wm.get('word') or ''
-			classical = wm.get('classical_meaning') or ''
-			here = wm.get('meaning_here') or ''
-			usage = wm.get('notable_usage') or ''
-			parts.extend([word, classical, here, usage])
-			labeled.append(
-				f'Word: {word} Classical meaning: {classical} '
-				f'Meaning here: {here} Notable usage: {usage}'
-			)
-		ai[key] = _ws_re.sub(' ', _url_re.sub(' ', ' '.join(parts))).strip()
-		contexts[key] = context
-		word_meanings[key] = _ws_re.sub(' ', _url_re.sub(' ', ' '.join(labeled))).strip()
-	conn.close()
-	return ai, contexts, word_meanings
-
-
 def load_rows():
 	import pandas as pd
 
@@ -99,8 +65,25 @@ def load_rows():
 		bn_tafsir = {(s, a): strip_markup(t) for s, a, t in
 		              conn.execute('select sura, ayah, text from verses')}
 
-	# AI-generated verse context and word meanings share one source table.
-	ai, contexts, word_meanings = load_ai_fields()
+	# AI-generated verse context (English prose). Flattened to plain text;
+	# word_meanings contributes its English explanations too.
+	ai = {}
+	with closing(sqlite3.connect('db/ai_context.db')) as conn:
+		for surah, verse, content in conn.execute('select surah, verse, content from verse_analysis'):
+			try:
+				d = json.loads(content)
+			except Exception:
+				continue
+			parts = [d.get('verse_context') or '']
+			for wm in d.get('word_meanings') or []:
+				if not isinstance(wm, dict):
+					continue
+				parts.append(wm.get('word') or '')
+				parts.append(wm.get('classical_meaning') or '')
+				parts.append(wm.get('meaning_here') or '')
+				parts.append(wm.get('notable_usage') or '')
+			text = _url_re.sub(' ', ' '.join(parts))
+			ai[(surah, verse)] = _ws_re.sub(' ', text).strip()
 
 	# Surah display names: "N. Name (...)" -> "Name (...)"
 	stat = pd.read_json('db/quran_stat.json')
@@ -124,8 +107,6 @@ def load_rows():
 			'en_tafsir': en_tafsir.get(key, ''),
 			'bn_tafsir': bn_tafsir.get(key, ''),
 			'ai': ai.get(key, ''),
-			'verse_context': contexts.get(key, ''),
-			'word_meanings': word_meanings.get(key, ''),
 			'surah_name': surah_names.get(surah, ''),
 		})
 	return rows

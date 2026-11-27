@@ -112,26 +112,40 @@ The application uses relative data paths such as `db/...` and `db2/...`.
 
 ## Run Locally
 
-This PR includes self-contained meaning search, runtime model weights, and optional offline rebuild tooling.
-Use **CPython 3.12 x64** and obtain all Git LFS files before disconnecting:
+### Requirements
 
-```text
-python deployment/manage.py install
+- Python 3.10 is recommended.
+- Git LFS is required for `db2/quran_metadata.db`.
+- Install Python dependencies from `requirements.txt`.
+
+### Setup
+
+```bash
+git lfs install
+git lfs pull
+
+python3.10 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
 ```
 
-Then use the virtual environment's Python (`.venv/bin/python` on Linux,
-`.venv/Scripts/python.exe` on Windows):
+### Start the Development Server
 
-```text
-PYTHON deployment/manage.py build
-PYTHON deployment/manage.py serve --listen 127.0.0.1:8000
+Run this command from the repository root:
+
+```bash
+flask --app app.py run --debug
 ```
 
-See [deployment/README.md](deployment/README.md) for offline installation,
-production configuration, supported platforms, model rebuilds and packaging.
-See [SEMANTIC_SEARCH.md](SEMANTIC_SEARCH.md) for relevance evaluation and limits.
+Do not run `python3 app.py`.
+The file does not define a `__main__` entry point.
 
-<!-- Legacy setup removed in favor of the bundled offline installation. -->
+### Quick Smoke Check
+
+```bash
+python3 -c "import app; print(app.app.test_client().get('/2/255').status_code)"
+```
+
 ## Build Search Index
 
 The search index is generated from local data files.
@@ -169,9 +183,80 @@ The upgrade switches require an existing `db/search.db`.
 
 ## Deploy to Server
 
-Use [the self-contained deployment instructions](deployment/README.md). They cover
-Waitress, HTTPS/reverse proxy settings, persistent secrets and static model hosting.
-Runtime model assets are included. Normal Python dependencies install through `requirements.txt`; a separate optional offline kit is available.
+The production site is deployed at [https://www.aayatun.com](https://www.aayatun.com).
+Use these steps for a Linux server deployment.
+
+### 1. Get the Code
+
+```bash
+git clone <repository-url>
+cd aayatun
+git checkout deploy
+git lfs install
+git lfs pull
+```
+
+### 2. Create a Python Environment
+
+```bash
+python3.10 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+pip install gunicorn
+```
+
+### 3. Set Environment Variables
+
+Set a secret key before you start the application:
+
+```bash
+export AAYATUN_SECRET_KEY="<long-random-secret>"
+```
+
+Do not commit the secret key to the repository.
+
+### 4. Build the Search Index
+
+```bash
+source venv/bin/activate
+python3 build_search.py
+```
+
+Rebuild or upgrade the index when search source data changes:
+
+```bash
+python3 build_search.py
+python3 build_search.py --add-english-index
+python3 build_search.py --add-root-index
+```
+
+### 5. Run with a WSGI Server
+
+Start Gunicorn from the repository root:
+
+```bash
+source venv/bin/activate
+gunicorn --workers 2 --bind 127.0.0.1:8000 app:app
+```
+
+Put a reverse proxy, such as Nginx, in front of Gunicorn.
+Configure the reverse proxy to forward HTTPS traffic to `127.0.0.1:8000`.
+
+### 6. Run as a Service
+
+Create a system service, such as `systemd`, for Gunicorn.
+Set the working directory to the repository root.
+Load `AAYATUN_SECRET_KEY` from a secure environment file.
+Restart the service after code or data updates.
+
+### Deployment Checklist
+
+- Pull the latest `deploy` branch.
+- Pull Git LFS objects.
+- Install or update Python dependencies.
+- Rebuild `db/search.db` when search data changes.
+- Restart the WSGI service.
+- Verify key routes, such as `/`, `/2/255`, `/page/1`, `/map`, and `/search`.
 
 ## Architecture Diagram
 

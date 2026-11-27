@@ -23,7 +23,7 @@
 {% block content %}
 
 <!-- <link href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.css" rel="stylesheet"> -->
-<link href="/static/vendor/datatables-1.10.22/dataTables.semanticui.min.css" rel="stylesheet">
+<link href="{{ url_for('meaning_search.static', filename='ui/datatables-1.10.22/dataTables.semanticui.min.css') }}" rel="stylesheet">
 
 <style>
 	* {
@@ -51,19 +51,8 @@
 <!-- <div style=""> -->
 	<br>
 	<!-- <a href=""><h4 style="text-align: center; font-size: 150%; font-family: 'Merriweather', serif;"> Surah Name</h4></a>  -->
-	<form class="ui form" method="POST" action="/search"
-		data-meaning-scope="{{ meaning_form_scope|default(meaning_scope) }}"
-		data-meaning-fields="{{ meaning_form_fields|default(meaning_fields)|join(', ') }}"
-		data-meaning-asset-mb="{{ '%.2f'|format(meaning_form_asset_mb|default(meaning_asset_mb)) }}">
-		{% if meaning_search_enabled %}
-		<label for="result-search-mode">Search mode</label>
-		<select id="result-search-mode" name="search_mode">
-			<option value="keyword" {% if search_mode != 'meaning' %}selected{% endif %}>Keyword search</option>
-			<option value="meaning" {% if search_mode == 'meaning' %}selected{% endif %}>Search by meaning</option>
-		</select>
-		{% include 'partials/_meaning_scope.html' %}
-		<p data-meaning-status role="status"></p>
-		{% endif %}
+	<form class="ui form" method="POST" action="/search">
+		{% with mode_id="result-search-mode", selected_scope=meaning_form_scope|default(meaning_scope) %}{% include "meaning_search/scope.html" %}{% endwith %}
 		<div class="field" style="width: 100%;">
 			<div class="ui action large input">
 				<input type="text" name="query_str" style="font-family: Open Sans" value="{{ query }}" placeholder="Enter a keyword...">
@@ -257,17 +246,8 @@
 		    				<hr style="width: 50%; color: lightgray; opacity: 50%;">
 		    			{% endif %}
 
-					{% if x.semantic_tafsir %}
-						<h4>Tafsir Ibn Kathir</h4>
-						<p>{{ x.semantic_tafsir|truncate(450, true) }}</p>
-						{% if x.semantic_tafsir|length > 450 %}<details><summary>Read full tafsir</summary><p style="white-space: pre-line">{{ x.semantic_tafsir }}</p></details>{% endif %}
-					{% endif %}
-					{% if x.semantic_ai %}
-						<h4>AI explanation <small style="font-weight:normal">AI-generated</small></h4>
-						<p>{{ x.semantic_ai|truncate(450, true) }}</p>
-						{% if x.semantic_ai|length > 450 %}<details><summary>Read full explanation</summary><p style="white-space: pre-line">{{ x.semantic_ai }}</p></details>{% endif %}
-					{% endif %}
-		    			{% if x.en_tafsir %}
+					{% if search_mode == "meaning" %}{% include "meaning_search/context.html" %}{% endif %}
+					{% if x.en_tafsir %}
 		    				<h4 style="font-family: Open Sans">Matched in Tafsir Ibn Kathir</h4>
 		    				<p> ...{{ x.en_tafsir }}... </p>
 		    				<hr style="width: 50%; color: lightgray; opacity: 50%;">
@@ -290,8 +270,8 @@
 
 
 	<!-- <script src="https://code.jquery.com/jquery-3.5.1.js"></script> -->
-	<script defer src="/static/vendor/datatables-1.10.22/jquery.dataTables.min.js"></script>
-	<script defer src="/static/vendor/datatables-1.10.22/dataTables.semanticui.min.js"></script>
+	<script defer src="{{ url_for('meaning_search.static', filename='ui/datatables-1.10.22/jquery.dataTables.min.js') }}"></script>
+	<script defer src="{{ url_for('meaning_search.static', filename='ui/datatables-1.10.22/dataTables.semanticui.min.js') }}"></script>
 
 
 	<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.js"></script> -->

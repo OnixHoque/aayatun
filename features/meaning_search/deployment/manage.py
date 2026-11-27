@@ -14,24 +14,31 @@ import sys
 import venv
 import zipfile
 
-ROOT = Path(__file__).resolve().parents[1]
+DEPLOYMENT = Path(__file__).resolve().parent
+FEATURE = DEPLOYMENT.parent
+ROOT = FEATURE.parents[1]
+KIT = Path(os.environ.get('AAYATUN_MEANING_KIT', DEPLOYMENT / 'kit')).resolve()
+DIST = FEATURE / 'dist'
 os.chdir(ROOT)
 sys.path.insert(0, str(ROOT))
-os.environ['HF_HUB_CACHE'] = str(ROOT / 'models/hub')
+os.environ['HF_HUB_CACHE'] = str(KIT / 'models/hub')
 os.environ['HF_HUB_OFFLINE'] = '1'
 os.environ['TRANSFORMERS_OFFLINE'] = '1'
 os.environ['HF_HUB_DISABLE_TELEMETRY'] = '1'
 
 
 def verify(optional=False):
-    manifest = "deployment/optional-assets.json" if optional else "deployment/assets.json"
-    entries = json.loads((ROOT / manifest).read_text(encoding="utf8"))["files"]
+    manifest = 'optional-assets.json' if optional else 'assets.json'
+    entries = json.loads((DEPLOYMENT / manifest).read_text(encoding='utf8'))['files']
     for relative, expected in entries.items():
-        path = ROOT / relative
+        path = (KIT if optional else ROOT) / relative
         if not path.is_file():
-            raise SystemExit(f'Missing asset: {relative}. See deployment/README.md for the runtime files or optional build kit.')
+            raise SystemExit(f'Missing asset: {relative}. See features/meaning_search/deployment/README.md for the runtime files or optional build kit.')
+        hasher = hashlib.sha256()
         with path.open('rb') as handle:
-            digest = hashlib.file_digest(handle, 'sha256').hexdigest()
+            for chunk in iter(lambda: handle.read(1024 * 1024), b''):
+                hasher.update(chunk)
+        digest = hasher.hexdigest()
         if path.stat().st_size != expected['bytes'] or digest != expected['sha256']:
             raise SystemExit(f'Incomplete or modified asset: {relative}. Check Git LFS downloads.')
     print(f'Verified {len(entries)} assets; no downloads.', flush=True)
@@ -49,7 +56,7 @@ def smoke_model():
     import torch
     from transformers import AutoModel, AutoTokenizer
     torch.set_num_threads(4)
-    import build_meaning_index as builder
+    from features.meaning_search import build_meaning_index as builder
     tokenizer = AutoTokenizer.from_pretrained(builder.MODEL, **builder.tokenizer_options())
     encoder = AutoModel.from_pretrained(builder.MODEL, **builder.tokenizer_options()).eval()
     passages = builder.make_passages(tokenizer, [{'verse_context': 'Accountability on the Day of Judgement.'}], 'verse_context')
@@ -59,8 +66,8 @@ def smoke_model():
 
 
 def install(offline=False, build_deps=False):
-    venv.EnvBuilder(with_pip=True).create(ROOT / '.venv')
-    executable = ROOT / ('.venv/Scripts/python.exe' if sys.platform == 'win32' else '.venv/bin/python')
+    venv.EnvBuilder(with_pip=True).create(FEATURE / '.venv')
+    executable = FEATURE / ('.venv/Scripts/python.exe' if sys.platform == 'win32' else '.venv/bin/python')
     command = [str(executable), '-m', 'pip', 'install']
     if offline:
         verify(optional=True)
@@ -69,11 +76,11 @@ def install(offline=False, build_deps=False):
         target = 'windows-cp312' if sys.platform == 'win32' else 'linux-cp312' if sys.platform == 'linux' else None
         if target is None:
             raise SystemExit('No optional offline wheels for this OS.')
-        lock = ROOT / 'deployment' / f'{target}{"" if build_deps else "-runtime"}.lock'
-        command += ['--no-index', '--no-cache-dir', '--find-links', str(ROOT / 'deployment/wheels' / target),
+        lock = DEPLOYMENT / f'{target}{"" if build_deps else "-runtime"}.lock'
+        command += ['--no-index', '--no-cache-dir', '--find-links', str(KIT / 'deployment/wheels' / target),
                     '--require-hashes', '-r', str(lock)]
     else:
-        command += ['-r', str(ROOT / ('requirements-build.txt' if build_deps else 'requirements-runtime.txt'))]
+        command += ['-r', str(FEATURE / ('requirements-build.txt' if build_deps else 'requirements-runtime.txt'))]
         if build_deps:
             command += ['--extra-index-url', 'https://download.pytorch.org/whl/cpu']
     subprocess.run(command, check=True)
@@ -84,17 +91,19 @@ def package(optional=False):
     files = subprocess.check_output(['git', 'ls-files', '-z'], cwd=ROOT).decode().split('\0')
     files = [name for name in files if name]
     if optional:
-        files = list(json.loads((ROOT / 'deployment/optional-assets.json').read_text())["files"])
-        files += [path.relative_to(ROOT).as_posix() for path in (ROOT / 'deployment').glob('*.lock')]
-        files.append('deployment/optional-assets.json')
+        files = list(json.loads((DEPLOYMENT / 'optional-assets.json').read_text())["files"])
     for name in ('db/search.db', 'db/search_vocab.pkl'):
         if not optional and (ROOT / name).is_file():
             files.append(name)
-    output = ROOT / ('dist/aayatun-optional-offline-build.zip' if optional else 'dist/aayatun-runtime.zip')
+    output = DIST / ('aayatun-optional-offline-build.zip' if optional else 'aayatun-runtime.zip')
     output.parent.mkdir(exist_ok=True)
     with zipfile.ZipFile(output, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=1) as archive:
         for name in sorted(set(files)):
-            archive.write(ROOT / name, name if optional else 'aayatun/' + name)
+            archive.write((KIT if optional else ROOT) / name, name if optional else 'aayatun/' + name)
+        if optional:
+            for lock in DEPLOYMENT.glob('*.lock'):
+                archive.write(lock, 'deployment/' + lock.name)
+            archive.write(DEPLOYMENT / 'optional-assets.json', 'deployment/optional-assets.json')
     print(f'Packaged actual LFS contents and application files: {output}')
 
 
@@ -114,17 +123,17 @@ def main():
         install(args.offline, args.build_deps)
     elif args.command == 'build':
         run('build_search.py')
-        run('build_meaning_index.py', '--validate-only')
+        run('-m', 'features.meaning_search.build_meaning_index', '--validate-only')
     elif args.command == 'smoke-model':
         smoke_model()
     elif args.command == 'rebuild-embeddings':
         run('build_search.py')
         # Keep the validated deployed manifest; a new build needs fresh validation.
-        output = ROOT / 'dist/rebuilt'
+        output = DIST / 'rebuilt'
         output.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(ROOT / 'static/meaning/verses-d1c40be0bef5-e5-v1.bin',
+        shutil.copyfile(FEATURE / 'static/verses-d1c40be0bef5-e5-v1.bin',
                         output / 'verses-d1c40be0bef5-e5-v1.bin')
-        run('build_meaning_index.py', '--output', 'dist/rebuilt/all-fields-index.json', '--device', 'cpu')
+        run('-m', 'features.meaning_search.build_meaning_index', '--output', str(output / 'all-fields-index.json'), '--device', 'cpu')
     elif args.command == 'serve':
         from waitress import serve
         from app import app

@@ -1,5 +1,6 @@
-const CACHE_NAME = 'aayatun-v254';
-const MEANING_ASSET_CACHE = 'aayatun-meaning-assets-v1';
+importScripts('/static/meaning/js/service-worker.js');
+
+const CACHE_NAME = 'aayatun-v255';
 
 // Prayer Time's sunrise/sunset/midnight pills use Material Symbols. The CSS
 // is precached with the shell, and install then caches every font file it
@@ -25,12 +26,6 @@ const CORE_ASSETS = [
   '/static/js/reel.js',
   '/static/css/reel.css',
   '/static/js/verse-nav.js',
-  '/static/js/meaning-search.js',
-  '/static/js/meaning-worker.js',
-  '/static/js/meaning-worker.js?local-model=',
-  '/static/js/meaning-core.mjs',
-  '/static/meaning/vendor/transformers-3.7.2/transformers.min.js',
-  '/static/meaning/vendor/transformers-3.7.2/ort-wasm-simd-threaded.jsep.mjs',
   '/static/js/qcf-font.js',
   '/static/js/mushaf-zoom.js',
   '/static/js/install.js',
@@ -71,7 +66,7 @@ self.addEventListener('activate', (evt) => {
   evt.waitUntil(
     caches.keys().then((keyList) => {
       return Promise.all(keyList.map((key) => {
-        if (key.startsWith('aayatun-v') && key !== CACHE_NAME) {
+        if (key !== CACHE_NAME && !self.meaningSearchCache.preserves(key)) {
           console.log('[ServiceWorker] Removing old cache', key);
           return caches.delete(key);
         }
@@ -133,14 +128,14 @@ function staleWhileRevalidate(req) {
   );
 }
 
-function cacheFirst(req, cacheName = CACHE_NAME) {
-  return caches.open(cacheName).then((cache) => cache.match(req)).then((cached) => {
+function cacheFirst(req) {
+  return caches.match(req).then((cached) => {
     if (cached) {
       return cached;
     }
     return fetch(req).then((res) => {
       const copy = res.clone();
-      caches.open(cacheName).then((cache) => cache.put(req, copy));
+      caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
       return res;
     }).catch(() => networkError());
   });
@@ -153,26 +148,7 @@ self.addEventListener('fetch', (evt) => {
   }
 
   const url = new URL(req.url);
-
-  if (url.origin === self.location.origin && url.pathname.startsWith('/static/meaning/')) {
-    // Transformers.js owns model caching. Avoid a duplicate 135 MB SW copy or
-    // background re-downloads when its Cache Storage entry already exists.
-    if (url.pathname.startsWith('/static/meaning/models/')) return;
-    // Vector filenames contain corpus hashes; runtime paths contain versions.
-    if (url.pathname.endsWith('.bin') || url.pathname.startsWith('/static/meaning/vendor/')) {
-      evt.respondWith(cacheFirst(req, MEANING_ASSET_CACHE));
-      return;
-    }
-    // Fetch the small mutable manifest freshly; use its cached copy offline.
-    evt.respondWith(fetch(req).then((res) => {
-      if (res.ok) {
-        const copy = res.clone();
-        evt.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.put(req, copy)));
-      }
-      return res;
-    }).catch(() => caches.match(req).then((cached) => cached || networkError())));
-    return;
-  }
+  if (self.meaningSearchCache.handle(evt, url, CACHE_NAME)) return;
 
   // Authenticated, per-session API responses must never be cached (and must
   // not be replayed by staleWhileRevalidate).

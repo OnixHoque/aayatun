@@ -1,22 +1,38 @@
-# Run the self-contained PR #2 app
+# Instructions to create and activate the Python 3.10 Virtual Environment
 
-Use CPython 3.12 x64. First obtain the complete checkout, including `git lfs pull`.
-Then install the normal application dependencies (requires package-index access):
+1. **Install Python 3.10:**
+   ```bash
+   sudo apt-get update
+   sudo apt-get install python3.10
+   ```
 
-```text
-python deployment/manage.py install
-```
+2. **Create a virtual environment:**
+   ```bash
+   python3.10 -m venv venv
+   ```
 
-On Windows:
+3. **Activate the virtual environment:**
+   ```bash
+   source venv/bin/activate
+   ```
 
-```text
-.venv/Scripts/python.exe deployment/manage.py build
-.venv/Scripts/python.exe deployment/manage.py serve --listen 127.0.0.1:8000
-```
+4. **Install dependencies from requirements.txt:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-On Linux x64 (glibc 2.28+), use `.venv/bin/python` instead.
-Runtime-only installation is the default. The separate optional offline kit is only
-needed for offline dependency installation or regenerating embeddings.
+5. **To deactivate the virtual environment when done:**
+   ```bash
+   deactivate
+   ```
 
-See [deployment/README.md](deployment/README.md) for production settings, offline
-rebuilds, browser verification, supported platforms, and portable ZIP packaging.
+
+# Run the app for testing
+
+flask --app app.py run --debug
+
+# Fetch PR
+
+git fetch origin pull/1/head:pr-1
+git fetch origin pull/1/head
+git merge --ff-only FETCH_HEAD

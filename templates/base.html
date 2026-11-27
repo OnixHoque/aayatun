@@ -114,14 +114,14 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" type="text/css" href="/static/vendor/fomantic-2.8.6/semantic.min.css">
+  <link rel="stylesheet" type="text/css" href="{{ url_for('meaning_search.static', filename='ui/fomantic-2.8.6/semantic.min.css') }}">
   <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename= 'images/favicon.png') }}"/>
   <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename= 'images/apple-touch-icon.png') }}">
 
 
-  <script defer src="/static/vendor/jquery-3.3.1/jquery.min.js"></script>
-  <script defer src="/static/vendor/fomantic-2.8.6/semantic.min.js"></script>
+  <script defer src="{{ url_for('meaning_search.static', filename='ui/jquery-3.3.1/jquery.min.js') }}"></script>
+  <script defer src="{{ url_for('meaning_search.static', filename='ui/fomantic-2.8.6/semantic.min.js') }}"></script>
   <script defer src="{{ url_for('static', filename='js/pull-refresh.js') }}"></script>
   <script defer src="{{ url_for('static', filename='js/recent.js') }}"></script>
   <script defer src="{{ url_for('static', filename='js/quiz-attend.js') }}"></script>
@@ -353,19 +353,8 @@
     <p style="font-family: Open Sans">Search the Entire Quran</p>
   </div>
   <div class="content">
-    <form class="ui form" method="POST" action="/search"
-      data-meaning-scope="{{ meaning_scope }}"
-      data-meaning-fields="{{ meaning_fields|join(', ') }}"
-      data-meaning-asset-mb="{{ '%.2f'|format(meaning_asset_mb) }}">
-      {% if meaning_search_enabled %}
-      <label for="dialog-search-mode">Search mode</label>
-      <select id="dialog-search-mode" name="search_mode">
-        <option value="keyword">Keyword search</option>
-        <option value="meaning">Search by meaning</option>
-      </select>
-      {% include 'partials/_meaning_scope.html' %}
-      <p data-meaning-status role="status"></p>
-      {% endif %}
+    <form class="ui form" method="POST" action="/search">
+      {% with mode_id="dialog-search-mode", selected_scope=meaning_scope %}{% include "meaning_search/scope.html" %}{% endwith %}
       <div class="field" style="width: 100%;">
         <div class="ui action large input">
           <input type="text" name="query_str" style="font-family: Open Sans" placeholder="Enter a keyword...">
@@ -382,9 +371,8 @@
   </div>
 </div>
 <div class="ui basic segment" style="padding: 0 !important; margin: 0 !important;">
-{% if meaning_search_enabled %}
-<script type="module" src="{{ url_for('static', filename='js/meaning-search.js', v='7') }}"
-  {% if local_meaning_model %}data-local-meaning-model{% endif %}></script>
+{% if meaning_scopes %}
+<script type="module" src="{{ url_for('meaning_search.static', filename='js/meaning-search.js', v='8') }}"></script>
 {% endif %}
 
   <div class="ui text container">

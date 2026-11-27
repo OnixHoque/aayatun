@@ -8,9 +8,8 @@ const crypto = require('node:crypto');
 const { spawn, execFileSync } = require('node:child_process');
 
 const HERE = __dirname;
-const WORKSPACE = path.resolve(HERE, '..', '..');
-const DEFAULT_ROOT = path.resolve(HERE, '..');
-const DEFAULT_MODEL_ROOT = path.join(DEFAULT_ROOT, 'static', 'meaning', 'models');
+const DEFAULT_ROOT = path.resolve(HERE, '..', '..', '..');
+const DEFAULT_MODEL_ROOT = path.join(HERE, '..', 'static', 'models');
 const DEFAULT_FIXTURE = path.join(HERE, 'islamqa_pr2_test_queries.jsonl');
 const DEFAULT_MANIFEST = path.join(HERE, 'islamqa_pr2_fixture_manifest.json');
 const DEFAULT_OUTPUT = path.join(HERE, 'islamqa_pr2_meaning_rankings.json');
@@ -108,7 +107,7 @@ function safeFile(root, relative) {
     return resolved;
 }
 
-async function serve(appRoot, modelRoot) {
+async function serve(appRoot, modelRoot, featureAssets) {
     const modelPrefix = '/static/meaning/models/';
     const transfers = {};
     const server = http.createServer(async (request, response) => {
@@ -119,6 +118,9 @@ async function serve(appRoot, modelRoot) {
             if (decoded.startsWith(modelPrefix)) {
                 root = modelRoot;
                 decoded = decoded.slice(modelPrefix.length);
+            } else if (featureAssets && decoded.startsWith('/static/meaning/')) {
+                root = featureAssets;
+                decoded = decoded.slice('/static/meaning/'.length);
             } else {
                 decoded = decoded.replace(/^\/+/, '');
             }
@@ -308,14 +310,22 @@ async function main() {
     const selected = args.query ? [{ id: 'manual-query', query: args.query }]
         : args.limit ? cases.slice(0, Number(args.limit)) : cases;
 
-    const workerPath = path.join(root, 'static', 'js', 'meaning-worker.js');
+    const movedAssets = path.join(root, 'features', 'meaning_search', 'static');
+    const featureAssets = fs.existsSync(movedAssets) ? movedAssets : null;
+    const assetRoot = featureAssets || path.join(root, 'static', 'meaning');
+    const workerRoot = featureAssets || path.join(root, 'static');
+    const workerPath = path.join(workerRoot, 'js', 'meaning-worker.js');
+    const workerUrl = featureAssets ? '/static/meaning/js/meaning-worker.js' : '/static/js/meaning-worker.js';
     const indexRelative = scope === 'all-fields' ? 'static/meaning/all-fields-index.json' : 'static/meaning/index.json';
-    const indexPath = path.join(root, indexRelative);
+    const indexPath = path.join(assetRoot, path.basename(indexRelative));
     const index = JSON.parse(await fsp.readFile(indexPath, 'utf8'));
     const vectorHashes = {};
     if (scope === 'translation') {
         if (index.corpus !== manifest.corpus.sha256) throw new Error('Meaning index corpus mismatch');
-        vectorHashes.translation = sha256File(path.join(root, 'static', 'meaning', index.file));
+        vectorHashes.translation = sha256File(path.join(assetRoot, index.file));
+        if (featureAssets && !args['allow-working-tree']) {
+            throw new Error('Use --allow-working-tree for the current feature or --root for the historical baseline');
+        }
         if (!args['allow-working-tree']) {
             assertPinnedAsset(root, 'static/js/meaning-worker.js');
             assertPinnedAsset(root, indexRelative);
@@ -328,21 +338,21 @@ async function main() {
             throw new Error('All-fields translation corpus mismatch');
         }
         for (const field of index.fields) {
-            const actual = sha256File(path.join(root, 'static', 'meaning', field.file));
+            const actual = sha256File(path.join(assetRoot, field.file));
             if (actual !== field.sha256) throw new Error(`${field.name} vector hash mismatch`);
             vectorHashes[field.name] = actual;
         }
     }
     const workerHash = textSha256File(workerPath);
     const coreHash = scope === 'all-fields'
-        ? textSha256File(path.join(root, 'static', 'js', 'meaning-core.mjs')) : null;
+        ? textSha256File(path.join(workerRoot, 'js', 'meaning-core.mjs')) : null;
     const indexHash = textSha256File(indexPath);
     const vectorsHash = scope === 'translation'
         ? vectorHashes.translation
         : crypto.createHash('sha256').update(JSON.stringify(vectorHashes)).digest('hex');
     const modelFiles = verifyModelFiles(modelRoot);
 
-    const { server, base, transfers } = await serve(root, modelRoot);
+    const { server, base, transfers } = await serve(root, modelRoot, featureAssets);
     const chromeErrors = [];
     let userDataDir;
     let child;
@@ -383,7 +393,7 @@ async function main() {
         await client.send('Page.navigate', { url: `${base}/${indexRelative}` });
         await loaded;
         const workerSetup = `
-            window.meaningWorker = new Worker('/static/js/meaning-worker.js?local-model', { type: 'module' });
+            window.meaningWorker = new Worker('${workerUrl}?local-model', { type: 'module' });
             window.__runMeaning = query => new Promise((resolve, reject) => {
                 const start = performance.now();
                 const timer = setTimeout(() => reject(new Error('Meaning worker timed out')), ${timeoutMs});
@@ -477,7 +487,7 @@ async function main() {
         const report = {
             engine: 'Aayatun PR #2 Search by meaning',
             external_dns_blocked: Boolean(args.offline),
-            product_commit: scope === 'translation' ? PRODUCT_COMMIT : rootRevision,
+            product_commit: scope === 'translation' && !args['allow-working-tree'] ? PRODUCT_COMMIT : rootRevision,
             root_revision: rootRevision,
             scope,
             working_tree_assets: scope === 'all-fields' || Boolean(args['allow-working-tree']),

@@ -24,7 +24,7 @@ from typing import Any, Callable, Iterable
 
 
 HERE = Path(__file__).resolve().parent
-WORKSPACE = HERE.parents[1]
+WORKSPACE = HERE.parents[3]
 DEFAULT_PACKAGE = (
     WORKSPACE / "Daleel" / "daleel-islamqa-review" / "datasets"
     / "sanitized_islamqa" / "split_package"

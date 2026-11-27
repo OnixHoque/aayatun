@@ -1,17 +1,1 @@
 db2/quran_metadata.db filter=lfs diff=lfs merge=lfs -text
-*.py text eol=lf
-*.js text eol=lf
-*.mjs text eol=lf
-*.sh text eol=lf
-*.json text eol=lf
-# Preserve the byte hash recorded by the validated embedding builder.
-build_meaning_index.py -text
-static/meaning/** -text
-static/vendor/** -text
-db/** -text
-deployment/licenses/** -text
-static/meaning/models/**/model_int8.onnx filter=lfs diff=lfs merge=lfs -text
-static/meaning/vendor/**/*.wasm filter=lfs diff=lfs merge=lfs -text
-evaluation/*_browser*.json filter=lfs diff=lfs merge=lfs -text
-evaluation/validation/*_browser*.json filter=lfs diff=lfs merge=lfs -text
-**/tokenizer.json filter=lfs diff=lfs merge=lfs -text

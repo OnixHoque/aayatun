@@ -88,189 +88,209 @@
       "bytes": 311238656,
       "sha256": "cff182a5efac0e77e07c53d73d79fa9ec5e79954216f76cc11968dc02ed2fd70"
     },
-    "deployment/licenses/DataTables-LICENSE.txt": {
+    "features/meaning_search/deployment/licenses/DataTables-LICENSE.txt": {
       "bytes": 1096,
       "sha256": "4f6610cece9940c3bf3de202a920e7b69491e7947d968330f03db592caa456dd"
     },
-    "deployment/licenses/E5-MIT-LICENSE.txt": {
+    "features/meaning_search/deployment/licenses/E5-MIT-LICENSE.txt": {
       "bytes": 1083,
       "sha256": "b5cb7ff7859e7d282d98fc43ab081b0dda5dc659dc3385cf65740c759a7e6a6c"
     },
-    "deployment/licenses/Fomantic-UI-LICENSE.md": {
+    "features/meaning_search/deployment/licenses/Fomantic-UI-LICENSE.md": {
       "bytes": 1042,
       "sha256": "d6cb13d42f2f219555468cc9d130f6aeef0e3825d1824f9e0c643118deebb786"
     },
-    "deployment/licenses/Font-Awesome-LICENSE.txt": {
+    "features/meaning_search/deployment/licenses/Font-Awesome-LICENSE.txt": {
       "bytes": 1548,
       "sha256": "e779748dfe75e84f974df3c7bc07f842011a100159158b0f1f49b2f2a5a515cb"
     },
-    "deployment/licenses/jQuery-LICENSE.txt": {
+    "features/meaning_search/deployment/licenses/jQuery-LICENSE.txt": {
       "bytes": 1605,
       "sha256": "2b3ed8ba424423a50b023e728530d94bc385cfc7c328ad65a3dfee9c7c0531c5"
     },
-    "deployment/licenses/ONNX-Runtime-LICENSE": {
+    "features/meaning_search/deployment/licenses/ONNX-Runtime-LICENSE": {
       "bytes": 1073,
       "sha256": "2f07c72751aed99790b8a4869cf2311df85a860b22ded05fa22803587a48922c"
     },
-    "deployment/licenses/ONNX-Runtime-ThirdPartyNotices.txt": {
+    "features/meaning_search/deployment/licenses/ONNX-Runtime-ThirdPartyNotices.txt": {
       "bytes": 316114,
       "sha256": "8c06e8cff286a4a117b3b246a4c7da68428a144af757823db50e3d6520941ec6"
     },
-    "deployment/licenses/Transformers.js-LICENSE.txt": {
+    "features/meaning_search/deployment/licenses/Transformers.js-LICENSE.txt": {
       "bytes": 11358,
       "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
     },
-    "static/meaning/all-fields-ar_raw-13b7f19b630d-e5-v1.bin": {
+    "features/meaning_search/static/all-fields-ar_raw-13b7f19b630d-e5-v1.bin": {
       "bytes": 2398848,
       "sha256": "0e54ea0b1cebfe1127b8c0341833c420c1e1219bd5d2ed9c3c7bf0772dd8d4e4"
     },
-    "static/meaning/all-fields-bn_tafsir-d32de40aabc1-e5-v1.bin": {
+    "features/meaning_search/static/all-fields-bn_tafsir-d32de40aabc1-e5-v1.bin": {
       "bytes": 3149952,
       "sha256": "b8ad1bdbe670f0e942e475123ab4d7c7124b71685d51323fee7f98c6059d383a"
     },
-    "static/meaning/all-fields-en_tafsir-0e3587b4af9e-e5-v1.bin": {
+    "features/meaning_search/static/all-fields-en_tafsir-0e3587b4af9e-e5-v1.bin": {
       "bytes": 4014720,
       "sha256": "0d85591a9d3a04f0e91a99671c6f682ff3fb1e79a24f88df6f80a673294fad81"
     },
-    "static/meaning/all-fields-index.json": {
+    "features/meaning_search/static/all-fields-index.json": {
       "bytes": 327346,
       "sha256": "fd109a88f98322abe0fb2b534ba89a2459a64fcffb64962b5c948e1e74b48ea5"
     },
-    "static/meaning/all-fields-surah_name-fe4282d95768-e5-v1.bin": {
+    "features/meaning_search/static/all-fields-surah_name-fe4282d95768-e5-v1.bin": {
       "bytes": 2394624,
       "sha256": "efe7e91e5bd7c75b69b40d7b1f7e77f4b8da0887179b6d9f6fdfc15dd1650654"
     },
-    "static/meaning/all-fields-verse_context-34d8bcc3e537-e5-v1.bin": {
+    "features/meaning_search/static/all-fields-verse_context-34d8bcc3e537-e5-v1.bin": {
       "bytes": 2351232,
       "sha256": "462cd027fcb341a3694b1dde4762ed7529097e9dced445d233c197b3afd92d6a"
     },
-    "static/meaning/all-fields-word_meanings-c875970b4af2-e5-v1.bin": {
+    "features/meaning_search/static/all-fields-word_meanings-c875970b4af2-e5-v1.bin": {
       "bytes": 5218560,
       "sha256": "99837d8e30d5f5d1d1086f0ddb7d8307adfb9ad8f883d69258949acb2da45329"
     },
-    "static/meaning/index.json": {
+    "features/meaning_search/static/index.json": {
       "bytes": 48757,
       "sha256": "f96386fa56d44f87c26933e35673816750b2862ccd46d2ac3303ea78b932d6de"
     },
-    "static/meaning/models/Xenova/multilingual-e5-small/config.json": {
+    "features/meaning_search/static/js/meaning-core.mjs": {
+      "bytes": 4056,
+      "sha256": "668cdf629dedb4ae2480e6603eb6832d39e7bb73c3df3b084ffe7c547135064a"
+    },
+    "features/meaning_search/static/js/meaning-model-source.mjs": {
+      "bytes": 888,
+      "sha256": "1fd91eb9a8b89bbc6e35e7a6e7cb9c4f99b5aec5df9e009d49e26f54067a9926"
+    },
+    "features/meaning_search/static/js/meaning-search.js": {
+      "bytes": 6075,
+      "sha256": "4793f0ff68bed8ce842bcfd5ab59d136c52fa15a0e6e4a96d23133c74008caa2"
+    },
+    "features/meaning_search/static/js/meaning-worker.js": {
+      "bytes": 9057,
+      "sha256": "3f14d33c357eec753d223ef1f0ed670a5f248b5e6a2485e9a581f44524a299fe"
+    },
+    "features/meaning_search/static/js/service-worker.js": {
+      "bytes": 1361,
+      "sha256": "4dcb68a4df2d773d5d43713560f2a42fd807d4a5fc3b7acc703745b21b7b0c77"
+    },
+    "features/meaning_search/static/models/Xenova/multilingual-e5-small/config.json": {
       "bytes": 658,
       "sha256": "cb99455288675345e1a4f411438d5d0adbba5fbd3a67ea4fb03c015433b996c1"
     },
-    "static/meaning/models/Xenova/multilingual-e5-small/onnx/model_int8.onnx": {
+    "features/meaning_search/static/models/Xenova/multilingual-e5-small/onnx/model_int8.onnx": {
       "bytes": 118054593,
       "sha256": "4d24e2bc01a447951524466ef533e52944bf48509e6552810bcee1a2711cb02c"
     },
-    "static/meaning/models/Xenova/multilingual-e5-small/tokenizer.json": {
+    "features/meaning_search/static/models/Xenova/multilingual-e5-small/tokenizer.json": {
       "bytes": 17082730,
       "sha256": "0b44a9d7b51c3c62626640cda0e2c2f70fdacdc25bbbd68038369d14ebdf4c39"
     },
-    "static/meaning/models/Xenova/multilingual-e5-small/tokenizer_config.json": {
+    "features/meaning_search/static/models/Xenova/multilingual-e5-small/tokenizer_config.json": {
       "bytes": 443,
       "sha256": "a1d6bc8734a6f635dc158508bef000f8e2e5a759c7d92f984b2c86e5ff53425b"
     },
-    "static/meaning/vendor/transformers-3.7.2/ort-wasm-simd-threaded.jsep.mjs": {
-      "bytes": 44484,
-      "sha256": "08fb86ec433c78bfb032c5d84a68b8e8e5a8d81268fa39e24314179a5767a5b9"
-    },
-    "static/meaning/vendor/transformers-3.7.2/ort-wasm-simd-threaded.jsep.wasm": {
-      "bytes": 21596019,
-      "sha256": "c46655e8a94afc45338d4cb2b840475f88e5012d524509916e505079c00bfa39"
-    },
-    "static/meaning/vendor/transformers-3.7.2/transformers.min.js": {
-      "bytes": 871803,
-      "sha256": "489ae9fa3deae4eed28f83b9f94a32342c63cffdabd56ad990f76d28c858a1c2"
-    },
-    "static/meaning/verses-d1c40be0bef5-e5-v1.bin": {
-      "bytes": 2394624,
-      "sha256": "0cad61636eb49d656fb65e705da4b84f2038c2a771a10bc6bf3d57e16fc071e5"
-    },
-    "static/vendor/datatables-1.10.22/dataTables.semanticui.min.css": {
+    "features/meaning_search/static/ui/datatables-1.10.22/dataTables.semanticui.min.css": {
       "bytes": 2625,
       "sha256": "489a55d810018deb277658f4bddb51a63e0b1387a28283d95634cd43a70cb32f"
     },
-    "static/vendor/datatables-1.10.22/dataTables.semanticui.min.js": {
+    "features/meaning_search/static/ui/datatables-1.10.22/dataTables.semanticui.min.js": {
       "bytes": 2457,
       "sha256": "9f18fcf89d259618fcd55105694d42c50f79c2e359940105ed5770fe11fb3c2d"
     },
-    "static/vendor/datatables-1.10.22/jquery.dataTables.min.js": {
+    "features/meaning_search/static/ui/datatables-1.10.22/jquery.dataTables.min.js": {
       "bytes": 83597,
       "sha256": "8fd44a290480b21cf6c3c3918302d2bde9cc3a1651e5500e64edae3cf5dd9fb1"
     },
-    "static/vendor/fomantic-2.8.6/semantic.min.css": {
+    "features/meaning_search/static/ui/fomantic-2.8.6/semantic.min.css": {
       "bytes": 1361707,
       "sha256": "039805ec035dc8dccd7641489320654c98bedf7a11088544bf35d4e2c69745fd"
     },
-    "static/vendor/fomantic-2.8.6/semantic.min.js": {
+    "features/meaning_search/static/ui/fomantic-2.8.6/semantic.min.js": {
       "bytes": 357311,
       "sha256": "f47dc75989cf2766c41e090eaf0fb8f0a85e3aa6334ef25dd616de53db040c59"
     },
-    "static/vendor/fomantic-2.8.6/themes/default/assets/fonts/brand-icons.eot": {
+    "features/meaning_search/static/ui/fomantic-2.8.6/themes/default/assets/fonts/brand-icons.eot": {
       "bytes": 133034,
       "sha256": "811e1577184066108ceca86d5a624a9012303df5206c5cb0b27d5e3fedcba5a3"
     },
-    "static/vendor/fomantic-2.8.6/themes/default/assets/fonts/brand-icons.svg": {
+    "features/meaning_search/static/ui/fomantic-2.8.6/themes/default/assets/fonts/brand-icons.svg": {
       "bytes": 719460,
       "sha256": "980a773627e3fc82248a99c21a6763bcccc1d04d2fbf22af74274f2381270158"
     },
-    "static/vendor/fomantic-2.8.6/themes/default/assets/fonts/brand-icons.ttf": {
+    "features/meaning_search/static/ui/fomantic-2.8.6/themes/default/assets/fonts/brand-icons.ttf": {
       "bytes": 132728,
       "sha256": "a0c145382acfe59767d1487d6505f349665b685c2885cd91b621d141a292b0f8"
     },
-    "static/vendor/fomantic-2.8.6/themes/default/assets/fonts/brand-icons.woff": {
+    "features/meaning_search/static/ui/fomantic-2.8.6/themes/default/assets/fonts/brand-icons.woff": {
       "bytes": 89824,
       "sha256": "e836c5d5dfc13e18170c5bddefb4fdac7c65ac0ad43a4b431acdc4a98865a260"
     },
-    "static/vendor/fomantic-2.8.6/themes/default/assets/fonts/brand-icons.woff2": {
+    "features/meaning_search/static/ui/fomantic-2.8.6/themes/default/assets/fonts/brand-icons.woff2": {
       "bytes": 76612,
       "sha256": "5d9190292acdd48ba0fc35080f7e7448f3cdf0d79199a4d23f0f49b5341fdf29"
     },
-    "static/vendor/fomantic-2.8.6/themes/default/assets/fonts/icons.eot": {
+    "features/meaning_search/static/ui/fomantic-2.8.6/themes/default/assets/fonts/icons.eot": {
       "bytes": 202902,
       "sha256": "32501727bb23fc77615b1ec76b5f298ec22198c0f3d6a3e7d6fe4ac3cf315db9"
     },
-    "static/vendor/fomantic-2.8.6/themes/default/assets/fonts/icons.svg": {
+    "features/meaning_search/static/ui/fomantic-2.8.6/themes/default/assets/fonts/icons.svg": {
       "bytes": 902364,
       "sha256": "96b9988db47361f88539a3bb4d0750bb7dd5cab3f8435cd941d00f97da1ad4bd"
     },
-    "static/vendor/fomantic-2.8.6/themes/default/assets/fonts/icons.ttf": {
+    "features/meaning_search/static/ui/fomantic-2.8.6/themes/default/assets/fonts/icons.ttf": {
       "bytes": 202616,
       "sha256": "231d68cefbc6846fb78cafca8467401a4f371e226418662e8900e3d52adc00ab"
     },
-    "static/vendor/fomantic-2.8.6/themes/default/assets/fonts/icons.woff": {
+    "features/meaning_search/static/ui/fomantic-2.8.6/themes/default/assets/fonts/icons.woff": {
       "bytes": 103300,
       "sha256": "352f8ead280419dd953d2bc7843386bb9430e8152c2dbd2c2d2494f6b9567ee7"
     },
-    "static/vendor/fomantic-2.8.6/themes/default/assets/fonts/icons.woff2": {
+    "features/meaning_search/static/ui/fomantic-2.8.6/themes/default/assets/fonts/icons.woff2": {
       "bytes": 79444,
       "sha256": "7f4d3fd0a705dbf8403298aad91d5de6972e6b5d536068eba8b24954a5a0a8c7"
     },
-    "static/vendor/fomantic-2.8.6/themes/default/assets/fonts/outline-icons.eot": {
+    "features/meaning_search/static/ui/fomantic-2.8.6/themes/default/assets/fonts/outline-icons.eot": {
       "bytes": 34390,
       "sha256": "01f4416f5db59e2dd6b6fbd9dc32336d99db18f7eb623a49f584d04afd279473"
     },
-    "static/vendor/fomantic-2.8.6/themes/default/assets/fonts/outline-icons.svg": {
+    "features/meaning_search/static/ui/fomantic-2.8.6/themes/default/assets/fonts/outline-icons.svg": {
       "bytes": 145125,
       "sha256": "9a5dd62ffcb96d027ac0db084eebac320bad33e267ff5d56a685702cc3209f1c"
     },
-    "static/vendor/fomantic-2.8.6/themes/default/assets/fonts/outline-icons.ttf": {
+    "features/meaning_search/static/ui/fomantic-2.8.6/themes/default/assets/fonts/outline-icons.ttf": {
       "bytes": 34092,
       "sha256": "f32b94a29060dfec0c797a1dfe111357eb1d682f1aca4ac4b95cf0f4c3e2bfa9"
     },
-    "static/vendor/fomantic-2.8.6/themes/default/assets/fonts/outline-icons.woff": {
+    "features/meaning_search/static/ui/fomantic-2.8.6/themes/default/assets/fonts/outline-icons.woff": {
       "bytes": 16800,
       "sha256": "8e2d96198711b63752e5f2f5987b8ffc536df6156a065bdbe28cb7231cad793d"
     },
-    "static/vendor/fomantic-2.8.6/themes/default/assets/fonts/outline-icons.woff2": {
+    "features/meaning_search/static/ui/fomantic-2.8.6/themes/default/assets/fonts/outline-icons.woff2": {
       "bytes": 13584,
       "sha256": "6a8c8e9e1e7f692c21af1956de163f3d026778e6449fe93a09a671847ca1ae65"
     },
-    "static/vendor/fomantic-2.8.6/themes/default/assets/images/flags.png": {
+    "features/meaning_search/static/ui/fomantic-2.8.6/themes/default/assets/images/flags.png": {
       "bytes": 28123,
       "sha256": "94d5c7f1661301c4a6dc491d72dd559a0620cd917a826f0df1b023bb96ea9ddd"
     },
-    "static/vendor/jquery-3.3.1/jquery.min.js": {
+    "features/meaning_search/static/ui/jquery-3.3.1/jquery.min.js": {
       "bytes": 86927,
       "sha256": "160a426ff2894252cd7cebbdd6d6b7da8fcd319c65b70468f10b6690c45d02ef"
+    },
+    "features/meaning_search/static/vendor/transformers-3.7.2/ort-wasm-simd-threaded.jsep.mjs": {
+      "bytes": 44484,
+      "sha256": "08fb86ec433c78bfb032c5d84a68b8e8e5a8d81268fa39e24314179a5767a5b9"
+    },
+    "features/meaning_search/static/vendor/transformers-3.7.2/ort-wasm-simd-threaded.jsep.wasm": {
+      "bytes": 21596019,
+      "sha256": "c46655e8a94afc45338d4cb2b840475f88e5012d524509916e505079c00bfa39"
+    },
+    "features/meaning_search/static/vendor/transformers-3.7.2/transformers.min.js": {
+      "bytes": 871803,
+      "sha256": "489ae9fa3deae4eed28f83b9f94a32342c63cffdabd56ad990f76d28c858a1c2"
+    },
+    "features/meaning_search/static/verses-d1c40be0bef5-e5-v1.bin": {
+      "bytes": 2394624,
+      "sha256": "0cad61636eb49d656fb65e705da4b84f2038c2a771a10bc6bf3d57e16fc071e5"
     }
   }
 }

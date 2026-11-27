@@ -2,21 +2,28 @@
 import email
 import hashlib
 import json
+import os
 from pathlib import Path
 import subprocess
 import zipfile
 
-ROOT = Path(__file__).resolve().parents[1]
+DEPLOYMENT = Path(__file__).resolve().parent
+FEATURE = DEPLOYMENT.parent
+ROOT = FEATURE.parents[1]
+KIT = Path(os.environ.get('AAYATUN_MEANING_KIT', DEPLOYMENT / 'kit')).resolve()
 runtime = {'flask', 'werkzeug', 'jinja2', 'markupsafe', 'blinker', 'click', 'itsdangerous',
            'numpy', 'pandas', 'python-dateutil', 'pytz', 'six', 'tzdata', 'waitress', 'colorama'}
 
 
 def digest(path):
+    hasher = hashlib.sha256()
     with path.open('rb') as handle:
-        return hashlib.file_digest(handle, 'sha256').hexdigest()
+        for chunk in iter(lambda: handle.read(1024 * 1024), b''):
+            hasher.update(chunk)
+    return hasher.hexdigest()
 
 
-for directory in sorted((ROOT / 'deployment/wheels').glob('*')):
+for directory in sorted((KIT / 'deployment/wheels').glob('*')):
     full, minimal = [], []
     for wheel in sorted(directory.glob('*.whl')):
         with zipfile.ZipFile(wheel) as archive:
@@ -27,17 +34,17 @@ for directory in sorted((ROOT / 'deployment/wheels').glob('*')):
         if metadata['Name'].lower().replace('_', '-') in runtime:
             minimal.append(line)
     for suffix, lines in [('', full), ('-runtime', minimal)]:
-        (ROOT / 'deployment' / f'{directory.name}{suffix}.lock').write_text(
+        (DEPLOYMENT / f'{directory.name}{suffix}.lock').write_text(
             '# Exact bundled wheels; install using --no-index --require-hashes.\n' + ''.join(lines), encoding='utf8')
 
 files = []
-for pattern in ('static/meaning/**/*', 'static/vendor/**/*', 'deployment/licenses/*'):
-    files.extend(path for path in ROOT.glob(pattern) if path.is_file())
+for pattern in ('static/**/*', 'deployment/licenses/*'):
+    files.extend(path for path in FEATURE.glob(pattern) if path.is_file())
 tracked_data = subprocess.check_output(['git', 'ls-files', '-z', 'db', 'db2'], cwd=ROOT).decode().split('\0')
 files.extend(ROOT / name for name in tracked_data if name)
 entries = {path.relative_to(ROOT).as_posix(): {'bytes': path.stat().st_size, 'sha256': digest(path)}
            for path in sorted(set(files))}
-(ROOT / 'deployment/assets.json').write_text(json.dumps({
+(DEPLOYMENT / 'assets.json').write_text(json.dumps({
     'schema_version': 1,
     'runtime': 'Transformers.js 3.7.2 / ONNX Runtime Web 1.22.0-dev.20250409-89f8206ba4',
     'runtime_model': 'Xenova/multilingual-e5-small@761b726dd34fb83930e26aab4e9ac3899aa1fa78',

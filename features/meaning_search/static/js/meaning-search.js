@@ -1,4 +1,4 @@
-const workerUrl = new URL('./meaning-worker.js?v=7', import.meta.url);
+const workerUrl = new URL('./meaning-worker.js?v=8', import.meta.url);
 let worker;
 let activeForm;
 

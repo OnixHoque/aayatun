@@ -1,12 +1,19 @@
 """Resolve browser-ranked references against the selected semantic corpus."""
 import hashlib
 import json
+import re
 import sqlite3
 from contextlib import closing
 from functools import lru_cache
 from pathlib import Path
 
 import searchtool
+from build_search import load_rows as load_keyword_rows, strip_markup
+
+_space = re.compile(r'\s+')
+_url = re.compile(r'https?://\S+')
+
+ASSET_ROOT = Path(__file__).resolve().parent / "static"
 
 
 ALL_FIELDS = (
@@ -33,6 +40,33 @@ def all_fields_hash(rows):
     return hashlib.sha256(json.dumps(verses, sort_keys=True).encode()).hexdigest()
 
 
+def load_rows():
+    """Add independent AI fields to the shared corpus without changing keyword indexing."""
+    rows = load_keyword_rows()
+    fields = {}
+    with closing(sqlite3.connect('db/ai_context.db')) as conn:
+        for surah, verse, content in conn.execute('SELECT surah, verse, content FROM verse_analysis'):
+            try:
+                data = json.loads(content)
+            except (TypeError, ValueError):
+                continue
+            context = _space.sub(' ', data.get('verse_context') or '').strip()
+            words = []
+            for item in data.get('word_meanings') or []:
+                if not isinstance(item, dict):
+                    continue
+                words.append(
+                    f"Word: {item.get('word') or ''} Classical meaning: {item.get('classical_meaning') or ''} "
+                    f"Meaning here: {item.get('meaning_here') or ''} Notable usage: {item.get('notable_usage') or ''}"
+                )
+            # The released benchmark indexes used this mapping. Changing the
+            # alignment requires rebuilding and revalidating those indexes.
+            fields[surah, verse] = (context, _space.sub(' ', _url.sub(' ', ' '.join(words))).strip())
+    for row in rows:
+        row['verse_context'], row['word_meanings'] = fields.get((row['surah'], row['verse']), ('', ''))
+    return rows
+
+
 @lru_cache(maxsize=1)
 def _translation_index(file_version):
     with closing(searchtool._connect()) as conn:
@@ -57,8 +91,6 @@ def _search_display_matches(rows, indexed, expected_count: int = 6236) -> bool:
 
 @lru_cache(maxsize=1)
 def _all_fields_index(file_version):
-    from build_search import load_rows
-
     rows = load_rows()
     with closing(searchtool._connect()) as conn:
         indexed = conn.execute(
@@ -71,7 +103,7 @@ def _all_fields_index(file_version):
 
 
 def _frozen_all_fields_manifest():
-    path = Path(__file__).resolve().parent / "static" / "meaning" / "all-fields-index.json"
+    path = ASSET_ROOT / "all-fields-index.json"
     try:
         manifest = json.loads(path.read_text(encoding="utf8"))
     except (OSError, ValueError):
@@ -137,7 +169,6 @@ def search(refs, browser_corpus, scope="translation"):
     if scope == 'all-fields':
         with closing(sqlite3.connect('db/en_kathir.db')) as tafsir_db, \
                 closing(sqlite3.connect('db/ai_context.db')) as ai_db:
-            from build_search import strip_markup
             for item in results:
                 s, v = item['surah'], item['verse']
                 tafsir = tafsir_db.execute(

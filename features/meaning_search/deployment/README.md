@@ -1,5 +1,9 @@
 # Deploy meaning search
 
+Run the commands below from the Aayatun repository root. Use the app's usual
+[setup and startup instructions](../../../run_command.md) if it is already running.
+Feature assets live in this folder and Flask serves them under /static/meaning/.
+
 ## Normal deployment: use the included embeddings
 
 The PR includes precomputed embeddings, the browser ONNX model/tokenizer, the
@@ -11,21 +15,22 @@ Obtain the branch and its Git LFS runtime files while connected:
 
 ```text
 git lfs pull
-python deployment/manage.py verify
-python deployment/manage.py install
+python features/meaning_search/deployment/manage.py verify
+python features/meaning_search/deployment/manage.py install
 ```
 
-The installer creates `.venv` and installs the normal Flask/SQLite application
-requirements from the Python package index. Python 3.12 is the tested version.
-You can instead use an existing environment with `pip install -r requirements.txt`.
+The optional feature installer creates `features/meaning_search/.venv` with the
+feature runtime requirements. You can use the app’s existing Python environment
+instead. Python 3.12 was used for verification.
 
-Use `.venv/Scripts/python.exe` on Windows or `.venv/bin/python` on Linux below
-(`PYTHON` is a placeholder for that executable):
+Use your app environment’s Python executable below. If you ran the feature
+installer, it is `features/meaning_search/.venv/Scripts/python.exe` on Windows
+or `features/meaning_search/.venv/bin/python` on Linux.
 
 ### Prepare the keyword index and check the supplied embeddings
 
 ```text
-PYTHON deployment/manage.py build
+PYTHON features/meaning_search/deployment/manage.py build
 ```
 
 This builds the SQLite keyword-search index and validates the shipped embeddings.
@@ -38,10 +43,11 @@ PYTHON -m flask --app app.py run --host 127.0.0.1 --port 8000
 ```
 
 Open http://127.0.0.1:8000. For production use
-`PYTHON deployment/manage.py serve --listen 127.0.0.1:8000` (Waitress) behind your
+`PYTHON features/meaning_search/deployment/manage.py serve --listen 127.0.0.1:8000` (Waitress) behind your
 HTTPS reverse proxy. Set `AAYATUN_HTTPS=1` and a persistent `AAYATUN_SECRET_KEY`
-outside Git. Serve `/static/` directly where possible; `.mjs` needs JavaScript MIME
-and `.wasm` needs `application/wasm`. Keep the runtime `db/` directory writable.
+outside Git. If the reverse proxy serves `/static/` directly, map
+`/static/meaning/` to `features/meaning_search/static/` first or forward that
+prefix to Flask. Serve `.mjs` as JavaScript and `.wasm` as `application/wasm`. Keep the runtime `db/` directory writable.
 
 ### Browser download and cache
 
@@ -71,7 +77,9 @@ These large files are **not required by, or checked into, the normal deployment*
 
 Download the [optional offline build kit](https://github.com/Mehrab-Tanjim/aayatun/releases/download/meaning-search-offline-build-v1/aayatun-optional-offline-build.zip)
 and its [SHA-256 checksum](https://github.com/Mehrab-Tanjim/aayatun/releases/download/meaning-search-offline-build-v1/aayatun-optional-offline-build.zip.sha256).
-Extract it into the checkout root so `models/` and `deployment/wheels/` are present.
+Extract it into `features/meaning_search/deployment/kit/` so that folder contains
+`models/` and `deployment/wheels/`. You can point `AAYATUN_MEANING_KIT` at an
+existing extraction instead.
 These directories are gitignored; production verification does not require them.
 The optional wheel set supports Windows x64 and glibc Linux x64 (glibc 2.28+).
 Other targets need their own compatible dependencies.
@@ -79,7 +87,7 @@ Other targets need their own compatible dependencies.
 ### Install without package-index downloads (optional)
 
 ```text
-python deployment/manage.py install --offline
+python features/meaning_search/deployment/manage.py install --offline
 ```
 
 This uses only the downloaded kit, exact wheel locks and SHA-256 hashes, with
@@ -92,14 +100,14 @@ This uses only the downloaded kit, exact wheel locks and SHA-256 hashes, with
 Only use this when intentionally changing the source corpus or builder:
 
 ```text
-python deployment/manage.py install --offline --build-deps
-PYTHON deployment/manage.py smoke-model
-PYTHON deployment/manage.py rebuild-embeddings
+python features/meaning_search/deployment/manage.py install --offline --build-deps
+PYTHON features/meaning_search/deployment/manage.py smoke-model
+PYTHON features/meaning_search/deployment/manage.py rebuild-embeddings
 ```
 
 The manager selects the optional pinned checkpoint and disables external model
 access. The smoke test runs the real encoder with sockets disabled. Full rebuilding
-can take considerably longer. New vectors go to `dist/rebuilt/`; they need fresh
+can take considerably longer. New vectors go to `features/meaning_search/dist/rebuilt/`; they need fresh
 validation before deployment. See `SEMANTIC_SEARCH.md` for provenance and tuning.
 The known zero-based AI verse-mapping issue remains unresolved in the ranked index;
 the results page shows correctly aligned per-verse AI context separately.
@@ -107,18 +115,18 @@ the results page shows correctly aligned per-verse AI context separately.
 ## Verification and portable packaging
 
 ```text
-PYTHON -m unittest test_meaning_search.py test_search_ranking.py
-PYTHON deployment/manage.py package
+PYTHON -m unittest features.meaning_search.test_meaning_search test_search_ranking
+PYTHON features/meaning_search/deployment/manage.py package
 ```
 
-`dist/aayatun-runtime.zip` contains the application, actual runtime LFS files and
+`features/meaning_search/dist/aayatun-runtime.zip` contains the application, actual runtime LFS files and
 any built SQLite index/vocabulary. It excludes the optional checkpoint/wheels,
 virtual environments and secrets. GitHub's default source ZIP may contain LFS
 pointers instead of model payloads.
 
 To reproduce the actual UI and model-cache check with Node.js and Chromium, set
 `AAYATUN_CHROME` to your Chromium executable, run the website on port 8000, and run
-`node evaluation/meaning_ui_browser.cjs`.
+`node features/meaning_search/evaluation/meaning_ui_browser.cjs`.
 
 Existing optional web fonts, emoji images, recitation/prayer services and on-demand
 external reader content retain their existing network behavior. Licenses are under
@@ -126,6 +134,6 @@ external reader content retain their existing network behavior. Licenses are und
 required. Windows execution is tested; Linux wheels resolve but Linux runtime
 execution has not been tested here.
 
-Maintainers: `python deployment/freeze_assets.py` records required runtime/data
+Maintainers: `python features/meaning_search/deployment/freeze_assets.py` records required runtime/data
 checksums and refreshes optional wheel locks if the optional kit is present.
-`PYTHON deployment/manage.py package --optional` creates a separate offline kit.
+`PYTHON features/meaning_search/deployment/manage.py package --optional` creates a separate offline kit.

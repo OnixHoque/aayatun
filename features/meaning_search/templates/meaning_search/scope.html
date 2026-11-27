@@ -1,0 +1,16 @@
+{% if meaning_scopes %}
+<label for="{{ mode_id }}">Search mode</label>
+<select id="{{ mode_id }}" name="search_mode">
+  <option value="keyword">Keyword search</option>
+  <option value="meaning" {% if search_mode == 'meaning' and mode_id == 'result-search-mode' %}selected{% endif %}>Search by meaning</option>
+</select>
+<div class="field" data-meaning-scope-control hidden>
+  <label for="{{ mode_id }}-source">Search in</label>
+  <select id="{{ mode_id }}-source" name="meaning_scope" data-meaning-source>
+    {% for scope in meaning_scopes %}
+    <option value="{{ scope }}" {% if scope == selected_scope %}selected{% endif %}>{{ 'All sources' if scope == 'all-fields' else 'English translation only' }}</option>
+    {% endfor %}
+  </select>
+</div>
+<p data-meaning-status role="status"></p>
+{% endif %}

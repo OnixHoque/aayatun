@@ -3,7 +3,7 @@ import { fetchModelFile } from './meaning-model-source.mjs';
 
 const model = 'Xenova/multilingual-e5-small';
 const revision = '761b726dd34fb83930e26aab4e9ac3899aa1fa78';
-const localModelRoot = new URL('../meaning/models/' + model + '/', import.meta.url).href;
+const localModelRoot = new URL('../models/' + model + '/', import.meta.url).href;
 const originalFetch = self.fetch.bind(self);
 let localOnly = new URL(import.meta.url).searchParams.has('local-model');
 self.fetch = (url, init) => fetchModelFile(url, init, {
@@ -11,8 +11,8 @@ self.fetch = (url, init) => fetchModelFile(url, init, {
     remoteRoot: `https://huggingface.co/${model}/resolve/${revision}/`, localOnly,
 });
 const indexUrls = {
-    translation: new URL('../meaning/index.json', import.meta.url),
-    'all-fields': new URL('../meaning/all-fields-index.json', import.meta.url),
+    translation: new URL('../index.json', import.meta.url),
+    'all-fields': new URL('../all-fields-index.json', import.meta.url),
 };
 let encoderPromise;
 const indexPromises = {};
@@ -22,17 +22,17 @@ async function loadEncoder() {
     try {
         const cache = await caches.open('transformers-cache');
         modelCached = Boolean(await cache.match(new URL(
-            '../meaning/models/Xenova/multilingual-e5-small/onnx/model_int8.onnx', import.meta.url).href));
+            '../models/Xenova/multilingual-e5-small/onnx/model_int8.onnx', import.meta.url).href));
     } catch { /* Search still works when persistent storage is unavailable. */ }
     const { env, pipeline } = await import(
-        '../meaning/vendor/transformers-3.7.2/transformers.min.js'
+        '../vendor/transformers-3.7.2/transformers.min.js'
     );
     env.allowLocalModels = true;
-    env.localModelPath = new URL('../meaning/models/', import.meta.url).href;
+    env.localModelPath = new URL('../models/', import.meta.url).href;
     env.allowRemoteModels = false;
     // Cache model/tokenizer responses across workers, page loads and app updates.
     env.useBrowserCache = typeof caches !== 'undefined';
-    env.backends.onnx.wasm.wasmPaths = new URL('../meaning/vendor/transformers-3.7.2/', import.meta.url).href;
+    env.backends.onnx.wasm.wasmPaths = new URL('../vendor/transformers-3.7.2/', import.meta.url).href;
     env.backends.onnx.wasm.numThreads = 1;
     const options = {
         revision, device: 'wasm', dtype: 'int8',

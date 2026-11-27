@@ -10,15 +10,36 @@ import unittest
 from unittest.mock import patch
 
 from app import app
-import app as app_module
-import build_search
-import meaning_search
+from features import meaning_search as integration
+from . import meaning_search
+
+ASSETS = meaning_search.ASSET_ROOT
 
 
 class MeaningSearchTests(unittest.TestCase):
+    def test_feature_assets_keep_their_public_urls_and_package_files_stay_private(self):
+        client = app.test_client()
+        page = client.get('/').get_data(as_text=True)
+        self.assertIn('/static/meaning/js/meaning-search.js?v=8', page)
+        for asset in ('index.json', 'js/meaning-worker.js'):
+            with client.get('/static/meaning/' + asset) as response:
+                self.assertEqual(response.status_code, 200)
+        self.assertEqual(client.get('/static/meaning/../meaning_search.py').status_code, 404)
+        self.assertEqual(client.get('/features/meaning_search/deployment/assets.json').status_code, 404)
+
+    def test_only_ready_scopes_appear_in_the_form(self):
+        with patch.object(integration, '_available', side_effect=lambda scope: scope == 'translation'):
+            page = app.test_client().get('/').get_data(as_text=True)
+        self.assertIn('value="translation" selected', page)
+        self.assertNotIn('value="all-fields"', page)
+        with patch.object(integration, '_available', return_value=False):
+            page = app.test_client().get('/').get_data(as_text=True)
+        self.assertNotIn('id="dialog-search-mode"', page)
+        self.assertNotIn('/static/meaning/js/meaning-search.js', page)
+
     def test_all_fields_results_include_tafsir_and_correctly_aligned_ai_context(self):
         import sqlite3
-        manifest = json.loads(Path('static/meaning/all-fields-index.json').read_text(encoding='utf8'))
+        manifest = json.loads((ASSETS / "all-fields-index.json").read_text(encoding='utf8'))
         results, meta = meaning_search.search(['75:6'], manifest['corpus'], scope='all-fields')
         self.assertIsNone(meta['error'])
         with sqlite3.connect('db/ai_context.db') as conn:
@@ -31,7 +52,7 @@ class MeaningSearchTests(unittest.TestCase):
         self.assertIn('denying its occurrence', results[0]['semantic_tafsir'])
 
     def test_verses_render_in_browser_order_without_keyword_search(self):
-        manifest = json.loads(Path("static/meaning/index.json").read_text(encoding="utf8"))
+        manifest = json.loads((ASSETS / "index.json").read_text(encoding="utf8"))
         with patch("searchtool.index_search", side_effect=AssertionError("keyword ranking called")):
             response = app.test_client().post("/search/", data={
                 "query_str": "How should I enter someone else's home?",
@@ -43,7 +64,7 @@ class MeaningSearchTests(unittest.TestCase):
         self.assertEqual(refs, ["24:27", "17:23"])
 
     def test_all_fields_scope_renders_and_explains_its_assets(self):
-        manifest = json.loads(Path("static/meaning/all-fields-index.json").read_text(encoding="utf8"))
+        manifest = json.loads((ASSETS / "all-fields-index.json").read_text(encoding="utf8"))
         with patch("searchtool.index_search", side_effect=AssertionError("keyword ranking called")):
             response = app.test_client().post("/search/", data={
                 "query_str": "patience through hardship", "search_mode": "meaning",
@@ -54,29 +75,27 @@ class MeaningSearchTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         refs = re.findall(r'class="surahlink"[^>]*>\s*(\d+:\d+)', text)
         self.assertEqual(refs, ["2:153", "94:6"])
-        self.assertGreaterEqual(text.count('data-meaning-scope="all-fields"'), 2)
-        self.assertIn("AI word and root meanings", text)
-        self.assertRegex(text, r'data-meaning-asset-mb="\d+\.\d+"')
+        self.assertGreaterEqual(text.count('value="all-fields" selected'), 2)
+        self.assertIn("Tafsir Ibn Kathir", text)
+        self.assertIn("AI explanation", text)
 
     def test_translation_scope_keeps_translation_metadata_on_the_result_form(self):
-        manifest = json.loads(Path("static/meaning/index.json").read_text(encoding="utf8"))
+        manifest = json.loads((ASSETS / "index.json").read_text(encoding="utf8"))
         response = app.test_client().post("/search/", data={
             "query_str": "light", "search_mode": "meaning", "meaning_scope": "translation",
             "meaning_corpus": manifest["corpus"], "meaning_ref": ["24:35"],
         })
         text = response.get_data(as_text=True)
         self.assertEqual(response.status_code, 200)
-        forms = re.findall(r'<form\b[^>]*action="/search"[^>]*>', text)
-        self.assertGreaterEqual(len(forms), 2)
-        result_form = forms[-1]
-        self.assertIn('data-meaning-scope="translation"', result_form)
-        self.assertIn('data-meaning-fields="English translations"', result_form)
-        self.assertNotIn('Arabic ayah text', result_form)
+        result_source = re.search(r'id="result-search-mode-source".*?</select>', text, re.S)
+        self.assertIsNotNone(result_source)
+        self.assertIn('value="translation" selected', result_source[0])
+        self.assertNotIn('value="all-fields" selected', result_source[0])
 
     def test_pending_all_fields_scope_is_hidden_and_rejected(self):
         pending = {"scope": "all-fields", "schema_version": 2, "fusion": {"status": "pending_validation"}}
         with patch("pathlib.Path.read_text", return_value=json.dumps(pending)):
-            self.assertIsNone(app_module._meaning_manifest("all-fields", (1, 2, 3)))
+            self.assertFalse(integration._manifest_available("all-fields", (1, 2, 3)))
         with patch.object(meaning_search, "_frozen_all_fields_manifest", return_value=None):
             results, meta = meaning_search.search(["1:1"], "unvalidated", scope="all-fields")
         self.assertEqual(results, [])
@@ -94,7 +113,7 @@ class MeaningSearchTests(unittest.TestCase):
         self.assertFalse(meaning_search._search_display_matches(rows, indexed, expected_count=2))
 
     def test_frozen_validation_provenance_rejects_tampering(self):
-        from evaluation.islamqa_pr2_all_fields import verify_frozen_validation
+        from .evaluation.islamqa_pr2_all_fields import verify_frozen_validation
 
         validation = {
             "fixture_sha256": "fixture", "diagnostics_sha256": "diagnostics",
@@ -129,7 +148,7 @@ class MeaningSearchTests(unittest.TestCase):
                 verify_frozen_validation(index, index_path, report_path)
 
     def test_every_raw_field_participates_in_the_all_fields_hash(self):
-        rows = build_search.load_rows()
+        rows = meaning_search.load_rows()
         baseline = meaning_search.all_fields_hash(rows)
         translation = meaning_search.field_hash(rows, "en")
         for field in meaning_search.ALL_FIELDS:
@@ -139,7 +158,7 @@ class MeaningSearchTests(unittest.TestCase):
         self.assertEqual(meaning_search.field_hash(rows, "en"), translation)
 
     def test_all_fields_rejects_a_translation_only_hash_and_unknown_scope(self):
-        translation = json.loads(Path("static/meaning/index.json").read_text(encoding="utf8"))
+        translation = json.loads((ASSETS / "index.json").read_text(encoding="utf8"))
         client = app.test_client()
         response = client.post("/search/", data={
             "query_str": "light", "search_mode": "meaning", "meaning_scope": "all-fields",
@@ -153,7 +172,7 @@ class MeaningSearchTests(unittest.TestCase):
         self.assertIn("Unknown meaning-search scope", response.get_data(as_text=True))
 
     def test_token_chunk_maps_are_deterministic_and_overlap(self):
-        import build_meaning_index as builder
+        from . import build_meaning_index as builder
 
         class CharacterTokenizer:
             def __call__(self, text, **options):
@@ -169,7 +188,7 @@ class MeaningSearchTests(unittest.TestCase):
         self.assertEqual(first, second)
 
     def test_repeated_surah_names_keep_a_passage_for_every_ayah(self):
-        import build_meaning_index as builder
+        from . import build_meaning_index as builder
 
         class CharacterTokenizer:
             def __call__(self, text, **options):
@@ -185,9 +204,9 @@ class MeaningSearchTests(unittest.TestCase):
         self.assertEqual([passage[1] for passage in passages], ["Al-Fatiha", "Al-Fatiha"])
 
     def test_manifest_rejects_invalid_fusion_weights(self):
-        import build_meaning_index as builder
+        from . import build_meaning_index as builder
 
-        path = Path("static/meaning/all-fields-index.json")
+        path = (ASSETS / "all-fields-index.json")
         manifest = json.loads(path.read_text(encoding="utf8"))
         manifest["fusion"]["weights"]["en"] = 0.9
         with self.assertRaisesRegex(ValueError, "fusion configuration"):
@@ -195,7 +214,7 @@ class MeaningSearchTests(unittest.TestCase):
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for worker fusion tests")
     def test_worker_fusion_renormalizes_missing_fields_and_breaks_ties_canonically(self):
-        core = Path("static/js/meaning-core.mjs").resolve().as_uri()
+        core = (ASSETS / "js/meaning-core.mjs").resolve().as_uri()
         script = f"""
             import {{ fuseScores, orderedWeights, rankScores, validateWeights }} from {json.dumps(core)};
             const assert = (condition, message) => {{ if (!condition) throw new Error(message); }};
@@ -217,14 +236,14 @@ class MeaningSearchTests(unittest.TestCase):
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for fusion parity tests")
     def test_offline_fusion_exactly_matches_the_javascript_scoring_core(self):
         import numpy as np
-        from evaluation.islamqa_pr2_all_fields import fuse
+        from .evaluation.islamqa_pr2_all_fields import fuse
 
         raw = np.asarray([
             [[1.0, 2.0, -np.inf, -np.inf], [0.0, 2.0, 4.0, -np.inf]],
             [[0.1, 0.2, 0.3, -np.inf], [-np.inf, 1.0, 2.0, 3.0]],
         ], dtype=np.float64)
         weights = np.asarray([0.25, 0.75], dtype=np.float64)
-        core = Path("static/js/meaning-core.mjs").resolve().as_uri()
+        core = (ASSETS / "js/meaning-core.mjs").resolve().as_uri()
         for method in ("weighted_raw", "weighted_z"):
             expected = fuse(raw, weights, method)
             script = f"""
