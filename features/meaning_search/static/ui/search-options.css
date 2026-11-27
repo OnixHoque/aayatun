@@ -14,3 +14,15 @@
    keyboard navigation and the accessibility tree. */
 #searchwindow .meaning-options-row[hidden] { display: flex; visibility: hidden; }
 #searchwindow .search-hint[hidden] { display: block; visibility: hidden; }
+
+/* A persistent two-line live region prevents loading feedback from
+   changing the centered dialog's height. Keep it available to screen readers. */
+#searchwindow [data-meaning-status] {
+    display: flex;
+    align-items: center;
+    min-height: 3em;
+    margin: 0;
+    font-size: .9rem;
+    line-height: 1.5;
+}
+#searchwindow [data-meaning-status] .loader { flex-shrink: 0; }
