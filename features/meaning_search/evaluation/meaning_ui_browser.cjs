@@ -65,7 +65,7 @@ async function main() {
         await client.send('Page.reload');
         await waitFor('document.readyState === "complete" && document.querySelector("#result-search-mode")');
         const cached = await evaluate(`new Promise((resolve, reject) => {
-            const source = 'const originalFetch = self.fetch; let modelFetches = 0; const phases = []; self.fetch = (...args) => { if (String(args[0]).includes("/meaning/models/")) modelFetches++; return originalFetch(...args); }; const send = self.postMessage.bind(self); self.postMessage = data => { if (data.type === "progress") phases.push(data.phase); send({...data, modelFetches, phases}); }; await import(' + JSON.stringify(location.origin + '/static/meaning/js/meaning-worker.js?v=8') + '); send({ready:true});';
+            const source = 'const originalFetch = self.fetch; let modelFetches = 0; const phases = []; self.fetch = (...args) => { const url = String(args[0]); if (url.includes("/meaning/models/") || url.includes("huggingface.co/Xenova/multilingual-e5-small/")) modelFetches++; return originalFetch(...args); }; const send = self.postMessage.bind(self); self.postMessage = data => { if (data.type === "progress") phases.push(data.phase); send({...data, modelFetches, phases}); }; await import(' + JSON.stringify(location.origin + '/static/meaning/js/meaning-worker.js?v=8') + '); send({ready:true});';
             const url = URL.createObjectURL(new Blob([source], {type:'text/javascript'}));
             const worker = new Worker(url, {type:'module'});
             const timer = setTimeout(() => reject(new Error('Cache probe timed out')), 90000);
