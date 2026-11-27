@@ -58,7 +58,8 @@ async function main() {
                     return { top: bounds.top, height: bounds.height,
                         visible: dialog.classList.contains('visible'),
                         sourcesVisible: getComputedStyle(sources).visibility === 'visible',
-                        hintVisible: getComputedStyle(hint).visibility === 'visible' };
+                        hintVisible: getComputedStyle(hint).visibility === 'visible',
+                        tipGap: hint.getBoundingClientRect().top - dialog.querySelector('.meaning-options').getBoundingClientRect().bottom };
                 })()`);
                 assert.ok(layout.visible && layout.height > 0, 'Real modal is visible');
                 baseline ??= layout;
@@ -66,6 +67,7 @@ async function main() {
                 assert.equal(layout.height, baseline.height);
                 assert.equal(layout.sourcesVisible, mode === 'meaning');
                 assert.equal(layout.hintVisible, mode === 'keyword');
+                assert.ok(layout.tipGap <= 20, `Extra gap above tips at ${width}px: ${layout.tipGap}`);
             }
             await evaluate(`(() => {
                 const dialog = document.querySelector('#searchwindow');

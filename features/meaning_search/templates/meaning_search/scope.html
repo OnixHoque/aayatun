@@ -12,5 +12,5 @@
     {% endfor %}
   </fieldset>
 </div>
-<p data-meaning-status role="status"></p>
+{% if not shared_feedback %}<p data-meaning-status role="status"></p>{% endif %}
 {% endif %}
