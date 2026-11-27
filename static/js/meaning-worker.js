@@ -1,7 +1,15 @@
 import { fuseScores, orderedWeights, rankScores, scorePassages } from './meaning-core.mjs';
+import { fetchModelFile } from './meaning-model-source.mjs';
 
 const model = 'Xenova/multilingual-e5-small';
 const revision = '761b726dd34fb83930e26aab4e9ac3899aa1fa78';
+const localModelRoot = new URL('../meaning/models/' + model + '/', import.meta.url).href;
+const originalFetch = self.fetch.bind(self);
+let localOnly = new URL(import.meta.url).searchParams.has('local-model');
+self.fetch = (url, init) => fetchModelFile(url, init, {
+    fetchImpl: originalFetch, localRoot: localModelRoot,
+    remoteRoot: `https://huggingface.co/${model}/resolve/${revision}/`, localOnly,
+});
 const indexUrls = {
     translation: new URL('../meaning/index.json', import.meta.url),
     'all-fields': new URL('../meaning/all-fields-index.json', import.meta.url),
@@ -26,14 +34,27 @@ async function loadEncoder() {
     env.useBrowserCache = typeof caches !== 'undefined';
     env.backends.onnx.wasm.wasmPaths = new URL('../meaning/vendor/transformers-3.7.2/', import.meta.url).href;
     env.backends.onnx.wasm.numThreads = 1;
-    return pipeline('feature-extraction', model, {
+    const options = {
         revision, device: 'wasm', dtype: 'int8',
         progress_callback: event => {
             if (!modelCached && event.status === 'progress' && event.file?.endsWith('.onnx')) {
                 self.postMessage({ type: 'progress', phase: 'download', progress: event.progress });
             }
         },
-    });
+    };
+    try {
+        return await pipeline('feature-extraction', model, options);
+    } catch (error) {
+        // A failed response body or invalid remote file can fail after headers.
+        if (localOnly) throw error;
+        localOnly = true;
+        try {
+            const cache = await caches.open('transformers-cache');
+            await Promise.all(['config.json', 'tokenizer_config.json', 'tokenizer.json', 'onnx/model_int8.onnx']
+                .map(file => cache.delete(localModelRoot + file)));
+        } catch { /* Cache access is optional. */ }
+        return pipeline('feature-extraction', model, options);
+    }
 }
 
 function vectorNorms(vectors, count, dimensions) {

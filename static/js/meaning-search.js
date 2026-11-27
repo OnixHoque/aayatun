@@ -1,4 +1,4 @@
-const workerUrl = new URL('./meaning-worker.js?v=6', import.meta.url);
+const workerUrl = new URL('./meaning-worker.js?v=7', import.meta.url);
 let worker;
 let activeForm;
 
@@ -39,9 +39,6 @@ function fail(form) {
 }
 
 function initializeWorker() {
-    if (document.querySelector('[data-local-meaning-model]')) {
-        workerUrl.searchParams.set('local-model', '');
-    }
     const instance = new Worker(workerUrl, { type: 'module' });
     instance.onerror = () => {
         if (activeForm) fail(activeForm);

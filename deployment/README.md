@@ -46,7 +46,10 @@ and `.wasm` needs `application/wasm`. Keep the runtime `db/` directory writable.
 ### Browser download and cache
 
 The first uncached search downloads about 180 MB of model, tokenizer, vectors and
-runtime from your own server. The page shows a spinner and model download progress.
+runtime in total. The model/tokenizer use the pinned Hugging Face download first,
+falling back to the identical bundled files on your server if HF fails or does not
+respond within 10 seconds. Embeddings and the JS/WASM runtime remain on your server.
+The page shows a spinner and model download progress.
 Query embedding and ranking run on the visitor's device; Flask validates verse
 references and renders results. No server GPU, inference API, or vector database
 is needed.

@@ -33,7 +33,7 @@ Weights are nonnegative and sum to one. The deployed method and weights are sele
 
 Ship `static/meaning/` with the app. The all-fields vectors contain 57,090 passages and 21.92 MB of int8 data, plus the manifest and passage maps. The original translation-only vectors are reused unchanged when their corpus and model hashes match. The all-fields worker verifies each downloaded vector file against its manifest SHA-256 hash.
 
-Flask runs no model and needs no inference service or API key. It verifies the current searchable corpus, rejects stale or unknown references, and falls back cleanly when an index is incomplete. The browser loads the pinned Transformers.js 3.7.2 runtime, ONNX/WASM, and ONNX model from the app itself. Remote model loading is disabled. The first use transfers about 140 MB for the model and can take longer on slow connections or devices.
+Flask runs no model and needs no inference service or API key. It verifies the current searchable corpus, rejects stale or unknown references, and falls back cleanly when an index is incomplete. The browser loads the pinned Transformers.js 3.7.2 runtime and ONNX/WASM from the app itself. Model/tokenizer files are fetched from the pinned Hugging Face revision first, with the bundled server snapshot as fallback. Browser cache keys stay on the app origin so either source is reused. The first use transfers about 140 MB for the model and can take longer on slow connections or devices.
 
 These files are included under `static/meaning/models/Xenova/multilingual-e5-small/` (the large ONNX file uses Git LFS):
 
@@ -42,7 +42,7 @@ These files are included under `static/meaning/models/Xenova/multilingual-e5-sma
 - `tokenizer.json`
 - `onnx/model_int8.onnx`
 
-Local model loading is the default; no environment flag is needed. The service worker precaches the local-model worker URL. The model is published under the [upstream MIT license](https://huggingface.co/intfloat/multilingual-e5-small). The original checkpoint and offline Python wheels are available as a separate optional build kit. Follow [the deployment guide](deployment/README.md); normal installation uses `requirements.txt`, while `install --offline` uses the optional kit without package-index access. This replaces the old Python 3.10 setup guidance for this PR.
+Hugging Face downloads with local-server fallback are the default; no environment flag is needed. The service worker precaches the local-model worker URL. The model is published under the [upstream MIT license](https://huggingface.co/intfloat/multilingual-e5-small). The original checkpoint and offline Python wheels are available as a separate optional build kit. Follow [the deployment guide](deployment/README.md); normal installation uses `requirements.txt`, while `install --offline` uses the optional kit without package-index access. This replaces the old Python 3.10 setup guidance for this PR.
 
 Pinned model revisions:
 
