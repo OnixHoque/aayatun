@@ -40,10 +40,10 @@ async function main() {
             throw new Error('Timed out: ' + expression);
         };
         await client.send('Page.navigate', { url: base });
-        await waitFor('document.querySelector("select[name=search_mode]") && document.readyState === "complete"');
+        await waitFor('document.querySelector("input[name=search_mode][value=meaning]") && document.readyState === "complete"');
         await evaluate(`(() => {
-            const mode = document.querySelector('select[name=search_mode]');
-            mode.value = 'meaning'; mode.dispatchEvent(new Event('change'));
+            const mode = document.querySelector('input[name=search_mode][value=meaning]');
+            mode.checked = true; mode.dispatchEvent(new Event('change'));
             mode.form.elements.query_str.value = 'saw the end';
             mode.form.requestSubmit();
         })()`);
@@ -84,9 +84,9 @@ async function main() {
         report.sourceComparison = {};
         for (const [scope, expectedFirst, action] of [['translation', '22:64', 'enter'], ['all-fields', '29:45', 'click'], ['all-fields', '29:45', 'enter'], ['translation', '22:64', 'click']]) {
             await evaluate(`(() => {
-                const form = document.querySelector('#result-search-mode').form;
-                const source = form.querySelector('[data-meaning-source]');
-                source.value = ${JSON.stringify(scope)}; source.dispatchEvent(new Event('change'));
+                const form = document.querySelector('#result-search-mode').closest('form');
+                const source = form.elements.meaning_scope;
+                source.value = ${JSON.stringify(scope)}; form.querySelector('[data-meaning-source]:checked').dispatchEvent(new Event('change'));
                 form.elements.query_str.value = 'What is the Importance of Prayer?';
                 form.elements.query_str.focus();
                 if (${JSON.stringify(action)} === 'click') form.querySelector('[type=submit]').click();
@@ -96,17 +96,17 @@ async function main() {
                 await client.send('Input.dispatchKeyEvent', {type:'keyUp', key:'Enter', code:'Enter', windowsVirtualKeyCode:13, nativeVirtualKeyCode:13});
             }
             await waitFor(`document.querySelector('.surahlink')?.textContent.trim() === ${JSON.stringify(expectedFirst)} && !document.querySelector('form[aria-busy]')`);
-            if (!(await evaluate(`document.querySelector('#result-search-mode').form.querySelector('[data-meaning-source]').value === ${JSON.stringify(scope)}`))) throw new Error('Source selection changed after ' + action);
+            if (!(await evaluate(`document.querySelector('#result-search-mode').closest('form').elements.meaning_scope.value === ${JSON.stringify(scope)}`))) throw new Error('Source selection changed after ' + action);
             report.sourceComparison[scope + ':' + action] = await evaluate(`Array.from(document.querySelectorAll('.surahlink'), n => n.textContent.trim()).slice(0,5)`);
         }
         await evaluate(`(() => {
-            const mode = document.querySelector('#result-search-mode');
-            mode.value = 'keyword';
+            const mode = document.querySelector('#result-search-mode input[value=keyword]');
+            mode.checked = true;
             mode.dispatchEvent(new Event('change'));
             mode.form.elements.query_str.value = 'light upon light';
             mode.form.requestSubmit();
         })()`);
-        await waitFor(`document.querySelector('#result-search-mode')?.value === 'keyword'
+        await waitFor(`document.querySelector('#result-search-mode input:checked')?.value === 'keyword'
             && [...document.querySelectorAll('.surahlink')].some(node => node.textContent.trim() === '24:35')`);
         await fs.mkdir('features/meaning_search/deployment/verification', {recursive:true});
         await fs.writeFile('features/meaning_search/deployment/verification/meaning-ui-cache.json', JSON.stringify(report,null,2));

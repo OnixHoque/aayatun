@@ -9,9 +9,7 @@ function setBusy(form, busy) {
     form.querySelector('[type=submit]').disabled = busy;
     form.querySelector('[type=submit]').classList.toggle('loading', busy);
     form.elements.query_str.readOnly = busy;
-    form.elements.search_mode.disabled = busy;
-    const source = form.querySelector('[data-meaning-source]');
-    if (source) source.disabled = busy;
+    form.querySelectorAll('[name=search_mode], [data-meaning-source]').forEach(control => { control.disabled = busy; });
     if (!busy) {
         form.querySelector('[type=submit]').classList.remove('loading');
         form.querySelector('[type=submit] i')?.classList.replace('loading', 'search');
@@ -62,11 +60,11 @@ function initializeWorker() {
             fail(form);
             return;
         }
-        const source = form.querySelector('[data-meaning-source]');
+        const source = form.elements.meaning_scope;
         const selectedScope = data.scope || form.dataset.meaningScope || 'all-fields';
         if (source) {
             source.value = selectedScope;
-            source.disabled = false;
+            form.querySelectorAll('[data-meaning-source]').forEach(control => { control.disabled = false; });
         }
         for (const [name, values] of Object.entries({
             meaning_corpus: [data.corpus], meaning_ref: data.refs,
@@ -80,17 +78,18 @@ function initializeWorker() {
             }
         }
         window.showLoading?.();
-        form.elements.search_mode.disabled = false;
+        form.querySelectorAll('[name=search_mode]').forEach(control => { control.disabled = false; });
         HTMLFormElement.prototype.submit.call(form);
     };
     return instance;
 }
 
-document.querySelectorAll('select[name=search_mode]').forEach(mode => {
-    const form = mode.form;
+document.querySelectorAll('[data-meaning-mode]').forEach(group => {
+    const form = group.closest('form');
+    const mode = form.elements.search_mode;
     const input = form.elements.query_str;
     const status = form.querySelector('[data-meaning-status]');
-    const source = form.querySelector('[data-meaning-source]');
+    const source = form.elements.meaning_scope;
     const sync = () => {
         const meaning = mode.value === 'meaning';
         const sourceControl = form.querySelector('[data-meaning-scope-control]');
@@ -103,8 +102,9 @@ document.querySelectorAll('select[name=search_mode]').forEach(mode => {
         status.textContent = '';
     };
     sync();
-    mode.addEventListener('change', sync);
-    source?.addEventListener('change', sync);
+    form.querySelectorAll('[name=search_mode], [data-meaning-source]').forEach(control => {
+        control.addEventListener('change', sync);
+    });
     window.addEventListener('pageshow', () => {
         form.querySelectorAll('[data-meaning-payload]').forEach(node => node.remove());
         setBusy(form, false);

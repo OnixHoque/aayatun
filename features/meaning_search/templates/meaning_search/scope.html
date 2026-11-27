@@ -1,16 +1,16 @@
 {% if meaning_scopes %}
-<label for="{{ mode_id }}">Search mode</label>
-<select id="{{ mode_id }}" name="search_mode">
-  <option value="keyword">Keyword search</option>
-  <option value="meaning" {% if search_mode == 'meaning' and mode_id == 'result-search-mode' %}selected{% endif %}>Search by meaning</option>
-</select>
-<div class="field" data-meaning-scope-control hidden>
-  <label for="{{ mode_id }}-source">Search in</label>
-  <select id="{{ mode_id }}-source" name="meaning_scope" data-meaning-source>
+<div class="meaning-options">
+  <fieldset id="{{ mode_id }}" class="meaning-options-row" data-meaning-mode>
+    <legend class="meaning-visually-hidden">Search mode</legend>
+    <label><input type="radio" name="search_mode" value="keyword" {% if search_mode != 'meaning' or mode_id != 'result-search-mode' %}checked{% endif %}> Keywords</label>
+    <label><input type="radio" name="search_mode" value="meaning" {% if search_mode == 'meaning' and mode_id == 'result-search-mode' %}checked{% endif %}> By meaning</label>
+  </fieldset>
+  <fieldset id="{{ mode_id }}-source" class="meaning-options-row meaning-sources" data-meaning-scope-control {% if search_mode != 'meaning' or mode_id != 'result-search-mode' %}hidden{% endif %}>
+    <legend class="meaning-visually-hidden">Search in</legend>
     {% for scope in meaning_scopes %}
-    <option value="{{ scope }}" {% if scope == selected_scope %}selected{% endif %}>{{ 'All sources' if scope == 'all-fields' else 'English translation only' }}</option>
+    <label><input type="radio" name="meaning_scope" data-meaning-source value="{{ scope }}" {% if scope == selected_scope %}checked{% endif %}> {{ 'All sources' if scope == 'all-fields' else 'Translation only' }}</label>
     {% endfor %}
-  </select>
+  </fieldset>
 </div>
 <p data-meaning-status role="status"></p>
 {% endif %}

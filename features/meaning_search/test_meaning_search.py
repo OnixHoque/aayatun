@@ -20,7 +20,7 @@ class MeaningSearchTests(unittest.TestCase):
     def test_feature_assets_keep_their_public_urls_and_package_files_stay_private(self):
         client = app.test_client()
         page = client.get('/').get_data(as_text=True)
-        self.assertIn('/static/meaning/js/meaning-search.js?v=8', page)
+        self.assertIn('/static/meaning/js/meaning-search.js?v=9', page)
         for asset in ('index.json', 'js/meaning-worker.js'):
             with client.get('/static/meaning/' + asset) as response:
                 self.assertEqual(response.status_code, 200)
@@ -30,7 +30,7 @@ class MeaningSearchTests(unittest.TestCase):
     def test_only_ready_scopes_appear_in_the_form(self):
         with patch.object(integration, '_available', side_effect=lambda scope: scope == 'translation'):
             page = app.test_client().get('/').get_data(as_text=True)
-        self.assertIn('value="translation" selected', page)
+        self.assertIn('value="translation" checked', page)
         self.assertNotIn('value="all-fields"', page)
         with patch.object(integration, '_available', return_value=False):
             page = app.test_client().get('/').get_data(as_text=True)
@@ -75,7 +75,7 @@ class MeaningSearchTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         refs = re.findall(r'class="surahlink"[^>]*>\s*(\d+:\d+)', text)
         self.assertEqual(refs, ["2:153", "94:6"])
-        self.assertGreaterEqual(text.count('value="all-fields" selected'), 2)
+        self.assertGreaterEqual(text.count('value="all-fields" checked'), 2)
         self.assertIn("Tafsir Ibn Kathir", text)
         self.assertIn("AI explanation", text)
 
@@ -87,10 +87,10 @@ class MeaningSearchTests(unittest.TestCase):
         })
         text = response.get_data(as_text=True)
         self.assertEqual(response.status_code, 200)
-        result_source = re.search(r'id="result-search-mode-source".*?</select>', text, re.S)
+        result_source = re.search(r'id="result-search-mode-source".*?</fieldset>', text, re.S)
         self.assertIsNotNone(result_source)
-        self.assertIn('value="translation" selected', result_source[0])
-        self.assertNotIn('value="all-fields" selected', result_source[0])
+        self.assertIn('value="translation" checked', result_source[0])
+        self.assertNotIn('value="all-fields" checked', result_source[0])
 
     def test_pending_all_fields_scope_is_hidden_and_rejected(self):
         pending = {"scope": "all-fields", "schema_version": 2, "fusion": {"status": "pending_validation"}}

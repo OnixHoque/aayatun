@@ -52,7 +52,6 @@
 	<br>
 	<!-- <a href=""><h4 style="text-align: center; font-size: 150%; font-family: 'Merriweather', serif;"> Surah Name</h4></a>  -->
 	<form class="ui form" method="POST" action="/search">
-		{% with mode_id="result-search-mode", selected_scope=meaning_form_scope|default(meaning_scope) %}{% include "meaning_search/scope.html" %}{% endwith %}
 		<div class="field" style="width: 100%;">
 			<div class="ui action large input">
 				<input type="text" name="query_str" style="font-family: Open Sans" value="{{ query }}" placeholder="Enter a keyword...">
@@ -64,6 +63,7 @@
 			</div>
 			<!-- <div class="ui error message" style="font-family: Open Sans"></div> -->
 		</div>
+		{% with mode_id="result-search-mode", selected_scope=meaning_form_scope|default(meaning_scope) %}{% include "meaning_search/scope.html" %}{% endwith %}
 		<!-- <p class="search-hint" style="margin: 8px 2px 0; font-size: 84%; line-height: 1.45; opacity: .78; font-family: 'Open Sans'">Tip: search words, phrases, Arabic roots, or verse references, e.g., “rope of Allah”, luqman parent, Fatiha رحم, root:رحم, surah:fatiha root:رحم, or 2:255. Use the field filter to explore translations, tafsir, and AI explanations.</p>
 		  -->
 		<p class="search-hint" style="margin: 8px 2px 0; font-size: 84%; line-height: 1.45; opacity: .78; font-family: 'Open Sans'">Tip: jump straight to a verse by typing <b>Surah:Verse</b> — e.g. <b>2:255</b> or <b>2 255</b> — or to a surah with just <b>2</b>. Or search English or Arabic keywords, e.g. “mercy” / “رحمة”, “Abraham” / “إبراهيم”, “charity” / “صدقة”, “Paradise” / “جنة”, “rope of Allah”, “luqman parent”, Fatiha رحم, root:رحم, surah:fatiha root:رحم.</p>

@@ -354,7 +354,6 @@
   </div>
   <div class="content">
     <form class="ui form" method="POST" action="/search">
-      {% with mode_id="dialog-search-mode", selected_scope=meaning_scope %}{% include "meaning_search/scope.html" %}{% endwith %}
       <div class="field" style="width: 100%;">
         <div class="ui action large input">
           <input type="text" name="query_str" style="font-family: Open Sans" placeholder="Enter a keyword...">
@@ -363,6 +362,7 @@
             <i id="search-submit-icon" class="search icon"></i>
           </button>
         </div>
+      {% with mode_id="dialog-search-mode", selected_scope=meaning_scope %}{% include "meaning_search/scope.html" %}{% endwith %}
         <p class="search-hint" style="margin: 8px 2px 0; font-size: 84%; line-height: 1.45; opacity: .78; font-family: 'Open Sans'">Tip: jump straight to a verse by typing <b>Surah:Verse</b> — e.g. <b>2:255</b> or <b>2 255</b> — or to a surah with just <b>2</b>. Or search English or Arabic keywords, e.g. “mercy” / “رحمة”, “Abraham” / “إبراهيم”, “charity” / “صدقة”, “Paradise” / “جنة”, “rope of Allah”, “luqman parent”, Fatiha رحم, root:رحم, surah:fatiha root:رحم.</p>
         <!-- <p class="search-hint">Search an Arabic root with <b>root:رحم</b>, or in a surah with <b>surah:fatiha root:رحم</b>.</p> -->
         <!-- <div class="ui error message" style="font-family: Open Sans"></div> -->
@@ -372,7 +372,8 @@
 </div>
 <div class="ui basic segment" style="padding: 0 !important; margin: 0 !important;">
 {% if meaning_scopes %}
-<script type="module" src="{{ url_for('meaning_search.static', filename='js/meaning-search.js', v='8') }}"></script>
+<link rel="stylesheet" href="{{ url_for('meaning_search.static', filename='ui/search-options.css', v='1') }}">
+<script type="module" src="{{ url_for('meaning_search.static', filename='js/meaning-search.js', v='9') }}"></script>
 {% endif %}
 
   <div class="ui text container">
