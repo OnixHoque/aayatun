@@ -114,14 +114,18 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.6/dist/semantic.min.css">
+  <link rel="stylesheet" type="text/css" href="{{ url_for('meaning_search.static', filename='ui/fomantic-2.8.6/semantic.min.css') }}">
   <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+  {% if meaning_scopes %}
+  <link rel="stylesheet" href="{{ url_for('meaning_search.static', filename='ui/search-options.css', v='6') }}">
+  <script type="module" src="{{ url_for('meaning_search.static', filename='js/meaning-search.js', v='10') }}"></script>
+  {% endif %}
   <link rel="icon" type="image/png" href="{{ url_for('static', filename= 'images/favicon.png') }}"/>
   <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename= 'images/apple-touch-icon.png') }}">
 
 
-  <script defer src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.6/dist/semantic.min.js"></script>
+  <script defer src="{{ url_for('meaning_search.static', filename='ui/jquery-3.3.1/jquery.min.js') }}"></script>
+  <script defer src="{{ url_for('meaning_search.static', filename='ui/fomantic-2.8.6/semantic.min.js') }}"></script>
   <script defer src="{{ url_for('static', filename='js/pull-refresh.js') }}"></script>
   <script defer src="{{ url_for('static', filename='js/recent.js') }}"></script>
   <script defer src="{{ url_for('static', filename='js/quiz-attend.js') }}"></script>
@@ -354,15 +358,19 @@
   </div>
   <div class="content">
     <form class="ui form" method="POST" action="/search">
-      <div class="field" style="width: 100%;">
+      <div class="field{% if meaning_scopes %} meaning-search-field{% endif %}" style="width: 100%;">
         <div class="ui action large input">
-          <input type="text" name="query_str" style="font-family: Open Sans" placeholder="Enter a keyword...">
-          <button id="search-submit" class="ui primary large icon button"
+          <input type="text" name="query_str" aria-label="Search query" style="font-family: Open Sans" placeholder="Enter a keyword...">
+          <button aria-label="Search" id="search-submit" class="ui primary large icon button"
           onclick="$('#search-submit').addClass('loading');$('#search-submit-icon').removeClass('search').addClass('loading');" type="submit">
             <i id="search-submit-icon" class="search icon"></i>
           </button>
         </div>
-        <p class="search-hint" style="margin: 8px 2px 0; font-size: 84%; line-height: 1.45; opacity: .78; font-family: 'Open Sans'">Tip: jump straight to a verse by typing <b>Surah:Verse</b> — e.g. <b>2:255</b> or <b>2 255</b> — or to a surah with just <b>2</b>. Or search English or Arabic keywords, e.g. “mercy” / “رحمة”, “Abraham” / “إبراهيم”, “charity” / “صدقة”, “Paradise” / “جنة”, “rope of Allah”, “luqman parent”, Fatiha رحم, root:رحم, surah:fatiha root:رحم.</p>
+        {% with mode_id="dialog-search-mode", selected_scope=meaning_scope, shared_feedback=true %}{% include "meaning_search/scope.html" %}{% endwith %}
+        <div class="meaning-feedback">
+          {% if meaning_scopes %}<p data-meaning-status role="status"></p>{% endif %}
+          <p class="search-hint" style="margin: 8px 2px 0; font-size: 84%; line-height: 1.45; opacity: .78; font-family: 'Open Sans'">Tip: jump straight to a verse by typing <b>Surah:Verse</b> — e.g. <b>2:255</b> or <b>2 255</b> — or to a surah with just <b>2</b>. Or search English or Arabic keywords, e.g. “mercy” / “رحمة”, “Abraham” / “إبراهيم”, “charity” / “صدقة”, “Paradise” / “جنة”, “rope of Allah”, “luqman parent”, Fatiha رحم, root:رحم, surah:fatiha root:رحم.</p>
+        </div>
         <!-- <p class="search-hint">Search an Arabic root with <b>root:رحم</b>, or in a surah with <b>surah:fatiha root:رحم</b>.</p> -->
         <!-- <div class="ui error message" style="font-family: Open Sans"></div> -->
       </div>

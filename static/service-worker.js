@@ -1,4 +1,6 @@
-const CACHE_NAME = 'aayatun-v253';
+importScripts('/static/meaning/js/service-worker.js');
+
+const CACHE_NAME = 'aayatun-v255';
 
 // Prayer Time's sunrise/sunset/midnight pills use Material Symbols. The CSS
 // is precached with the shell, and install then caches every font file it
@@ -64,7 +66,7 @@ self.addEventListener('activate', (evt) => {
   evt.waitUntil(
     caches.keys().then((keyList) => {
       return Promise.all(keyList.map((key) => {
-        if (key !== CACHE_NAME) {
+        if (key !== CACHE_NAME && !self.meaningSearchCache.preserves(key)) {
           console.log('[ServiceWorker] Removing old cache', key);
           return caches.delete(key);
         }
@@ -146,6 +148,7 @@ self.addEventListener('fetch', (evt) => {
   }
 
   const url = new URL(req.url);
+  if (self.meaningSearchCache.handle(evt, url, CACHE_NAME)) return;
 
   // Authenticated, per-session API responses must never be cached (and must
   // not be replayed by staleWhileRevalidate).

@@ -1,0 +1,82 @@
+{
+  "query": "what questions will be asked on the day of judgement",
+  "scope": "all-fields",
+  "external_dns_blocked": true,
+  "worker_sha256": "fa31216aeac034ad5fe5a04bdbe122833397b677913bf8c9edf2e501f512e14d",
+  "index_sha256": "fd109a88f98322abe0fb2b534ba89a2459a64fcffb64962b5c948e1e74b48ea5",
+  "fusion": {
+    "method": "weighted_raw",
+    "weights": {
+      "ar_raw": 0,
+      "en": 0.2,
+      "en_tafsir": 0.6,
+      "bn_tafsir": 0,
+      "verse_context": 0.2,
+      "word_meanings": 0,
+      "surah_name": 0
+    }
+  },
+  "results": [
+    {
+      "rank": 1,
+      "ref": "75:6",
+      "score": 0.86443052971,
+      "translation": "He asks, \"When is the Day of Resurrection?\""
+    },
+    {
+      "rank": 2,
+      "ref": "82:17",
+      "score": 0.862226693714,
+      "translation": "And what can make you know what is the Day of Recompense?"
+    },
+    {
+      "rank": 3,
+      "ref": "37:21",
+      "score": 0.860620646518,
+      "translation": "[They will be told], \"This is the Day of Judgement which you used to deny.\""
+    },
+    {
+      "rank": 4,
+      "ref": "78:17",
+      "score": 0.86034543502,
+      "translation": "Indeed, the Day of Judgement is an appointed time -"
+    },
+    {
+      "rank": 5,
+      "ref": "44:40",
+      "score": 0.859212464872,
+      "translation": "Indeed, the Day of Judgement is the appointed time for them all -"
+    },
+    {
+      "rank": 6,
+      "ref": "25:26",
+      "score": 0.856772478128,
+      "translation": "True sovereignty, that Day, is for the Most Merciful. And it will be upon the disbelievers a difficult Day."
+    },
+    {
+      "rank": 7,
+      "ref": "86:9",
+      "score": 0.856258973245,
+      "translation": "The Day when secrets will be put on trial,"
+    },
+    {
+      "rank": 8,
+      "ref": "51:12",
+      "score": 0.855936792892,
+      "translation": "They ask, \"When is the Day of Recompense?\""
+    },
+    {
+      "rank": 9,
+      "ref": "22:17",
+      "score": 0.854587282825,
+      "translation": "Indeed, those who have believed and those who were Jews and the Sabeans and the Christians and the Magians and those who associated with Allah - Allah will judge between them on the Day of Resurrection. Indeed Allah is, over all things, Witness."
+    },
+    {
+      "rank": 10,
+      "ref": "68:39",
+      "score": 0.852860645795,
+      "translation": "Or do you have oaths [binding] upon Us, extending until the Day of Resurrection, that indeed for you is whatever you judge?"
+    }
+  ],
+  "assessment": "Top matches concern the Day of Judgement but do not directly enumerate the questions asked. This is a relevance limitation, not a verified religious answer."
+}

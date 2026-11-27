@@ -1,0 +1,56 @@
+.meaning-options { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem 1.5rem; margin: .5rem 0 .75rem; font-size: .9rem; }
+.meaning-options-row { display: flex; flex-wrap: wrap; gap: .25rem 1.25rem; border: 0; padding: 0; margin: 0; min-width: 0; }
+.meaning-options-row[hidden] { display: none; }
+.ui.form .meaning-options-row label { display: inline-flex; align-items: center; gap: .45rem; padding: .3rem 0; cursor: pointer; font-weight: 400; color: inherit; }
+.meaning-options-row input[type="radio"] { margin: 0; width: 1rem; height: 1rem; accent-color: #2185d0; cursor: pointer; }
+.meaning-options-row input:focus-visible { outline: 2px solid #2185d0; outline-offset: 3px; }
+.meaning-sources { border-left: 1px solid #aaa6; padding-left: 1.5rem; }
+.meaning-visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+[data-meaning-status]:empty { margin: 0; }
+@media (max-width: 480px) { .meaning-sources { flex-basis: 100%; border-left: 0; padding-left: 0; } }
+
+/* Keep the centered dialog's dimensions stable when switching search modes.
+   Visibility preserves responsive space while removing hidden controls from
+   keyboard navigation and the accessibility tree. */
+#searchwindow .meaning-options-row[hidden] { display: flex; visibility: hidden; }
+#searchwindow .search-hint[hidden] { display: block; visibility: hidden; }
+
+/* Tips and status share a grid cell: the tips reserve responsive space for
+   feedback without an extra blank row between the options and tips. */
+#searchwindow .meaning-feedback { display: grid; }
+#searchwindow .meaning-feedback > * { grid-area: 1 / 1; align-self: start; }
+#searchwindow [data-meaning-status] {
+    display: flex;
+    align-items: center;
+    margin: 8px 2px 0;
+    font-size: .9rem;
+    line-height: 1.5;
+}
+#searchwindow [data-meaning-status] .loader { flex-shrink: 0; }
+
+/* On narrow dialogs the source options wrap to a second row. Let the
+   keyword tip use that space too, starting just below the mode buttons. */
+@media (max-width: 600px) {
+    #searchwindow .meaning-search-field {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto auto min-content auto;
+    }
+    #searchwindow .meaning-options,
+    #searchwindow .meaning-feedback { display: contents; }
+    #searchwindow .meaning-search-field .ui.input { grid-area: 1 / 1; }
+    #searchwindow [data-meaning-mode] {
+        grid-area: 2 / 1;
+        margin-top: .5rem;
+        font-size: .9rem;
+    }
+    #searchwindow .meaning-sources {
+        grid-area: 3 / 1;
+        margin-top: .35rem;
+        border-left: 0;
+        padding-left: 0;
+        font-size: .9rem;
+    }
+    #searchwindow [data-meaning-status] { grid-area: 4 / 1; }
+    #searchwindow .meaning-feedback > .search-hint { grid-area: 3 / 1 / 5; }
+}

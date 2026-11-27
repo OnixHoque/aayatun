@@ -1,0 +1,311 @@
+{
+  "schema_version": 1,
+  "runtime": "Transformers.js 3.7.2 / ONNX Runtime Web 1.22.0-dev.20250409-89f8206ba4",
+  "runtime_model": "Xenova/multilingual-e5-small@761b726dd34fb83930e26aab4e9ac3899aa1fa78",
+  "builder_model": "intfloat/multilingual-e5-small@c007d7ef6fd86656326059b28395a7a03a7c5846",
+  "files": {
+    "db/ai_context.db": {
+      "bytes": 31895552,
+      "sha256": "0a334c0e376ccca777312757d8671ad08fc71803effc8fdd8644999b598ff91e"
+    },
+    "db/ayah_themes.db": {
+      "bytes": 184320,
+      "sha256": "e2f7c42f44cf7c80529eca02bf68f3077315574eb5b651d0e1de09c575f0d8be"
+    },
+    "db/bn_zakaria.db": {
+      "bytes": 20639744,
+      "sha256": "5bf5567da24df0a0207836804f24ae075996947ca2a1691e77f3b727cad95585"
+    },
+    "db/en_kathir.db": {
+      "bytes": 12650496,
+      "sha256": "5e8cf990f9e6face2e57fcad7a1ed556408c073fe81b10f6d97020080f2523c1"
+    },
+    "db/en_quran.db": {
+      "bytes": 1984512,
+      "sha256": "cd1cd1ee0bb43b75fccb0e8226af15c55a653cd7e46391f52c8dbdbdad34125a"
+    },
+    "db/english_words.README.txt": {
+      "bytes": 528,
+      "sha256": "d071610866ce0429d0c4aba67c7865c88479ef28b401b623f0ab30027b89f1e3",
+      "line_endings": "lf"
+    },
+    "db/english_words.txt": {
+      "bytes": 3864805,
+      "sha256": "643c7f71d5caee9806be56f5ed83ba36e2246a06a04bcf4aaa0576790bb90d66",
+      "line_endings": "lf"
+    },
+    "db/mushaf_lines.json": {
+      "bytes": 1983314,
+      "sha256": "34437ff02158af8f686a7b9dcacb7a5ab0a9801453fb025d03369c60122248a1",
+      "line_endings": "lf"
+    },
+    "db/page_overviews.db": {
+      "bytes": 839680,
+      "sha256": "dc5b648249e9e77ced99b2e51ed42045695d1045341e11844e16d098e95a9309"
+    },
+    "db/pos_tags_dict.txt": {
+      "bytes": 1318,
+      "sha256": "aa15e6d019e25404cc5572e9e9deadd80969d87af283b892fe58951886d082e2",
+      "line_endings": "lf"
+    },
+    "db/qcf_verses.json": {
+      "bytes": 433767,
+      "sha256": "5e107d11fc615d8466d5af33afa221948e192171249f1edbc28b61b612395300",
+      "line_endings": "lf"
+    },
+    "db/quran.db": {
+      "bytes": 2558976,
+      "sha256": "d3cf1507035566808a43833589bb1ad5db5964a5bad902cc7d51ef9abe0938a8"
+    },
+    "db/quran_index.txt": {
+      "bytes": 61085,
+      "sha256": "acc388963073e17bf3dd41d31f78bdde0f60daca893e82587ee5b9767b0afc31",
+      "line_endings": "lf"
+    },
+    "db/quran_stat.json": {
+      "bytes": 9530,
+      "sha256": "0f0339d858b985fcd2ab70728e68fabae852ca73f56e20349c644601d6caea4e",
+      "line_endings": "lf"
+    },
+    "db/root_meanings.json": {
+      "bytes": 358571,
+      "sha256": "fed71281ba3dc8e8685db400e0003290b5bf90f78ed113a602ed6d3f2848281d",
+      "line_endings": "lf"
+    },
+    "db/ruku_index.txt": {
+      "bytes": 5388,
+      "sha256": "5d885cdd6de32f6ca29327314ab6f8164dfc076bf4bbd5db140ea2f1991b377b",
+      "line_endings": "lf"
+    },
+    "db/sarf.json": {
+      "bytes": 1398645,
+      "sha256": "4a7cb74ac4552f7d37c0154e68c73d88c18969adb4419e5e0bbfcc49dfef5f04",
+      "line_endings": "lf"
+    },
+    "db/search_synonyms.json": {
+      "bytes": 2915,
+      "sha256": "4a99245f21d7d9e18a07add3aa2acfe366a60277e12758e568f90e8f940d37af",
+      "line_endings": "lf"
+    },
+    "db/surah_overviews.db": {
+      "bytes": 180224,
+      "sha256": "7a3e90240c92c729406b4109afda8fb3566e334ffdc90eb72d28eb17ee5c9ade"
+    },
+    "db/verse_quizzes.db": {
+      "bytes": 21708800,
+      "sha256": "093ff949de543ddd94d136eddc20622b9e8a607a3646b29d7656e9b0073e2778"
+    },
+    "db2/quran_metadata.db": {
+      "bytes": 311238656,
+      "sha256": "cff182a5efac0e77e07c53d73d79fa9ec5e79954216f76cc11968dc02ed2fd70"
+    },
+    "features/meaning_search/deployment/licenses/DataTables-LICENSE.txt": {
+      "bytes": 1096,
+      "sha256": "4f6610cece9940c3bf3de202a920e7b69491e7947d968330f03db592caa456dd"
+    },
+    "features/meaning_search/deployment/licenses/E5-MIT-LICENSE.txt": {
+      "bytes": 1083,
+      "sha256": "b5cb7ff7859e7d282d98fc43ab081b0dda5dc659dc3385cf65740c759a7e6a6c"
+    },
+    "features/meaning_search/deployment/licenses/Fomantic-UI-LICENSE.md": {
+      "bytes": 1042,
+      "sha256": "d6cb13d42f2f219555468cc9d130f6aeef0e3825d1824f9e0c643118deebb786"
+    },
+    "features/meaning_search/deployment/licenses/Font-Awesome-LICENSE.txt": {
+      "bytes": 1548,
+      "sha256": "e779748dfe75e84f974df3c7bc07f842011a100159158b0f1f49b2f2a5a515cb"
+    },
+    "features/meaning_search/deployment/licenses/jQuery-LICENSE.txt": {
+      "bytes": 1605,
+      "sha256": "2b3ed8ba424423a50b023e728530d94bc385cfc7c328ad65a3dfee9c7c0531c5"
+    },
+    "features/meaning_search/deployment/licenses/ONNX-Runtime-LICENSE": {
+      "bytes": 1073,
+      "sha256": "2f07c72751aed99790b8a4869cf2311df85a860b22ded05fa22803587a48922c"
+    },
+    "features/meaning_search/deployment/licenses/ONNX-Runtime-ThirdPartyNotices.txt": {
+      "bytes": 316114,
+      "sha256": "8c06e8cff286a4a117b3b246a4c7da68428a144af757823db50e3d6520941ec6"
+    },
+    "features/meaning_search/deployment/licenses/Transformers.js-LICENSE.txt": {
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    "features/meaning_search/static/all-fields-ar_raw-13b7f19b630d-e5-v1.bin": {
+      "bytes": 2398848,
+      "sha256": "0e54ea0b1cebfe1127b8c0341833c420c1e1219bd5d2ed9c3c7bf0772dd8d4e4"
+    },
+    "features/meaning_search/static/all-fields-bn_tafsir-d32de40aabc1-e5-v1.bin": {
+      "bytes": 3149952,
+      "sha256": "b8ad1bdbe670f0e942e475123ab4d7c7124b71685d51323fee7f98c6059d383a"
+    },
+    "features/meaning_search/static/all-fields-en_tafsir-0e3587b4af9e-e5-v1.bin": {
+      "bytes": 4014720,
+      "sha256": "0d85591a9d3a04f0e91a99671c6f682ff3fb1e79a24f88df6f80a673294fad81"
+    },
+    "features/meaning_search/static/all-fields-index.json": {
+      "bytes": 327346,
+      "sha256": "fd109a88f98322abe0fb2b534ba89a2459a64fcffb64962b5c948e1e74b48ea5"
+    },
+    "features/meaning_search/static/all-fields-surah_name-fe4282d95768-e5-v1.bin": {
+      "bytes": 2394624,
+      "sha256": "efe7e91e5bd7c75b69b40d7b1f7e77f4b8da0887179b6d9f6fdfc15dd1650654"
+    },
+    "features/meaning_search/static/all-fields-verse_context-34d8bcc3e537-e5-v1.bin": {
+      "bytes": 2351232,
+      "sha256": "462cd027fcb341a3694b1dde4762ed7529097e9dced445d233c197b3afd92d6a"
+    },
+    "features/meaning_search/static/all-fields-word_meanings-c875970b4af2-e5-v1.bin": {
+      "bytes": 5218560,
+      "sha256": "99837d8e30d5f5d1d1086f0ddb7d8307adfb9ad8f883d69258949acb2da45329"
+    },
+    "features/meaning_search/static/index.json": {
+      "bytes": 48757,
+      "sha256": "f96386fa56d44f87c26933e35673816750b2862ccd46d2ac3303ea78b932d6de"
+    },
+    "features/meaning_search/static/js/meaning-core.mjs": {
+      "bytes": 3957,
+      "sha256": "a83e88995a3823dd5aa9416a038387ed3de84e4f7cf9701c39a8c622ab4209f2"
+    },
+    "features/meaning_search/static/js/meaning-model-source.mjs": {
+      "bytes": 888,
+      "sha256": "1fd91eb9a8b89bbc6e35e7a6e7cb9c4f99b5aec5df9e009d49e26f54067a9926"
+    },
+    "features/meaning_search/static/js/meaning-search.js": {
+      "bytes": 5636,
+      "sha256": "708a931a2382b17b1c7a5567ba1c9d9635b2e060ee42dda268a40f4350b0c271"
+    },
+    "features/meaning_search/static/js/meaning-worker.js": {
+      "bytes": 9057,
+      "sha256": "3f14d33c357eec753d223ef1f0ed670a5f248b5e6a2485e9a581f44524a299fe"
+    },
+    "features/meaning_search/static/js/service-worker.js": {
+      "bytes": 1361,
+      "sha256": "4dcb68a4df2d773d5d43713560f2a42fd807d4a5fc3b7acc703745b21b7b0c77"
+    },
+    "features/meaning_search/static/models/Xenova/multilingual-e5-small/config.json": {
+      "bytes": 658,
+      "sha256": "cb99455288675345e1a4f411438d5d0adbba5fbd3a67ea4fb03c015433b996c1"
+    },
+    "features/meaning_search/static/models/Xenova/multilingual-e5-small/onnx/model_int8.onnx": {
+      "bytes": 118054593,
+      "sha256": "4d24e2bc01a447951524466ef533e52944bf48509e6552810bcee1a2711cb02c"
+    },
+    "features/meaning_search/static/models/Xenova/multilingual-e5-small/tokenizer.json": {
+      "bytes": 17082730,
+      "sha256": "0b44a9d7b51c3c62626640cda0e2c2f70fdacdc25bbbd68038369d14ebdf4c39"
+    },
+    "features/meaning_search/static/models/Xenova/multilingual-e5-small/tokenizer_config.json": {
+      "bytes": 443,
+      "sha256": "a1d6bc8734a6f635dc158508bef000f8e2e5a759c7d92f984b2c86e5ff53425b"
+    },
+    "features/meaning_search/static/ui/datatables-1.10.22/dataTables.semanticui.min.css": {
+      "bytes": 2625,
+      "sha256": "489a55d810018deb277658f4bddb51a63e0b1387a28283d95634cd43a70cb32f"
+    },
+    "features/meaning_search/static/ui/datatables-1.10.22/dataTables.semanticui.min.js": {
+      "bytes": 2457,
+      "sha256": "9f18fcf89d259618fcd55105694d42c50f79c2e359940105ed5770fe11fb3c2d"
+    },
+    "features/meaning_search/static/ui/datatables-1.10.22/jquery.dataTables.min.js": {
+      "bytes": 83597,
+      "sha256": "8fd44a290480b21cf6c3c3918302d2bde9cc3a1651e5500e64edae3cf5dd9fb1"
+    },
+    "features/meaning_search/static/ui/fomantic-2.8.6/semantic.min.css": {
+      "bytes": 1361707,
+      "sha256": "039805ec035dc8dccd7641489320654c98bedf7a11088544bf35d4e2c69745fd"
+    },
+    "features/meaning_search/static/ui/fomantic-2.8.6/semantic.min.js": {
+      "bytes": 357311,
+      "sha256": "f47dc75989cf2766c41e090eaf0fb8f0a85e3aa6334ef25dd616de53db040c59"
+    },
+    "features/meaning_search/static/ui/fomantic-2.8.6/themes/default/assets/fonts/brand-icons.eot": {
+      "bytes": 133034,
+      "sha256": "811e1577184066108ceca86d5a624a9012303df5206c5cb0b27d5e3fedcba5a3"
+    },
+    "features/meaning_search/static/ui/fomantic-2.8.6/themes/default/assets/fonts/brand-icons.svg": {
+      "bytes": 719460,
+      "sha256": "980a773627e3fc82248a99c21a6763bcccc1d04d2fbf22af74274f2381270158"
+    },
+    "features/meaning_search/static/ui/fomantic-2.8.6/themes/default/assets/fonts/brand-icons.ttf": {
+      "bytes": 132728,
+      "sha256": "a0c145382acfe59767d1487d6505f349665b685c2885cd91b621d141a292b0f8"
+    },
+    "features/meaning_search/static/ui/fomantic-2.8.6/themes/default/assets/fonts/brand-icons.woff": {
+      "bytes": 89824,
+      "sha256": "e836c5d5dfc13e18170c5bddefb4fdac7c65ac0ad43a4b431acdc4a98865a260"
+    },
+    "features/meaning_search/static/ui/fomantic-2.8.6/themes/default/assets/fonts/brand-icons.woff2": {
+      "bytes": 76612,
+      "sha256": "5d9190292acdd48ba0fc35080f7e7448f3cdf0d79199a4d23f0f49b5341fdf29"
+    },
+    "features/meaning_search/static/ui/fomantic-2.8.6/themes/default/assets/fonts/icons.eot": {
+      "bytes": 202902,
+      "sha256": "32501727bb23fc77615b1ec76b5f298ec22198c0f3d6a3e7d6fe4ac3cf315db9"
+    },
+    "features/meaning_search/static/ui/fomantic-2.8.6/themes/default/assets/fonts/icons.svg": {
+      "bytes": 902364,
+      "sha256": "96b9988db47361f88539a3bb4d0750bb7dd5cab3f8435cd941d00f97da1ad4bd"
+    },
+    "features/meaning_search/static/ui/fomantic-2.8.6/themes/default/assets/fonts/icons.ttf": {
+      "bytes": 202616,
+      "sha256": "231d68cefbc6846fb78cafca8467401a4f371e226418662e8900e3d52adc00ab"
+    },
+    "features/meaning_search/static/ui/fomantic-2.8.6/themes/default/assets/fonts/icons.woff": {
+      "bytes": 103300,
+      "sha256": "352f8ead280419dd953d2bc7843386bb9430e8152c2dbd2c2d2494f6b9567ee7"
+    },
+    "features/meaning_search/static/ui/fomantic-2.8.6/themes/default/assets/fonts/icons.woff2": {
+      "bytes": 79444,
+      "sha256": "7f4d3fd0a705dbf8403298aad91d5de6972e6b5d536068eba8b24954a5a0a8c7"
+    },
+    "features/meaning_search/static/ui/fomantic-2.8.6/themes/default/assets/fonts/outline-icons.eot": {
+      "bytes": 34390,
+      "sha256": "01f4416f5db59e2dd6b6fbd9dc32336d99db18f7eb623a49f584d04afd279473"
+    },
+    "features/meaning_search/static/ui/fomantic-2.8.6/themes/default/assets/fonts/outline-icons.svg": {
+      "bytes": 145125,
+      "sha256": "9a5dd62ffcb96d027ac0db084eebac320bad33e267ff5d56a685702cc3209f1c"
+    },
+    "features/meaning_search/static/ui/fomantic-2.8.6/themes/default/assets/fonts/outline-icons.ttf": {
+      "bytes": 34092,
+      "sha256": "f32b94a29060dfec0c797a1dfe111357eb1d682f1aca4ac4b95cf0f4c3e2bfa9"
+    },
+    "features/meaning_search/static/ui/fomantic-2.8.6/themes/default/assets/fonts/outline-icons.woff": {
+      "bytes": 16800,
+      "sha256": "8e2d96198711b63752e5f2f5987b8ffc536df6156a065bdbe28cb7231cad793d"
+    },
+    "features/meaning_search/static/ui/fomantic-2.8.6/themes/default/assets/fonts/outline-icons.woff2": {
+      "bytes": 13584,
+      "sha256": "6a8c8e9e1e7f692c21af1956de163f3d026778e6449fe93a09a671847ca1ae65"
+    },
+    "features/meaning_search/static/ui/fomantic-2.8.6/themes/default/assets/images/flags.png": {
+      "bytes": 28123,
+      "sha256": "94d5c7f1661301c4a6dc491d72dd559a0620cd917a826f0df1b023bb96ea9ddd"
+    },
+    "features/meaning_search/static/ui/jquery-3.3.1/jquery.min.js": {
+      "bytes": 86927,
+      "sha256": "160a426ff2894252cd7cebbdd6d6b7da8fcd319c65b70468f10b6690c45d02ef"
+    },
+    "features/meaning_search/static/ui/search-options.css": {
+      "bytes": 2870,
+      "sha256": "53568ecb8993c391d147d9a2f0c4459848be2a6d46344b17e0daca82f8fe7ca1"
+    },
+    "features/meaning_search/static/vendor/transformers-3.7.2/ort-wasm-simd-threaded.jsep.mjs": {
+      "bytes": 44484,
+      "sha256": "08fb86ec433c78bfb032c5d84a68b8e8e5a8d81268fa39e24314179a5767a5b9"
+    },
+    "features/meaning_search/static/vendor/transformers-3.7.2/ort-wasm-simd-threaded.jsep.wasm": {
+      "bytes": 21596019,
+      "sha256": "c46655e8a94afc45338d4cb2b840475f88e5012d524509916e505079c00bfa39"
+    },
+    "features/meaning_search/static/vendor/transformers-3.7.2/transformers.min.js": {
+      "bytes": 871803,
+      "sha256": "489ae9fa3deae4eed28f83b9f94a32342c63cffdabd56ad990f76d28c858a1c2"
+    },
+    "features/meaning_search/static/verses-d1c40be0bef5-e5-v1.bin": {
+      "bytes": 2394624,
+      "sha256": "0cad61636eb49d656fb65e705da4b84f2038c2a771a10bc6bf3d57e16fc071e5"
+    }
+  }
+}

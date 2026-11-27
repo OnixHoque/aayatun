@@ -1,0 +1,6 @@
+static/** -text
+static/models/**/model_int8.onnx filter=lfs diff=lfs merge=lfs -text
+static/models/**/tokenizer.json filter=lfs diff=lfs merge=lfs -text
+static/vendor/**/*.wasm filter=lfs diff=lfs merge=lfs -text
+build_meaning_index.py -text
+deployment/licenses/** -text

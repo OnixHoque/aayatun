@@ -1,0 +1,6 @@
+-r requirements-runtime.txt
+torch==2.5.1+cpu
+transformers==4.46.3
+huggingface-hub==0.36.2
+tokenizers==0.20.3
+safetensors==0.8.0

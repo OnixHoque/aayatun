@@ -16,6 +16,7 @@ from urllib.parse import urlparse
 from flask import request, redirect, session, jsonify, make_response, url_for
 import re
 import searchtool as st
+from features import meaning_search
 
 @lru_cache(maxsize=1)
 def getVerseMaps():
@@ -29,6 +30,7 @@ def getRukuList():
 RUKU_LIST = getRukuList()
 
 app = Flask(__name__)
+meaning_search.register(app)
 
 # Session signing key for the nav API token. Prefer an env var; otherwise keep
 # a generated key in a gitignored file so sessions survive reloads/restarts and
@@ -175,6 +177,8 @@ _search_fields = ('all', 'ayah', 'translation', 'en_tafsir', 'bn_tafsir', 'ai')
 @app.route('/search/', strict_slashes=False, methods = ['POST'])
 def search():
 	query_str = request.form['query_str']
+	if request.form.get('search_mode') == 'meaning':
+		return meaning_search.render_results(query_str)
 	n = 25
 	field = 'all'
 

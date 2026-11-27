@@ -1,0 +1,5 @@
+/.venv/
+/deployment/kit/
+/deployment/verification/
+/evaluation/.cache/
+/dist/

@@ -1,0 +1,4 @@
+# Frozen diagnostic and fixture provenance records byte hashes.
+*.json -text
+*.jsonl -text
+*_browser*.json filter=lfs diff=lfs merge=lfs -text

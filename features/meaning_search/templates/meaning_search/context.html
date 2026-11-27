@@ -1,0 +1,20 @@
+{% if x.semantic_tafsir %}
+  <h4>Tafsir Ibn Kathir</h4>
+  <p>{{ x.semantic_tafsir|truncate(450, true) }}</p>
+  {% if x.semantic_tafsir|length > 450 %}
+    <details>
+      <summary>Read full tafsir</summary>
+      <p style="white-space: pre-line">{{ x.semantic_tafsir }}</p>
+    </details>
+  {% endif %}
+{% endif %}
+{% if x.semantic_ai %}
+  <h4>AI explanation <small style="font-weight:normal">AI-generated</small></h4>
+  <p>{{ x.semantic_ai|truncate(450, true) }}</p>
+  {% if x.semantic_ai|length > 450 %}
+    <details>
+      <summary>Read full explanation</summary>
+      <p style="white-space: pre-line">{{ x.semantic_ai }}</p>
+    </details>
+  {% endif %}
+{% endif %}
