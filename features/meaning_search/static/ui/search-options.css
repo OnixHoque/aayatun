@@ -8,3 +8,9 @@
 .meaning-visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 [data-meaning-status]:empty { display: none; }
 @media (max-width: 480px) { .meaning-sources { flex-basis: 100%; border-left: 0; padding-left: 0; } }
+
+/* Keep the centered dialog's dimensions stable when switching search modes.
+   Visibility preserves responsive space while removing hidden controls from
+   keyboard navigation and the accessibility tree. */
+#searchwindow .meaning-options-row[hidden] { display: flex; visibility: hidden; }
+#searchwindow .search-hint[hidden] { display: block; visibility: hidden; }
