@@ -369,9 +369,21 @@ def _run_query(conn, match_expr, limit):
 	return conn.execute(sql + ' LIMIT ?', (match_expr, int(limit))).fetchall()
 
 
+_EXPLICIT_QUERY_RE = re.compile(r'["()*]|\b(?:AND|OR|NOT)\b')
+_COMMON_WORD_RE = re.compile(r"(?<![\w'\u2019-])(?:a|an|the|is|are|was|were)(?![\w'\u2019-])", re.IGNORECASE)
+
+
+def _drop_common_words(raw):
+	if _EXPLICIT_QUERY_RE.search(raw):
+		return raw
+	filtered, count = _COMMON_WORD_RE.subn(' ', raw)
+	# Keep a literal search possible when every word was in the list.
+	return ' '.join(filtered.split()) if count and normalize(filtered)[0].strip() else raw
+
+
 def _plain_keywords(raw):
 	"""Normalized keywords for the automatic multi-word tiers."""
-	if re.search(r'["()*]|\b(?:AND|OR|NOT)\b', raw):
+	if _EXPLICIT_QUERY_RE.search(raw):
 		return []
 	normalized, _ = normalize(raw)
 	words = normalized.split()
@@ -1009,6 +1021,7 @@ def index_search(search_query, result_limit=10, dirname=None, search_fields=None
 				if root_results:
 					return root_results, root_meta
 
+	raw = _drop_common_words(raw)
 	gloss = _load_glossary()
 	match_expr, terms = _build_match(raw, col, gloss)
 	# Full-match tier: every token must be present somewhere. Docs matching

@@ -16,6 +16,23 @@ from searchtool import index_search
 
 
 class SearchFormattingTests(unittest.TestCase):
+    def test_plain_search_ignores_articles_and_be_verbs(self):
+        for query, keywords in (('the light is upon a light', 'light upon light'),
+                                ('an orphan was afraid', 'orphan afraid'),
+                                ('the believers are patient', 'believers patient'),
+                                ('the angels were sent', 'angels sent')):
+            with self.subTest(query=query):
+                expected, _ = index_search(keywords, 10, field='translation')
+                self.assertTrue(expected)
+                rows, _ = index_search(query, 10, field='translation')
+                self.assertEqual(rows, expected)
+
+    def test_common_words_stay_in_explicit_and_stopword_only_searches(self):
+        for query in ('"the light"', 'the OR light', 'the AND light',
+                      'society NOT the', '(the light)', 'the* light', 'is the'):
+            with self.subTest(query=query):
+                self.assertEqual(searchtool._drop_common_words(query), query)
+
     def test_preposition_query_does_not_highlight_one_or_inside_upon(self):
         rows, _ = index_search('questions on judgement day', 10, field='all')
         self.assertEqual((rows[0]['surah'], rows[0]['verse']), (89, 22))
